@@ -18,6 +18,7 @@ const required = [
   'public/js/pages/login.js', 'public/js/pages/activar-cuenta.js', 'public/js/pages/dashboard.js',
   'public/js/pages/ordenes.js', 'public/js/pages/orden.js', 'public/js/pages/perfil.js',
   'public/js/pages/configuracion.js', 'functions/api/maderarte.js',
+  'worker/index.js', 'scripts/test-worker.mjs',
   'apps-script/Config.gs', 'apps-script/SheetHelpers.gs', 'apps-script/Schema.gs',
   'apps-script/DriveFolders.gs', 'apps-script/Auth.gs', 'apps-script/Orders.gs',
   'apps-script/Router.gs', 'apps-script/appsscript.json', 'apps-script/README.md'
@@ -64,6 +65,16 @@ assert.equal(packageLock.version, version);
 assert.equal(packageLock.packages[''].version, version);
 assert.equal(JSON.parse(readFileSync(join(root, 'public/manifest.webmanifest'), 'utf8')).name, 'Maderarte App');
 assert.equal(JSON.parse(readFileSync(join(root, 'apps-script/appsscript.json'), 'utf8')).runtimeVersion, 'V8');
+
+const wranglerSource = readFileSync(join(root, 'wrangler.toml'), 'utf8');
+assert.match(wranglerSource, /^main\s*=\s*["']\.\/worker\/index\.js["']/m, 'Wrangler no apunta al Worker principal');
+assert.match(wranglerSource, /^\[assets\]$/m, 'Falta la configuración de Static Assets');
+assert.match(wranglerSource, /directory\s*=\s*["']\.\/public["']/, 'Static Assets no apunta a public');
+assert.match(wranglerSource, /binding\s*=\s*["']ASSETS["']/, 'Falta el binding ASSETS');
+assert.match(wranglerSource, /html_handling\s*=\s*["']none["']/, 'Las rutas .html deben conservarse sin reescrituras automáticas');
+assert.match(wranglerSource, /not_found_handling\s*=\s*["']404-page["']/, 'Falta la página 404 de Static Assets');
+assert.match(wranglerSource, /run_worker_first\s*=\s*\[[\s\S]*["']\/api\/maderarte["']/, 'La API debe ejecutar primero el Worker');
+assert.doesNotMatch(wranglerSource, /pages_build_output_dir/, 'No debe quedar configuración de Pages');
 
 for (const file of files.filter(file => ['.js', '.mjs'].includes(extname(file)))) {
   execFileSync(process.execPath, ['--check', file], { stdio: 'pipe' });
@@ -126,5 +137,6 @@ console.log('OK · sintaxis JavaScript y Apps Script');
 console.log('OK · referencias HTML y recursos locales');
 console.log('OK · sin datos comerciales, IDs privados ni secretos');
 console.log('OK · contratos de API y versión 0.2.0 coherentes');
+console.log('OK · Cloudflare Worker y Static Assets protegidos');
 console.log('OK · encabezados únicos y contrato de Sedes protegido');
 console.log('OK · recursos de marca sin derivados no aprobados');

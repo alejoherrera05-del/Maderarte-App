@@ -1,6 +1,14 @@
 name = "maderarte-app"
-compatibility_date = "2026-08-31"
-pages_build_output_dir = "./public"
+main = "./worker/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+html_handling = "none"
+not_found_handling = "404-page"
+run_worker_first = [ "/api/maderarte", "/api/maderarte/*" ]
 
 [vars]
 MADERARTE_APP_ENV = "preparacion"

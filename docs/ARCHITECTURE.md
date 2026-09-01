@@ -12,7 +12,9 @@ Navegador
   ├── Firebase Authentication
   └── /api/maderarte
           ↓
-Cloudflare Pages Function
+Cloudflare Worker + Static Assets
+  ├── sirve public/ sin ejecutar código dinámico
+  ├── ejecuta el Worker primero solo para /api/maderarte
   ├── valida origen y tamaño
   ├── administra cookie de sesión HttpOnly
   └── reenvía a Apps Script
@@ -25,6 +27,17 @@ Google Apps Script
   ├── genera documentos
   └── registra auditoría
 ```
+
+## Decisión de despliegue
+
+Cloudflare integra actualmente la creación de aplicaciones nuevas en Workers. Maderarte usa Workers con Static Assets porque permite publicar los HTML de `public/` y ejecutar la API en el mismo origen, sin cambiar la arquitectura multipágina ni introducir un framework.
+
+- `worker/index.js` es la entrada de ejecución.
+- `functions/api/maderarte.js` mantiene la lógica de la frontera API.
+- `wrangler.toml` apunta `assets.directory` a `./public`.
+- Solo `/api/maderarte` ejecuta primero el Worker.
+- Las rutas estáticas conservan los nombres `.html`.
+- `_headers`, `_redirects` y `404.html` permanecen dentro de `public/`.
 
 ## Identidad y autorización
 
@@ -56,7 +69,8 @@ HomeEasy y Maderarte no comparten roles, permisos, sesiones ni datos comerciales
 - `public/css/`: sistema visual compartido.
 - `public/js/core/`: configuración, API, sesión, autenticación, permisos y shell.
 - `public/js/pages/`: lógica específica de cada pantalla.
-- `functions/api/maderarte.js`: frontera segura en Cloudflare.
+- `worker/index.js`: entrada del Worker y entrega de archivos estáticos.
+- `functions/api/maderarte.js`: frontera segura de `/api/maderarte`.
 
 ## Backend
 
@@ -67,6 +81,10 @@ HomeEasy y Maderarte no comparten roles, permisos, sesiones ni datos comerciales
 - `apps-script/Auth.gs`: Firebase, autorización y sesiones.
 - `apps-script/Orders.gs`: consultas de órdenes y expedientes.
 - `apps-script/Router.gs`: acciones públicas del Web App.
+
+## Dominio
+
+El primer control visual se realiza en un subdominio temporal `workers.dev`. El dominio final previsto es `app.maderartepopayan.com`. Antes de mover o delegar DNS se debe inventariar la página pública, correo y registros actuales para no interrumpir servicios existentes.
 
 ## WhatsApp
 
