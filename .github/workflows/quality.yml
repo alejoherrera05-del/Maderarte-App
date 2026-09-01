@@ -27,3 +27,6 @@ jobs:
 
       - name: Verificar fundación
         run: npm test
+
+      - name: Validar empaquetado de Cloudflare sin publicar
+        run: npx --yes wrangler@4.68.0 deploy --dry-run --outdir /tmp/maderarte-wrangler-dry-run
