@@ -1,0 +1,72 @@
+name: Ensamblar fundación verificada
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bootstrap.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: maderarte-foundation-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  ensamblar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruir paquete fuente
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            bootstrap/part-00.b64 \
+            bootstrap/part-01.b64 \
+            bootstrap/part-02.b64 \
+            bootstrap/part-03.b64 \
+            bootstrap/part-04a.b64 \
+            bootstrap/part-04b.b64 \
+            > /tmp/maderarte-source.b64
+          test "$(wc -c < /tmp/maderarte-source.b64)" -eq 66408
+          base64 --decode /tmp/maderarte-source.b64 > /tmp/maderarte-source.tar.gz
+          echo "186c9ce465081ec71108aad0613e03ae49db3aac8d5a7101d8b66bc816a9b1e7  /tmp/maderarte-source.tar.gz" | sha256sum -c -
+
+      - name: Instalar fundación y retirar transporte temporal
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --extract --gzip --file /tmp/maderarte-source.tar.gz --directory . --no-same-owner
+          rm -rf bootstrap
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar verificación completa
+        run: npm test
+
+      - name: Publicar fundación en main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No se detectaron cambios para publicar."
+            exit 1
+          fi
+          git commit -m "feat: publish Maderarte App foundation v0.2.0"
+          git push origin HEAD:main
