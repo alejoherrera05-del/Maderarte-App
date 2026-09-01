@@ -19,11 +19,11 @@ async function firebaseRequest(endpoint, payload) {
       INVALID_PASSWORD: 'La contraseña no es correcta.',
       INVALID_LOGIN_CREDENTIALS: 'El correo o la contraseña no son correctos.',
       USER_DISABLED: 'Esta cuenta está deshabilitada.',
-      EMAIL_EXISTS: 'La cuenta ya existe. Usa la misma contraseña con la que ingresas a HomeEasy.',
+      EMAIL_EXISTS: 'La cuenta ya existe. Ingresa con tu cuenta autorizada de Maderarte.',
       WEAK_PASSWORD: 'La contraseña debe tener al menos seis caracteres.',
       TOO_MANY_ATTEMPTS_TRY_LATER: 'Se bloquearon temporalmente los intentos. Inténtalo más tarde.'
     };
-    throw new ApiError(messages[code] || 'Firebase no pudo validar la cuenta.', { code, status: response.status });
+    throw new ApiError(messages[code] || 'No fue posible validar la cuenta.', { code, status: response.status });
   }
   return body;
 }

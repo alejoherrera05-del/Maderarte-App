@@ -51,7 +51,7 @@ resetButton.addEventListener('click', async () => {
     await sendPasswordReset(email);
     showMessage(APP_CONFIG.preview.enabled
       ? 'La vista local no envía correos.'
-      : 'Firebase envió las instrucciones para restablecer la contraseña.', true);
+      : 'Se enviaron las instrucciones para restablecer la contraseña.', true);
   } catch (error) {
     showMessage(error.message || 'No fue posible enviar el correo.');
   } finally {

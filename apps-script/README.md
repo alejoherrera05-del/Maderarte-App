@@ -33,7 +33,7 @@ Configura en **Configuración del proyecto → Propiedades del script**:
 - `SPREADSHEET_ID`: ID de `Base de Datos Maderarte App`.
 - `DRIVE_DOCUMENTS_ROOT_ID`: ID de `02_DOCUMENTOS_CLIENTES`.
 - `FIREBASE_WEB_API_KEY`: API key web del proyecto Firebase compartido para identidad.
-- `PROXY_TOKEN`: secreto largo y aleatorio, igual al secreto de Cloudflare.
+- `MADERARTE_PROXY_TOKEN`: secreto largo y aleatorio, igual al secreto de Cloudflare.
 - `MODO_OPERACION`: `PREPARACION` durante esta fase.
 - `APP_BASE_URL`: URL pública final de Maderarte App, sin `/` al final. Puede agregarse cuando Cloudflare entregue la URL, pero es obligatoria antes de crear invitaciones.
 
@@ -57,7 +57,7 @@ No escribas estos valores dentro de los archivos `.gs` ni los guardes en GitHub.
 4. Conserva la URL terminada en `/exec` fuera de GitHub.
 5. Esa URL se guardará únicamente como secreto `MADERARTE_APPS_SCRIPT_URL` en Cloudflare.
 
-Apps Script rechaza solicitudes que no incluyan el `PROXY_TOKEN`. El navegador nunca conoce ese secreto ni la URL privada del Web App.
+Apps Script rechaza solicitudes que no incluyan el `MADERARTE_PROXY_TOKEN`. El navegador nunca conoce ese secreto ni la URL privada del Web App.
 
 ## Estado funcional
 
