@@ -26,7 +26,7 @@ Nombre exacto: `Base de Datos Maderarte App`.
 | `Usuarios` | Autorización, rol y sedes de cada persona |
 | `Roles` | Permisos por rol en JSON |
 | `Configuracion` | Claves operativas y referencias de Drive |
-| `Sedes` | Principal y Terraplaza, prefijos y consecutivos |
+| `Sedes` | Principal y Terraplaza, datos de contacto, prefijos y consecutivos |
 | `Invitaciones` | Invitaciones controladas de usuarios |
 | `Sesiones` | Sesiones opacas emitidas por Maderarte |
 | `Auditoria` | Registro de acciones y cambios |
@@ -46,6 +46,13 @@ Nombre exacto: `Base de Datos Maderarte App`.
 Cada fila de `Abonos` conserva recibo, OP, fecha, valor, medio de pago, referencia, comentario, saldo anterior, saldo nuevo, PDF, soporte, usuario, estado y `Request_ID`.
 
 No existen columnas `Abono_1`, `Abono_2`, etc. Una OP puede tener tantos registros de abono como necesite.
+
+## Integridad de encabezados
+
+- Cada encabezado debe ser único dentro de su pestaña.
+- El Cerebro rechaza una pestaña que contenga nombres de columna duplicados.
+- `Sedes` conserva, en este orden funcional, identificación, nombre, prefijos, `Direccion`, `Telefono`, `Estado`, consecutivos y fecha de actualización.
+- No renombrar columnas directamente en el Sheet sin actualizar primero el contrato y las pruebas.
 
 ## Contrato técnico exacto
 
