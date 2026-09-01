@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import vm from 'node:vm';
 
 const schemaSource = readFileSync(resolve('apps-script/Schema.gs'), 'utf8');
+const authSource = readFileSync(resolve('apps-script/Auth.gs'), 'utf8');
 
 function createDiagnosticContext() {
   const state = {
@@ -59,6 +60,26 @@ function createDiagnosticContext() {
   return { context, state };
 }
 
+function createAuthorizationContext() {
+  const state = { users: [] };
+  const context = vm.createContext({
+    __state: state,
+    findRow_: (sheetName, header, expected) => {
+      if (sheetName !== 'Usuarios') return null;
+      return state.users.find(row => String(row[header] || '').trim() === String(expected || '').trim()) || null;
+    },
+    normalizeCode_: value => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9_\-.*]/g, ''),
+    normalizeEmail_: value => String(value || '').trim().toLowerCase(),
+    appError_: (code, message, httpStatus, details) => Object.assign(new Error(message), {
+      appCode: code,
+      httpStatus,
+      details
+    })
+  });
+  vm.runInContext(authSource, context, { filename: 'Auth.gs' });
+  return { context, state };
+}
+
 {
   const { context } = createDiagnosticContext();
   const result = context.verificarBaseCero();
@@ -100,4 +121,41 @@ function createDiagnosticContext() {
   assert.throws(() => context.verificarBaseCero(), error => error.appCode === 'SHEET_SCHEMA_MISMATCH');
 }
 
+{
+  const { context } = createAuthorizationContext();
+  assert.throws(
+    () => context.authorizedUserByFirebase_({ uid: 'firebase-unknown', email: 'unknown@example.com' }),
+    error => error.appCode === 'USER_NOT_AUTHORIZED' && error.httpStatus === 403
+  );
+}
+
+{
+  const { context, state } = createAuthorizationContext();
+  state.users.push({ UID_Firebase: 'firebase-user', Email: 'authorized@example.com', Estado: 'ACTIVO' });
+  assert.throws(
+    () => context.authorizedUserByFirebase_({ uid: 'firebase-user', email: 'other@example.com' }),
+    error => error.appCode === 'IDENTITY_MISMATCH' && error.httpStatus === 403
+  );
+}
+
+{
+  const { context, state } = createAuthorizationContext();
+  state.users.push({ UID_Firebase: 'firebase-user', Email: 'authorized@example.com', Estado: 'INACTIVO' });
+  assert.throws(
+    () => context.authorizedUserByFirebase_({ uid: 'firebase-user', email: 'authorized@example.com' }),
+    error => error.appCode === 'USER_INACTIVE' && error.httpStatus === 403
+  );
+}
+
+{
+  const { context, state } = createAuthorizationContext();
+  const authorized = { UID_Firebase: 'firebase-user', Email: 'authorized@example.com', Estado: 'ACTIVO' };
+  state.users.push(authorized);
+  assert.equal(
+    context.authorizedUserByFirebase_({ uid: 'firebase-user', email: 'authorized@example.com' }),
+    authorized
+  );
+}
+
 console.log('OK · diagnóstico base cero de Apps Script verificado');
+console.log('OK · autorización, identidad e inactividad de usuarios verificadas');
