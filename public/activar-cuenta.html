@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1c1c1e">
+  <meta name="description" content="Activación de una cuenta autorizada de Maderarte.">
+  <title>Activar cuenta · Maderarte App</title>
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+</head>
+<body>
+  <main class="login-page">
+    <section class="login-panel">
+      <div class="login-card">
+        <div class="login-brand"><div class="brand-copy"><strong class="brand-name">MADERARTE</strong><span class="brand-subtitle login-subtitle">Activación segura</span></div></div>
+        <div id="activation-state"><h1>Validando invitación</h1><p>Estamos comprobando que el enlace esté vigente.</p></div>
+        <form class="login-form" id="activation-form" hidden novalidate>
+          <div><h1 id="activation-name">Usuario Maderarte</h1><p>Rol asignado: <strong id="activation-role">USUARIO</strong></p></div>
+          <div class="field"><label for="activation-email">Correo autorizado</label><input id="activation-email" type="email" readonly></div>
+          <div class="field"><label for="activation-password">Contraseña</label><input id="activation-password" type="password" minlength="6" autocomplete="new-password" required></div>
+          <div class="field"><label for="activation-confirm">Confirmar contraseña</label><input id="activation-confirm" type="password" minlength="6" autocomplete="new-password" required></div>
+          <label class="checkbox-row"><input id="activation-remember" type="checkbox"> Mantener sesión en este dispositivo</label>
+          <div class="form-message" id="activation-message" role="alert"></div>
+          <button class="button primary" id="activation-button" type="submit">Activar cuenta</button>
+        </form>
+        <a class="link-action login-back" href="/login.html">Volver a iniciar sesión</a>
+      </div>
+    </section>
+    <aside class="login-visual" aria-label="Activación de cuenta"><div class="login-visual-copy"><strong>Tu acceso es personal.</strong><p>Cada acción queda vinculada a la persona, el rol y el dispositivo que la realizó.</p></div></aside>
+  </main>
+  <script type="module" src="/js/pages/activar-cuenta.js"></script>
+</body>
+</html>

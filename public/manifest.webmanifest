@@ -1,0 +1,10 @@
+{
+  "name": "Maderarte App",
+  "short_name": "Maderarte",
+  "description": "Aplicación interna de gestión comercial y operativa de Maderarte.",
+  "start_url": "/login.html",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#1c1c1e",
+  "lang": "es-CO"
+}
