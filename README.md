@@ -13,7 +13,7 @@ Los registros comerciales comienzan vacíos. Esta fundación prepara:
 - HTML multipágina y responsive.
 - Firebase Authentication compartido con HomeEasy únicamente para identidad.
 - Usuarios, roles, permisos y sesiones propios de Maderarte.
-- Cloudflare Pages y Pages Functions en el plan gratuito.
+- Cloudflare Workers con Static Assets en el plan gratuito.
 - Google Apps Script como cerebro operativo.
 - Google Sheets como base y Google Drive como archivo documental.
 - Ledger de órdenes y expediente de OP en modo lectura.
@@ -52,9 +52,15 @@ http://localhost:4173/login.html?preview=1
 ## Despliegue previsto
 
 - Repositorio: `alejoherrera05-del/Maderarte-App`.
-- Publicación: Cloudflare Pages Free.
-- Directorio publicado: `public`.
-- API: `functions/api/maderarte.js`.
+- Publicación: Cloudflare Workers Free con Static Assets.
+- Archivos estáticos: `public/`.
+- Entrada del Worker: `worker/index.js`.
+- API interna: `functions/api/maderarte.js`, importada por el Worker.
+- Comando de despliegue: `npx wrangler deploy`.
+- URL temporal: subdominio `workers.dev`.
+- Dominio final previsto: `app.maderartepopayan.com`.
 - Secretos: variables privadas de Cloudflare y Script Properties de Apps Script.
+
+La interfaz actual de Cloudflare integra la creación de aplicaciones en Workers. No volver a configurar este proyecto como Pages ni restaurar `pages_build_output_dir`.
 
 Lee `AGENTS.md` y `docs/` antes de modificar reglas, autenticación o estructura de datos.

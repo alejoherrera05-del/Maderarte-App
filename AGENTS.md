@@ -11,6 +11,7 @@ Antes de trabajar revisa:
 5. `docs/DRIVE_STRUCTURE.md`
 6. `docs/PUBLIC_REPOSITORY_RULES.md`
 7. `docs/IMPLEMENTATION_PLAN.md`
+8. `docs/CLOUDFLARE_DEPLOYMENT.md`
 
 ## Decisiones no negociables
 
@@ -28,6 +29,16 @@ Antes de trabajar revisa:
 - No distribuir archivos de fuentes. `MADERARTE` se presenta con el recurso gráfico aprobado o una cadena tipográfica segura.
 - No redibujar el logo ni usar imágenes generadas como identidad.
 - El VPS actual podrá alojar WhatsApp de Maderarte, con componentes y credenciales separados de HomeEasy.
+
+## Despliegue Cloudflare
+
+- La aplicación nueva se despliega con Cloudflare Workers y Static Assets, no con Pages.
+- `worker/index.js` es la entrada del Worker.
+- `public/` contiene los archivos estáticos.
+- `functions/api/maderarte.js` conserva la lógica de la API y es importado por el Worker.
+- `wrangler.toml` debe mantener `main`, `[assets]`, el binding `ASSETS` y las rutas `/api/maderarte` en `run_worker_first`.
+- No reintroducir `pages_build_output_dir`.
+- El primer despliegue visual no configura secretos ni habilita escrituras comerciales.
 
 ## Frontend
 
@@ -48,6 +59,7 @@ La fundación v0.2.0 es de lectura. No habilitar creación o edición comercial 
 Antes de cada entrega:
 
 ```bash
+npm ci
 npm test
 ```
 
