@@ -18,7 +18,7 @@ const required = [
   'public/js/pages/login.js', 'public/js/pages/activar-cuenta.js', 'public/js/pages/dashboard.js',
   'public/js/pages/ordenes.js', 'public/js/pages/orden.js', 'public/js/pages/perfil.js',
   'public/js/pages/configuracion.js', 'functions/api/maderarte.js',
-  'worker/index.js', 'scripts/test-worker.mjs',
+  'worker/index.js', 'scripts/test-worker.mjs', 'scripts/test-apps-script.mjs',
   'apps-script/Config.gs', 'apps-script/SheetHelpers.gs', 'apps-script/Schema.gs',
   'apps-script/DriveFolders.gs', 'apps-script/Auth.gs', 'apps-script/Orders.gs',
   'apps-script/Router.gs', 'apps-script/appsscript.json', 'apps-script/README.md'
@@ -44,6 +44,10 @@ const textFiles = files.filter(file => textExtensions.has(extname(file).toLowerC
 const joinedText = textFiles
   .map(file => readFileSync(file, 'utf8'))
   .join('\n');
+const publicText = textFiles
+  .filter(file => relative(root, file).replaceAll('\\', '/').startsWith('public/'))
+  .map(file => readFileSync(file, 'utf8'))
+  .join('\n');
 
 const forbiddenValues = [
   ['script.google.com/macros/', 's/'].join(''),
@@ -57,6 +61,7 @@ assert.ok(!/(?:SPREADSHEET_ID|DRIVE_DOCUMENTS_ROOT_ID)\s*[:=]\s*['"][A-Za-z0-9_-
 assert.ok(!/(?:uid|UID_Firebase)\s*[:=]\s*['"][A-Za-z0-9_-]{20,}['"]/i.test(joinedText), 'Se encontró un UID personal configurado directamente');
 assert.ok(!/SpreadsheetApp\.openById\(['"][^'"]+['"]\)/.test(joinedText), 'Se encontró un Spreadsheet ID fijo');
 assert.ok(!/DriveApp\.getFolderById\(['"][^'"]+['"]\)/.test(joinedText), 'Se encontró un Drive folder ID fijo');
+assert.doesNotMatch(publicText, /homeeasy/i, 'La interfaz pública contiene una referencia a HomeEasy');
 
 const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const packageLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
@@ -113,6 +118,16 @@ const requiredActions = ['AUTH_LOGIN', 'AUTH_SESSION_VALIDATE', 'AUTH_LOGOUT', '
 for (const action of requiredActions) assert.ok(routeActions.has(action), `Falta la acción ${action} en Router.gs`);
 
 const schemaSource = readFileSync(join(root, 'apps-script/Schema.gs'), 'utf8');
+const requiredSheetContracts = [
+  'Clientes', 'Usuarios', 'Roles', 'Configuracion', 'Sedes', 'Invitaciones', 'Sesiones',
+  'Cotizaciones', 'Ordenes_Pedido', 'Orden_Items', 'Produccion', 'Abonos', 'Remisiones',
+  'Remision_Items', 'Agenda', 'Documentos', 'Auditoria', 'Anulaciones', 'Versiones_Documentos',
+  'Lotes_Numeracion', 'Registro_Numeros', 'Idempotencia', 'Catalogos'
+];
+for (const sheetName of requiredSheetContracts) assert.match(schemaSource, new RegExp(`\\b${sheetName}:\\s*\\[`), `Falta el contrato de ${sheetName}`);
+assert.match(schemaSource, /function verificarBaseCero\(/, 'Falta verificarBaseCero');
+assert.match(schemaSource, /COMMERCIAL_BASE_NOT_ZERO/, 'El diagnóstico no protege la base comercial vacía');
+assert.match(schemaSource, /DRIVE_ROOT_MISMATCH/, 'El diagnóstico no valida la raíz documental');
 const sedesContract = schemaSource.match(/Sedes:\s*\[([^\]]+)\]/);
 assert.ok(sedesContract, 'Falta el contrato de Sedes en Schema.gs');
 const sedesHeaders = [...sedesContract[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
@@ -125,6 +140,10 @@ assert.deepEqual(sedesHeaders, [
 const sheetHelpersSource = readFileSync(join(root, 'apps-script/SheetHelpers.gs'), 'utf8');
 assert.match(sheetHelpersSource, /function duplicateHeaders_\(/, 'Falta la detección de encabezados repetidos');
 assert.match(sheetHelpersSource, /SHEET_SCHEMA_DUPLICATE_HEADER/, 'Falta el error para encabezados repetidos');
+const configSource = readFileSync(join(root, 'apps-script/Config.gs'), 'utf8');
+assert.match(configSource, /COMMERCIAL_WRITES:\s*false/, 'Las escrituras comerciales deben permanecer deshabilitadas');
+const routerSource = readFileSync(join(root, 'apps-script/Router.gs'), 'utf8');
+assert.match(routerSource, /requiredProperty_\('MADERARTE_PROXY_TOKEN'\)/, 'Apps Script debe usar MADERARTE_PROXY_TOKEN');
 
 const formatSource = readFileSync(join(root, 'public/js/core/format.js'), 'utf8');
 assert.match(formatSource, /export function safeInternalUrl\(/, 'Falta safeInternalUrl');

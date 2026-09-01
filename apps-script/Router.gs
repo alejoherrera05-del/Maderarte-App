@@ -5,7 +5,7 @@ function doGet() {
 }
 
 function validateProxy_(body) {
-  var expected = requiredProperty_('PROXY_TOKEN');
+  var expected = requiredProperty_('MADERARTE_PROXY_TOKEN');
   if (!secureEquals_(body && body.proxyToken, expected)) throw appError_('PROXY_REJECTED', 'Solicitud no autorizada.', 403);
 }
 

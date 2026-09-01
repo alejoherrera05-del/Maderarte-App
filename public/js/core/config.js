@@ -18,8 +18,7 @@ export const APP_CONFIG = Object.freeze({
     localOnly: true
   }),
   firebase: Object.freeze({
-    apiKey: 'AIzaSyCc-kiqZ3WxpulA_fKEgNuSNLI2ofCL7eY',
-    projectId: 'homeeasy-auth'
+    apiKey: 'AIzaSyCc-kiqZ3WxpulA_fKEgNuSNLI2ofCL7eY'
   })
 });
 
