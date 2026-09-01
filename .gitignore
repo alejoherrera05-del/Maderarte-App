@@ -11,6 +11,12 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Google Apps Script: identidad local y destino privado de clasp.
+.clasp.json
+.clasprc.json
+**/.clasp.json
+**/.clasprc.json
+
 # Datos y documentos comerciales: nunca se versionan.
 data/
 exports/
