@@ -16,9 +16,24 @@ function headerMap_(headers) {
   return map;
 }
 
+function duplicateHeaders_(headers) {
+  var seen = {};
+  var duplicates = [];
+  headers.forEach(function(header) {
+    if (!header) return;
+    if (seen[header] && duplicates.indexOf(header) === -1) duplicates.push(header);
+    seen[header] = true;
+  });
+  return duplicates;
+}
+
 function assertHeaders_(sheetName, requiredHeaders) {
   var sheet = getSheet_(sheetName);
   var headers = getHeaders_(sheet);
+  var duplicates = duplicateHeaders_(headers);
+  if (duplicates.length) {
+    throw appError_('SHEET_SCHEMA_DUPLICATE_HEADER', 'La pestaña ' + sheetName + ' contiene encabezados repetidos.', 503, { duplicates: duplicates });
+  }
   var missing = requiredHeaders.filter(function(header) { return headers.indexOf(header) === -1; });
   if (missing.length) throw appError_('SHEET_SCHEMA_MISMATCH', 'La pestaña ' + sheetName + ' no coincide con el contrato.', 503, { missing: missing });
   return headers;
