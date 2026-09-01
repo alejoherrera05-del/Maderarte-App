@@ -101,6 +101,20 @@ const routeActions = new Set([...router.matchAll(/case '([A-Z0-9_]+)'/g)].map(ma
 const requiredActions = ['AUTH_LOGIN', 'AUTH_SESSION_VALIDATE', 'AUTH_LOGOUT', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR', 'DASHBOARD_RESUMEN', 'ORDENES_LISTAR', 'ORDEN_OBTENER', 'SISTEMA_ESTADO', 'USUARIOS_LISTAR', 'INVITACION_CREAR'];
 for (const action of requiredActions) assert.ok(routeActions.has(action), `Falta la acción ${action} en Router.gs`);
 
+const schemaSource = readFileSync(join(root, 'apps-script/Schema.gs'), 'utf8');
+const sedesContract = schemaSource.match(/Sedes:\s*\[([^\]]+)\]/);
+assert.ok(sedesContract, 'Falta el contrato de Sedes en Schema.gs');
+const sedesHeaders = [...sedesContract[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
+assert.deepEqual(sedesHeaders, [
+  'Sede_ID', 'Nombre', 'Prefijo_OP', 'Prefijo_Cotizacion', 'Prefijo_Recibo', 'Prefijo_Remision',
+  'Direccion', 'Telefono', 'Estado', 'Siguiente_OP', 'Siguiente_Cotizacion', 'Siguiente_Recibo',
+  'Siguiente_Remision', 'Actualizado_En'
+], 'El contrato de Sedes cambió o perdió columnas');
+
+const sheetHelpersSource = readFileSync(join(root, 'apps-script/SheetHelpers.gs'), 'utf8');
+assert.match(sheetHelpersSource, /function duplicateHeaders_\(/, 'Falta la detección de encabezados repetidos');
+assert.match(sheetHelpersSource, /SHEET_SCHEMA_DUPLICATE_HEADER/, 'Falta el error para encabezados repetidos');
+
 const formatSource = readFileSync(join(root, 'public/js/core/format.js'), 'utf8');
 assert.match(formatSource, /export function safeInternalUrl\(/, 'Falta safeInternalUrl');
 const versionFiles = ['public/js/core/config.js', 'functions/api/maderarte.js', 'apps-script/Config.gs', 'README.md'];
@@ -112,4 +126,5 @@ console.log('OK · sintaxis JavaScript y Apps Script');
 console.log('OK · referencias HTML y recursos locales');
 console.log('OK · sin datos comerciales, IDs privados ni secretos');
 console.log('OK · contratos de API y versión 0.2.0 coherentes');
+console.log('OK · encabezados únicos y contrato de Sedes protegido');
 console.log('OK · recursos de marca sin derivados no aprobados');
