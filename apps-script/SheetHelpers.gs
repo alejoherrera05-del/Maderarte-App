@@ -7,7 +7,12 @@ function getSheet_(name) {
 function getHeaders_(sheet) {
   var lastColumn = sheet.getLastColumn();
   if (lastColumn < 1) return [];
-  return sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(function(value) { return String(value || '').trim(); });
+  var headers = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(function(value) { return String(value || '').trim(); });
+  var duplicates = duplicateHeaders_(headers);
+  if (duplicates.length) {
+    throw appError_('SHEET_SCHEMA_DUPLICATE_HEADER', 'La pestaña ' + sheet.getName() + ' contiene encabezados repetidos.', 503, { duplicates: duplicates });
+  }
+  return headers;
 }
 
 function headerMap_(headers) {
@@ -30,10 +35,6 @@ function duplicateHeaders_(headers) {
 function assertHeaders_(sheetName, requiredHeaders) {
   var sheet = getSheet_(sheetName);
   var headers = getHeaders_(sheet);
-  var duplicates = duplicateHeaders_(headers);
-  if (duplicates.length) {
-    throw appError_('SHEET_SCHEMA_DUPLICATE_HEADER', 'La pestaña ' + sheetName + ' contiene encabezados repetidos.', 503, { duplicates: duplicates });
-  }
   var missing = requiredHeaders.filter(function(header) { return headers.indexOf(header) === -1; });
   if (missing.length) throw appError_('SHEET_SCHEMA_MISMATCH', 'La pestaña ' + sheetName + ' no coincide con el contrato.', 503, { missing: missing });
   return headers;
