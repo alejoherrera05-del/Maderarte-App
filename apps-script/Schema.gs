@@ -4,7 +4,7 @@ var REQUIRED_HEADERS = Object.freeze({
   Sesiones: ['Sesion_ID', 'Token_Hash', 'UID_Firebase', 'Email', 'Nombre_Usuario', 'Rol', 'Sede_Principal', 'Sedes_Permitidas', 'Dispositivo_ID', 'Dispositivo', 'Plataforma', 'Navegador', 'IP_Hash', 'Creada_En', 'Ultima_Actividad', 'Expira_En', 'Estado', 'Cerrada_En', 'Motivo_Cierre', 'Version_App'],
   Roles: ['Rol', 'Descripcion', 'Permisos_JSON', 'Activo', 'Protegido'],
   Configuracion: ['Clave', 'Valor', 'Tipo'],
-  Sedes: ['Sede_ID', 'Nombre', 'Prefijo_OP', 'Prefijo_Cotizacion', 'Prefijo_Recibo', 'Prefijo_Remision', 'Estado'],
+  Sedes: ['Sede_ID', 'Nombre', 'Prefijo_OP', 'Prefijo_Cotizacion', 'Prefijo_Recibo', 'Prefijo_Remision', 'Direccion', 'Telefono', 'Estado', 'Siguiente_OP', 'Siguiente_Cotizacion', 'Siguiente_Recibo', 'Siguiente_Remision', 'Actualizado_En'],
   Ordenes_Pedido: ['Fecha', 'Numero_OP', 'Sede', 'Cedula_NIT', 'Nombre_Cliente', 'Valor_Total', 'Abonado_Total', 'Saldo_Pendiente', 'Estado', 'Estado_Produccion', 'URL_PDF_OP', 'URL_Carpeta_Cliente', 'URL_Carpeta_OP'],
   Orden_Items: ['Item_ID', 'Numero_OP', 'Descripcion', 'Cantidad', 'Unidad', 'Valor_Unitario', 'Subtotal'],
   Abonos: ['Numero_Recibo', 'Numero_OP', 'Sede', 'Cedula_NIT', 'Nombre_Cliente', 'Fecha_Pago', 'Valor_Abono', 'Medio_Pago', 'Comentario', 'Saldo_Anterior', 'Saldo_Nuevo', 'URL_PDF_Recibo', 'URL_Soporte_Pago', 'Estado_Registro'],
