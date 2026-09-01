@@ -1,0 +1,43 @@
+name: Calidad
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Detectar fundación
+        id: foundation
+        shell: bash
+        run: |
+          if [[ -f package.json ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "La fundación aún se está ensamblando; no hay código que validar todavía."
+          fi
+
+      - name: Preparar Node.js
+        if: steps.foundation.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependencias
+        if: steps.foundation.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Verificar fundación
+        if: steps.foundation.outputs.ready == 'true'
+        run: npm test
