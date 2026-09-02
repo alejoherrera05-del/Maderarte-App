@@ -1,0 +1,150 @@
+:root { --sidebar-width: 282px; }
+
+body { background: #f5f5f4; }
+small { font-size: .875rem; }
+.field label,
+.checkbox-field legend,
+.status-badge,
+.key-value span,
+.data-table th { font-size: .875rem; }
+.priority-copy span,
+.timeline-copy span,
+.link-copy span,
+.order-card-meta,
+.item-row-copy span,
+.item-row-amount span,
+.item-row-amount small { font-size: .875rem; }
+.user-chip-copy strong { font-size: .9375rem; }
+.user-chip-copy span { font-size: .8125rem; }
+
+/* Shell interior coherente con el inicio */
+.interior-app-shell { background: #f5f5f4; }
+.interior-app-shell .sidebar {
+  padding: 18px 16px;
+  border-right: 1px solid #e2e1de;
+  background: #fff;
+  color: #282624;
+  box-shadow: 8px 0 28px rgba(40, 38, 36, .035);
+}
+.interior-app-shell .brand-block {
+  min-height: 76px;
+  gap: 11px;
+  padding: 4px 6px 18px;
+  border-bottom: 1px solid #ecebe8;
+  color: #282624;
+}
+.shell-brand-logo { width: 50px; height: 50px; flex: 0 0 50px; object-fit: contain; }
+.shell-brand-copy { min-width: 0; display: grid; gap: 3px; }
+.shell-brand-wordmark { width: 164px; max-width: 100%; height: auto; }
+.shell-brand-subtitle { color: #6b6967; font-size: .875rem; }
+.interior-app-shell .side-nav { gap: 7px; padding-top: 18px; }
+.interior-app-shell .nav-label { padding: 11px 12px 7px; color: #8a8783; font-size: .8125rem; letter-spacing: .045em; }
+.interior-app-shell .nav-link {
+  min-height: 54px;
+  gap: 13px;
+  border-radius: 14px;
+  color: #4e4b48;
+  font-size: .9375rem;
+  font-weight: 700;
+}
+.interior-app-shell .nav-link:hover { background: #f7f5f2; color: #1f1e1d; }
+.interior-app-shell .nav-link[aria-current="page"] { background: var(--copper-soft); color: var(--copper-strong); }
+.interior-app-shell .nav-icon {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 11px;
+  background: #f1efec;
+  color: currentColor;
+}
+.interior-app-shell .nav-link[aria-current="page"] .nav-icon { background: #fff; }
+.interior-app-shell .nav-icon img { width: 20px; height: 20px; }
+.interior-app-shell .sidebar-footer { padding: 18px 6px 0; }
+.interior-app-shell .connection-box { border-color: #e6e3df; background: #f8f7f5; }
+.interior-app-shell .connection-box strong { color: #282624; font-size: .9375rem; }
+.interior-app-shell .connection-box span { color: #77736f; font-size: .875rem; }
+.interior-app-shell .topbar {
+  min-height: 76px;
+  border-bottom: 1px solid #e2e1de;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 5px 18px rgba(40,38,36,.035);
+}
+.interior-app-shell .topbar-context strong { font-size: 1.05rem; }
+.interior-app-shell .topbar-context span { color: #6b6967; font-size: .875rem; }
+.profile-actions { position: relative; }
+.interior-app-shell .page { padding-top: 34px; }
+.interior-app-shell .mobile-nav { background: rgba(255,255,255,.96); }
+.mobile-nav-icon { width: 26px; height: 26px; display: grid; place-items: center; }
+.mobile-nav-icon img { width: 22px; height: 22px; }
+
+/* Login Maderarte */
+.login-page { background: #f5f5f4; }
+.login-panel { background: #f5f5f4; }
+.login-card {
+  width: min(100%, 470px);
+  padding: clamp(28px, 4vw, 42px);
+  border: 1px solid #e1dfdc;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(40, 38, 36, .09);
+}
+.login-brand-lockup { display: flex; align-items: center; gap: 14px; margin-bottom: 38px; }
+.login-brand-logo { width: 62px; height: 62px; flex: 0 0 62px; object-fit: contain; }
+.login-brand-copy { min-width: 0; display: grid; gap: 4px; }
+.login-brand-wordmark { width: min(260px, 62vw); height: auto; }
+.login-brand-copy span { color: #66635f; font-size: .9375rem; }
+.login-card h1 { margin-bottom: 10px; font-size: clamp(2rem, 3vw, 2.55rem); }
+.login-card > p { margin-bottom: 30px; font-size: 1rem; }
+.login-form { gap: 18px; }
+.login-form .field label { font-size: .9375rem; }
+.login-form .field input { min-height: 50px; border-radius: 12px; font-size: 1rem; }
+.login-form .button { min-height: 50px; border-radius: 12px; font-size: 1rem; }
+.checkbox-row { font-size: .875rem; line-height: 1.4; }
+.text-button { font-size: .875rem; }
+.login-help { margin-top: 20px; color: #77736f; font-size: .875rem; }
+.login-visual {
+  isolation: isolate;
+  align-items: flex-end;
+  background: #2a211d url('/assets/interiors/living-room-afternoon.webp') center center / cover no-repeat;
+}
+.login-visual::before {
+  display: block;
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(21,18,16,.08) 25%, rgba(21,18,16,.68) 100%);
+  box-shadow: none;
+}
+.login-visual-copy { z-index: 1; max-width: 620px; }
+.login-visual-copy strong { margin-bottom: 10px; font-size: clamp(2.1rem, 3.8vw, 3.8rem); line-height: 1.02; }
+.login-visual-copy p { color: rgba(255,255,255,.88); font-size: 1rem; }
+
+/* Inicio: refinamiento de legibilidad y estados */
+.dashboard-profile-summary strong { font-size: .9375rem; }
+.dashboard-profile-summary small { font-size: .875rem; }
+.dashboard-profile-menu a,
+.dashboard-profile-menu button { font-size: .9375rem; }
+.dashboard-menu-copy span { font-size: .9rem; line-height: 1.35; }
+.dashboard-menu-item.is-disabled { cursor: default; opacity: .72; }
+.dashboard-menu-item.is-disabled:hover { background: #fff; transform: none; }
+.dashboard-menu-status {
+  justify-self: end;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f2f0ed;
+  color: #77736f;
+  font-size: .8125rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.dashboard-dialog-header p { font-size: .9375rem; line-height: 1.45; }
+.dashboard-dialog-option strong { font-size: 1rem; }
+.dashboard-dialog-option small { font-size: .875rem; line-height: 1.4; }
+.dashboard-footer p { font-size: .9375rem; }
+.dashboard-notification-button { display: none; }
+
+@media (hover: hover) and (pointer: fine) {
+  .interior-app-shell .nav-link:hover { transform: translateX(2px); }
+}
