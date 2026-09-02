@@ -15,9 +15,9 @@ No se copian datos, URLs privadas, IDs, credenciales, PDFs, cachés, mascota Hom
 | `index.html` | Inicio editorial, acciones superiores, hero, navegación agrupada, bottom sheets, campana, footer | `public/index.html` | Mantener estructura HomeEasy; adaptar banner, logo, colores y controles explícitamente aprobados para Maderarte. |
 | `clientes.html` | Buscar cliente → transición → expediente → Órdenes/Cotizaciones → pagos/PDF/acciones | `public/clientes.html` | Debe portar el flujo real de HomeEasy. No convertir en tabla CRUD genérica. |
 | `ventas.html` | Historial de ventas, OP, pagos, saldos, filtros y acceso al expediente | `public/ordenes.html` | Equivalente de historial comercial de OP. |
-| `cotizacion.html` | Formulario, cliente, items, cálculos, observaciones, condiciones y documento | `public/cotizacion.html` | **Paridad mejorada**: conservar lógica y minimalismo, pero no copiar la hoja editable literalmente. Maderarte usa formulario operativo por secciones, items ricos de muebles, fotografías por item, resumen financiero y vista previa/anexo. |
-| `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/seguimiento.html` | Portar lectura y seguimiento; adaptar estados, textos y métricas de Maderarte. |
-| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Fuente de lógica de creación/edición/conversión, con el mismo lenguaje mejorado de formularios Maderarte. No habilitar escritura todavía. |
+| `cotizacion.html` | Flujo, cliente, items, cálculos, documento y emisión de cotización | `public/cotizacion.html` | Paridad mejorada: conservar esencia/flujo, pero usar composición específica para mobiliario Maderarte. |
+| `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/cotizaciones.html` | Portar lectura y seguimiento; adaptar estados de Maderarte. |
+| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Fuente de la futura creación de OP. Debe reutilizar el sistema especializado de Cotización. |
 | `abono.html` | Registro de abono/recibo y relación con OP | `public/abono.html` | Fuente de UX para Abonos; escritura se habilita más adelante. |
 | `documentos.html` | Centro documental | `public/documentos.html` | Portar patrón cuando llegue el módulo de documentos. |
 | `calendario.html` | Agenda, eventos, recordatorios y navegación desde campana | `public/agenda.html` | Fuente para Agenda y notificaciones reales. |
@@ -56,29 +56,28 @@ La versión actual de HomeEasy usa dos momentos claros:
 
 Maderarte debe partir de ese flujo. En modo lectura, las acciones de edición/creación se ocultan o deshabilitan de forma honesta, pero la estructura de consulta se conserva.
 
-## Formularios comerciales: patrón mejorado Maderarte
+## Cotizaciones: desviación Maderarte aprobada
 
-Los formularios de HomeEasy son la fuente de lógica y simplicidad, pero **no son una plantilla visual literal**. Para Maderarte se conserva su esencia minimalista y se mejora la experiencia para mobiliario:
+El formulario de cotización toma de HomeEasy la lógica de documento comercial, búsqueda de cliente, items, cálculos, vista previa y futura emisión, pero **no** reutiliza la hoja PDF como interfaz de edición.
 
-- pantalla standalone con cabecera sticky y retorno contextual;
-- formulario dividido en bloques claros, no una simulación permanente de hoja PDF;
-- información del cliente en una superficie simple;
-- cada producto es un item rico e independiente con descripción, categoría, referencia, cantidad, unidad, medidas, acabados, especificaciones y valor;
-- cada item permite adjuntar fotografías de referencia en la experiencia de composición;
-- las fotografías no saturan la hoja comercial principal: se destinan a un **anexo fotográfico separado**, ordenado por item y con sus especificaciones;
-- resumen financiero visible y fácil de leer, sin reducir tipografía;
-- condiciones comerciales explícitas y provenientes de reglas de Maderarte;
-- la futura OP debe calcular el abono mínimo del **30%** y comunicar fabricación estimada de **25 a 30 días** desde confirmación + abono mínimo;
-- responsive real: en móvil los items se apilan como tarjetas y los inputs se mantienen en 16px o más;
-- mientras `COMMERCIAL_WRITES=false`, las acciones de guardar/emitir permanecen bloqueadas, pero cálculos, fotos locales y vista previa pueden funcionar para revisión de UX.
+Reglas específicas de Maderarte:
+
+- La sede es el primer paso obligatorio y bloquea el resto del formulario hasta ser seleccionada.
+- La sede define consecutivo previsto, datos públicos de emisión y asociación operativa.
+- Fecha, número previsto, sede y asesor deben ser visibles antes de capturar el cliente.
+- El formulario usa una composición editorial/operativa propia de Maderarte, no un hero genérico ni una plantilla SaaS.
+- Cada item de mobiliario usa solo: descripción, categoría, cantidad, valor unitario, tela/acabado, madera/acabado, especificaciones y fotografías.
+- `Referencia`, `Unidad` y `Medidas` no son campos separados del formulario. Las medidas y cualquier detalle técnico viven dentro de `Especificaciones`.
+- Las fotografías se asocian al item y se presentan en un anexo fotográfico separado de la hoja comercial principal.
+- La vista previa debe tener membrete de empresa, sede emisora, fecha, consecutivo, asesor, cliente, detalle, resumen financiero y condiciones comerciales.
+- El backend puede exponer metadata de lectura para el consecutivo previsto, pero no consume/reserva números mientras `COMMERCIAL_WRITES=false`.
 
 ## Desviaciones Maderarte permitidas
 
 - Identidad naranja/grafito/dorado y logo oficial Maderarte.
 - Sin Hommy ni assets de marca HomeEasy.
 - Backend seguro e independiente ya aprobado.
-- Campos adicionales propios de muebles: sede, dirección de entrega, descripción detallada, estado de producción, materiales/medidas y demás campos del schema Maderarte.
-- Formularios comerciales mejorados para items de mobiliario y anexo fotográfico, manteniendo la esencia minimalista y la lógica probada.
+- Campos adicionales propios de muebles y producción cuando tengan sentido real de negocio.
 - Acciones de escritura bloqueadas mientras `COMMERCIAL_WRITES=false`.
 
 Cualquier otra desviación debe estar pedida explícitamente por el propietario o justificada por una diferencia real de negocio.
