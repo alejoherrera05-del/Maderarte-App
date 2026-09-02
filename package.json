@@ -12,7 +12,8 @@
     "test:brain": "node scripts/test-apps-script.mjs",
     "test:clients": "node scripts/test-clients.mjs",
     "test:commercial-rules": "node scripts/test-commercial-rules.mjs",
-    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:edge && npm run test:worker"
+    "test:quotes": "node scripts/test-quotes.mjs",
+    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:quotes && npm run test:edge && npm run test:worker"
   },
   "engines": {
     "node": ">=20"
