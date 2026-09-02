@@ -1,5 +1,5 @@
+import { APP_CONFIG, withPreview } from '../core/config.js';
 import { escapeHtml } from '../core/format.js';
-import { withPreview } from '../core/config.js';
 import { guardPage } from '../core/page-guard.js';
 import { filterByPermission } from '../core/permissions.js';
 
@@ -87,20 +87,35 @@ function optionMarkup(option) {
 }
 
 function bindDashboardInteractions(session) {
-  const dialog = document.getElementById('dashboard-menu-dialog');
-  const dialogTitle = document.getElementById('dashboard-dialog-title');
-  const dialogDescription = document.getElementById('dashboard-dialog-description');
-  const dialogOptions = document.getElementById('dashboard-dialog-options');
+  const sheet = document.getElementById('dashboard-menu-sheet');
+  const sheetTitle = document.getElementById('dashboard-dialog-title');
+  const sheetDescription = document.getElementById('dashboard-dialog-description');
+  const sheetOptions = document.getElementById('dashboard-dialog-options');
+  const sheetClose = document.getElementById('dashboard-sheet-close');
+
+  const closeSheet = () => {
+    if (!sheet) return;
+    sheet.classList.remove('active');
+    sheet.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
+  const openSheet = item => {
+    if (!sheet || !sheetTitle || !sheetDescription || !sheetOptions) return;
+    sheet.dataset.tone = item.tone;
+    sheetTitle.textContent = item.label;
+    sheetDescription.textContent = item.description;
+    sheetOptions.innerHTML = (item.options || []).map(optionMarkup).join('');
+    sheet.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => sheet.classList.add('active'));
+    window.setTimeout(() => sheetClose?.focus(), 220);
+  };
 
   document.querySelectorAll('button.dashboard-menu-item').forEach(button => {
     button.addEventListener('click', () => {
       const item = findMenuItem(button.dataset.menuKey);
-      if (!item || !dialog || !dialogTitle || !dialogDescription || !dialogOptions) return;
-      dialog.dataset.tone = item.tone;
-      dialogTitle.textContent = item.label;
-      dialogDescription.textContent = item.description;
-      dialogOptions.innerHTML = (item.options || []).map(optionMarkup).join('');
-      dialog.showModal();
+      if (item) openSheet(item);
     });
   });
 
@@ -122,9 +137,14 @@ function bindDashboardInteractions(session) {
     });
   });
 
-  dialog?.addEventListener('click', event => {
-    if (event.target === dialog) dialog.close();
+  sheet?.addEventListener('click', event => {
+    if (event.target === sheet) closeSheet();
   });
+  sheetClose?.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && sheet?.classList.contains('active')) closeSheet();
+  });
+
   filterByPermission(document.querySelectorAll('[data-permission]'), session);
 }
 
@@ -134,6 +154,7 @@ guardPage({
   title: 'Centro operativo',
   async render({ session, content }) {
     const moment = dayPart();
+    const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
       <section class="dashboard-hero" data-day-part="${escapeHtml(moment.key)}" aria-labelledby="dashboard-greeting">
         <div class="dashboard-hero-copy"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)}, ${escapeHtml(firstName(session.profile))}</h1></div>
@@ -142,12 +163,16 @@ guardPage({
     </section>
     <footer class="dashboard-footer" aria-label="Información de Maderarte">
       <img class="dashboard-footer-seal" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
-      <p>Muebles con un estilo diferente para cada cliente.</p>
+      <p class="dashboard-footer-title">Maderarte · Centro operativo</p>
+      <span class="dashboard-footer-version">VERSIÓN ${escapeHtml(APP_CONFIG.version)} &copy; ${year}</span>
     </footer>
-    <dialog class="dashboard-menu-dialog" id="dashboard-menu-dialog" aria-labelledby="dashboard-dialog-title">
-      <div class="dashboard-dialog-header"><div><h2 id="dashboard-dialog-title"></h2><p id="dashboard-dialog-description"></p></div><form method="dialog"><button class="dashboard-dialog-close" type="submit" aria-label="Cerrar"><img src="/assets/icons/x.svg" alt="" aria-hidden="true"></button></form></div>
-      <div class="dashboard-dialog-options" id="dashboard-dialog-options"></div>
-    </dialog>`;
+    <div class="dashboard-sheet-overlay" id="dashboard-menu-sheet" aria-hidden="true">
+      <section class="dashboard-sheet-content" role="dialog" aria-modal="true" aria-labelledby="dashboard-dialog-title">
+        <div class="dashboard-sheet-handle" aria-hidden="true"></div>
+        <div class="dashboard-dialog-header"><div><h2 id="dashboard-dialog-title"></h2><p id="dashboard-dialog-description"></p></div><button class="dashboard-dialog-close" id="dashboard-sheet-close" type="button" aria-label="Cerrar"><img src="/assets/icons/x.svg" alt="" aria-hidden="true"></button></div>
+        <div class="dashboard-dialog-options" id="dashboard-dialog-options"></div>
+      </section>
+    </div>`;
     bindDashboardInteractions(session);
   }
 });
