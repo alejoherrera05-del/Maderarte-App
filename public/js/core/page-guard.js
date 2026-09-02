@@ -30,9 +30,8 @@ export async function guardPage({ permission, activeKey, title, subtitle, render
 }
 
 /**
- * Protege una pantalla que, como varios módulos vigentes de HomeEasy, tiene una
- * experiencia completa propia y no debe quedar forzada dentro del shell genérico.
- * Conserva exactamente las mismas reglas de sesión y permisos de Maderarte.
+ * Protege una pantalla con experiencia completa propia sin forzarla dentro del
+ * shell genérico. Conserva las mismas reglas de sesión y permisos de Maderarte.
  */
 export async function guardStandalonePage({ permission, render }) {
   initializeTheme();
