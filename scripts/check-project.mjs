@@ -8,17 +8,17 @@ const version = '0.2.0';
 const required = [
   'README.md', 'AGENTS.md', 'package.json', 'package-lock.json', 'wrangler.toml',
   '.github/workflows/quality.yml',
-  'public/login.html', 'public/activar-cuenta.html', 'public/index.html', 'public/clientes.html', 'public/ordenes.html',
+  'public/login.html', 'public/activar-cuenta.html', 'public/index.html', 'public/clientes.html', 'public/cotizacion.html', 'public/ordenes.html',
   'public/orden.html', 'public/perfil.html', 'public/configuracion.html', 'public/404.html',
   'public/manifest.webmanifest', 'public/_headers', 'public/_redirects',
-  'public/assets/brand/README.md', 'public/css/clientes-parity.css', 'public/css/dashboard-parity.css',
-  'public/js/core/config.js', 'public/js/core/format.js', 'public/js/core/session.js',
+  'public/assets/brand/README.md', 'public/css/clientes-parity.css', 'public/css/cotizacion-form.css', 'public/css/dashboard-parity.css',
+  'public/js/core/config.js', 'public/js/core/format.js', 'public/js/core/session.js', 'public/js/core/commercial-rules.js',
   'public/js/core/api.js', 'public/js/core/auth.js', 'public/js/core/permissions.js',
   'public/js/core/ui.js', 'public/js/core/shell.js', 'public/js/core/page-guard.js',
   'public/js/pages/login.js', 'public/js/pages/activar-cuenta.js', 'public/js/pages/dashboard.js',
-  'public/js/pages/clientes.js', 'public/js/pages/ordenes.js', 'public/js/pages/orden.js', 'public/js/pages/perfil.js',
+  'public/js/pages/clientes.js', 'public/js/pages/cotizacion.js', 'public/js/pages/ordenes.js', 'public/js/pages/orden.js', 'public/js/pages/perfil.js',
   'public/js/pages/configuracion.js', 'functions/api/maderarte.js',
-  'worker/index.js', 'scripts/test-worker.mjs', 'scripts/test-apps-script.mjs', 'scripts/test-clients.mjs',
+  'worker/index.js', 'scripts/test-worker.mjs', 'scripts/test-apps-script.mjs', 'scripts/test-clients.mjs', 'scripts/test-commercial-rules.mjs',
   'apps-script/Config.gs', 'apps-script/SheetHelpers.gs', 'apps-script/Schema.gs',
   'apps-script/DriveFolders.gs', 'apps-script/Auth.gs', 'apps-script/Clients.gs', 'apps-script/Orders.gs',
   'apps-script/Router.gs', 'apps-script/appsscript.json', 'apps-script/README.md',
@@ -149,6 +149,11 @@ assert.match(clientsSource, /requirePermission_\(session, 'clientes\.read'\)/, '
 assert.match(clientsSource, /function listClients_\(/, 'Falta listClients_');
 assert.match(clientsSource, /function getClient_\(/, 'Falta getClient_');
 
+const commercialRulesSource = readFileSync(join(root, 'public/js/core/commercial-rules.js'), 'utf8');
+assert.match(commercialRulesSource, /minimumOrderDepositPercent:\s*30/, 'El frontend debe conservar el abono mínimo del 30%');
+assert.match(commercialRulesSource, /manufacturingDaysMin:\s*25/, 'El frontend debe conservar fabricación mínima de 25 días');
+assert.match(commercialRulesSource, /manufacturingDaysMax:\s*30/, 'El frontend debe conservar fabricación máxima de 30 días');
+
 const formatSource = readFileSync(join(root, 'public/js/core/format.js'), 'utf8');
 assert.match(formatSource, /export function safeInternalUrl\(/, 'Falta safeInternalUrl');
 const versionFiles = ['public/js/core/config.js', 'functions/api/maderarte.js', 'apps-script/Config.gs', 'README.md'];
@@ -162,5 +167,6 @@ console.log('OK · sin datos comerciales, IDs privados ni secretos');
 console.log('OK · contratos de API y versión 0.2.0 coherentes');
 console.log('OK · Cloudflare Worker y Static Assets protegidos');
 console.log('OK · Clientes protegido por permisos y rutas de lectura');
+console.log('OK · formulario de cotización y reglas comerciales protegidos');
 console.log('OK · encabezados únicos y contrato de Sedes protegido');
 console.log('OK · recursos de marca sin derivados no aprobados');
