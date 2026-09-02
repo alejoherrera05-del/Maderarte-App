@@ -3,6 +3,7 @@ import { apiRequest, ApiError } from './api.js';
 import { clearSessionSnapshot, getDeviceMetadata, readSessionSnapshot, writeSessionSnapshot } from './session.js';
 
 const FIREBASE_BASE = 'https://identitytoolkit.googleapis.com/v1';
+export const SESSION_REVALIDATE_AFTER_MS = 5 * 60 * 1000;
 
 async function firebaseRequest(endpoint, payload) {
   const response = await fetch(`${FIREBASE_BASE}/${endpoint}?key=${encodeURIComponent(APP_CONFIG.firebase.apiKey)}`, {
@@ -67,8 +68,7 @@ export async function sendPasswordReset(email) {
   });
 }
 
-export async function validateSession({ allowCachedOnTransient = true } = {}) {
-  if (APP_CONFIG.preview.enabled) return createPreviewSession('session');
+async function validateSessionRemote({ allowCachedOnTransient = true } = {}) {
   try {
     const response = await apiRequest('AUTH_SESSION_VALIDATE', { device: getDeviceMetadata() });
     const cached = readSessionSnapshot();
@@ -79,6 +79,24 @@ export async function validateSession({ allowCachedOnTransient = true } = {}) {
     if (!error?.transient) clearSessionSnapshot();
     throw error;
   }
+}
+
+export async function validateSession({ allowCachedOnTransient = true, preferCache = false } = {}) {
+  if (APP_CONFIG.preview.enabled) return createPreviewSession('session');
+  const cached = readSessionSnapshot();
+  if (preferCache && cached) {
+    return {
+      ...cached,
+      cacheFirst: true,
+      needsRevalidation: Date.now() - Number(cached.validatedAt || 0) >= SESSION_REVALIDATE_AFTER_MS
+    };
+  }
+  return validateSessionRemote({ allowCachedOnTransient });
+}
+
+export async function revalidateSession({ allowCachedOnTransient = true } = {}) {
+  if (APP_CONFIG.preview.enabled) return createPreviewSession('session');
+  return validateSessionRemote({ allowCachedOnTransient });
 }
 
 export async function logout() {
