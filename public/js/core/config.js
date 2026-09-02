@@ -9,6 +9,7 @@ export const APP_CONFIG = Object.freeze({
   requestTimeoutMs: 18_000,
   sessionCacheKey: 'MADERARTE_APP_SESSION_SNAPSHOT_V1',
   deviceIdKey: 'MADERARTE_APP_DEVICE_ID_V1',
+  deviceNameKey: 'MADERARTE_APP_DEVICE_NAME_V1',
   themeKey: 'MADERARTE_APP_THEME_V1',
   loginPath: '/login.html',
   homePath: '/index.html',
