@@ -104,6 +104,9 @@ Reglas visuales derivadas de esa referencia:
 - Cuando una opción abre subcategorías o acciones secundarias, usar el patrón de HomeEasy: fondo oscurecido y desenfocado + ventana/bottom sheet que emerge desde la parte inferior. La entrada debe animarse desde `translateY(100%)` a `translateY(0)` con una curva elástica suave cercana a `0.4s cubic-bezier(.175,.885,.32,1.1)`.
 - En móvil el bottom sheet ocupa el ancho completo, respeta `safe-area-inset-bottom` y puede cerrarse tocando fuera o mediante un control accesible.
 - El footer debe seguir el patrón operativo de HomeEasy: marca/sello, nombre del sistema y **versión real de la app + año**. Nunca inventar un número de versión visual diferente al código.
+- En el Inicio de Maderarte evitar un header de marca grande o pesado. La identidad debe integrarse de forma editorial y sutil dentro del hero/banner.
+- Las acciones superiores del Inicio deben sentirse ligeras: controles circulares independientes para notificaciones y perfil, con profundidad mínima y sin convertirlos en una barra pesada.
+- Evitar dobles cajas, bordes repetidos y sombras fuertes. Los grupos del Inicio deben parecer listas limpias tipo Settings: título de sección fuera de la superficie y una sola tarjeta/lista interior.
 - Copiar patrones de interacción y lógica, nunca colores, textos, marca, logos, mascota o identidad comercial de HomeEasy.
 
 ## Estado de escritura
