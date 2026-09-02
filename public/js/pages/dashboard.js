@@ -6,52 +6,26 @@ import { filterByPermission } from '../core/permissions.js';
 const MENU_GROUPS = Object.freeze([
   {
     key: 'comercial', label: 'Comercial', tone: 'orange', items: [
-      { key: 'clientes', label: 'Clientes', description: 'Directorio y seguimiento', icon: 'users-three', permission: 'clientes.read', options: [
-        { label: 'Directorio de clientes', description: 'Consulta y seguimiento comercial', disabled: true },
-        { label: 'Nuevo cliente', description: 'Disponible cuando se habiliten las escrituras', disabled: true }
-      ] },
-      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Crear y hacer seguimiento', icon: 'file-text', permission: 'cotizaciones.read', options: [
-        { label: 'Consultar cotizaciones', description: 'Historial comercial', disabled: true },
-        { label: 'Nueva cotización', description: 'Disponible en la etapa de escrituras', disabled: true }
-      ] },
+      { key: 'clientes', label: 'Clientes', description: 'Directorio y seguimiento', icon: 'users-three', permission: 'clientes.read', available: false },
+      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Propuestas y seguimiento', icon: 'file-text', permission: 'cotizaciones.read', available: false },
       { key: 'ordenes', label: 'Órdenes de pedido', description: 'Pedidos, estado y detalle', icon: 'clipboard-text', permission: 'ordenes.read', options: [
         { label: 'Ver órdenes de pedido', description: 'Abrir el listado y sus expedientes', href: '/ordenes.html' },
-        { label: 'Nueva orden de pedido', description: 'Disponible cuando se habiliten las escrituras', disabled: true }
+        { label: 'Nueva orden de pedido', description: 'Se habilitará en la etapa de escrituras', disabled: true }
       ] },
-      { key: 'abonos', label: 'Abonos', description: 'Pagos y saldos', icon: 'wallet', permission: 'abonos.read', options: [
-        { label: 'Consultar abonos', description: 'Pagos asociados a cada OP', disabled: true },
-        { label: 'Registrar abono', description: 'Disponible en la etapa de escrituras', disabled: true }
-      ] }
+      { key: 'abonos', label: 'Abonos', description: 'Pagos y saldos', icon: 'wallet', permission: 'abonos.read', available: false }
     ]
   },
   {
     key: 'operacion', label: 'Operación', tone: 'graphite', items: [
-      { key: 'produccion', label: 'Producción', description: 'Avance por etapa', icon: 'stack', permission: 'produccion.read', options: [
-        { label: 'Seguimiento de producción', description: 'Estado de los productos por OP', disabled: true },
-        { label: 'Actualizar etapa', description: 'Disponible en la etapa de escrituras', disabled: true }
-      ] },
-      { key: 'remisiones', label: 'Remisiones', description: 'Entregas y soportes', icon: 'truck', permission: 'remisiones.read', options: [
-        { label: 'Consultar remisiones', description: 'Entregas vinculadas a cada OP', disabled: true },
-        { label: 'Nueva remisión', description: 'Disponible en la etapa de escrituras', disabled: true }
-      ] },
-      { key: 'agenda', label: 'Agenda', description: 'Compromisos y fechas', icon: 'calendar-dots', permission: 'agenda.read', options: [
-        { label: 'Ver agenda', description: 'Entregas, visitas y tareas', disabled: true },
-        { label: 'Crear compromiso', description: 'Disponible en una siguiente etapa', disabled: true }
-      ] }
+      { key: 'produccion', label: 'Producción', description: 'Avance por etapa', icon: 'stack', permission: 'produccion.read', available: false },
+      { key: 'remisiones', label: 'Remisiones', description: 'Entregas y soportes', icon: 'truck', permission: 'remisiones.read', available: false },
+      { key: 'agenda', label: 'Agenda', description: 'Compromisos y fechas', icon: 'calendar-dots', permission: 'agenda.read', available: false }
     ]
   },
   {
     key: 'gestion', label: 'Gestión', tone: 'gold', items: [
-      { key: 'documentos', label: 'Documentos', description: 'Archivos y soportes', icon: 'folder-open', permission: 'documentos.read', options: [
-        { label: 'Consultar documentos', description: 'Archivos asociados a clientes y OP', disabled: true }
-      ] },
-      { key: 'reportes', label: 'Reportes', description: 'Lectura de la operación', icon: 'chart-bar', permission: 'reportes.read', options: [
-        { label: 'Reportes operativos', description: 'Disponible en una siguiente etapa', disabled: true }
-      ] },
-      { key: 'configuracion', label: 'Configuración', description: 'Preferencias de la app', icon: 'sliders-horizontal', permission: 'config.read', options: [
-        { label: 'Configuración del sistema', description: 'Estado, usuarios y parámetros', href: '/configuracion.html' },
-        { label: 'Mi perfil', description: 'Cuenta, rol y dispositivo', href: '/perfil.html' }
-      ] }
+      { key: 'documentos', label: 'Documentos', description: 'Archivos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
+      { key: 'reportes', label: 'Reportes', description: 'Lectura de la operación', icon: 'chart-bar', permission: 'reportes.read', available: false }
     ]
   }
 ]);
@@ -75,10 +49,15 @@ function firstName(profile) {
 
 function menuItem(item, tone) {
   const permission = item.permission ? ` data-permission="${escapeHtml(item.permission)}"` : '';
+  const core = `<span class="dashboard-menu-icon"><img src="/assets/icons/${escapeHtml(item.icon)}.svg" alt="" aria-hidden="true"></span>
+    <span class="dashboard-menu-copy"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}</span></span>`;
+
+  if (item.available === false) {
+    return `<div class="dashboard-menu-item is-disabled" aria-disabled="true"${permission}>${core}<span class="dashboard-menu-status">Próximamente</span></div>`;
+  }
+
   return `<button class="dashboard-menu-item" type="button" data-menu-key="${escapeHtml(item.key)}" data-tone="${escapeHtml(tone)}"${permission}>
-    <span class="dashboard-menu-icon"><img src="/assets/icons/${escapeHtml(item.icon)}.svg" alt="" aria-hidden="true"></span>
-    <span class="dashboard-menu-copy"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}</span></span>
-    <img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true">
+    ${core}<img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true">
   </button>`;
 }
 
@@ -103,7 +82,7 @@ function findMenuItem(key) {
 }
 
 function optionMarkup(option) {
-  if (option.disabled) return `<button class="dashboard-dialog-option" type="button" disabled><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><span class="status-badge">Próximamente</span></button>`;
+  if (option.disabled) return `<button class="dashboard-dialog-option" type="button" disabled><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><span class="status-badge">No disponible</span></button>`;
   return `<a class="dashboard-dialog-option" href="${escapeHtml(withPreview(option.href))}"><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><img src="/assets/icons/arrow-right.svg" alt="" aria-hidden="true"></a>`;
 }
 
@@ -113,14 +92,14 @@ function bindDashboardInteractions(session) {
   const dialogDescription = document.getElementById('dashboard-dialog-description');
   const dialogOptions = document.getElementById('dashboard-dialog-options');
 
-  document.querySelectorAll('.dashboard-menu-item').forEach(button => {
+  document.querySelectorAll('button.dashboard-menu-item').forEach(button => {
     button.addEventListener('click', () => {
       const item = findMenuItem(button.dataset.menuKey);
       if (!item || !dialog || !dialogTitle || !dialogDescription || !dialogOptions) return;
       dialog.dataset.tone = item.tone;
       dialogTitle.textContent = item.label;
       dialogDescription.textContent = item.description;
-      dialogOptions.innerHTML = item.options.map(optionMarkup).join('');
+      dialogOptions.innerHTML = (item.options || []).map(optionMarkup).join('');
       dialog.showModal();
     });
   });
@@ -164,7 +143,6 @@ guardPage({
     <footer class="dashboard-footer" aria-label="Información de Maderarte">
       <img class="dashboard-footer-seal" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
       <p>Muebles con un estilo diferente para cada cliente.</p>
-      <span>Maderarte APP 1.0</span>
     </footer>
     <dialog class="dashboard-menu-dialog" id="dashboard-menu-dialog" aria-labelledby="dashboard-dialog-title">
       <div class="dashboard-dialog-header"><div><h2 id="dashboard-dialog-title"></h2><p id="dashboard-dialog-description"></p></div><form method="dialog"><button class="dashboard-dialog-close" type="submit" aria-label="Cerrar"><img src="/assets/icons/x.svg" alt="" aria-hidden="true"></button></form></div>
