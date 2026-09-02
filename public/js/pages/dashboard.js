@@ -9,8 +9,8 @@ const MENU_GROUPS = Object.freeze([
       { key: 'clientes', label: 'Consultar cliente', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
       { key: 'ventas', label: 'Historial de ventas', description: 'OP, pagos, saldos y filtros', icon: 'clipboard-text', permission: 'ordenes.read', href: '/ordenes.html' },
       { key: 'cotizaciones', label: 'Cotización', description: 'Crear y hacer seguimiento', icon: 'file-text', permission: 'cotizaciones.read', options: [
-        { label: 'Seguimiento', description: 'Consulta de cotizaciones y estados', disabled: true },
-        { label: 'Formulario', description: 'Crear una nueva cotización', disabled: true }
+        { label: 'Formulario', description: 'Crear una propuesta con items y referencias', href: '/cotizacion.html' },
+        { label: 'Seguimiento', description: 'Consulta de cotizaciones y estados', disabled: true }
       ] },
       { key: 'pedido', label: 'Orden de pedido', description: 'Crear y consultar expedientes', icon: 'clipboard-text', permission: 'ordenes.read', options: [
         { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' },
