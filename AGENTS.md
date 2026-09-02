@@ -30,6 +30,47 @@ Antes de trabajar revisa:
 - No redibujar el logo ni usar imágenes generadas como identidad.
 - El VPS actual podrá alojar WhatsApp de Maderarte, con componentes y credenciales separados de HomeEasy.
 
+## Flujo obligatorio GitHub-first
+
+GitHub es la fuente visible y operativa del desarrollo. El entorno local o temporal de Codex puede utilizarse para editar, ejecutar pruebas y levantar previews, pero nunca debe convertirse en un estado de trabajo oculto o en una fuente paralela de verdad.
+
+Reglas obligatorias para cualquier tarea de código o diseño:
+
+1. Antes de la primera modificación, actualizar desde `origin/main` y confirmar el commit base real.
+2. Crear una rama de trabajo con nombre descriptivo, por ejemplo `codex/etapa-4-1-sistema-visual-index`.
+3. Publicar esa rama en GitHub inmediatamente. No empezar una tarea relevante sobre una rama que solo exista localmente.
+4. Después del primer avance coherente, hacer commit y push y abrir el Pull Request hacia `main` temprano. El PR es el espacio vivo de revisión; no debe aparecer únicamente al final.
+5. Continuar trabajando sobre esa misma rama remota y hacer push después de cada avance coherente o checkpoint visual/funcional. No acumular cambios útiles únicamente en local mientras se reporta progreso.
+6. Antes de pedir revisión, mostrar una pantalla, afirmar que algo quedó listo o entregar una etapa, el estado correspondiente debe existir en GitHub y se deben informar como mínimo: rama, commit SHA y número del PR.
+7. Si Cloudflare genera Preview URL para la rama o el PR, usar esa URL para la revisión visual antes del merge.
+8. `main` debe permanecer estable. Los cambios visuales, funcionales o de arquitectura se revisan desde la rama remota/PR antes de fusionarse, salvo una corrección documental trivial autorizada explícitamente.
+9. No hacer merge de una etapa visual si todavía está en revisión del propietario. Mantener el PR abierto y seguir subiendo las correcciones a la misma rama.
+10. Si por cualquier motivo existen cambios locales aún no publicados, el siguiente paso obligatorio es commit + push antes de continuar con más desarrollo.
+
+Objetivo de este flujo:
+
+```text
+origin/main
+   ↓
+rama remota en GitHub
+   ↓
+primer commit visible
+   ↓
+PR abierto temprano
+   ↓
+commits + push continuos
+   ↓
+Preview Cloudflare / revisión
+   ↓
+pruebas
+   ↓
+aprobación
+   ↓
+merge a main
+```
+
+No usar ZIPs, copias locales antiguas ni ramas locales sin publicar como fuente del estado actual del proyecto.
+
 ## Despliegue Cloudflare
 
 - La aplicación nueva se despliega con Cloudflare Workers y Static Assets, no con Pages.
