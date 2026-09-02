@@ -11,6 +11,9 @@ La revisión actual conserva la identidad propia de Maderarte y eleva el Inicio 
 - Controles superiores del Inicio reducidos a acciones circulares de notificaciones y perfil.
 - La campana no simula alertas: si se abre sin datos, comunica que no hay notificaciones nuevas.
 - Inicio con banner interiorista dinámico por momento del día, saludo personalizado y navegación por Comercial, Operación y Gestión.
+- Los tres banners comparten una sala residencial coherente inspirada en el sofá aprobado: tapizado bouclé crema, estructura redondeada en nogal, mesa auxiliar, arte, planta, cortinas y lámpara de piso.
+- La iluminación sigue una lógica real: lámpara apagada durante mañana y tarde; encendida únicamente en la escena nocturna.
+- Las imágenes finales se entregan en WebP de 1920 × 480, sin textos, logos generados, manchas oscuras, ruido visible ni sombras duras de ventana.
 - Los grupos del Inicio usan una sola superficie limpia por sección; se eliminan dobles cajas, bordes repetidos y sombras innecesarias.
 - Los iconos de módulos se reducen de tamaño y profundidad para evitar una estética de plantilla o tablero genérico.
 - Configuración vive en el menú de perfil/sistema y no dentro de Gestión.
@@ -39,7 +42,7 @@ La revisión actual conserva la identidad propia de Maderarte y eleva el Inicio 
 
 ## Evidencia
 
-Las capturas intermedias de QA no se conservan en Git para evitar inflar el repositorio. La revisión visual se realiza sobre la Preview URL del PR y las validaciones automáticas del repositorio.
+Las capturas intermedias de QA no se conservan en Git para evitar inflar el repositorio. La revisión visual se realiza sobre la Preview URL del PR y las validaciones automáticas del repositorio. El nuevo encuadre del banner fue comprobado localmente en 1440 × 900 y 390 × 844, sin errores de consola ni desplazamiento horizontal.
 
 ## Barreras
 
