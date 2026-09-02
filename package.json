@@ -11,7 +11,8 @@
     "test:worker": "node scripts/test-worker.mjs",
     "test:brain": "node scripts/test-apps-script.mjs",
     "test:clients": "node scripts/test-clients.mjs",
-    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:edge && npm run test:worker"
+    "test:commercial-rules": "node scripts/test-commercial-rules.mjs",
+    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:edge && npm run test:worker"
   },
   "engines": {
     "node": ">=20"
