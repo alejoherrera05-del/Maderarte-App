@@ -42,13 +42,7 @@ export function readSessionSnapshot() {
     }
     const profile = normalizeProfile(value.profile);
     if (!profile.uid || !profile.email || profile.status !== 'ACTIVO') continue;
-    return {
-      profile,
-      permissions: normalizePermissions(value.permissions),
-      expiresAt: value.expiresAt,
-      validatedAt: Number(value.validatedAt || 0),
-      persistence
-    };
+    return { profile, permissions: normalizePermissions(value.permissions), expiresAt: value.expiresAt, validatedAt: Number(value.validatedAt || 0), persistence };
   }
   return null;
 }
@@ -56,13 +50,7 @@ export function readSessionSnapshot() {
 export function writeSessionSnapshot(session, persistence = 'session') {
   clearSessionSnapshot();
   const targetPersistence = persistence === 'local' ? 'local' : 'session';
-  const normalized = {
-    profile: normalizeProfile(session?.profile),
-    permissions: normalizePermissions(session?.permissions),
-    expiresAt: String(session?.expiresAt ?? ''),
-    validatedAt: Date.now(),
-    persistence: targetPersistence
-  };
+  const normalized = { profile: normalizeProfile(session?.profile), permissions: normalizePermissions(session?.permissions), expiresAt: String(session?.expiresAt ?? ''), validatedAt: Date.now(), persistence: targetPersistence };
   storageFor(targetPersistence).setItem(APP_CONFIG.sessionCacheKey, JSON.stringify(normalized));
   return normalized;
 }
@@ -88,6 +76,13 @@ export function getDeviceId() {
   return id;
 }
 
+export function setDeviceName(value) {
+  const name = String(value || '').trim().slice(0, 80);
+  if (name) window.localStorage.setItem(APP_CONFIG.deviceNameKey, name);
+  else window.localStorage.removeItem(APP_CONFIG.deviceNameKey);
+  return name;
+}
+
 export function getDeviceMetadata() {
   const ua = navigator.userAgent || '';
   let platform = 'Equipo';
@@ -104,9 +99,10 @@ export function getDeviceMetadata() {
   else if (/FxiOS|Firefox\//i.test(ua)) browser = 'Firefox';
   else if (/Safari\//i.test(ua)) browser = 'Safari';
 
+  const customName = String(window.localStorage.getItem(APP_CONFIG.deviceNameKey) || '').trim();
   return {
     id: getDeviceId(),
-    name: `${platform} · ${browser}`,
+    name: customName || `${platform} · ${browser}`,
     platform,
     browser,
     language: navigator.language || 'es-CO',
