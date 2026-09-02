@@ -10,7 +10,8 @@
     "test:edge": "node scripts/test-edge.mjs",
     "test:worker": "node scripts/test-worker.mjs",
     "test:brain": "node scripts/test-apps-script.mjs",
-    "test": "npm run check && npm run test:brain && npm run test:edge && npm run test:worker"
+    "test:clients": "node scripts/test-clients.mjs",
+    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:edge && npm run test:worker"
   },
   "engines": {
     "node": ">=20"
