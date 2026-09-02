@@ -20,30 +20,19 @@ Antes de trabajar revisa:
 - Los registros comerciales empiezan en cero y solo nacen desde Maderarte App.
 - La hoja oficial se llama `Base de Datos Maderarte App`.
 - La raíz documental se llama `MADERARTE APP`.
-- **HomeEasy `main` es el molde funcional y de experiencia de Maderarte App.** No es solo inspiración visual. Para cualquier módulo equivalente se debe partir de la pantalla HomeEasy vigente indicada en `docs/HOMEEASY_PARITY_MAP.md`.
-- HomeEasy nunca es fuente de clientes, órdenes, abonos o documentos de Maderarte.
+- La versión vigente de HomeEasy en `alejoherrera05-del/Homeeasy` es el molde funcional, de experiencia y de navegación para cualquier flujo que ya exista allí. No se trata como inspiración abstracta.
+- Antes de diseñar o implementar un módulo de Maderarte que tenga equivalente en HomeEasy, se debe inspeccionar primero la pantalla vigente de HomeEasy y portar su composición, jerarquía, estados, interacción, microinteracciones, navegación y comportamiento responsive. Solo se adaptan marca Maderarte, campos/reglas comerciales y backend independiente.
+- No inventar un shell, tabla, formulario, modal o flujo alternativo cuando HomeEasy ya resolvió el mismo caso, salvo que el propietario apruebe explícitamente la diferencia.
+- HomeEasy nunca es fuente de clientes, órdenes, abonos, documentos, secretos, URLs privadas, credenciales, logos, mascota ni identidad comercial para Maderarte.
 - La OP es el expediente central. Abonos, remisiones y documentos comerciales siempre referencian una OP.
 - Firebase identifica a la persona. Maderarte decide autorización, rol, sede y permisos.
 - El navegador nunca llama directamente a Apps Script; usa `/api/maderarte`.
 - Google Sheets y Drive son la fuente operativa. No introducir Firestore, SQL, D1 o Drizzle.
 - No existe registro público de usuarios.
-- No guardar información sensible o comercial en Git.
+- No guardar datos comerciales, PDFs, hojas, respaldos, tokens, contraseñas, claves ni `.env` en Git.
 - No distribuir archivos de fuentes. `MADERARTE` se presenta con el recurso gráfico aprobado o una cadena tipográfica segura.
 - No redibujar el logo ni usar imágenes generadas como identidad.
 - El VPS actual podrá alojar WhatsApp de Maderarte, con componentes y credenciales separados de HomeEasy.
-
-## Contrato de paridad HomeEasy → Maderarte
-
-1. Si HomeEasy ya resolvió un flujo equivalente, **no diseñar otro desde cero**.
-2. Inspeccionar primero la versión vigente del módulo en `alejoherrera05-del/Homeeasy`, rama `main`, incluidos sus overrides CSS/JS actuales.
-3. Portar composición, jerarquía, navegación, flujo entre estados, responsive, bottom sheets/popovers, estados de carga/vacío/error, retorno contextual y microinteracciones.
-4. Adaptar solamente identidad Maderarte, textos, campos/reglas de negocio, permisos, rutas y backend propio.
-5. No copiar datos, URLs privadas, credenciales, PDFs, cachés, Hommy ni identidad HomeEasy.
-6. Conservar la arquitectura segura ya aprobada de Maderarte: Cloudflare Worker, `/api/maderarte`, Firebase, sesión propia, Apps Script modular, Sheet y Drive independientes.
-7. No crear un shell genérico si la pantalla HomeEasy fuente no funciona así.
-8. No sustituir un flujo rico por una tabla CRUD genérica. En particular, Clientes debe conservar el patrón búsqueda → expediente → órdenes/cotizaciones/abonos.
-9. Las desviaciones solo se permiten si el propietario las pidió explícitamente o una diferencia real de negocio/schema las exige; deben documentarse en `docs/HOMEEASY_PARITY_MAP.md`.
-10. Antes de merge, comparar módulo Maderarte contra su fuente HomeEasy en desktop y móvil.
 
 ## Flujo obligatorio GitHub-first
 
@@ -52,42 +41,84 @@ GitHub es la fuente visible y operativa del desarrollo. El entorno local o tempo
 Reglas obligatorias para cualquier tarea de código o diseño:
 
 1. Antes de la primera modificación, actualizar desde `origin/main` y confirmar el commit base real.
-2. Crear y publicar una rama de trabajo inmediatamente.
-3. Después del primer avance coherente, hacer commit/push y abrir el Pull Request hacia `main` temprano.
-4. Continuar trabajando sobre esa misma rama remota y hacer push después de cada checkpoint visual/funcional.
-5. Antes de pedir revisión o afirmar que algo quedó listo, el estado correspondiente debe existir en GitHub e indicar rama, commit y PR.
-6. Si Cloudflare genera Preview URL, usarla para revisión visual antes del merge.
-7. `main` debe permanecer estable. No fusionar una etapa visual mientras siga en revisión del propietario.
-8. Si existen cambios locales aún no publicados, el siguiente paso obligatorio es commit + push antes de continuar.
+2. Crear una rama de trabajo con nombre descriptivo.
+3. Publicar esa rama en GitHub inmediatamente. No empezar una tarea relevante sobre una rama que solo exista localmente.
+4. Después del primer avance coherente, hacer commit y push y abrir el Pull Request hacia `main` temprano. El PR es el espacio vivo de revisión; no debe aparecer únicamente al final.
+5. Continuar trabajando sobre esa misma rama remota y hacer push después de cada avance coherente o checkpoint visual/funcional. No acumular cambios útiles únicamente en local mientras se reporta progreso.
+6. Antes de pedir revisión, mostrar una pantalla, afirmar que algo quedó listo o entregar una etapa, el estado correspondiente debe existir en GitHub y se deben informar como mínimo: rama, commit SHA y número del PR.
+7. Si Cloudflare genera Preview URL para la rama o el PR, usar esa URL para la revisión visual antes del merge.
+8. `main` debe permanecer estable. Los cambios visuales, funcionales o de arquitectura se revisan desde la rama remota/PR antes de fusionarse, salvo una corrección documental trivial autorizada explícitamente.
+9. No hacer merge de una etapa visual si todavía está en revisión del propietario. Mantener el PR abierto y seguir subiendo las correcciones a la misma rama.
+10. Si por cualquier motivo existen cambios locales aún no publicados, el siguiente paso obligatorio es commit + push antes de continuar con más desarrollo.
+
+Objetivo de este flujo:
+
+```text
+origin/main
+   ↓
+rama remota en GitHub
+   ↓
+primer commit visible
+   ↓
+PR abierto temprano
+   ↓
+commits + push continuos
+   ↓
+Preview Cloudflare / revisión
+   ↓
+pruebas
+   ↓
+aprobación
+   ↓
+merge a main
+```
 
 No usar ZIPs, copias locales antiguas ni ramas locales sin publicar como fuente del estado actual del proyecto.
 
 ## Despliegue Cloudflare
 
-- La aplicación se despliega con Cloudflare Workers y Static Assets, no con Pages.
+- La aplicación nueva se despliega con Cloudflare Workers y Static Assets, no con Pages.
 - `worker/index.js` es la entrada del Worker.
 - `public/` contiene los archivos estáticos.
 - `functions/api/maderarte.js` conserva la lógica de la API y es importado por el Worker.
 - `wrangler.toml` debe mantener `main`, `[assets]`, el binding `ASSETS` y las rutas `/api/maderarte` en `run_worker_first`.
 - No reintroducir `pages_build_output_dir`.
+- El primer despliegue visual no configura secretos ni habilita escrituras comerciales.
 
 ## Frontend
 
-- HTML multipágina dentro de `public/`, igual que el patrón operativo de HomeEasy, pero con assets y backend propios.
-- CSS compartido en `public/css/` cuando pueda modularizarse sin cambiar la experiencia fuente.
+- HTML multipágina dentro de `public/`.
+- CSS compartido en `public/css/`.
 - Núcleo JavaScript en `public/js/core/`.
 - Código específico por pantalla en `public/js/pages/`.
 - Una sola capa API, de autenticación y de sesión.
+- Sin CSS o JavaScript de negocio inline.
 - Interfaz en español, tema claro principal, textos legibles y sin scroll horizontal.
-- Tipografía del sistema tipo Apple; en Windows usar `Segoe UI Variable` / `Segoe UI` como sustituto natural.
-- Evitar pesos tipográficos pesados y no reducir letra para hacer caber más información.
-- Cuando una opción abre subcategorías, conservar el patrón HomeEasy de bottom sheet desde abajo, overlay/blur, safe area y cierre táctil.
-- El footer usa versión real de la app + año.
-- En el Inicio, mantener las decisiones Maderarte ya aprobadas únicamente donde fueron pedidas explícitamente; la estructura de interacción sigue naciendo de HomeEasy.
+- La navegación entre módulos protegidos debe ser cache-first como en la app de referencia: si existe una sesión local vigente, el módulo se abre inmediatamente y la revalidación se hace silenciosamente en segundo plano. No bloquear cada cambio de página con una validación remota.
+- Si no existe una sesión cacheada y la validación tarda más de ~220 ms, usar una cubierta de apertura centrada, sobria y de marca. Nunca dejar textos técnicos de “Validando sesión” escritos estáticamente dentro de los HTML protegidos.
+- Una pantalla con experiencia propia en la referencia puede ser standalone. No forzarla dentro de un sidebar o shell universal solo por uniformidad técnica.
+
+### Referencia permanente de experiencia
+
+Maderarte es una marca y aplicación independiente, pero la app operativa ya aprobada sirve como camino probado para estructura y comportamiento. Antes de inventar un patrón nuevo, revisar cómo resuelve la app de referencia una interacción equivalente y portarla cuando corresponda.
+
+Reglas visuales derivadas de esa referencia:
+
+- Usar tipografía del sistema tipo Apple: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, `SF Pro Display`; en Windows usar `Segoe UI Variable` / `Segoe UI` como sustituto natural. No distribuir archivos de SF Pro.
+- Evitar pesos tipográficos pesados. La interfaz normalmente debe moverse entre 400, 500 y 600/650; reservar pesos superiores solo para casos excepcionales.
+- No reducir el tamaño de letra para hacer caber más información. La lectura y el aire visual tienen prioridad.
+- Las acciones principales deben tener respuesta táctil/visual discreta al presionar.
+- Cuando una opción abre subcategorías o acciones secundarias, usar fondo oscurecido/desenfocado + ventana/bottom sheet que emerge desde la parte inferior. La entrada debe animarse desde `translateY(100%)` a `translateY(0)` con una curva elástica suave cercana a `0.4s cubic-bezier(.175,.885,.32,1.1)`.
+- En móvil el bottom sheet ocupa el ancho completo, respeta `safe-area-inset-bottom` y puede cerrarse tocando fuera o mediante un control accesible.
+- El footer debe mostrar marca/sello, nombre del sistema y **versión real de la app + año** cuando corresponda. Nunca inventar un número de versión visual diferente al código.
+- En el Inicio de Maderarte evitar un header de marca grande o pesado. La identidad debe integrarse de forma editorial y sutil dentro del hero/banner.
+- Las acciones superiores del Inicio deben sentirse ligeras: controles circulares independientes para notificaciones y perfil, con profundidad mínima y sin convertirlos en una barra pesada.
+- Evitar dobles cajas, bordes repetidos y sombras fuertes. Los grupos del Inicio deben parecer listas limpias tipo Settings: título de sección fuera de la superficie y una sola tarjeta/lista interior.
+- Copiar patrones de interacción y lógica, nunca colores, textos, marca, logos, mascota o identidad comercial de HomeEasy.
 
 ## Estado de escritura
 
-La fundación v0.2.0 sigue en modo lectura. No habilitar creación o edición comercial hasta que autenticación, permisos, consecutivos, Drive, idempotencia y auditoría tengan pruebas específicas. Que HomeEasy ya tenga un botón de escritura no autoriza a habilitarlo todavía en Maderarte.
+La fundación v0.2.0 es de lectura. No habilitar creación o edición comercial hasta que autenticación, permisos, consecutivos, Drive, idempotencia y auditoría tengan pruebas específicas.
 
 ## Validación
 
