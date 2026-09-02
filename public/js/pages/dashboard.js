@@ -6,7 +6,10 @@ import { filterByPermission } from '../core/permissions.js';
 const MENU_GROUPS = Object.freeze([
   {
     key: 'comercial', label: 'Comercial', tone: 'orange', items: [
-      { key: 'clientes', label: 'Clientes', description: 'Datos, pedidos y saldos', icon: 'users-three', permission: 'clientes.read', available: false },
+      { key: 'clientes', label: 'Clientes', description: 'Datos, pedidos y saldos', icon: 'users-three', permission: 'clientes.read', options: [
+        { label: 'Ver clientes', description: 'Abrir el directorio comercial', href: '/clientes.html' },
+        { label: 'Nuevo cliente', description: 'Se habilitará en la etapa de escrituras', disabled: true }
+      ] },
       { key: 'cotizaciones', label: 'Cotizaciones', description: 'Propuestas enviadas', icon: 'file-text', permission: 'cotizaciones.read', available: false },
       { key: 'ordenes', label: 'Órdenes de pedido', description: 'Pedidos, estado y entregas', icon: 'clipboard-text', permission: 'ordenes.read', options: [
         { label: 'Ver órdenes de pedido', description: 'Abrir el listado y sus expedientes', href: '/ordenes.html' },
