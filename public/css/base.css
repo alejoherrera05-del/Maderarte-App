@@ -96,7 +96,30 @@ small { font-size: 0.84rem; color: var(--text-soft); }
   place-items: center;
   padding: 24px;
   background: #f2f2f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
 }
-.standalone-access-state > * {
+.standalone-access-state > * { width: min(460px, 100%); }
+.standalone-access-state .empty-state {
   width: min(460px, 100%);
+  padding: 30px;
+  border: 1px solid rgba(60,60,67,.08);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 22px 65px rgba(45,35,40,.12);
+  text-align: center;
 }
+.standalone-access-state .empty-state-inner { display: grid; justify-items: center; gap: 8px; }
+.standalone-access-state .empty-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 5px;
+  border-radius: 18px;
+  background: rgba(230,111,23,.10);
+  color: #e66f17;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+.standalone-access-state h2 { margin: 0; color: #292529; font-size: 1.35rem; font-weight: 680; letter-spacing: -.035em; }
+.standalone-access-state p { margin: 0; color: #777075; font-size: .84rem; line-height: 1.55; }
