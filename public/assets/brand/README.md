@@ -1,5 +1,9 @@
 # Recursos de marca
 
-El PNG oficial `logomaderarte2026.png` permanece protegido en Google Drive y no se publica en esta fundación.
+`maderarte-logo-2026.webp` es una copia web optimizada del PNG maestro oficial conservado en Google Drive. Su incorporación visual fue aprobada el 1 de septiembre de 2026.
 
-En esta etapa la interfaz usa únicamente el nombre **MADERARTE** en mayúsculas mediante la familia tipográfica del sistema `Algerian` cuando está disponible. Los derivados oficiales, favicons e iconos se incorporarán en una fase de marca revisada y aprobada, sin redibujar el logo original.
+- No redibujar, recolorear ni reconstruir el emblema.
+- El encabezado muestra el archivo oficial a color.
+- El pie usa el mismo archivo oficial con un tratamiento visual monocromático de baja jerarquía.
+- El archivo maestro no se publica en este repositorio.
+- `maderarte-wordmark-algerian.png` es el rótulo aprobado rasterizado desde Algerian para asegurar el mismo aspecto en iPhone y computador sin distribuir el archivo de fuente.

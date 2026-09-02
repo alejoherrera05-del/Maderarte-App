@@ -21,6 +21,7 @@ function navLink(item, activeKey, mobile = false) {
 export function mountShell({ session, activeKey, title, subtitle = 'Operación interna de Maderarte' }) {
   const root = document.getElementById('app-shell');
   if (!root) throw new Error('Falta el contenedor #app-shell.');
+  if (activeKey === 'inicio') return mountDashboardShell({ root, session });
   const profile = session.profile;
   const nav = NAV_ITEMS.map(item => navLink(item, activeKey)).join('');
   const mobileNav = NAV_ITEMS.map(item => navLink(item, activeKey, true)).join('');
@@ -55,6 +56,65 @@ export function mountShell({ session, activeKey, title, subtitle = 'Operación i
   filterByPermission(root.querySelectorAll('[data-permission]'), session);
   bindShellEvents();
   return document.getElementById('page-content');
+}
+
+function mountDashboardShell({ root, session }) {
+  const profile = session.profile;
+  document.documentElement.dataset.theme = 'light';
+  root.className = 'app-shell dashboard-app-shell';
+  root.innerHTML = `
+    <main class="dashboard-shell" id="main-content">
+      <header class="dashboard-topbar">
+        <a class="dashboard-brand" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Maderarte, centro operativo">
+          <img class="dashboard-brand-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
+          <span class="dashboard-brand-copy"><img class="dashboard-brand-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"><span class="dashboard-brand-subtitle">Centro operativo</span></span>
+        </a>
+        <div class="dashboard-topbar-actions">
+          <button class="dashboard-notification-button" type="button" aria-label="Notificaciones">
+            <img src="/assets/icons/bell-simple.svg" alt="" aria-hidden="true"><span aria-hidden="true"></span>
+          </button>
+          <span class="dashboard-topbar-divider" aria-hidden="true"></span>
+          <button class="dashboard-profile-button" id="dashboard-profile-button" type="button" aria-label="Abrir mi perfil" aria-haspopup="menu" aria-expanded="false">
+            <span>Mi perfil</span><img src="/assets/icons/caret-down.svg" alt="" aria-hidden="true">
+          </button>
+          <div class="dashboard-profile-menu" id="dashboard-profile-menu" role="menu" hidden>
+            <div class="dashboard-profile-summary"><span class="user-avatar">${escapeHtml(initials(profile.name))}</span><span><strong>${escapeHtml(profile.name || profile.email)}</strong><small>${escapeHtml(profile.role || 'Usuario')}</small></span></div>
+            <a role="menuitem" href="${escapeHtml(withPreview('/perfil.html'))}"><img src="/assets/icons/user-circle.svg" alt="" aria-hidden="true"><span>Ver mi perfil</span></a>
+            <button role="menuitem" id="dashboard-logout-button" type="button"><img src="/assets/icons/arrow-right.svg" alt="" aria-hidden="true"><span>Cerrar sesión</span></button>
+          </div>
+        </div>
+      </header>
+      <div id="page-content"></div>
+    </main>`;
+
+  bindDashboardShellEvents();
+  return document.getElementById('page-content');
+}
+
+function bindDashboardShellEvents() {
+  const profileButton = document.getElementById('dashboard-profile-button');
+  const profileMenu = document.getElementById('dashboard-profile-menu');
+  const closeProfileMenu = () => {
+    if (!profileButton || !profileMenu) return;
+    profileMenu.hidden = true;
+    profileButton.setAttribute('aria-expanded', 'false');
+  };
+  profileButton?.addEventListener('click', event => {
+    event.stopPropagation();
+    const nextOpen = profileMenu?.hidden ?? false;
+    if (profileMenu) profileMenu.hidden = !nextOpen;
+    profileButton.setAttribute('aria-expanded', String(nextOpen));
+  });
+  document.addEventListener('click', event => {
+    if (!profileMenu?.hidden && !profileMenu.contains(event.target) && !profileButton?.contains(event.target)) closeProfileMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeProfileMenu();
+  });
+  document.getElementById('dashboard-logout-button')?.addEventListener('click', async () => {
+    await logout();
+    window.location.assign(withPreview(APP_CONFIG.loginPath));
+  });
 }
 
 function bindShellEvents() {

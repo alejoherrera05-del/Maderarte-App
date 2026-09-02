@@ -3,7 +3,7 @@
   --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-brand: Algerian, "Copperplate Gothic Bold", Georgia, serif;
 
-  --bg: #f3f4f6;
+  --bg: #f5f5f4;
   --surface: #ffffff;
   --surface-soft: #f8f8f9;
   --surface-raised: #ffffff;
@@ -12,11 +12,11 @@
   --text-faint: #85858e;
   --line: #ddddE2;
   --line-strong: #c9c9d0;
-  --graphite: #1c1c1e;
-  --copper: #a94d12;
-  --copper-strong: #873b0b;
-  --copper-soft: #f6e9df;
-  --gold: #d66a1f;
+  --graphite: #282624;
+  --copper: #e66f17;
+  --copper-strong: #c85c0e;
+  --copper-soft: #fff0e4;
+  --gold: #966f2a;
   --success: #217346;
   --success-soft: #e4f4ea;
   --warning: #9a6400;

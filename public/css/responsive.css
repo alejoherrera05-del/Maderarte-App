@@ -27,6 +27,55 @@
   .login-page { grid-template-columns: 1fr; }
   .login-panel { min-height: 100svh; }
   .login-visual { display: none; }
+  .dashboard-app-shell { padding-bottom: 0; }
+}
+
+@media (max-width: 760px) {
+  .dashboard-topbar { min-height: 72px; margin: 7px 8px 0; padding: 9px 13px; border-radius: 14px; }
+  .dashboard-brand { gap: 9px; }
+  .dashboard-brand-logo { width: 46px; height: 46px; }
+  .dashboard-brand-wordmark { width: 150px; }
+  .dashboard-brand-subtitle { font-size: .76rem; }
+  .dashboard-topbar-actions { gap: 5px; }
+  .dashboard-notification-button { width: 40px; height: 40px; }
+  .dashboard-notification-button img { width: 23px; height: 23px; }
+  .dashboard-topbar-divider { height: 34px; margin-inline: 1px; }
+  .dashboard-profile-button { min-height: 40px; gap: 7px; padding: 0 6px; font-size: .84rem; }
+  .dashboard-profile-button img { width: 16px; height: 16px; }
+  .dashboard-profile-menu { top: calc(100% + 10px); }
+  .dashboard-page { padding: 12px 8px 0; }
+  .dashboard-hero { min-height: 250px; padding: 24px 20px; border-radius: 14px; background-position: 56% 54%; }
+  .dashboard-hero-copy p { margin-bottom: 7px; font-size: .84rem; }
+  .dashboard-hero-copy h1 { max-width: 330px; font-size: clamp(2rem, 10.5vw, 2.9rem); line-height: 1.02; }
+  .dashboard-groups { grid-template-columns: 1fr; grid-template-areas: none; gap: 10px; padding: 14px 0 0; }
+  .dashboard-menu-group:nth-child(n) { grid-area: auto; border-radius: 14px; }
+  .dashboard-group-toggle { min-height: 54px; padding: 12px 18px; }
+  .dashboard-group-toggle span { font-size: 1.05rem; }
+  .dashboard-group-toggle img { display: block; transition: transform .16s ease; }
+  .dashboard-group-toggle[aria-expanded="true"] img { transform: rotate(180deg); }
+  .dashboard-menu-list { margin: 0 8px 8px; }
+  .dashboard-menu-list[data-mobile-collapsed="true"] { display: none; }
+  .dashboard-menu-item { min-height: 76px; grid-template-columns: 52px minmax(0, 1fr) 22px; gap: 14px; padding: 10px 13px; }
+  .dashboard-menu-icon { width: 52px; height: 52px; border-radius: 12px; }
+  .dashboard-menu-icon img { width: 29px; height: 29px; }
+  .dashboard-menu-copy strong { font-size: .92rem; }
+  .dashboard-menu-copy span { font-size: .78rem; }
+  .dashboard-menu-caret { width: 17px; height: 17px; }
+  .dashboard-footer { min-height: 154px; margin-top: 40px; padding: 28px 20px 32px; }
+  .dashboard-footer-seal { width: 52px; height: 52px; }
+  .dashboard-footer p { max-width: 290px; font-size: .86rem; line-height: 1.45; }
+  .dashboard-menu-dialog { width: min(500px, calc(100vw - 20px)); border-radius: 18px; }
+  .dashboard-dialog-header { padding: 20px 18px 15px; }
+  .dashboard-dialog-options { padding: 10px; }
+}
+
+@media (max-width: 420px) {
+  .dashboard-brand-wordmark { width: 138px; }
+  .dashboard-brand-subtitle { display: none; }
+  .dashboard-profile-button > span { display: none; }
+  .dashboard-profile-button { width: 38px; justify-content: center; }
+  .dashboard-topbar-divider { display: none; }
+  .dashboard-hero { min-height: 236px; }
 }
 
 @media (max-width: 640px) {
