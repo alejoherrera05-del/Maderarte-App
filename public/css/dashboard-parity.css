@@ -1,0 +1,24 @@
+.dashboard-groups {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: 18px;
+}
+
+.dashboard-menu-item[href] {
+  text-decoration: none;
+}
+
+.dashboard-menu-group[data-tone="gold"] .dashboard-menu-icon {
+  background: var(--gold);
+}
+
+@media (max-width: 760px) {
+  .dashboard-groups {
+    grid-template-columns: 1fr;
+    max-width: none;
+    gap: 22px;
+    padding-inline: 4px;
+  }
+}
