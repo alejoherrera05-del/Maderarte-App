@@ -2,25 +2,28 @@
 
 ## Alcance
 
-Esta revisión conserva la dirección visual aprobada del nuevo inicio y corrige coherencia, legibilidad y comportamiento entre pantallas.
+La revisión actual conserva la identidad propia de Maderarte y eleva el Inicio hacia una experiencia más editorial, ligera y cercana al estándar visual ya aprobado en la app operativa de referencia.
 
 ## Decisiones vigentes
 
 - Identidad Maderarte con naranja, grafito, dorado, blanco y grises neutros.
-- Logo oficial optimizado para web y wordmark rasterizado desde el recurso aprobado.
+- Logo oficial y wordmark integrados de forma sutil dentro del banner del Inicio; se elimina el encabezado de marca pesado en esa pantalla.
+- Controles superiores del Inicio reducidos a acciones circulares de notificaciones y perfil.
+- La campana no simula alertas: si se abre sin datos, comunica que no hay notificaciones nuevas.
 - Inicio con banner interiorista dinámico por momento del día, saludo personalizado y navegación por Comercial, Operación y Gestión.
+- Los grupos del Inicio usan una sola superficie limpia por sección; se eliminan dobles cajas, bordes repetidos y sombras innecesarias.
+- Los iconos de módulos se reducen de tamaño y profundidad para evitar una estética de plantilla o tablero genérico.
 - Configuración vive en el menú de perfil/sistema y no dentro de Gestión.
-- Las funciones todavía no disponibles se muestran como tales antes del clic.
-- Las subopciones operativas usan una ventana tipo bottom sheet: overlay oscurecido con blur y panel que emerge desde la parte inferior; en móvil ocupa todo el ancho y respeta safe area.
-- La entrada del bottom sheet usa `translateY(100%) → translateY(0)` con transición elástica de 0.4 s para conservar la respuesta táctil aprobada en la referencia operativa.
+- Las funciones todavía no disponibles se muestran como “En preparación” antes del clic.
+- Las subopciones operativas usan bottom sheet desde la parte inferior, con overlay, blur, safe area y transición elástica.
 - Tema claro es la experiencia estable de esta fase; el modo oscuro se reintroducirá cuando todas las pantallas lo soporten con la misma calidad.
-- El login y la activación de cuenta usan el mismo lenguaje visual del inicio y conservan intacta la lógica de autenticación.
-- La navegación de páginas interiores conserva la misma marca, paleta, iconografía y jerarquía del inicio.
+- El login conserva el mismo lenguaje visual del sistema y la lógica de autenticación permanece intacta.
+- La navegación de páginas interiores conserva la misma marca, paleta, iconografía y jerarquía del sistema.
 
 ## Tipografía y legibilidad
 
-- Pila del sistema: SF Pro / San Francisco en dispositivos Apple y `Segoe UI Variable` / `Segoe UI` como sustituto natural en Windows, sin distribuir archivos de fuente.
-- Pesos visuales normales entre 400, 500 y 600; se evita una interfaz gruesa o pesada.
+- Pila del sistema: SF Pro / San Francisco en Apple y Segoe UI Variable / Segoe UI en Windows.
+- Pesos predominantes entre 400 y 600.
 - Texto principal alrededor de 15–16 px.
 - Información secundaria legible, con piso aproximado de 14 px cuando es contenido que el usuario debe leer.
 - Inputs de login en 16 px para evitar zoom en Safari/iPhone.
@@ -29,10 +32,10 @@ Esta revisión conserva la dirección visual aprobada del nuevo inicio y corrige
 
 ## Funcionalidad visual
 
-- Órdenes de pedido continúa siendo el módulo operativo disponible desde el inicio.
-- Los demás módulos de la Etapa 4 permanecen visibles como arquitectura de producto, pero sin falsas acciones.
-- No se muestra un indicador de notificación si no existen notificaciones reales.
-- El footer sigue el patrón operativo aprobado: sello/marca, nombre del sistema y la versión REAL del código con el año. En esta rama debe mostrar `VERSIÓN 0.2.0 © 2026`.
+- Órdenes de pedido continúa siendo el módulo operativo disponible desde el Inicio.
+- Los demás módulos permanecen visibles como arquitectura del producto, sin simular funcionalidad que todavía no existe.
+- El footer muestra la versión real de la aplicación y el año.
+- La marca de Maderarte no compite con el contenido: el banner concentra identidad y saludo; el resto de la interfaz prioriza la operación.
 
 ## Evidencia
 
