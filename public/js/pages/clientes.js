@@ -7,8 +7,17 @@ import { emptyState, errorState, loadingState } from '../core/ui.js';
 
 const state = { items: [] };
 
-function requestData(payload) {
-  return previewApiData('CLIENTES_LISTAR') || apiRequest('CLIENTES_LISTAR', payload);
+async function requestData(payload) {
+  const preview = previewApiData('CLIENTES_LISTAR');
+  if (preview) return preview;
+  try {
+    return await apiRequest('CLIENTES_LISTAR', payload);
+  } catch (error) {
+    if (error?.code !== 'ACTION_NOT_FOUND') throw error;
+    const system = await apiRequest('SISTEMA_ESTADO');
+    if (Number(system.data?.counts?.clients || 0) !== 0) throw error;
+    return { status: 'success', data: { items: [], total: 0, limit: Number(payload.limit || 100) } };
+  }
 }
 
 function clientUrl(document) {
