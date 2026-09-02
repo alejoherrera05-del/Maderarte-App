@@ -26,15 +26,35 @@ function brandMarkup(classPrefix = 'shell') {
     <span class="${classPrefix}-brand-copy"><img class="${classPrefix}-brand-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"><span class="${classPrefix}-brand-subtitle">Centro operativo</span></span>`;
 }
 
-function profileMenuMarkup(profile, prefix) {
-  return `<button class="dashboard-profile-button" id="${prefix}-profile-button" type="button" aria-label="Abrir mi perfil" aria-haspopup="menu" aria-expanded="false">
-      <span>Mi perfil</span><img src="/assets/icons/caret-down.svg" alt="" aria-hidden="true">
-    </button>
-    <div class="dashboard-profile-menu" id="${prefix}-profile-menu" role="menu" hidden>
+function profileMenuContent(profile, prefix) {
+  return `<div class="dashboard-profile-menu" id="${prefix}-profile-menu" role="menu" hidden>
       <div class="dashboard-profile-summary"><span class="user-avatar">${escapeHtml(initials(profile.name))}</span><span><strong>${escapeHtml(profile.name || profile.email)}</strong><small>${escapeHtml(profile.role || 'Usuario')}</small></span></div>
       <a role="menuitem" href="${escapeHtml(withPreview('/perfil.html'))}" data-permission="perfil.read"><img src="/assets/icons/user-circle.svg" alt="" aria-hidden="true"><span>Mi perfil</span></a>
       <a role="menuitem" href="${escapeHtml(withPreview('/configuracion.html'))}" data-permission="config.read"><img src="/assets/icons/gear-six.svg" alt="" aria-hidden="true"><span>Configuración</span></a>
       <button role="menuitem" id="${prefix}-logout-button" type="button"><img src="/assets/icons/arrow-right.svg" alt="" aria-hidden="true"><span>Cerrar sesión</span></button>
+    </div>`;
+}
+
+function profileMenuMarkup(profile, prefix) {
+  return `<button class="dashboard-profile-button" id="${prefix}-profile-button" type="button" aria-label="Abrir mi perfil" aria-haspopup="menu" aria-expanded="false">
+      <span>Mi perfil</span><img src="/assets/icons/caret-down.svg" alt="" aria-hidden="true">
+    </button>
+    ${profileMenuContent(profile, prefix)}`;
+}
+
+function dashboardControlsMarkup(profile) {
+  return `<div class="dashboard-floating-actions" aria-label="Acciones rápidas">
+      <button class="dashboard-circle-action" id="dashboard-notifications-button" type="button" aria-label="Notificaciones" aria-haspopup="true" aria-expanded="false">
+        <img src="/assets/icons/bell-simple.svg" alt="" aria-hidden="true">
+      </button>
+      <div class="dashboard-notifications-popover" id="dashboard-notifications-popover" hidden>
+        <strong>Notificaciones</strong>
+        <p>No hay notificaciones nuevas.</p>
+      </div>
+      <button class="dashboard-circle-action dashboard-profile-orb" id="dashboard-profile-button" type="button" aria-label="Abrir mi perfil" aria-haspopup="menu" aria-expanded="false">
+        <span class="dashboard-profile-initials">${escapeHtml(initials(profile.name))}</span>
+      </button>
+      ${profileMenuContent(profile, 'dashboard')}
     </div>`;
 }
 
@@ -80,19 +100,13 @@ function mountDashboardShell({ root, session }) {
   root.className = 'app-shell dashboard-app-shell';
   root.innerHTML = `
     <main class="dashboard-shell" id="main-content">
-      <header class="dashboard-topbar">
-        <a class="dashboard-brand" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Maderarte, centro operativo">
-          ${brandMarkup('dashboard')}
-        </a>
-        <div class="dashboard-topbar-actions">
-          ${profileMenuMarkup(session.profile, 'dashboard')}
-        </div>
-      </header>
+      ${dashboardControlsMarkup(session.profile)}
       <div id="page-content"></div>
     </main>`;
 
   filterByPermission(root.querySelectorAll('[data-permission]'), session);
   bindProfileMenu('dashboard');
+  bindDashboardNotifications();
   return document.getElementById('page-content');
 }
 
@@ -119,6 +133,28 @@ function bindProfileMenu(prefix) {
   document.getElementById(`${prefix}-logout-button`)?.addEventListener('click', async () => {
     await logout();
     window.location.assign(withPreview(APP_CONFIG.loginPath));
+  });
+}
+
+function bindDashboardNotifications() {
+  const button = document.getElementById('dashboard-notifications-button');
+  const popover = document.getElementById('dashboard-notifications-popover');
+  const close = () => {
+    if (!button || !popover) return;
+    popover.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+  button?.addEventListener('click', event => {
+    event.stopPropagation();
+    const nextOpen = popover?.hidden ?? false;
+    if (popover) popover.hidden = !nextOpen;
+    button.setAttribute('aria-expanded', String(nextOpen));
+  });
+  document.addEventListener('click', event => {
+    if (!popover?.hidden && !popover.contains(event.target) && !button?.contains(event.target)) close();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') close();
   });
 }
 
