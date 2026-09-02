@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f6f7">
+  <meta name="description" content="Formulario de cotización de Maderarte.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/cotizacion-form.css">
+  <title>Nueva cotización · Maderarte App</title>
+</head>
+<body class="quote-page">
+  <main id="quote-app" class="quote-app" hidden>
+    <header class="quote-header">
+      <div class="quote-header-inner">
+        <a class="quote-round-button" href="/index.html" aria-label="Volver al inicio">
+          <img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true">
+        </a>
+        <div class="quote-header-brand">
+          <img src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
+          <span><strong>Nueva cotización</strong><small>Maderarte</small></span>
+        </div>
+        <button class="quote-preview-button" id="quote-preview-button" type="button">Vista previa</button>
+      </div>
+    </header>
+
+    <div class="quote-shell">
+      <section class="quote-hero" aria-labelledby="quote-title">
+        <div>
+          <p class="quote-eyebrow">Comercial</p>
+          <h1 id="quote-title">Cotizar un proyecto</h1>
+          <p>Construye la propuesta por items, con acabados, medidas, fotografías de referencia y condiciones claras para el cliente.</p>
+        </div>
+        <div class="quote-mode-badge"><span></span>Preparación · sin escritura</div>
+      </section>
+
+      <form id="quote-form" class="quote-form" novalidate>
+        <div class="quote-main-column">
+          <section class="quote-section">
+            <div class="quote-section-heading">
+              <span class="quote-step">01</span>
+              <div><h2>Cliente</h2><p>Busca un cliente existente o completa los datos de la propuesta.</p></div>
+            </div>
+
+            <div class="quote-client-search-wrap">
+              <label for="quote-client-search">Buscar cliente</label>
+              <div class="quote-search-control">
+                <img src="/assets/icons/magnifying-glass.svg" alt="" aria-hidden="true">
+                <input id="quote-client-search" type="search" placeholder="Identificación o nombre" autocomplete="off">
+              </div>
+              <div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" hidden></div>
+              <p id="quote-client-message" class="quote-helper" role="status"></p>
+            </div>
+
+            <div class="quote-field-grid quote-field-grid-client">
+              <div class="quote-field"><label for="quote-client-document">Cédula / NIT</label><input id="quote-client-document" autocomplete="off"></div>
+              <div class="quote-field quote-field-wide"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
+              <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
+              <div class="quote-field"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
+              <div class="quote-field quote-field-wide"><label for="quote-client-address">Dirección</label><input id="quote-client-address" autocomplete="street-address"></div>
+              <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" autocomplete="address-level2"></div>
+              <div class="quote-field"><label for="quote-branch">Sede</label><select id="quote-branch"><option value="MP">Maderarte Principal</option><option value="TP">Maderarte Terraplaza</option></select></div>
+            </div>
+          </section>
+
+          <section class="quote-section quote-items-section">
+            <div class="quote-section-heading quote-items-heading">
+              <span class="quote-step">02</span>
+              <div><h2>Items de la cotización</h2><p>Cada mueble conserva sus propias medidas, acabados, valor y referencias visuales.</p></div>
+              <button class="quote-add-item" id="quote-add-item" type="button"><span>＋</span>Añadir item</button>
+            </div>
+            <div id="quote-items" class="quote-items"></div>
+          </section>
+
+          <section class="quote-section">
+            <div class="quote-section-heading">
+              <span class="quote-step">03</span>
+              <div><h2>Observaciones y condiciones</h2><p>Información que debe quedar clara antes de que el cliente confirme el pedido.</p></div>
+            </div>
+            <div class="quote-field"><label for="quote-notes">Observaciones especiales</label><textarea id="quote-notes" rows="4" placeholder="Detalles de diseño, instalación, acceso, cambios acordados o aclaraciones de la propuesta."></textarea></div>
+            <div class="quote-conditions" aria-label="Condiciones comerciales">
+              <div class="quote-condition"><span class="quote-condition-mark">30%</span><div><strong>Abono mínimo para solicitar el pedido</strong><p>El pedido se confirma e inicia cuando el cliente completa al menos el 30% del valor total.</p></div></div>
+              <div class="quote-condition"><span class="quote-condition-mark">25–30</span><div><strong>Tiempo estimado de fabricación</strong><p>El proceso de fabricación se estima entre 25 y 30 días desde la confirmación del pedido y el abono mínimo requerido.</p></div></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="quote-summary-column" aria-label="Resumen financiero">
+          <section class="quote-summary-card">
+            <div class="quote-summary-head"><span>Resumen</span><small id="quote-item-count">1 item</small></div>
+            <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
+            <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
+            <div class="quote-summary-total"><span>Total cotizado</span><strong id="quote-total">$ 0</strong></div>
+            <div class="quote-deposit-box">
+              <span>Abono mínimo para solicitar</span>
+              <strong id="quote-minimum-deposit">$ 0</strong>
+              <small>30% del total cotizado</small>
+            </div>
+            <div class="quote-summary-row quote-summary-muted"><span>Saldo después del mínimo</span><strong id="quote-remaining">$ 0</strong></div>
+            <button class="quote-secondary-action" id="quote-summary-preview" type="button">Ver propuesta y anexo</button>
+            <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Guardar y generar cotización</button>
+            <p class="quote-write-note">La emisión real se habilitará cuando activemos las escrituras comerciales.</p>
+          </section>
+        </aside>
+      </form>
+    </div>
+
+    <div class="quote-preview-overlay" id="quote-preview-overlay" aria-hidden="true">
+      <section class="quote-preview-sheet" role="dialog" aria-modal="true" aria-labelledby="quote-preview-title">
+        <div class="quote-preview-handle" aria-hidden="true"></div>
+        <header class="quote-preview-header">
+          <div><p>Vista previa</p><h2 id="quote-preview-title">Propuesta comercial</h2></div>
+          <button class="quote-preview-close" id="quote-preview-close" type="button" aria-label="Cerrar">×</button>
+        </header>
+        <div id="quote-preview-content" class="quote-preview-content"></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/js/pages/cotizacion.js"></script>
+</body>
+</html>
