@@ -5,6 +5,7 @@ import { filterByPermission } from './permissions.js';
 
 const NAV_ITEMS = Object.freeze([
   { key: 'inicio', label: 'Inicio', short: 'Inicio', icon: 'house', href: '/index.html', permission: 'app.access' },
+  { key: 'clientes', label: 'Clientes', short: 'Clientes', icon: 'users-three', href: '/clientes.html', permission: 'clientes.read' },
   { key: 'ordenes', label: 'Órdenes de pedido', short: 'Órdenes', icon: 'clipboard-text', href: '/ordenes.html', permission: 'ordenes.read' }
 ]);
 
@@ -35,13 +36,6 @@ function profileMenuContent(profile, prefix) {
     </div>`;
 }
 
-function profileMenuMarkup(profile, prefix) {
-  return `<button class="dashboard-profile-button" id="${prefix}-profile-button" type="button" aria-label="Abrir mi perfil" aria-haspopup="menu" aria-expanded="false">
-      <span>Mi perfil</span><img src="/assets/icons/caret-down.svg" alt="" aria-hidden="true">
-    </button>
-    ${profileMenuContent(profile, prefix)}`;
-}
-
 function dashboardControlsMarkup(profile) {
   return `<div class="dashboard-floating-actions" aria-label="Acciones rápidas">
       <button class="dashboard-circle-action" id="dashboard-notifications-button" type="button" aria-label="Notificaciones" aria-haspopup="true" aria-expanded="false">
@@ -55,6 +49,21 @@ function dashboardControlsMarkup(profile) {
         <span class="dashboard-profile-initials">${escapeHtml(initials(profile.name))}</span>
       </button>
       ${profileMenuContent(profile, 'dashboard')}
+    </div>`;
+}
+
+function interiorControlsMarkup(profile) {
+  return `<div class="interior-system-actions" aria-label="Acciones del sistema">
+      <button class="interior-circle-action" id="interior-notifications-button" type="button" aria-label="Notificaciones" aria-haspopup="true" aria-expanded="false">
+        <img src="/assets/icons/bell-simple.svg" alt="" aria-hidden="true">
+      </button>
+      <div class="interior-notifications-popover" id="interior-notifications-popover" hidden>
+        <strong>Notificaciones</strong><p>No hay notificaciones nuevas.</p>
+      </div>
+      <button class="interior-circle-action interior-profile-orb" id="interior-profile-button" type="button" aria-label="Abrir mi perfil" aria-haspopup="menu" aria-expanded="false">
+        <span>${escapeHtml(initials(profile.name))}</span>
+      </button>
+      ${profileMenuContent(profile, 'interior')}
     </div>`;
 }
 
@@ -72,19 +81,17 @@ export function mountShell({ session, activeKey, title, subtitle = 'Operación i
       <a class="brand-block" href="${escapeHtml(withPreview('/index.html'))}">
         ${brandMarkup('shell')}
       </a>
-      <nav class="side-nav"><span class="nav-label">Maderarte</span>${nav}</nav>
+      <nav class="side-nav"><span class="nav-label">Navegación</span>${nav}</nav>
       <div class="sidebar-footer"><div class="connection-box"><strong>Centro operativo</strong><span>${session.offline ? 'Conexión limitada' : 'Sesión activa'}</span></div></div>
     </aside>
     <button class="sidebar-overlay" id="sidebar-overlay" type="button" aria-label="Cerrar menú"></button>
     <main class="app-main" id="main-content">
-      <header class="topbar">
-        <div class="topbar-actions">
+      <header class="topbar interior-topbar">
+        <div class="topbar-actions interior-page-context">
           <button class="icon-button mobile-menu-button" id="mobile-menu-button" type="button" aria-label="Abrir menú">☰</button>
           <div class="topbar-context"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(subtitle)}</span></div>
         </div>
-        <div class="topbar-actions profile-actions">
-          ${profileMenuMarkup(session.profile, 'interior')}
-        </div>
+        ${interiorControlsMarkup(session.profile)}
       </header>
       <div id="page-content"></div>
     </main>
@@ -93,6 +100,7 @@ export function mountShell({ session, activeKey, title, subtitle = 'Operación i
   filterByPermission(root.querySelectorAll('[data-permission]'), session);
   bindShellEvents();
   bindProfileMenu('interior');
+  bindNotifications('interior');
   return document.getElementById('page-content');
 }
 
@@ -106,7 +114,7 @@ function mountDashboardShell({ root, session }) {
 
   filterByPermission(root.querySelectorAll('[data-permission]'), session);
   bindProfileMenu('dashboard');
-  bindDashboardNotifications();
+  bindNotifications('dashboard');
   return document.getElementById('page-content');
 }
 
@@ -136,9 +144,9 @@ function bindProfileMenu(prefix) {
   });
 }
 
-function bindDashboardNotifications() {
-  const button = document.getElementById('dashboard-notifications-button');
-  const popover = document.getElementById('dashboard-notifications-popover');
+function bindNotifications(prefix) {
+  const button = document.getElementById(`${prefix}-notifications-button`);
+  const popover = document.getElementById(`${prefix}-notifications-popover`);
   const close = () => {
     if (!button || !popover) return;
     popover.hidden = true;
