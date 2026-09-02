@@ -135,9 +135,11 @@ export function previewApiData(action) {
   if (!APP_CONFIG.preview.enabled) return null;
   const common = { status: 'success', code: 'PREVIEW_LOCAL', msg: 'Vista local sin datos comerciales.', requestId: 'PREVIEW-LOCAL' };
   if (action === 'DASHBOARD_RESUMEN') return { ...common, data: { metrics: { activeOrders: 0, pendingBalance: 0, pendingProduction: 0, readyDelivery: 0 }, priorities: [], mode: 'PREPARACION' } };
+  if (action === 'CLIENTES_LISTAR') return { ...common, data: { items: [], total: 0 } };
+  if (action === 'CLIENTE_OBTENER') return { ...common, data: null };
   if (action === 'ORDENES_LISTAR') return { ...common, data: { items: [], total: 0 } };
   if (action === 'ORDEN_OBTENER') return { ...common, data: null };
-  if (action === 'SISTEMA_ESTADO') return { ...common, data: { appVersion: APP_CONFIG.version, mode: 'PREPARACION', commercialWrites: 'DESHABILITADAS', sheets: [], counts: {} } };
+  if (action === 'SISTEMA_ESTADO') return { ...common, data: { appVersion: APP_CONFIG.version, mode: 'PREPARACION', commercialWrites: 'DESHABILITADAS', sheets: [], counts: { clients: 0, orders: 0, payments: 0, remissions: 0 } } };
   if (action === 'USUARIOS_LISTAR') return { ...common, data: { items: [], total: 0 } };
   return { ...common, data: {} };
 }
