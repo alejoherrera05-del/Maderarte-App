@@ -6,26 +6,26 @@ import { filterByPermission } from '../core/permissions.js';
 const MENU_GROUPS = Object.freeze([
   {
     key: 'comercial', label: 'Comercial', tone: 'orange', items: [
-      { key: 'clientes', label: 'Clientes', description: 'Directorio y seguimiento', icon: 'users-three', permission: 'clientes.read', available: false },
-      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Propuestas y seguimiento', icon: 'file-text', permission: 'cotizaciones.read', available: false },
-      { key: 'ordenes', label: 'Órdenes de pedido', description: 'Pedidos, estado y detalle', icon: 'clipboard-text', permission: 'ordenes.read', options: [
+      { key: 'clientes', label: 'Clientes', description: 'Datos, pedidos y saldos', icon: 'users-three', permission: 'clientes.read', available: false },
+      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Propuestas enviadas', icon: 'file-text', permission: 'cotizaciones.read', available: false },
+      { key: 'ordenes', label: 'Órdenes de pedido', description: 'Pedidos, estado y entregas', icon: 'clipboard-text', permission: 'ordenes.read', options: [
         { label: 'Ver órdenes de pedido', description: 'Abrir el listado y sus expedientes', href: '/ordenes.html' },
         { label: 'Nueva orden de pedido', description: 'Se habilitará en la etapa de escrituras', disabled: true }
       ] },
-      { key: 'abonos', label: 'Abonos', description: 'Pagos y saldos', icon: 'wallet', permission: 'abonos.read', available: false }
+      { key: 'abonos', label: 'Abonos', description: 'Pagos recibidos y saldos', icon: 'wallet', permission: 'abonos.read', available: false }
     ]
   },
   {
     key: 'operacion', label: 'Operación', tone: 'graphite', items: [
-      { key: 'produccion', label: 'Producción', description: 'Avance por etapa', icon: 'stack', permission: 'produccion.read', available: false },
-      { key: 'remisiones', label: 'Remisiones', description: 'Entregas y soportes', icon: 'truck', permission: 'remisiones.read', available: false },
-      { key: 'agenda', label: 'Agenda', description: 'Compromisos y fechas', icon: 'calendar-dots', permission: 'agenda.read', available: false }
+      { key: 'produccion', label: 'Producción', description: 'Pedidos en fabricación', icon: 'stack', permission: 'produccion.read', available: false },
+      { key: 'remisiones', label: 'Remisiones', description: 'Entregas realizadas', icon: 'truck', permission: 'remisiones.read', available: false },
+      { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false }
     ]
   },
   {
     key: 'gestion', label: 'Gestión', tone: 'gold', items: [
-      { key: 'documentos', label: 'Documentos', description: 'Archivos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
-      { key: 'reportes', label: 'Reportes', description: 'Lectura de la operación', icon: 'chart-bar', permission: 'reportes.read', available: false }
+      { key: 'documentos', label: 'Documentos', description: 'PDF y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
+      { key: 'reportes', label: 'Reportes', description: 'Ventas y operación', icon: 'chart-bar', permission: 'reportes.read', available: false }
     ]
   }
 ]);
@@ -53,7 +53,7 @@ function menuItem(item, tone) {
     <span class="dashboard-menu-copy"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}</span></span>`;
 
   if (item.available === false) {
-    return `<div class="dashboard-menu-item is-disabled" aria-disabled="true"${permission}>${core}<span class="dashboard-menu-status">Próximamente</span></div>`;
+    return `<div class="dashboard-menu-item is-disabled" aria-disabled="true"${permission}>${core}<span class="dashboard-menu-status">En preparación</span></div>`;
   }
 
   return `<button class="dashboard-menu-item" type="button" data-menu-key="${escapeHtml(item.key)}" data-tone="${escapeHtml(tone)}"${permission}>
@@ -157,6 +157,10 @@ guardPage({
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
       <section class="dashboard-hero" data-day-part="${escapeHtml(moment.key)}" aria-labelledby="dashboard-greeting">
+        <div class="dashboard-hero-brand" aria-label="Maderarte">
+          <img class="dashboard-hero-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
+          <img class="dashboard-hero-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
+        </div>
         <div class="dashboard-hero-copy"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)}, ${escapeHtml(firstName(session.profile))}</h1></div>
       </section>
       <div class="dashboard-groups">${MENU_GROUPS.map(menuGroup).join('')}</div>
