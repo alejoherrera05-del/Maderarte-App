@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1c1c1e">
+  <meta name="theme-color" content="#f5f5f4">
   <meta name="description" content="Acceso a la aplicación interna de Maderarte.">
   <title>Iniciar sesión · Maderarte App</title>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -12,12 +12,16 @@
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/responsive.css">
+  <link rel="stylesheet" href="/css/refinement.css">
 </head>
 <body>
   <main class="login-page">
     <section class="login-panel">
       <div class="login-card">
-        <div class="login-brand"><div class="brand-copy"><strong class="brand-name">MADERARTE</strong><span class="brand-subtitle login-subtitle">Centro operativo</span></div></div>
+        <div class="login-brand-lockup">
+          <img class="login-brand-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
+          <span class="login-brand-copy"><img class="login-brand-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"><span>Centro operativo</span></span>
+        </div>
         <div class="preview-notice" id="preview-notice" hidden>Vista local: entra sin consultar datos ni escribir en la base.</div>
         <h1>Bienvenido</h1>
         <p>Ingresa con tu cuenta autorizada de Maderarte.</p>
@@ -31,7 +35,9 @@
         <small class="login-help">El acceso es exclusivo para usuarios autorizados.</small>
       </div>
     </section>
-    <aside class="login-visual" aria-label="Presentación de Maderarte App"><div class="login-visual-copy"><strong>Órdenes, producción y entregas con estado claro.</strong><p>Consulta pendientes, saldos y fechas de entrega sin perder el contexto de cada pedido.</p></div></aside>
+    <aside class="login-visual" aria-label="Maderarte">
+      <div class="login-visual-copy"><strong>Muebles con un estilo diferente para cada cliente.</strong><p>Centro operativo Maderarte.</p></div>
+    </aside>
   </main>
   <script type="module" src="/js/pages/login.js"></script>
 </body>

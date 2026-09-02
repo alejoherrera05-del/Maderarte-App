@@ -1,0 +1,251 @@
+:root { --sidebar-width: 282px; }
+
+/* Tipografía del sistema: SF Pro en Apple y Segoe UI Variable en Windows. */
+body { background: #f5f5f4; font-weight: 400; letter-spacing: -.01em; }
+h1, h2, h3 { font-weight: 600; }
+strong { font-weight: 600; }
+small { font-size: .875rem; }
+.button,
+.icon-button,
+.link-action,
+.text-button { font-weight: 600; }
+.field label,
+.checkbox-field legend,
+.status-badge,
+.key-value span,
+.data-table th { font-size: .875rem; font-weight: 600; }
+.priority-copy span,
+.timeline-copy span,
+.link-copy span,
+.order-card-meta,
+.item-row-copy span,
+.item-row-amount span,
+.item-row-amount small { font-size: .875rem; }
+.user-chip-copy strong { font-size: .9375rem; font-weight: 600; }
+.user-chip-copy span { font-size: .8125rem; font-weight: 500; }
+.primary-cell,
+.order-card-client,
+.item-row-copy strong { font-weight: 600; }
+
+/* Shell interior coherente con el inicio */
+.interior-app-shell { background: #f5f5f4; }
+.interior-app-shell .sidebar {
+  padding: 18px 16px;
+  border-right: 1px solid #e2e1de;
+  background: #fff;
+  color: #282624;
+  box-shadow: 8px 0 28px rgba(40, 38, 36, .035);
+}
+.interior-app-shell .brand-block {
+  min-height: 76px;
+  gap: 11px;
+  padding: 4px 6px 18px;
+  border-bottom: 1px solid #ecebe8;
+  color: #282624;
+}
+.shell-brand-logo { width: 50px; height: 50px; flex: 0 0 50px; object-fit: contain; }
+.shell-brand-copy { min-width: 0; display: grid; gap: 3px; }
+.shell-brand-wordmark { width: 164px; max-width: 100%; height: auto; }
+.shell-brand-subtitle { color: #6b6967; font-size: .875rem; }
+.interior-app-shell .side-nav { gap: 7px; padding-top: 18px; }
+.interior-app-shell .nav-label { padding: 11px 12px 7px; color: #8a8783; font-size: .8125rem; font-weight: 550; letter-spacing: .045em; }
+.interior-app-shell .nav-link {
+  min-height: 54px;
+  gap: 13px;
+  border-radius: 14px;
+  color: #4e4b48;
+  font-size: .9375rem;
+  font-weight: 600;
+}
+.interior-app-shell .nav-link:hover { background: #f7f5f2; color: #1f1e1d; }
+.interior-app-shell .nav-link[aria-current="page"] { background: var(--copper-soft); color: var(--copper-strong); }
+.interior-app-shell .nav-icon {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 11px;
+  background: #f1efec;
+  color: currentColor;
+}
+.interior-app-shell .nav-link[aria-current="page"] .nav-icon { background: #fff; }
+.interior-app-shell .nav-icon img { width: 20px; height: 20px; }
+.interior-app-shell .sidebar-footer { padding: 18px 6px 0; }
+.interior-app-shell .connection-box { border-color: #e6e3df; background: #f8f7f5; }
+.interior-app-shell .connection-box strong { color: #282624; font-size: .9375rem; font-weight: 600; }
+.interior-app-shell .connection-box span { color: #77736f; font-size: .875rem; }
+.interior-app-shell .topbar {
+  min-height: 76px;
+  border-bottom: 1px solid #e2e1de;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 5px 18px rgba(40,38,36,.035);
+}
+.interior-app-shell .topbar-context strong { font-size: 1.05rem; font-weight: 600; }
+.interior-app-shell .topbar-context span { color: #6b6967; font-size: .875rem; }
+.profile-actions { position: relative; }
+.interior-app-shell .page { padding-top: 34px; }
+.interior-app-shell .mobile-nav { background: rgba(255,255,255,.96); }
+.mobile-nav-icon { width: 26px; height: 26px; display: grid; place-items: center; }
+.mobile-nav-icon img { width: 22px; height: 22px; }
+
+/* Login Maderarte */
+.login-page { background: #f5f5f4; }
+.login-panel { background: #f5f5f4; }
+.login-card {
+  width: min(100%, 470px);
+  padding: clamp(28px, 4vw, 42px);
+  border: 1px solid #e1dfdc;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(40, 38, 36, .09);
+}
+.login-brand-lockup { display: flex; align-items: center; gap: 14px; margin-bottom: 38px; }
+.login-brand-logo { width: 62px; height: 62px; flex: 0 0 62px; object-fit: contain; }
+.login-brand-copy { min-width: 0; display: grid; gap: 4px; }
+.login-brand-wordmark { width: min(260px, 62vw); height: auto; }
+.login-brand-copy span { color: #66635f; font-size: .9375rem; }
+.login-card h1 { margin-bottom: 10px; font-size: clamp(2rem, 3vw, 2.55rem); font-weight: 600; }
+.login-card > p { margin-bottom: 30px; font-size: 1rem; }
+.login-form { gap: 18px; }
+.login-form .field label { font-size: .9375rem; font-weight: 600; }
+.login-form .field input { min-height: 50px; border-radius: 12px; font-size: 1rem; }
+.login-form .button { min-height: 50px; border-radius: 12px; font-size: 1rem; font-weight: 600; }
+.checkbox-row { font-size: .875rem; line-height: 1.4; }
+.text-button { font-size: .875rem; font-weight: 600; }
+.login-help { margin-top: 20px; color: #77736f; font-size: .875rem; }
+.login-visual {
+  isolation: isolate;
+  align-items: flex-end;
+  background: #2a211d url('/assets/interiors/living-room-afternoon.webp') center center / cover no-repeat;
+}
+.login-visual::before {
+  display: block;
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, rgba(21,18,16,.08) 25%, rgba(21,18,16,.68) 100%);
+  box-shadow: none;
+}
+.login-visual-copy { z-index: 1; max-width: 620px; }
+.login-visual-copy strong { margin-bottom: 10px; font-size: clamp(2.1rem, 3.8vw, 3.8rem); font-weight: 600; line-height: 1.02; }
+.login-visual-copy p { color: rgba(255,255,255,.88); font-size: 1rem; }
+
+/* Inicio: escala, pesos y respuesta táctil */
+.dashboard-profile-summary strong { font-size: .9375rem; font-weight: 600; }
+.dashboard-profile-summary small { font-size: .875rem; }
+.dashboard-profile-menu a,
+.dashboard-profile-menu button { font-size: .9375rem; font-weight: 500; }
+.dashboard-hero-copy p { font-weight: 550; }
+.dashboard-hero-copy h1 { font-weight: 600; }
+.dashboard-group-toggle span { font-weight: 600; }
+.dashboard-menu-copy strong { font-weight: 600; }
+.dashboard-menu-copy span { font-size: .9rem; line-height: 1.35; }
+.dashboard-menu-item { transition: background .16s ease, transform .18s ease, box-shadow .18s ease; }
+.dashboard-menu-item:active { transform: scale(.985); }
+.dashboard-menu-item.is-disabled { cursor: default; opacity: .68; }
+.dashboard-menu-item.is-disabled:hover,
+.dashboard-menu-item.is-disabled:active { background: #fff; transform: none; }
+.dashboard-menu-status {
+  justify-self: end;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #f2f0ed;
+  color: #77736f;
+  font-size: .8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.dashboard-notification-button { display: none; }
+
+/* Bottom sheet táctil estilo iOS */
+.dashboard-sheet-overlay {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0,0,0,.40);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .30s ease, visibility .30s ease;
+}
+.dashboard-sheet-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.dashboard-sheet-content {
+  width: min(100%, 720px);
+  max-height: min(84svh, 760px);
+  overflow-y: auto;
+  padding: 12px 24px calc(30px + env(safe-area-inset-bottom));
+  border: 1px solid rgba(60,60,67,.12);
+  border-bottom: 0;
+  border-radius: 30px 30px 0 0;
+  background: #fff;
+  box-shadow: 0 -10px 40px rgba(0,0,0,.14);
+  transform: translateY(100%);
+  transition: transform .40s cubic-bezier(.175,.885,.32,1.1);
+}
+.dashboard-sheet-overlay.active .dashboard-sheet-content { transform: translateY(0); }
+.dashboard-sheet-handle {
+  width: 40px;
+  height: 5px;
+  margin: 0 auto 16px;
+  border-radius: 999px;
+  background: #d8d6d2;
+}
+.dashboard-sheet-content .dashboard-dialog-header {
+  padding: 4px 2px 18px;
+  border-bottom: 0;
+  box-shadow: none !important;
+}
+.dashboard-sheet-content .dashboard-dialog-header h2 { margin-bottom: 5px; font-size: 1.32rem; font-weight: 600; }
+.dashboard-sheet-content .dashboard-dialog-header p { font-size: .9375rem; line-height: 1.45; }
+.dashboard-sheet-content .dashboard-dialog-close { flex: 0 0 40px; }
+.dashboard-sheet-content .dashboard-dialog-options { gap: 12px; padding: 0; }
+.dashboard-sheet-content .dashboard-dialog-option {
+  min-height: 76px;
+  padding: 15px 18px;
+  border: 1px solid #ebe9e6;
+  border-radius: 18px;
+  background: #f8f8f8;
+  box-shadow: none;
+}
+.dashboard-sheet-content .dashboard-dialog-option:not(:disabled):hover { border-color: #ddd9d4; background: #fff; }
+.dashboard-sheet-content .dashboard-dialog-option:active:not(:disabled) { transform: scale(.985); }
+.dashboard-sheet-content .dashboard-dialog-option strong { font-size: 1rem; font-weight: 600; }
+.dashboard-sheet-content .dashboard-dialog-option small { font-size: .875rem; line-height: 1.4; }
+
+/* Pie operativo con versión real */
+.dashboard-footer { gap: 3px; }
+.dashboard-footer-seal { margin-bottom: 3px; }
+.dashboard-footer-title { margin: 0; color: #333; font-size: .9rem; font-weight: 550; }
+.dashboard-footer-version { color: #888; font-size: .75rem; font-weight: 500; letter-spacing: .035em; }
+
+@media (hover: hover) and (pointer: fine) {
+  .interior-app-shell .nav-link:hover { transform: translateX(2px); }
+}
+
+@media (max-width: 760px) {
+  .dashboard-sheet-content {
+    width: 100%;
+    max-height: 86svh;
+    padding: 12px 20px calc(28px + env(safe-area-inset-bottom));
+  }
+  .dashboard-sheet-content .dashboard-dialog-header h2 { font-size: 1.3rem; }
+  .dashboard-sheet-content .dashboard-dialog-option { min-height: 78px; border-radius: 19px; }
+}
+
+@media (max-width: 640px) {
+  .login-card { padding: 26px 22px; border-radius: 22px; box-shadow: 0 12px 34px rgba(40,38,36,.07); }
+  .login-brand-lockup { margin-bottom: 30px; }
+  .login-brand-logo { width: 56px; height: 56px; flex-basis: 56px; }
+  .dashboard-menu-copy strong { font-size: .95rem; }
+  .dashboard-menu-copy span { font-size: .875rem; white-space: normal; }
+}

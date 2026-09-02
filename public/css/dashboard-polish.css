@@ -1,0 +1,133 @@
+/* Ajuste final de composición del inicio: controles de sistema fuera del hero y marca integrada. */
+
+.dashboard-floating-actions {
+  position: relative;
+  z-index: 45;
+  top: auto;
+  right: auto;
+  width: min(100%, 1512px);
+  margin: 0 auto;
+  padding: 14px 16px 7px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.dashboard-circle-action {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(60, 60, 67, .10);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 4px 14px rgba(31, 29, 27, .075);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+
+.dashboard-circle-action:hover {
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(31, 29, 27, .10);
+}
+
+.dashboard-circle-action > img {
+  width: 20px;
+  height: 20px;
+}
+
+.dashboard-profile-initials {
+  width: 32px;
+  height: 32px;
+  font-size: .76rem;
+  font-weight: 600;
+}
+
+.dashboard-floating-actions .dashboard-profile-menu,
+.dashboard-notifications-popover {
+  top: calc(100% + 7px);
+}
+
+.dashboard-page {
+  padding-top: 0;
+}
+
+.dashboard-hero-brand {
+  top: 25px;
+  left: 29px;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.dashboard-hero-logo {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 2px 7px rgba(255, 255, 255, .28)) drop-shadow(0 2px 5px rgba(0, 0, 0, .18));
+}
+
+.dashboard-hero-wordmark {
+  width: clamp(122px, 10vw, 152px);
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, .78)) drop-shadow(0 0 9px rgba(255, 255, 255, .22));
+}
+
+.dashboard-hero[data-day-part="night"] .dashboard-hero-wordmark {
+  filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0, 0, 0, .30));
+}
+
+@media (max-width: 760px) {
+  .dashboard-floating-actions {
+    width: 100%;
+    margin: 0;
+    padding: max(10px, env(safe-area-inset-top)) 10px 7px;
+    gap: 8px;
+  }
+
+  .dashboard-circle-action {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dashboard-profile-initials {
+    width: 31px;
+    height: 31px;
+    font-size: .72rem;
+  }
+
+  .dashboard-page {
+    padding-top: 0;
+  }
+
+  .dashboard-hero-brand {
+    top: 17px;
+    left: 17px;
+    gap: 7px;
+    padding: 0;
+  }
+
+  .dashboard-hero-logo {
+    width: 27px;
+    height: 27px;
+  }
+
+  .dashboard-hero-wordmark {
+    width: 108px;
+  }
+}
+
+@media (max-width: 390px) {
+  .dashboard-floating-actions {
+    padding-inline: 8px;
+  }
+
+  .dashboard-hero-brand {
+    max-width: none;
+  }
+
+  .dashboard-hero-wordmark {
+    width: 102px;
+  }
+}

@@ -1,43 +1,182 @@
-import { apiRequest } from '../core/api.js';
-import { previewApiData } from '../core/auth.js';
-import { money, escapeHtml } from '../core/format.js';
-import { withPreview } from '../core/config.js';
+import { APP_CONFIG, withPreview } from '../core/config.js';
+import { escapeHtml } from '../core/format.js';
 import { guardPage } from '../core/page-guard.js';
-import { emptyState, errorState, loadingState } from '../core/ui.js';
+import { filterByPermission } from '../core/permissions.js';
 
-async function loadData() {
-  return previewApiData('DASHBOARD_RESUMEN') || apiRequest('DASHBOARD_RESUMEN');
+const MENU_GROUPS = Object.freeze([
+  {
+    key: 'comercial', label: 'Comercial', tone: 'orange', items: [
+      { key: 'clientes', label: 'Clientes', description: 'Datos, pedidos y saldos', icon: 'users-three', permission: 'clientes.read', available: false },
+      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Propuestas enviadas', icon: 'file-text', permission: 'cotizaciones.read', available: false },
+      { key: 'ordenes', label: 'Órdenes de pedido', description: 'Pedidos, estado y entregas', icon: 'clipboard-text', permission: 'ordenes.read', options: [
+        { label: 'Ver órdenes de pedido', description: 'Abrir el listado y sus expedientes', href: '/ordenes.html' },
+        { label: 'Nueva orden de pedido', description: 'Se habilitará en la etapa de escrituras', disabled: true }
+      ] },
+      { key: 'abonos', label: 'Abonos', description: 'Pagos recibidos y saldos', icon: 'wallet', permission: 'abonos.read', available: false }
+    ]
+  },
+  {
+    key: 'operacion', label: 'Operación', tone: 'graphite', items: [
+      { key: 'produccion', label: 'Producción', description: 'Pedidos en fabricación', icon: 'stack', permission: 'produccion.read', available: false },
+      { key: 'remisiones', label: 'Remisiones', description: 'Entregas realizadas', icon: 'truck', permission: 'remisiones.read', available: false },
+      { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false }
+    ]
+  },
+  {
+    key: 'gestion', label: 'Gestión', tone: 'gold', items: [
+      { key: 'documentos', label: 'Documentos', description: 'PDF y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
+      { key: 'reportes', label: 'Reportes', description: 'Ventas y operación', icon: 'chart-bar', permission: 'reportes.read', available: false }
+    ]
+  }
+]);
+
+function dayPart(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 12) return { key: 'morning', greeting: 'Buenos días' };
+  if (hour < 18) return { key: 'afternoon', greeting: 'Buenas tardes' };
+  return { key: 'night', greeting: 'Buenas noches' };
+}
+
+function formattedDate(date = new Date()) {
+  const value = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function firstName(profile) {
+  const value = String(profile?.name || '').trim().split(/\s+/)[0];
+  return value || 'equipo Maderarte';
+}
+
+function menuItem(item, tone) {
+  const permission = item.permission ? ` data-permission="${escapeHtml(item.permission)}"` : '';
+  const core = `<span class="dashboard-menu-icon"><img src="/assets/icons/${escapeHtml(item.icon)}.svg" alt="" aria-hidden="true"></span>
+    <span class="dashboard-menu-copy"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}</span></span>`;
+
+  if (item.available === false) {
+    return `<div class="dashboard-menu-item is-disabled" aria-disabled="true"${permission}>${core}<span class="dashboard-menu-status">En preparación</span></div>`;
+  }
+
+  return `<button class="dashboard-menu-item" type="button" data-menu-key="${escapeHtml(item.key)}" data-tone="${escapeHtml(tone)}"${permission}>
+    ${core}<img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true">
+  </button>`;
+}
+
+function menuGroup(group, index) {
+  const expanded = index === 0 ? 'true' : 'false';
+  return `<section class="dashboard-menu-group" data-tone="${escapeHtml(group.tone)}">
+    <button class="dashboard-group-toggle" type="button" aria-expanded="${expanded}" aria-controls="dashboard-group-${escapeHtml(group.key)}">
+      <span>${escapeHtml(group.label)}</span><img src="/assets/icons/caret-down.svg" alt="" aria-hidden="true">
+    </button>
+    <div class="dashboard-menu-list" id="dashboard-group-${escapeHtml(group.key)}"${index === 0 ? '' : ' data-mobile-collapsed="true"'}>
+      ${group.items.map(item => menuItem(item, group.tone)).join('')}
+    </div>
+  </section>`;
+}
+
+function findMenuItem(key) {
+  for (const group of MENU_GROUPS) {
+    const item = group.items.find(candidate => candidate.key === key);
+    if (item) return { ...item, tone: group.tone };
+  }
+  return null;
+}
+
+function optionMarkup(option) {
+  if (option.disabled) return `<button class="dashboard-dialog-option" type="button" disabled><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><span class="status-badge">No disponible</span></button>`;
+  return `<a class="dashboard-dialog-option" href="${escapeHtml(withPreview(option.href))}"><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><img src="/assets/icons/arrow-right.svg" alt="" aria-hidden="true"></a>`;
+}
+
+function bindDashboardInteractions(session) {
+  const sheet = document.getElementById('dashboard-menu-sheet');
+  const sheetTitle = document.getElementById('dashboard-dialog-title');
+  const sheetDescription = document.getElementById('dashboard-dialog-description');
+  const sheetOptions = document.getElementById('dashboard-dialog-options');
+  const sheetClose = document.getElementById('dashboard-sheet-close');
+
+  const closeSheet = () => {
+    if (!sheet) return;
+    sheet.classList.remove('active');
+    sheet.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  };
+
+  const openSheet = item => {
+    if (!sheet || !sheetTitle || !sheetDescription || !sheetOptions) return;
+    sheet.dataset.tone = item.tone;
+    sheetTitle.textContent = item.label;
+    sheetDescription.textContent = item.description;
+    sheetOptions.innerHTML = (item.options || []).map(optionMarkup).join('');
+    sheet.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => sheet.classList.add('active'));
+    window.setTimeout(() => sheetClose?.focus(), 220);
+  };
+
+  document.querySelectorAll('button.dashboard-menu-item').forEach(button => {
+    button.addEventListener('click', () => {
+      const item = findMenuItem(button.dataset.menuKey);
+      if (item) openSheet(item);
+    });
+  });
+
+  document.querySelectorAll('.dashboard-group-toggle').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      if (!window.matchMedia('(max-width: 760px)').matches) return;
+      const panel = document.getElementById(toggle.getAttribute('aria-controls'));
+      const nextExpanded = toggle.getAttribute('aria-expanded') !== 'true';
+      if (nextExpanded) {
+        document.querySelectorAll('.dashboard-group-toggle').forEach(otherToggle => {
+          if (otherToggle === toggle) return;
+          otherToggle.setAttribute('aria-expanded', 'false');
+          const otherPanel = document.getElementById(otherToggle.getAttribute('aria-controls'));
+          if (otherPanel) otherPanel.dataset.mobileCollapsed = 'true';
+        });
+      }
+      toggle.setAttribute('aria-expanded', String(nextExpanded));
+      if (panel) panel.dataset.mobileCollapsed = String(!nextExpanded);
+    });
+  });
+
+  sheet?.addEventListener('click', event => {
+    if (event.target === sheet) closeSheet();
+  });
+  sheetClose?.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && sheet?.classList.contains('active')) closeSheet();
+  });
+
+  filterByPermission(document.querySelectorAll('[data-permission]'), session);
 }
 
 guardPage({
   permission: 'app.access',
   activeKey: 'inicio',
-  title: 'Centro de operaciones',
-  subtitle: 'Estado actual de la operación registrada en Maderarte App.',
+  title: 'Centro operativo',
   async render({ session, content }) {
-    content.innerHTML = `<section class="page">
-      <div class="page-header"><div class="page-heading"><h1>Hola, ${escapeHtml(session.profile.name || 'equipo Maderarte')}</h1><p>Esta fundación empieza con una base comercial vacía. Aquí aparecerá únicamente lo creado desde la nueva app.</p></div><div class="page-actions"><a class="button primary" href="${escapeHtml(withPreview('/ordenes.html'))}">Ver órdenes</a></div></div>
-      <div id="dashboard-body">${loadingState('Consultando la operación')}</div>
-    </section>`;
-
-    const body = document.getElementById('dashboard-body');
-    try {
-      const response = await loadData();
-      const metrics = response.data?.metrics || {};
-      const priorities = Array.isArray(response.data?.priorities) ? response.data.priorities : [];
-      body.innerHTML = `
-        <div class="metric-strip">
-          <article class="metric"><span>Órdenes activas</span><strong>${Number(metrics.activeOrders || 0)}</strong><small>Confirmadas o en proceso</small></article>
-          <article class="metric"><span>Saldo pendiente</span><strong>${money(metrics.pendingBalance || 0)}</strong><small>Por cobrar en órdenes activas</small></article>
-          <article class="metric"><span>Producción pendiente</span><strong>${Number(metrics.pendingProduction || 0)}</strong><small>Aún no listas para entrega</small></article>
-          <article class="metric"><span>Listas para entregar</span><strong>${Number(metrics.readyDelivery || 0)}</strong><small>Producción terminada</small></article>
+    const moment = dayPart();
+    const year = new Date().getFullYear();
+    content.innerHTML = `<section class="dashboard-page">
+      <section class="dashboard-hero" data-day-part="${escapeHtml(moment.key)}" aria-labelledby="dashboard-greeting">
+        <div class="dashboard-hero-brand" aria-label="Maderarte">
+          <img class="dashboard-hero-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
+          <img class="dashboard-hero-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
         </div>
-        <div class="content-grid">
-          <section class="card panel"><div class="panel-header"><h2>Prioridades</h2><a href="${escapeHtml(withPreview('/ordenes.html'))}">Abrir ledger</a></div><div class="priority-list">${priorities.length ? priorities.map(item => `<a class="priority-row" href="${escapeHtml(withPreview(`/orden.html?op=${encodeURIComponent(item.number || '')}`))}"><span class="status-badge warning">${escapeHtml(item.label || 'Pendiente')}</span><span class="priority-copy"><strong>${escapeHtml(item.number || 'Orden')}</strong><span>${escapeHtml(item.client || '')}</span></span></a>`).join('') : emptyState({ icon: '0', title: 'Sin prioridades', message: 'No hay órdenes registradas todavía.' })}</div></section>
-          <aside class="stack"><section class="card panel"><div class="panel-header"><h2>Estado del sistema</h2></div><div class="key-value-grid"><div class="key-value"><span>Versión</span><strong>0.2.0</strong></div><div class="key-value"><span>Modo</span><strong>${escapeHtml(response.data?.mode || 'PREPARACION')}</strong></div><div class="key-value"><span>Datos comerciales</span><strong>Base Cero</strong></div><div class="key-value"><span>Escrituras</span><strong>Deshabilitadas</strong></div></div></section></aside>
-        </div>`;
-    } catch (error) {
-      body.innerHTML = errorState(error.message, error.requestId);
-    }
+        <div class="dashboard-hero-copy"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)}, ${escapeHtml(firstName(session.profile))}</h1></div>
+      </section>
+      <div class="dashboard-groups">${MENU_GROUPS.map(menuGroup).join('')}</div>
+    </section>
+    <footer class="dashboard-footer" aria-label="Información de Maderarte">
+      <img class="dashboard-footer-seal" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
+      <p class="dashboard-footer-title">Maderarte · Centro operativo</p>
+      <span class="dashboard-footer-version">VERSIÓN ${escapeHtml(APP_CONFIG.version)} &copy; ${year}</span>
+    </footer>
+    <div class="dashboard-sheet-overlay" id="dashboard-menu-sheet" aria-hidden="true">
+      <section class="dashboard-sheet-content" role="dialog" aria-modal="true" aria-labelledby="dashboard-dialog-title">
+        <div class="dashboard-sheet-handle" aria-hidden="true"></div>
+        <div class="dashboard-dialog-header"><div><h2 id="dashboard-dialog-title"></h2><p id="dashboard-dialog-description"></p></div><button class="dashboard-dialog-close" id="dashboard-sheet-close" type="button" aria-label="Cerrar"><img src="/assets/icons/x.svg" alt="" aria-hidden="true"></button></div>
+        <div class="dashboard-dialog-options" id="dashboard-dialog-options"></div>
+      </section>
+    </div>`;
+    bindDashboardInteractions(session);
   }
 });

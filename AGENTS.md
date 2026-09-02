@@ -91,6 +91,24 @@ No usar ZIPs, copias locales antiguas ni ramas locales sin publicar como fuente 
 - Sin CSS o JavaScript de negocio inline.
 - Interfaz en español, tema claro principal, textos legibles y sin scroll horizontal.
 
+### Referencia permanente de experiencia: HomeEasy
+
+Maderarte es una marca y aplicación independiente, pero su estándar de interacción debe aprender de la versión vigente de HomeEasy que el propietario ya aprobó. Antes de inventar un patrón nuevo, revisar cómo resuelve HomeEasy una interacción equivalente y conservar lo que funcione mejor en claridad, tactilidad y jerarquía.
+
+Reglas visuales derivadas de esa referencia:
+
+- Usar tipografía del sistema tipo Apple: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, `SF Pro Display`; en Windows usar `Segoe UI Variable` / `Segoe UI` como sustituto natural. No distribuir archivos de SF Pro.
+- Evitar pesos tipográficos pesados. La interfaz normalmente debe moverse entre 400, 500 y 600; reservar pesos superiores solo para casos excepcionales.
+- No reducir el tamaño de letra para hacer caber más información. La lectura y el aire visual tienen prioridad.
+- Las acciones principales deben tener respuesta táctil/visual discreta al presionar.
+- Cuando una opción abre subcategorías o acciones secundarias, usar el patrón de HomeEasy: fondo oscurecido y desenfocado + ventana/bottom sheet que emerge desde la parte inferior. La entrada debe animarse desde `translateY(100%)` a `translateY(0)` con una curva elástica suave cercana a `0.4s cubic-bezier(.175,.885,.32,1.1)`.
+- En móvil el bottom sheet ocupa el ancho completo, respeta `safe-area-inset-bottom` y puede cerrarse tocando fuera o mediante un control accesible.
+- El footer debe seguir el patrón operativo de HomeEasy: marca/sello, nombre del sistema y **versión real de la app + año**. Nunca inventar un número de versión visual diferente al código.
+- En el Inicio de Maderarte evitar un header de marca grande o pesado. La identidad debe integrarse de forma editorial y sutil dentro del hero/banner.
+- Las acciones superiores del Inicio deben sentirse ligeras: controles circulares independientes para notificaciones y perfil, con profundidad mínima y sin convertirlos en una barra pesada.
+- Evitar dobles cajas, bordes repetidos y sombras fuertes. Los grupos del Inicio deben parecer listas limpias tipo Settings: título de sección fuera de la superficie y una sola tarjeta/lista interior.
+- Copiar patrones de interacción y lógica, nunca colores, textos, marca, logos, mascota o identidad comercial de HomeEasy.
+
 ## Estado de escritura
 
 La fundación v0.2.0 es de lectura. No habilitar creación o edición comercial hasta que autenticación, permisos, consecutivos, Drive, idempotencia y auditoría tengan pruebas específicas.
