@@ -15,9 +15,9 @@ No se copian datos, URLs privadas, IDs, credenciales, PDFs, cachés, mascota Hom
 | `index.html` | Inicio editorial, acciones superiores, hero, navegación agrupada, bottom sheets, campana, footer | `public/index.html` | Mantener estructura HomeEasy; adaptar banner, logo, colores y controles explícitamente aprobados para Maderarte. |
 | `clientes.html` | Buscar cliente → transición → expediente → Órdenes/Cotizaciones → pagos/PDF/acciones | `public/clientes.html` | Debe portar el flujo real de HomeEasy. No convertir en tabla CRUD genérica. |
 | `ventas.html` | Historial de ventas, OP, pagos, saldos, filtros y acceso al expediente | `public/ordenes.html` | Equivalente de historial comercial de OP. |
-| `cotizacion.html` | Formulario de cotización | `public/cotizacion.html` | Estructura fuente para Etapa de escrituras. Mientras `COMMERCIAL_WRITES=false`, no habilitar creación real. |
-| `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/cotizaciones.html` | Portar lectura y seguimiento; adaptar estados de Maderarte. |
-| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Fuente de la futura creación de OP. No habilitar escritura todavía. |
+| `cotizacion.html` | Formulario, cliente, items, cálculos, observaciones, condiciones y documento | `public/cotizacion.html` | **Paridad mejorada**: conservar lógica y minimalismo, pero no copiar la hoja editable literalmente. Maderarte usa formulario operativo por secciones, items ricos de muebles, fotografías por item, resumen financiero y vista previa/anexo. |
+| `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/seguimiento.html` | Portar lectura y seguimiento; adaptar estados, textos y métricas de Maderarte. |
+| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Fuente de lógica de creación/edición/conversión, con el mismo lenguaje mejorado de formularios Maderarte. No habilitar escritura todavía. |
 | `abono.html` | Registro de abono/recibo y relación con OP | `public/abono.html` | Fuente de UX para Abonos; escritura se habilita más adelante. |
 | `documentos.html` | Centro documental | `public/documentos.html` | Portar patrón cuando llegue el módulo de documentos. |
 | `calendario.html` | Agenda, eventos, recordatorios y navegación desde campana | `public/agenda.html` | Fuente para Agenda y notificaciones reales. |
@@ -56,12 +56,29 @@ La versión actual de HomeEasy usa dos momentos claros:
 
 Maderarte debe partir de ese flujo. En modo lectura, las acciones de edición/creación se ocultan o deshabilitan de forma honesta, pero la estructura de consulta se conserva.
 
+## Formularios comerciales: patrón mejorado Maderarte
+
+Los formularios de HomeEasy son la fuente de lógica y simplicidad, pero **no son una plantilla visual literal**. Para Maderarte se conserva su esencia minimalista y se mejora la experiencia para mobiliario:
+
+- pantalla standalone con cabecera sticky y retorno contextual;
+- formulario dividido en bloques claros, no una simulación permanente de hoja PDF;
+- información del cliente en una superficie simple;
+- cada producto es un item rico e independiente con descripción, categoría, referencia, cantidad, unidad, medidas, acabados, especificaciones y valor;
+- cada item permite adjuntar fotografías de referencia en la experiencia de composición;
+- las fotografías no saturan la hoja comercial principal: se destinan a un **anexo fotográfico separado**, ordenado por item y con sus especificaciones;
+- resumen financiero visible y fácil de leer, sin reducir tipografía;
+- condiciones comerciales explícitas y provenientes de reglas de Maderarte;
+- la futura OP debe calcular el abono mínimo del **30%** y comunicar fabricación estimada de **25 a 30 días** desde confirmación + abono mínimo;
+- responsive real: en móvil los items se apilan como tarjetas y los inputs se mantienen en 16px o más;
+- mientras `COMMERCIAL_WRITES=false`, las acciones de guardar/emitir permanecen bloqueadas, pero cálculos, fotos locales y vista previa pueden funcionar para revisión de UX.
+
 ## Desviaciones Maderarte permitidas
 
 - Identidad naranja/grafito/dorado y logo oficial Maderarte.
 - Sin Hommy ni assets de marca HomeEasy.
 - Backend seguro e independiente ya aprobado.
 - Campos adicionales propios de muebles: sede, dirección de entrega, descripción detallada, estado de producción, materiales/medidas y demás campos del schema Maderarte.
+- Formularios comerciales mejorados para items de mobiliario y anexo fotográfico, manteniendo la esencia minimalista y la lógica probada.
 - Acciones de escritura bloqueadas mientras `COMMERCIAL_WRITES=false`.
 
 Cualquier otra desviación debe estar pedida explícitamente por el propietario o justificada por una diferencia real de negocio.
