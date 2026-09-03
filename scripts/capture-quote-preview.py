@@ -32,10 +32,8 @@ try:
     driver.find_element(By.ID, "quote-client-name").send_keys("Cliente de muestra")
     driver.find_element(By.ID, "quote-client-document").send_keys("123456789")
     driver.find_element(By.ID, "quote-client-phone").send_keys("3000000000")
-    description = driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="description"]')
-    description.send_keys("Sofá de diseño personalizado")
-    value = driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="unitValue"]')
-    value.send_keys("4500000")
+    driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="description"]').send_keys("Sofá de diseño personalizado")
+    driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="unitValue"]').send_keys("4500000")
 
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
@@ -48,12 +46,9 @@ try:
         const rect = node.getBoundingClientRect();
         const style = getComputedStyle(node);
         return {
-          top: Math.round(rect.top),
-          bottom: Math.round(rect.bottom),
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-          fontSize: style.fontSize,
-          lineHeight: style.lineHeight,
+          top: Math.round(rect.top), bottom: Math.round(rect.bottom),
+          width: Math.round(rect.width), height: Math.round(rect.height),
+          fontSize: style.fontSize, lineHeight: style.lineHeight,
           display: style.display
         };
       };
@@ -76,16 +71,16 @@ try:
       return result;
     """)
 
+    page = driver.find_element(By.CSS_SELECTOR, ".quote-preview-main-page")
+    page.screenshot(str(OUTPUT))
+    print("VISUAL_QA_METRICS=" + json.dumps(metrics, ensure_ascii=False, sort_keys=True))
+    print(f"Screenshot guardado en {OUTPUT}")
+
     header_height = metrics.get("header", {}).get("height", 999)
     content_start = metrics.get("contentStart", 999)
     if header_height > 125:
         raise AssertionError(f"Cabecera demasiado alta: {header_height}px")
     if content_start > 225:
         raise AssertionError(f"El contenido empieza demasiado abajo: {content_start}px")
-
-    page = driver.find_element(By.CSS_SELECTOR, ".quote-preview-main-page")
-    page.screenshot(str(OUTPUT))
-    print("VISUAL_QA_METRICS=" + json.dumps(metrics, ensure_ascii=False, sort_keys=True))
-    print(f"Screenshot guardado en {OUTPUT}")
 finally:
     driver.quit()
