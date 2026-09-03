@@ -9,6 +9,7 @@ const html = read('public/cotizacion.html');
 const js = read('public/js/pages/cotizacion.js');
 const css = read('public/css/cotizacion-form.css');
 const polishCss = read('public/css/cotizacion-brand-polish.css');
+const premiumCss = read('public/css/cotizacion-document-premium.css');
 const documentPolish = read('public/js/pages/cotizacion-document-polish.js');
 const companyProfile = read('public/js/core/company-profile.js');
 const quotes = read('apps-script/Quotes.gs');
@@ -20,6 +21,7 @@ assert.match(html, /id="quote-meta-number"/, 'Debe existir una ubicación visibl
 assert.match(html, /id="quote-meta-date"/, 'Debe existir una ubicación visible para la fecha');
 assert.match(html, /id="quote-meta-advisor"/, 'Debe mostrarse el asesor de la cotización');
 assert.match(html, /cotizacion-brand-polish\.css/, 'Debe cargarse la capa visual específica de Maderarte');
+assert.match(html, /cotizacion-document-premium\.css/, 'Debe cargarse el diseño premium del documento');
 assert.match(html, /cotizacion-document-polish\.js/, 'Debe cargarse la vista previa documental limpia');
 
 assert.match(js, /apiRequest\('COTIZACION_META'/, 'El formulario debe solicitar metadata real por sede');
@@ -56,15 +58,22 @@ assert.match(documentPolish, /if \(!withPhotos\.length\) return '';/, 'No debe g
 assert.match(documentPolish, /client\.document \?/, 'Los datos opcionales del cliente deben renderizarse condicionalmente');
 assert.match(documentPolish, /data\.discount > 0 \?/, 'El descuento en cero no debe imprimirse como una fila vacía');
 assert.doesNotMatch(documentPolish, /Sin especificaciones adicionales/, 'El PDF no debe imprimir placeholders por datos faltantes');
-assert.match(documentPolish, /quote-preview-letterhead/, 'La vista previa debe conservar membrete específico');
+assert.match(documentPolish, /quote-premium-header/, 'La vista previa debe usar el encabezado premium');
+assert.match(documentPolish, /quote-premium-doc-card/, 'Número, fecha y estado deben vivir en un bloque documental jerárquico');
+assert.match(documentPolish, /iconSvg\('calendar'\)/, 'La fecha debe tener iconografía documental');
+assert.match(documentPolish, /iconSvg\('hash'\)/, 'El número debe tener iconografía documental');
+assert.match(documentPolish, /quote-premium-context-band/, 'Debe existir una banda de contexto con sede, asesor, cliente y estado');
 
 assert.match(css, /\.quote-gate-stage/, 'Falta el sistema visual del selector de sede');
-assert.match(css, /\.quote-preview-letterhead/, 'Falta el sistema visual premium del membrete');
 assert.match(polishCss, /\.quote-preview-button[\s\S]*background:\s*var\(--quote-copper\)/, 'Vista previa debe permanecer con relleno');
 assert.match(polishCss, /\.quote-deposit-box[\s\S]*background:\s*var\(--quote-graphite\)/, 'El resumen no debe volver al bloque pastel');
+assert.match(premiumCss, /\.quote-premium-doc-card/, 'Falta el bloque documental premium');
+assert.match(premiumCss, /\.quote-premium-number-block strong/, 'Falta jerarquía tipográfica para el número');
+assert.match(premiumCss, /\.quote-premium-contact-icon/, 'Falta iconografía en los datos corporativos');
+assert.match(premiumCss, /\.quote-premium-context-band/, 'Falta la banda de contexto premium');
 
 console.log('OK · cotización bloqueada por sede y metadata visible');
 console.log('OK · items especializados para mobiliario Maderarte');
 console.log('OK · identidad comercial oficial protegida');
 console.log('OK · PDF omite campos vacíos y anexos sin fotos');
-console.log('OK · paleta sobria y acciones con relleno protegidas');
+console.log('OK · encabezado premium con número, fecha e iconografía protegido');
