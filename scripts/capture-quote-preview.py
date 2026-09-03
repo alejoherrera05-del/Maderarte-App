@@ -54,20 +54,19 @@ try:
       };
       const page = pick('.quote-preview-main-page');
       const detail = pick('.quote-minimal-section-heading');
+      const client = pick('.quote-minimal-client');
       const result = {
         page,
         header: pick('.quote-minimal-header'),
         primary: pick('.quote-minimal-primary'),
         identity: pick('.quote-minimal-identity'),
         contact: pick('.quote-minimal-contact'),
-        client: pick('.quote-minimal-client'),
+        client,
         detailHeading: detail,
         number: pick('.quote-minimal-document strong')
       };
-      if (page && detail) {
-        result.contentStart = Math.round(detail.top - page.top);
-        result.contentStartRatio = Number(((detail.top - page.top) / page.height).toFixed(3));
-      }
+      if (page && client) result.clientStart = Math.round(client.top - page.top);
+      if (page && detail) result.detailStart = Math.round(detail.top - page.top);
       return result;
     """)
 
@@ -77,10 +76,13 @@ try:
     print(f"Screenshot guardado en {OUTPUT}")
 
     header_height = metrics.get("header", {}).get("height", 999)
-    content_start = metrics.get("contentStart", 999)
-    if header_height > 125:
+    client_start = metrics.get("clientStart", 999)
+    detail_start = metrics.get("detailStart", 999)
+    if header_height > 110:
         raise AssertionError(f"Cabecera demasiado alta: {header_height}px")
-    if content_start > 225:
-        raise AssertionError(f"El contenido empieza demasiado abajo: {content_start}px")
+    if client_start > 130:
+        raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
+    if detail_start > 235:
+        raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
 finally:
     driver.quit()
