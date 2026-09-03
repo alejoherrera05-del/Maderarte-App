@@ -20,16 +20,22 @@ jobs:
           python-version: '3.12'
       - name: Instalar Selenium
         run: pip install selenium==4.35.0
-      - name: Esperar preview y capturar documento
-        env:
-          QUOTE_PREVIEW_URL: https://etapa-4-paridad-homeeasy-maderarte-app.alejoherrera05.workers.dev/cotizacion.html?preview=1
+      - name: Servir la rama actual
         run: |
-          for i in {1..12}; do
-            if curl -fsS "$QUOTE_PREVIEW_URL" >/dev/null; then break; fi
-            sleep 10
+          node scripts/serve.mjs > /tmp/maderarte-serve.log 2>&1 &
+          echo $! > /tmp/maderarte-serve.pid
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/cotizacion.html?preview=1 >/dev/null; then exit 0; fi
+            sleep 1
           done
-          python scripts/capture-quote-preview.py
+          cat /tmp/maderarte-serve.log
+          exit 1
+      - name: Capturar documento real en Chrome
+        env:
+          QUOTE_PREVIEW_URL: http://127.0.0.1:4173/cotizacion.html?preview=1
+        run: python scripts/capture-quote-preview.py
       - name: Publicar captura
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cotizacion-visual-qa
