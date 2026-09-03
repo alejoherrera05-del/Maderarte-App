@@ -16,23 +16,37 @@ function quoteMeta_(payload, session) {
     throw appError_('BRANCH_NOT_AVAILABLE', 'La sede seleccionada no está disponible.', 404);
   }
 
+  var branchFallbacks = {
+    MP: {
+      name: 'Sede principal',
+      address: 'Transversal 9 # 6N-26 · Edificio Dorado · Frente al Éxito Panamericana'
+    },
+    TP: {
+      name: 'Sede norte · Terraplaza',
+      address: 'Centro Comercial Terraplaza · Local 113 · Primer piso'
+    }
+  };
+  var fallback = branchFallbacks[branch] || { name: branch, address: '' };
   var nextNumber = Math.max(1, Math.floor(valueNumber_(row.Siguiente_Cotizacion) || 1));
   var prefix = String(row.Prefijo_Cotizacion || 'COT').trim().toUpperCase();
   var previewNumber = prefix + '-' + String(nextNumber).padStart(4, '0');
 
   return {
     branch: branch,
-    branchName: String(row.Nombre || branch),
-    branchAddress: String(row.Direccion || ''),
-    branchPhone: String(row.Telefono || ''),
+    branchName: String(row.Nombre || fallback.name),
+    branchAddress: String(row.Direccion || fallback.address),
+    branchPhone: String(row.Telefono || getConfigValue_('EMPRESA_CELULAR', '3006478590')),
     previewNumber: previewNumber,
     numberStatus: 'PREVISTO',
     issuedAt: now_().toISOString(),
     advisor: String(session && session.profile && session.profile.name || ''),
     company: {
-      legalName: getConfigValue_('EMPRESA_RAZON_SOCIAL', 'MADERARTE POPAYÁN S.A.S.'),
-      nit: getConfigValue_('EMPRESA_NIT', ''),
-      website: getConfigValue_('EMPRESA_WEB', 'maderartepopayan.com')
+      legalName: getConfigValue_('EMPRESA_RAZON_SOCIAL', 'GRUPO EMPRESARIAL MADERARTE WILLRES SAS'),
+      nit: getConfigValue_('EMPRESA_NIT', '901188291-2'),
+      mobile: getConfigValue_('EMPRESA_CELULAR', '3006478590'),
+      whatsapp: getConfigValue_('EMPRESA_WHATSAPP', '3117476465'),
+      website: getConfigValue_('EMPRESA_WEB', 'www.maderartepopayan.com'),
+      socialHandle: getConfigValue_('EMPRESA_SOCIALES', '@maderartepopayan')
     }
   };
 }
