@@ -28,9 +28,18 @@ try:
     wait.until(EC.visibility_of_element_located((By.ID, "quote-app")))
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="MP"]'))).click()
     wait.until(EC.visibility_of_element_located((By.ID, "quote-workspace")))
+
+    driver.find_element(By.ID, "quote-client-name").send_keys("Cliente de muestra")
+    driver.find_element(By.ID, "quote-client-document").send_keys("123456789")
+    driver.find_element(By.ID, "quote-client-phone").send_keys("3000000000")
+    description = driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="description"]')
+    description.send_keys("Sofá de diseño personalizado")
+    value = driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="unitValue"]')
+    value.send_keys("4500000")
+
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
-    time.sleep(0.6)
+    time.sleep(0.5)
 
     metrics = driver.execute_script("""
       const pick = (selector) => {
@@ -41,8 +50,6 @@ try:
         return {
           top: Math.round(rect.top),
           bottom: Math.round(rect.bottom),
-          left: Math.round(rect.left),
-          right: Math.round(rect.right),
           width: Math.round(rect.width),
           height: Math.round(rect.height),
           fontSize: style.fontSize,
@@ -51,23 +58,30 @@ try:
         };
       };
       const page = pick('.quote-preview-main-page');
-      const detail = pick('.quote-premium-section-heading');
+      const detail = pick('.quote-minimal-section-heading');
       const result = {
         page,
-        brand: pick('.quote-premium-brand-pane'),
-        documentCard: pick('.quote-premium-doc-card'),
-        companyGrid: pick('.quote-premium-company-grid'),
-        contextBand: pick('.quote-premium-context-band'),
-        clientBlock: pick('.quote-preview-client-block'),
+        header: pick('.quote-minimal-header'),
+        primary: pick('.quote-minimal-primary'),
+        identity: pick('.quote-minimal-identity'),
+        contact: pick('.quote-minimal-contact'),
+        client: pick('.quote-minimal-client'),
         detailHeading: detail,
-        number: pick('.quote-premium-number-block strong'),
+        number: pick('.quote-minimal-document strong')
       };
       if (page && detail) {
-        result.headerFootprint = Math.round(detail.top - page.top);
-        result.headerRatio = Number(((detail.top - page.top) / page.height).toFixed(3));
+        result.contentStart = Math.round(detail.top - page.top);
+        result.contentStartRatio = Number(((detail.top - page.top) / page.height).toFixed(3));
       }
       return result;
     """)
+
+    header_height = metrics.get("header", {}).get("height", 999)
+    content_start = metrics.get("contentStart", 999)
+    if header_height > 125:
+        raise AssertionError(f"Cabecera demasiado alta: {header_height}px")
+    if content_start > 225:
+        raise AssertionError(f"El contenido empieza demasiado abajo: {content_start}px")
 
     page = driver.find_element(By.CSS_SELECTOR, ".quote-preview-main-page")
     page.screenshot(str(OUTPUT))
