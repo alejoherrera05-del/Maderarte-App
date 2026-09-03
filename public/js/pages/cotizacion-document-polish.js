@@ -86,7 +86,7 @@ function collectDocumentData() {
 function minimalHeaderMarkup(data) {
   const branch = data.branch;
   const branchName = branch?.name || text('quote-meta-branch-name') || data.branchCode || '';
-  const branchAddress = [branch?.address, branch?.reference].filter(Boolean).join(' · ');
+  const branchAddress = branch?.address || '';
   const pending = /pendiente/i.test(data.number);
   const issueMeta = [data.date, 'Borrador'].filter(Boolean).join(' · ');
   const operationMeta = [branchName, branchAddress, data.advisor ? `Asesor: ${data.advisor}` : ''].filter(Boolean).join(' · ');
