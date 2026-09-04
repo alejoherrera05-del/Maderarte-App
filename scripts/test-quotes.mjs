@@ -61,16 +61,16 @@ assert.doesNotMatch(documentJs, /quote-premium-context-band/);
 assert.doesNotMatch(documentJs, /quote-preview-footer/);
 
 assert.match(documentCss, /\.quote-brand-band/);
-assert.match(documentCss, /radial-gradient/);
-assert.match(documentCss, /linear-gradient\(135deg/);
+assert.match(documentCss, /background:\s*#292724/);
+assert.doesNotMatch(documentCss, /gradient\(/);
+assert.doesNotMatch(documentCss, /Allura/);
 assert.match(documentCss, /\.quote-doc-meta/);
 assert.match(documentCss, /\.quote-document-title/);
 assert.match(documentCss, /\.quote-document-signature/);
-assert.match(documentCss, /Snell Roundhand/);
-assert.match(documentCss, /Segoe Script/);
+assert.match(documentCss, /font-style:\s*italic/);
 assert.match(documentCss, /position:\s*absolute/);
 assert.match(documentCss, /border-radius:\s*999px/);
 
 console.log('OK · cotización Maderarte protegida');
-console.log('OK · cabecera HomeEasy adaptada con profundidad digital');
-console.log('OK · asesor fuera del encabezado y firma final sin cargo');
+console.log('OK · cabecera sólida sin degradés protegida');
+console.log('OK · asesor fuera del encabezado y firma final sobria');
