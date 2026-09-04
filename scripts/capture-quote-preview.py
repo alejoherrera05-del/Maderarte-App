@@ -37,6 +37,7 @@ try:
 
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-document-signature")))
     time.sleep(0.6)
 
     metrics = driver.execute_script("""
@@ -49,7 +50,7 @@ try:
           top: Math.round(rect.top), bottom: Math.round(rect.bottom),
           width: Math.round(rect.width), height: Math.round(rect.height),
           fontSize: style.fontSize, lineHeight: style.lineHeight,
-          display: style.display
+          display: style.display, fontFamily: style.fontFamily
         };
       };
       const page = pick('.quote-preview-main-page');
@@ -67,6 +68,8 @@ try:
         title,
         client,
         detailHeading: detail,
+        signature: pick('.quote-document-signature'),
+        signatureName: pick('.quote-document-signature span'),
         number: pick('.quote-doc-meta-item > strong')
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
@@ -84,6 +87,7 @@ try:
     meta_height = metrics.get("meta", {}).get("height", 999)
     client_start = metrics.get("clientStart", 999)
     detail_start = metrics.get("detailStart", 999)
+    signature = metrics.get("signature")
 
     if header_height < 145 or header_height > 205:
         raise AssertionError(f"Cabecera fuera de rango: {header_height}px")
@@ -95,5 +99,7 @@ try:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
     if detail_start > 335:
         raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
+    if not signature or signature.get("height", 0) < 20:
+        raise AssertionError("La firma final del asesor no se renderizó")
 finally:
     driver.quit()
