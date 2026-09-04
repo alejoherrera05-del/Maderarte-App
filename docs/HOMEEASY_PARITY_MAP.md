@@ -15,9 +15,9 @@ No se copian datos, URLs privadas, IDs, credenciales, PDFs, cachés, mascota Hom
 | `index.html` | Inicio editorial, acciones superiores, hero, navegación agrupada, bottom sheets, campana, footer | `public/index.html` | Mantener estructura HomeEasy; adaptar banner, logo, colores y controles explícitamente aprobados para Maderarte. |
 | `clientes.html` | Buscar cliente → transición → expediente → Órdenes/Cotizaciones → pagos/PDF/acciones | `public/clientes.html` | Debe portar el flujo real de HomeEasy. No convertir en tabla CRUD genérica. |
 | `ventas.html` | Historial de ventas, OP, pagos, saldos, filtros y acceso al expediente | `public/ordenes.html` | Equivalente de historial comercial de OP. |
-| `cotizacion.html` | Formulario de cotización y documento/PDF | `public/cotizacion.html` | Estructura fuente para el flujo y la jerarquía documental; Maderarte especializa el formulario para mobiliario y mejora el acabado visual sin perder la arquitectura. Mientras `COMMERCIAL_WRITES=false`, no habilitar creación real. |
-| `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/cotizaciones.html` | Portar lectura y seguimiento; adaptar estados de Maderarte. |
-| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Fuente de la futura creación de OP. Reutilizar el sistema especializado de Cotización. No habilitar escritura todavía. |
+| `cotizacion.html` | Formulario de cotización y documento/PDF | `public/cotizacion.html` | **APROBADO.** Formulario especializado para mobiliario + documento híbrido Maderarte/HomeEasy + paginación adaptativa. Mientras `COMMERCIAL_WRITES=false`, no habilitar creación real. |
+| `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/cotizaciones.html` | **IMPLEMENTADO EN LECTURA.** Radar por antigüedad, valor, filtros, PDF y vínculo a OP convertida. Sin notas/archivo/escrituras todavía. |
+| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Siguiente módulo. Reutilizar el sistema especializado y aprobado de Cotización. No habilitar escritura todavía. |
 | `abono.html` | Registro de abono/recibo y relación con OP | `public/abono.html` | Fuente de UX para Abonos y Recibo de caja; escritura se habilita más adelante. |
 | `documentos.html` | Centro documental | `public/documentos.html` | Portar patrón cuando llegue el módulo de documentos. |
 | `calendario.html` | Agenda, eventos, recordatorios y navegación desde campana | `public/agenda.html` | Fuente para Agenda y notificaciones reales. |
@@ -68,20 +68,49 @@ El formulario conserva la esencia de operación simple y directa, pero se especi
 - si no existen fotografías, no existe anexo fotográfico;
 - si solo algunos muebles tienen fotos, solo esos aparecen en el anexo.
 
-### Documento de cliente
+### Documento de cliente aprobado
 
-La cabecera de la cotización toma como base directa la arquitectura vigente de HomeEasy:
+La versión aprobada ya no intenta copiar literalmente el PDF de HomeEasy. Usa una solución híbrida acordada:
 
-- franja superior de marca;
-- logo + identidad a la izquierda;
-- datos corporativos y sede emisora integrados a la derecha;
-- cápsula blanca flotante con **COTIZACIÓN N°** y **FECHA** como información de lectura inmediata;
-- título `COTIZACIÓN` debajo antes de entrar al cuerpo;
-- el acabado Maderarte puede usar grafito/cobre/dorado, degradés muy sutiles y profundidad digital, pero no sustituir esta jerarquía por otra composición experimental.
+- **encabezado propio Maderarte** con logo, wordmark, eslogan, `COTIZACIÓN`, número, fecha, sede y datos corporativos;
+- debajo del encabezado, **cuerpo calmado tipo HomeEasy**, con información del cliente, detalle comercial de productos, subtotal/descuento/total y condiciones legibles;
+- el cliente no ve la regla interna del 30% ni en el total ni en las condiciones del PDF;
+- la cantidad, valor unitario y valor total tienen columnas alineadas;
+- el cierre usa la altura disponible de la hoja en vez de comprimir todo hacia arriba;
+- el asesor aparece al cierre como bloque legible `Asesor comercial` + nombre;
+- Maddy + información del sistema forman un pie centrado en todas las hojas;
+- todas las páginas llevan `Página X de Y`;
+- los anexos de fotografías se paginan como hojas A4 reales con el mismo pie documental.
 
-El asesor **no aparece en la cabecera del documento**. Se conserva como dato operativo del formulario y al final de la Cotización se renderiza una firma tipográfica con **solo su nombre**, sin cargo ni etiqueta. Esta misma regla aplica a la futura Orden de pedido y al Recibo de caja.
+Visual QA captura el HTML real en Chrome y genera PDF real para evitar aprobar maquetas que no coincidan con la exportación.
 
-Visual QA debe capturar el HTML real en Chrome, comprobar la geometría de cabecera/número/fecha y verificar que la firma final exista antes de aprobar cambios relevantes del documento.
+## Seguimiento de cotizaciones: paridad implementada en lectura
+
+La fuente es `Homeeasy/main/seguimiento.html`. Se conserva su concepto de **radar comercial**, pero sobre la infraestructura y datos propios de Maderarte.
+
+### Paridad conservada
+
+- cabecera compacta con volver + identidad + actualizar;
+- hero de seguimiento;
+- dos indicadores principales: cantidad de propuestas abiertas y valor en seguimiento;
+- lectura visual de antigüedad mediante tres bandas: `0–7 días`, `8–15 días`, `más de 15 días`;
+- filtros por rango de fechas;
+- tarjetas comerciales con número, cliente, valor, antigüedad y observaciones;
+- grid de tres columnas en desktop y una columna en móvil;
+- visor de PDF cuando existe una URL HTTPS válida;
+- estados de carga, vacío y error.
+
+### Desviaciones Maderarte deliberadas
+
+- el rango inicial es **últimos 30 días**, no únicamente el mes calendario, para no ocultar una oportunidad envejecida por haber cambiado de mes;
+- se puede buscar por cotización, cliente, documento o teléfono;
+- se puede filtrar por sede MP / TP;
+- una cotización convertida muestra su OP relacionada y deja de sumar en el potencial abierto;
+- no se copian las acciones HomeEasy de `Nota` ni `Archivar`, porque implican escritura y `COMMERCIAL_WRITES=false`;
+- la primera implementación es estrictamente de lectura: `COTIZACIONES_LISTAR` requiere `cotizaciones.read` y respeta las sedes permitidas de la sesión;
+- el modo `?preview=1` usa datos demostrativos locales únicamente para QA visual; la base comercial real permanece en cero.
+
+Visual QA de Seguimiento valida Chrome desktop y móvil, protege el grid de tres columnas, la ausencia de overflow horizontal, los tres niveles de antigüedad y la cotización convertida.
 
 ## Desviaciones Maderarte permitidas
 
