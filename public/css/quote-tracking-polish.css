@@ -1,0 +1,365 @@
+/* Seguimiento — visual polish approved direction.
+ * Strengthens app hierarchy and replaces generic dot/pill cues with a cleaner
+ * segmented age control. This file intentionally overrides quote-tracking.css.
+ */
+
+/* App header: more presence without becoming a second hero. */
+.tracking-header-inner {
+  min-height: 84px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px));
+  padding-bottom: 10px;
+}
+
+.tracking-brand {
+  gap: 12px;
+}
+
+.tracking-brand > img {
+  width: 38px;
+  height: 38px;
+}
+
+.tracking-brand-copy {
+  gap: 3px;
+}
+
+.tracking-brand-copy strong {
+  font-size: 1.14rem;
+  line-height: 1.05;
+  font-weight: 730;
+  letter-spacing: -.032em;
+}
+
+.tracking-brand-copy span {
+  color: #7a746f;
+  font-size: .82rem;
+  line-height: 1.15;
+  font-weight: 560;
+}
+
+/* Hero title: app-like section marker, no decorative dot. */
+.tracking-hero {
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tracking-hero-copy {
+  max-width: 790px;
+}
+
+.tracking-eyebrow-dot {
+  display: none !important;
+}
+
+.tracking-eyebrow {
+  gap: 10px;
+  color: var(--track-copper-deep);
+  font-size: .82rem;
+  font-weight: 720;
+  letter-spacing: .015em;
+}
+
+.tracking-eyebrow::before {
+  content: '';
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid rgba(184, 90, 43, .13);
+  border-radius: 10px;
+  background-color: var(--track-copper-soft);
+  background-image: url('/assets/icons/chart-bar.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 18px 18px;
+}
+
+.tracking-hero h1 {
+  margin-top: 13px;
+  font-size: clamp(2.45rem, 4.2vw, 3.55rem);
+  line-height: .97;
+  font-weight: 725;
+  letter-spacing: -.055em;
+}
+
+.tracking-hero p {
+  margin-top: 12px;
+  font-size: 1.02rem;
+  line-height: 1.52;
+}
+
+/* Age legend: one designed control, three clear segments, no floating pills/dots. */
+.tracking-legend {
+  min-width: 430px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--track-line-strong);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 9px 28px rgba(42, 36, 32, .045);
+}
+
+.tracking-legend-pill {
+  position: relative;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 16px 11px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--track-ink);
+  font-size: 0;
+  font-weight: 700;
+}
+
+.tracking-legend-pill + .tracking-legend-pill {
+  border-left: 1px solid var(--track-line);
+}
+
+.tracking-legend-pill::before,
+.tracking-legend-pill::after {
+  display: block;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+}
+
+.tracking-legend-pill::before {
+  font-size: .65rem;
+  line-height: 1;
+  font-weight: 740;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.tracking-legend-pill::after {
+  color: #3d3936;
+  font-size: .91rem;
+  line-height: 1.08;
+  font-weight: 720;
+  letter-spacing: -.015em;
+}
+
+.tracking-legend-pill.recent {
+  box-shadow: inset 0 3px 0 var(--track-green);
+}
+.tracking-legend-pill.recent::before { content: 'Reciente'; color: var(--track-green); }
+.tracking-legend-pill.recent::after { content: '0–7 días'; }
+
+.tracking-legend-pill.attention {
+  box-shadow: inset 0 3px 0 var(--track-amber);
+}
+.tracking-legend-pill.attention::before { content: 'Atención'; color: var(--track-amber); }
+.tracking-legend-pill.attention::after { content: '8–15 días'; }
+
+.tracking-legend-pill.priority {
+  box-shadow: inset 0 3px 0 var(--track-red);
+}
+.tracking-legend-pill.priority::before { content: 'Prioridad'; color: var(--track-red); }
+.tracking-legend-pill.priority::after { content: '+15 días'; }
+
+/* Card age chips keep their meaning without the generic status dot. */
+.tracking-age::before {
+  display: none !important;
+}
+
+.tracking-age {
+  min-height: 31px;
+  padding-inline: 11px;
+  border: 1px solid #ded9d4;
+  background: #fff;
+}
+
+.age-recent .tracking-age {
+  border-color: rgba(57, 117, 95, .24);
+  background: #fff;
+  color: var(--track-green);
+}
+
+.age-attention .tracking-age {
+  border-color: rgba(163, 117, 37, .26);
+  background: #fff;
+  color: var(--track-amber);
+}
+
+.age-priority .tracking-age {
+  border-color: rgba(166, 76, 79, .25);
+  background: #fff;
+  color: var(--track-red);
+}
+
+.is-converted .tracking-age {
+  border-color: rgba(164, 125, 62, .25);
+  background: #fff;
+  color: var(--track-gold);
+}
+
+/* Section hierarchy: clearer on a long app screen. */
+.tracking-filters-title strong {
+  font-size: 1.08rem;
+  font-weight: 710;
+  letter-spacing: -.02em;
+}
+
+.tracking-results-head {
+  margin-top: 4px;
+  margin-bottom: 13px;
+}
+
+.tracking-results-head strong {
+  font-size: 1.18rem;
+  font-weight: 720;
+  letter-spacing: -.025em;
+}
+
+.tracking-results-head span {
+  font-size: .84rem;
+}
+
+/* Footer: Maddy is part of the system identity, not fine print. */
+.tracking-footer {
+  min-height: 76px;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 0 4px;
+}
+
+.tracking-footer img {
+  width: 112px;
+  max-height: 46px;
+  object-fit: contain;
+}
+
+.tracking-footer span {
+  color: #77716c;
+  font-size: .80rem;
+  line-height: 1.2;
+  font-weight: 590;
+  letter-spacing: -.005em;
+}
+
+@media (max-width: 900px) {
+  .tracking-hero {
+    align-items: flex-start;
+  }
+
+  .tracking-legend {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .tracking-header-inner {
+    min-height: 76px;
+  }
+
+  .tracking-brand > img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .tracking-brand-copy strong {
+    font-size: 1.04rem;
+  }
+
+  .tracking-brand-copy span {
+    font-size: .76rem;
+  }
+
+  .tracking-hero h1 {
+    font-size: clamp(2.15rem, 10vw, 2.75rem);
+  }
+
+  .tracking-hero p {
+    font-size: .94rem;
+  }
+
+  .tracking-legend {
+    border-radius: 16px;
+  }
+
+  .tracking-legend-pill {
+    min-height: 62px;
+    padding: 10px 11px;
+  }
+
+  .tracking-legend-pill::before {
+    font-size: .56rem;
+    letter-spacing: .055em;
+  }
+
+  .tracking-legend-pill::after {
+    font-size: .78rem;
+  }
+
+  .tracking-footer {
+    min-height: 70px;
+    gap: 12px;
+    padding-top: 17px;
+  }
+
+  .tracking-footer img {
+    width: 96px;
+  }
+
+  .tracking-footer span {
+    font-size: .73rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .tracking-brand {
+    gap: 9px;
+  }
+
+  .tracking-brand > img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tracking-brand-copy strong {
+    font-size: 1rem;
+  }
+
+  .tracking-brand-copy span {
+    font-size: .72rem;
+  }
+
+  .tracking-eyebrow::before {
+    width: 31px;
+    height: 31px;
+    flex-basis: 31px;
+    background-size: 16px 16px;
+  }
+
+  .tracking-legend-pill {
+    min-height: 59px;
+    padding-inline: 9px;
+  }
+
+  .tracking-legend-pill::before {
+    font-size: .52rem;
+  }
+
+  .tracking-legend-pill::after {
+    font-size: .73rem;
+  }
+
+  .tracking-footer {
+    flex-direction: column;
+    gap: 7px;
+    text-align: center;
+  }
+
+  .tracking-footer img {
+    width: 104px;
+  }
+}
