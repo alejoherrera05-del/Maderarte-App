@@ -53,16 +53,24 @@ assert.match(documentJs, /quote-document-title/);
 assert.match(documentJs, /COTIZACIÓN N°/);
 assert.match(documentJs, />FECHA</);
 assert.match(documentJs, /quote-client-section/);
+assert.match(documentJs, /quote-document-signature/);
+assert.match(documentJs, /signatureMarkup\(data\.advisor\)/);
+assert.doesNotMatch(documentJs, /Asesor:/);
 assert.doesNotMatch(documentJs, /quote-editorial-strip/);
 assert.doesNotMatch(documentJs, /quote-premium-context-band/);
 assert.doesNotMatch(documentJs, /quote-preview-footer/);
 
 assert.match(documentCss, /\.quote-brand-band/);
+assert.match(documentCss, /radial-gradient/);
+assert.match(documentCss, /linear-gradient\(135deg/);
 assert.match(documentCss, /\.quote-doc-meta/);
 assert.match(documentCss, /\.quote-document-title/);
+assert.match(documentCss, /\.quote-document-signature/);
+assert.match(documentCss, /Snell Roundhand/);
+assert.match(documentCss, /Segoe Script/);
 assert.match(documentCss, /position:\s*absolute/);
 assert.match(documentCss, /border-radius:\s*999px/);
-assert.match(documentCss, /background:\s*#2b2927/);
 
 console.log('OK · cotización Maderarte protegida');
-console.log('OK · jerarquía de cabecera documental protegida');
+console.log('OK · cabecera HomeEasy adaptada con profundidad digital');
+console.log('OK · asesor fuera del encabezado y firma final sin cargo');
