@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import time
@@ -12,13 +13,15 @@ BASE_URL = os.environ.get(
     "http://127.0.0.1:4173/cotizacion.html?preview=1",
 )
 OUTPUT = Path(os.environ.get("QUOTE_SCREENSHOT", "artifacts/cotizacion-preview.png"))
+PDF_OUTPUT = Path(os.environ.get("QUOTE_PDF", "artifacts/cotizacion-preview.pdf"))
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+PDF_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
 options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--window-size=1680,1500")
+options.add_argument("--window-size=1680,1800")
 options.add_argument("--force-device-scale-factor=1")
 
 driver = webdriver.Chrome(options=options)
@@ -29,7 +32,7 @@ try:
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="MP"]'))).click()
     wait.until(EC.visibility_of_element_located((By.ID, "quote-workspace")))
 
-    # Datos visuales representativos para que el screenshot muestre la jerarquía real.
+    # Datos representativos de una cotización real para revisar la página completa.
     driver.execute_script("""
       const number = document.getElementById('quote-meta-number');
       const advisor = document.getElementById('quote-meta-advisor');
@@ -37,26 +40,36 @@ try:
       if (advisor) advisor.textContent = 'Alejandro Herrera';
     """)
 
-    driver.find_element(By.ID, "quote-client-name").send_keys("Daniela Torres García")
+    driver.find_element(By.ID, "quote-client-name").send_keys("María Fernanda López")
     driver.find_element(By.ID, "quote-client-document").send_keys("1061760852")
-    driver.find_element(By.ID, "quote-client-phone").send_keys("3001234567")
-    driver.find_element(By.ID, "quote-client-email").send_keys("cliente@muestra.com")
-    driver.find_element(By.ID, "quote-client-address").send_keys("Calle 5 # 8-20")
+    driver.find_element(By.ID, "quote-client-phone").send_keys("3125559081")
+    driver.find_element(By.ID, "quote-client-email").send_keys("mariafernanda@email.com")
+    driver.find_element(By.ID, "quote-client-address").send_keys("Cra. 8 # 12-44")
     driver.find_element(By.ID, "quote-client-city").send_keys("Popayán")
 
-    item = '.quote-item'
-    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="description"]').send_keys("Sofá Oslo 2.10 m")
-    Select(driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="category"]')).select_by_value("SALA")
-    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="fabric"]').send_keys("Bouclé marfil")
-    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="wood"]').send_keys("Madera natural tono champaña")
-    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="specifications"]').send_keys("Medidas 2.10 x 0.88 m · Espuma alta densidad · Cojines decorativos incluidos")
-    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="unitValue"]').send_keys("4500000")
+    first = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[0]
+    first.find_element(By.CSS_SELECTOR, '[data-field="description"]').send_keys("Sofá Oslo 2.10 m")
+    Select(first.find_element(By.CSS_SELECTOR, '[data-field="category"]')).select_by_value("SALA")
+    first.find_element(By.CSS_SELECTOR, '[data-field="fabric"]').send_keys("Bouclé marfil")
+    first.find_element(By.CSS_SELECTOR, '[data-field="wood"]').send_keys("Poliuretano champaña")
+    first.find_element(By.CSS_SELECTOR, '[data-field="specifications"]').send_keys("Medidas 2.10 x 0.88 m · Espuma alta densidad · Cojines decorativos incluidos")
+    first.find_element(By.CSS_SELECTOR, '[data-field="unitValue"]').send_keys("3800000")
+
+    driver.find_element(By.ID, "quote-add-item").click()
+    wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, '.quote-item')) == 2)
+    second = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
+    second.find_element(By.CSS_SELECTOR, '[data-field="description"]').send_keys("Mesa de centro Mandala")
+    Select(second.find_element(By.CSS_SELECTOR, '[data-field="category"]')).select_by_value("SALA")
+    second.find_element(By.CSS_SELECTOR, '[data-field="wood"]').send_keys("Madera tono nogal con tallado artesanal")
+    second.find_element(By.CSS_SELECTOR, '[data-field="specifications"]').send_keys("Mesa redonda con base robusta y acabado semimate")
+    second.find_element(By.CSS_SELECTOR, '[data-field="unitValue"]').send_keys("700000")
 
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-document-signature")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-commercial-conditions")))
-    time.sleep(0.6)
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-order-conditions")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-maddy-footer")))
+    time.sleep(0.8)
 
     metrics = driver.execute_script("""
       const pick = (selector) => {
@@ -76,7 +89,6 @@ try:
       const header = pick('.quote-brand-header');
       const band = pick('.quote-brand-band');
       const meta = pick('.quote-doc-meta');
-      const title = pick('.quote-document-title');
       const client = pick('.quote-client-section');
       const detail = pick('.quote-section-heading');
       const result = {
@@ -84,13 +96,13 @@ try:
         header,
         band,
         meta,
-        title,
         client,
         detailHeading: detail,
-        item: pick('.quote-preview-item'),
-        conditions: pick('.quote-commercial-conditions'),
+        firstItem: pick('.quote-preview-item'),
+        conditions: pick('.quote-order-conditions'),
         signature: pick('.quote-document-signature'),
-        signatureName: pick('.quote-document-signature span'),
+        maddyFooter: pick('.quote-maddy-footer'),
+        maddyArt: pick('.quote-maddy-footer-art'),
         number: pick('.quote-doc-meta-item > strong')
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
@@ -103,6 +115,37 @@ try:
     print("VISUAL_QA_METRICS=" + json.dumps(metrics, ensure_ascii=False, sort_keys=True))
     print(f"Screenshot guardado en {OUTPUT}")
 
+    # Exportar el mismo HTML como PDF A4 real, sin la interfaz de la aplicación alrededor.
+    page_html = page.get_attribute("outerHTML")
+    driver.execute_script("""
+      document.body.innerHTML = arguments[0];
+      document.body.className = 'quote-print-export';
+      document.documentElement.style.background = '#fff';
+    """, page_html)
+    driver.execute_async_script("""
+      const done = arguments[arguments.length - 1];
+      const images = Array.from(document.images);
+      Promise.all(images.map(img => img.complete ? Promise.resolve() : new Promise(resolve => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      }))).then(() => done());
+    """)
+    time.sleep(0.3)
+    pdf = driver.execute_cdp_cmd("Page.printToPDF", {
+      "printBackground": True,
+      "paperWidth": 8.27,
+      "paperHeight": 11.69,
+      "marginTop": 0,
+      "marginBottom": 0,
+      "marginLeft": 0,
+      "marginRight": 0,
+      "preferCSSPageSize": False,
+      "displayHeaderFooter": False,
+      "scale": 1
+    })
+    PDF_OUTPUT.write_bytes(base64.b64decode(pdf["data"]))
+    print(f"PDF real guardado en {PDF_OUTPUT}")
+
     header_height = metrics.get("header", {}).get("height", 999)
     band_height = metrics.get("band", {}).get("height", 999)
     meta_height = metrics.get("meta", {}).get("height", 999)
@@ -110,6 +153,8 @@ try:
     detail_start = metrics.get("detailStart", 999)
     signature = metrics.get("signature")
     conditions = metrics.get("conditions")
+    maddy_footer = metrics.get("maddyFooter")
+    maddy_art = metrics.get("maddyArt")
 
     if header_height < 145 or header_height > 205:
         raise AssertionError(f"Cabecera fuera de rango: {header_height}px")
@@ -121,9 +166,15 @@ try:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
     if detail_start > 345:
         raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
-    if not conditions or conditions.get("height", 0) < 45:
-        raise AssertionError("Las condiciones comerciales diseñadas no se renderizaron")
+    if not conditions or conditions.get("height", 0) < 55:
+        raise AssertionError("Las condiciones del pedido no se renderizaron")
     if not signature or signature.get("height", 0) < 20:
         raise AssertionError("La firma final del asesor no se renderizó")
+    if not maddy_footer or maddy_footer.get("height", 0) < 45:
+        raise AssertionError("El pie de página de Maddy no se renderizó")
+    if not maddy_art or maddy_art.get("width", 0) < 80:
+        raise AssertionError("El recurso de Maddy no se renderizó")
+    if PDF_OUTPUT.stat().st_size < 20_000:
+        raise AssertionError("El PDF exportado parece incompleto")
 finally:
     driver.quit()
