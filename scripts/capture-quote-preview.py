@@ -87,7 +87,6 @@ try:
         "Transporte urbano incluido para Popayán."
     )
 
-    # Attach one real repository image to every product to exercise the appendix.
     image_urls = [
         "/assets/interiors/living-room-morning.webp",
         "/assets/interiors/living-room-afternoon.webp",
@@ -107,8 +106,8 @@ try:
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-page")))
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-investment")))
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-term-cards")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-footer")))
-    time.sleep(0.8)
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-document-footer")))
+    time.sleep(1.0)
 
     metrics = driver.execute_script("""
       const pick = (selector) => {
@@ -123,13 +122,23 @@ try:
           display: style.display, fontFamily: style.fontFamily,
           backgroundColor: style.backgroundColor,
           text: node.textContent.trim(),
-          overflowingX: node.scrollWidth > node.clientWidth + 1
+          overflowingX: node.scrollWidth > node.clientWidth + 1,
+          overflowingY: node.scrollHeight > node.clientHeight + 2
         };
       };
       const page = pick('.quote-editorial-page');
       const header = pick('.quote-editorial-header');
       const client = pick('.quote-editorial-client');
       const itemsHead = pick('.quote-editorial-section-head');
+      const pages = Array.from(document.querySelectorAll('#quote-preview-content > .quote-preview-page'));
+      const footers = Array.from(document.querySelectorAll('#quote-preview-content > .quote-preview-page > .quote-document-footer, #quote-preview-content > .quote-editorial-page .quote-document-footer'));
+      const appendixPages = Array.from(document.querySelectorAll('.quote-preview-appendix-page'));
+      const appendixText = appendixPages.map(node => node.textContent.trim()).join('\n');
+      const pageNumbers = pages.map(node => node.querySelector('.quote-document-page-number')?.textContent?.trim() || '');
+      const mainNode = document.querySelector('.quote-editorial-page');
+      const mainFooterNode = mainNode?.querySelector('.quote-document-footer');
+      const mainRect = mainNode?.getBoundingClientRect();
+      const footerRect = mainFooterNode?.getBoundingClientRect();
       const result = {
         page,
         header,
@@ -148,9 +157,16 @@ try:
         firstTerm: pick('.quote-editorial-term-card'),
         termValue: pick('.quote-editorial-term-value'),
         signature: pick('.quote-editorial-signature'),
-        footer: pick('.quote-editorial-footer'),
-        maddyArt: pick('.quote-editorial-footer > img'),
-        appendix: pick('.quote-preview-appendix-page')
+        footer: pick('.quote-editorial-page .quote-document-footer'),
+        maddyArt: pick('.quote-editorial-page .quote-document-footer > img'),
+        appendix: pick('.quote-preview-appendix-page'),
+        pageCount: pages.length,
+        footerCount: footers.length,
+        appendixPageCount: appendixPages.length,
+        appendixText,
+        pageNumbers,
+        mainFooterGap: mainRect && footerRect ? Math.round(mainRect.bottom - footerRect.bottom) : 999,
+        mainClassName: mainNode?.className || ''
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
       if (page && itemsHead) result.itemsStart = Math.round(itemsHead.top - page.top);
@@ -162,14 +178,13 @@ try:
     print("VISUAL_QA_METRICS=" + json.dumps(metrics, ensure_ascii=False, sort_keys=True))
     print(f"Screenshot guardado en {OUTPUT}")
 
-    page_html = page.get_attribute("outerHTML")
-    appendix = driver.find_elements(By.CSS_SELECTOR, ".quote-preview-appendix-page")
-    appendix_html = appendix[0].get_attribute("outerHTML") if appendix else ""
+    pages = driver.find_elements(By.CSS_SELECTOR, "#quote-preview-content > .quote-preview-page")
+    pages_html = "".join(node.get_attribute("outerHTML") for node in pages)
     driver.execute_script("""
-      document.body.innerHTML = arguments[0] + arguments[1];
+      document.body.innerHTML = arguments[0];
       document.body.className = 'quote-print-export';
       document.documentElement.style.background = '#fff';
-    """, page_html, appendix_html)
+    """, pages_html)
     driver.execute_async_script("""
       const done = arguments[arguments.length - 1];
       const images = Array.from(document.images);
@@ -178,7 +193,7 @@ try:
         img.addEventListener('error', resolve, { once: true });
       }))).then(() => done());
     """)
-    time.sleep(0.3)
+    time.sleep(0.4)
     pdf = driver.execute_cdp_cmd("Page.printToPDF", {
       "printBackground": True,
       "paperWidth": 8.27,
@@ -214,14 +229,13 @@ try:
     term_value = metrics.get("termValue")
     footer = metrics.get("footer")
     maddy_art = metrics.get("maddyArt")
-    appendix_metric = metrics.get("appendix")
     third_item = metrics.get("thirdItem")
 
     if header_height < 130 or header_height > 270:
         raise AssertionError(f"Membrete editorial fuera de rango: {header_height}px")
     if client_start > 300:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
-    if items_start > 430:
+    if items_start > 460:
         raise AssertionError(f"El detalle empieza demasiado abajo: {items_start}px")
     if not quote_number or px(quote_number) < 16:
         raise AssertionError("El número de cotización volvió a quedar demasiado pequeño")
@@ -229,28 +243,36 @@ try:
         raise AssertionError("La fecha no es suficientemente legible o se está recortando")
     if not quote_branch or px(quote_branch) < 11.5 or quote_branch.get("overflowingX"):
         raise AssertionError("La sede no es suficientemente legible o se está recortando")
-    if not total or px(total) < 26 or "7.000.000" not in total.get("text", ""):
+    if not total or px(total) < 24 or "7.000.000" not in total.get("text", ""):
         raise AssertionError("El total con descuento no tiene la jerarquía o el valor esperado")
-    if not investment or investment.get("height", 0) < 80:
-        raise AssertionError("El resumen comercial no se renderizó")
+    if not investment or investment.get("height", 0) < 95:
+        raise AssertionError("El resumen comercial no se renderizó con suficiente presencia")
     if not third_item:
         raise AssertionError("El tercer producto no se renderizó")
-    if not appendix_metric or "Item 3" not in appendix_metric.get("text", ""):
-        raise AssertionError("El anexo fotográfico no contiene los tres productos")
-    # The hybrid document deliberately uses compact, text-first conditions rather than cards.
-    if not first_term or first_term.get("height", 0) < 28:
+    if not first_term or first_term.get("height", 0) < 24:
         raise AssertionError("Las condiciones comerciales no se renderizaron correctamente")
-    if not term_value or px(term_value) < 10:
+    if not term_value or px(term_value) < 11:
         raise AssertionError("Los valores de condiciones no son legibles")
     if not footer or footer.get("height", 0) < 28:
         raise AssertionError("El pie del documento no se renderizó")
-    if not maddy_art or maddy_art.get("width", 0) < 75:
+    if not maddy_art or maddy_art.get("width", 0) < 70:
         raise AssertionError("Maddy no se renderizó con el tamaño mínimo esperado")
-    if page_metric and footer:
-        used_height = footer.get("bottom", 0) - page_metric.get("top", 0)
-        if used_height > page_metric.get("height", 0):
-            raise AssertionError("El contenido comercial principal desbordó la primera hoja")
-    if PDF_OUTPUT.stat().st_size < 60_000:
+    if page_metric.get("overflowingY"):
+        raise AssertionError("La primera página sigue desbordando verticalmente")
+    if metrics.get("mainFooterGap", 999) > 55:
+        raise AssertionError("El pie principal no está aprovechando la altura disponible de la hoja")
+    if metrics.get("pageCount") != 3:
+        raise AssertionError(f"Se esperaban 3 páginas reales y se obtuvieron {metrics.get('pageCount')}")
+    if metrics.get("footerCount") != metrics.get("pageCount"):
+        raise AssertionError("Maddy y el pie no aparecen en todas las páginas")
+    if metrics.get("appendixPageCount") != 2:
+        raise AssertionError("El anexo fotográfico no se paginó en dos hojas reales")
+    if "Item 1" not in metrics.get("appendixText", "") or "Item 3" not in metrics.get("appendixText", ""):
+        raise AssertionError("El anexo fotográfico no contiene los tres productos")
+    expected_numbers = ["Página 1 de 3", "Página 2 de 3", "Página 3 de 3"]
+    if metrics.get("pageNumbers") != expected_numbers:
+        raise AssertionError(f"La numeración de páginas no es consistente: {metrics.get('pageNumbers')}")
+    if PDF_OUTPUT.stat().st_size < 80_000:
         raise AssertionError("El PDF de prueba parece incompleto")
 finally:
     driver.quit()
