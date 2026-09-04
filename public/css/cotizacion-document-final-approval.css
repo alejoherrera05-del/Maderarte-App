@@ -110,7 +110,9 @@
   padding-top: 8px;
   border-top: 1px solid #cec8c2;
   color: #3e3935;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif !important;
   font-size: .82rem !important;
+  font-style: normal !important;
   line-height: 1.2;
   font-weight: 620;
 }
@@ -159,6 +161,20 @@
   justify-self: auto !important;
 }
 
+/* Higher specificity is required here because an earlier annex rule assigned
+ * the counter to a third grid column. Keep it absolutely anchored instead. */
+.quote-preview-appendix-page > .quote-document-footer .quote-document-page-number {
+  position: absolute !important;
+  right: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  justify-self: auto !important;
+  align-self: auto !important;
+  display: block !important;
+}
+
 .quote-preview-appendix-page > .quote-document-footer {
   margin-top: auto;
 }
@@ -188,11 +204,12 @@
     padding-right: 0 !important;
   }
 
-  .quote-document-page-number {
-    position: static;
+  .quote-document-page-number,
+  .quote-preview-appendix-page > .quote-document-footer .quote-document-page-number {
+    position: static !important;
     grid-column: 1 / -1 !important;
     justify-self: center !important;
-    transform: none;
+    transform: none !important;
     margin-top: 6px;
   }
 }
