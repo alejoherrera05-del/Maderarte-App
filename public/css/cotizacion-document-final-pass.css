@@ -1,0 +1,204 @@
+/* Final approval pass for the client-facing quotation.
+ * Improves readability and information hierarchy without changing the approved visual direction.
+ */
+
+/* Corporate information must remain easy to read when the document is viewed or printed. */
+.quote-editorial-page .quote-editorial-company-copy strong {
+  font-size: .69rem;
+  line-height: 1.22;
+}
+
+.quote-editorial-page .quote-editorial-company-copy span {
+  font-size: .66rem;
+  line-height: 1.28;
+}
+
+/* Client data: labels give meaning to each datum without turning the document into a form. */
+.quote-editorial-page .quote-editorial-client-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px 0;
+  margin-top: 10px;
+  font-size: .68rem;
+  line-height: 1.4;
+}
+
+.quote-editorial-page .quote-editorial-client-detail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.quote-editorial-page .quote-editorial-client-detail small {
+  color: #8c8680;
+  font-size: .54rem;
+  line-height: 1;
+  font-weight: 680;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.quote-editorial-page .quote-editorial-client-detail strong {
+  color: #5c5651;
+  font-size: .68rem;
+  line-height: 1.35;
+  font-weight: 560;
+  overflow-wrap: anywhere;
+}
+
+.quote-editorial-page .quote-editorial-client-detail + .quote-editorial-client-detail::before {
+  content: '';
+  width: 1px;
+  height: 12px;
+  margin: 0 11px;
+  background: #ddd8d3;
+}
+
+/* Product facts gain a little more readability; quantity belongs with the commercial value. */
+.quote-editorial-page .quote-editorial-item-title {
+  display: block;
+}
+
+.quote-editorial-page .quote-editorial-item-facts small {
+  font-size: .55rem;
+  letter-spacing: .035em;
+}
+
+.quote-editorial-page .quote-editorial-item-facts strong,
+.quote-editorial-page .quote-editorial-item-spec {
+  font-size: .68rem;
+  line-height: 1.44;
+}
+
+.quote-editorial-page .quote-editorial-item-price {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  min-width: 138px;
+  padding-top: 1px;
+}
+
+.quote-editorial-page .quote-editorial-item-price small {
+  color: #7f7973;
+  font-size: .56rem;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: .025em;
+  text-transform: none;
+}
+
+.quote-editorial-page .quote-editorial-item-price strong {
+  margin-top: 7px;
+  font-size: .92rem;
+}
+
+.quote-editorial-page .quote-editorial-item-price span {
+  margin-top: 5px;
+  color: #8b857f;
+  font-size: .58rem;
+}
+
+/* The investment band now uses its left side intentionally instead of leaving visual dead space. */
+.quote-editorial-page .quote-editorial-investment {
+  grid-template-columns: minmax(0, 1fr) minmax(245px, auto);
+  gap: 28px;
+  align-items: center;
+  min-height: 82px;
+  padding: 14px 18px 15px;
+}
+
+.quote-editorial-page .quote-editorial-investment-context {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+}
+
+.quote-editorial-page .quote-editorial-investment-context > span {
+  color: #8b857f;
+  font-size: .55rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-investment-context > strong {
+  margin-top: 6px;
+  color: #373330;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
+  font-size: 1rem;
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.quote-editorial-page .quote-editorial-investment-context > small {
+  margin-top: 5px;
+  color: #7d7771;
+  font-size: .62rem;
+  line-height: 1.3;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown {
+  width: min(280px, 100%);
+  margin-top: 9px;
+  gap: 5px;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown span {
+  font-size: .64rem;
+}
+
+/* Secondary commercial text should be readable without increasing visual weight. */
+.quote-editorial-page .quote-editorial-section-head > div > span,
+.quote-editorial-page .quote-editorial-section-kicker {
+  font-size: .57rem;
+}
+
+.quote-editorial-page .quote-editorial-section-head > strong {
+  font-size: .62rem;
+}
+
+.quote-editorial-page .quote-editorial-term-copy strong {
+  font-size: .71rem;
+}
+
+.quote-editorial-page .quote-editorial-term-copy p,
+.quote-editorial-page .quote-editorial-term-copy span,
+.quote-editorial-page .quote-editorial-notes p {
+  font-size: .62rem;
+}
+
+@media (max-width: 760px) {
+  .quote-editorial-page .quote-editorial-client-line {
+    display: grid;
+    gap: 7px;
+  }
+
+  .quote-editorial-page .quote-editorial-client-detail {
+    display: flex;
+  }
+
+  .quote-editorial-page .quote-editorial-client-detail + .quote-editorial-client-detail::before {
+    display: none;
+  }
+
+  .quote-editorial-page .quote-editorial-item-price {
+    grid-column: 2;
+    justify-items: start;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .quote-editorial-page .quote-editorial-investment {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .quote-editorial-page .quote-editorial-total {
+    text-align: left;
+  }
+}
