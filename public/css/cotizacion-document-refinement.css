@@ -1,4 +1,16 @@
 /* Final refinement layer for the client-facing quotation preview. */
+.quote-maderarte-page {
+  min-height: 1122px;
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-maderarte-page .quote-document-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .quote-document-title {
   padding: 35px 20px 12px;
 }
@@ -147,7 +159,7 @@
 /* Advisor sign-off and Maddy document footer. */
 .quote-document-signature {
   width: 210px;
-  margin: 23px 0 0 auto;
+  margin: 26px 0 0 auto;
   padding-top: 7px;
   border-top: 1px solid #cfc9c3;
   text-align: center;
@@ -163,16 +175,16 @@
   display: grid;
   justify-items: center;
   gap: 3px;
-  margin-top: 18px;
-  padding: 13px 18px 3px;
+  margin-top: auto;
+  padding: 17px 18px 10px;
   border-top: 1px solid #e6e1dc;
   text-align: center;
 }
 
 .quote-maddy-footer-art {
-  width: 108px;
+  width: 152px;
   height: auto;
-  opacity: .62;
+  opacity: .64;
 }
 
 .quote-maddy-footer-copy {
@@ -210,6 +222,10 @@ body.quote-print-export .quote-preview-main-page {
 }
 
 @media (max-width: 760px) {
+  .quote-maderarte-page {
+    min-height: auto;
+  }
+
   .quote-maderarte-page .quote-preview-bottom {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -232,6 +248,6 @@ body.quote-print-export .quote-preview-main-page {
   }
 
   .quote-maddy-footer-art {
-    width: 96px;
+    width: 118px;
   }
 }
