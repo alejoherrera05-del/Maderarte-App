@@ -10,10 +10,10 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, .92fr);
-  gap: 26px;
+  gap: 24px;
   align-items: center;
-  min-height: 122px;
-  padding: 22px 30px 38px;
+  min-height: 112px;
+  padding: 18px 28px 33px;
   background: #2b2927;
   color: #fff;
 }
@@ -30,13 +30,13 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
 }
 
 .quote-brand-logo {
-  width: 66px;
-  height: 66px;
-  flex: 0 0 66px;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 60px;
   object-fit: contain;
   filter: drop-shadow(0 5px 12px rgba(0,0,0,.18));
 }
@@ -44,19 +44,19 @@
 .quote-brand-copy {
   min-width: 0;
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .quote-brand-wordmark {
-  width: min(285px, 100%);
+  width: min(265px, 100%);
   height: auto;
   filter: grayscale(1) brightness(0) invert(1);
 }
 
 .quote-brand-copy > span {
   color: rgba(255,255,255,.68);
-  font-size: .61rem;
-  line-height: 1.35;
+  font-size: .59rem;
+  line-height: 1.32;
   letter-spacing: .004em;
 }
 
@@ -64,18 +64,18 @@
   min-width: 0;
   display: grid;
   justify-items: end;
-  gap: 3px;
+  gap: 2px;
   text-align: right;
   color: rgba(255,255,255,.72);
-  font-size: .53rem;
-  line-height: 1.35;
+  font-size: .51rem;
+  line-height: 1.31;
 }
 
 .quote-company-info strong {
   color: #d5a65a;
-  font-size: .61rem;
+  font-size: .59rem;
   font-weight: 690;
-  letter-spacing: .025em;
+  letter-spacing: .024em;
 }
 
 .quote-company-info span {
@@ -134,20 +134,20 @@
 }
 
 .quote-document-title {
-  padding: 36px 20px 15px;
+  padding: 31px 20px 12px;
   border-bottom: 1px solid #eeeae6;
   background: #fff;
   color: #9b4d23;
   text-align: center;
-  font-size: 1.03rem;
+  font-size: .98rem;
   line-height: 1;
   font-weight: 520;
-  letter-spacing: .34em;
-  text-indent: .34em;
+  letter-spacing: .32em;
+  text-indent: .32em;
 }
 
 .quote-document-body {
-  padding: 22px 30px 0;
+  padding: 20px 30px 0;
 }
 
 .quote-client-section {
@@ -202,7 +202,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 18px;
+  margin-top: 17px;
   padding-bottom: 8px;
   border-bottom: 1.5px solid #2c2927;
 }
@@ -279,8 +279,8 @@
 @media (max-width: 760px) {
   .quote-brand-band {
     grid-template-columns: 1fr;
-    gap: 15px;
-    padding: 20px 20px 42px;
+    gap: 14px;
+    padding: 18px 20px 40px;
   }
 
   .quote-company-info {
@@ -302,14 +302,14 @@
   }
 
   .quote-document-title {
-    padding-top: 37px;
-    font-size: .92rem;
+    padding-top: 34px;
+    font-size: .9rem;
     letter-spacing: .27em;
     text-indent: .27em;
   }
 
   .quote-document-body {
-    padding: 20px 18px 0;
+    padding: 19px 18px 0;
   }
 
   .quote-client-section .quote-preview-client-grid {
@@ -328,13 +328,13 @@
   }
 
   .quote-brand-logo {
-    width: 54px;
-    height: 54px;
-    flex-basis: 54px;
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
   }
 
   .quote-brand-wordmark {
-    width: min(220px, 100%);
+    width: min(215px, 100%);
   }
 
   .quote-doc-meta {
