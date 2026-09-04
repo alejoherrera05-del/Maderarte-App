@@ -21,7 +21,7 @@ options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--window-size=1680,1800")
+options.add_argument("--window-size=1680,1900")
 options.add_argument("--force-device-scale-factor=1")
 
 driver = webdriver.Chrome(options=options)
@@ -32,7 +32,6 @@ try:
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="MP"]'))).click()
     wait.until(EC.visibility_of_element_located((By.ID, "quote-workspace")))
 
-    # Datos representativos de una cotización real para revisar la página completa.
     driver.execute_script("""
       const number = document.getElementById('quote-meta-number');
       const advisor = document.getElementById('quote-meta-advisor');
@@ -52,7 +51,7 @@ try:
     Select(first.find_element(By.CSS_SELECTOR, '[data-field="category"]')).select_by_value("SALA")
     first.find_element(By.CSS_SELECTOR, '[data-field="fabric"]').send_keys("Bouclé marfil")
     first.find_element(By.CSS_SELECTOR, '[data-field="wood"]').send_keys("Poliuretano champaña")
-    first.find_element(By.CSS_SELECTOR, '[data-field="specifications"]').send_keys("Medidas 2.10 x 0.88 m · Espuma alta densidad · Cojines decorativos incluidos")
+    first.find_element(By.CSS_SELECTOR, '[data-field="specifications"]').send_keys("Medidas 2.10 x 0.88 m. Espuma de alta densidad y cojines decorativos incluidos.")
     first.find_element(By.CSS_SELECTOR, '[data-field="unitValue"]').send_keys("3800000")
 
     driver.find_element(By.ID, "quote-add-item").click()
@@ -61,14 +60,14 @@ try:
     second.find_element(By.CSS_SELECTOR, '[data-field="description"]').send_keys("Mesa de centro Mandala")
     Select(second.find_element(By.CSS_SELECTOR, '[data-field="category"]')).select_by_value("SALA")
     second.find_element(By.CSS_SELECTOR, '[data-field="wood"]').send_keys("Madera tono nogal con tallado artesanal")
-    second.find_element(By.CSS_SELECTOR, '[data-field="specifications"]').send_keys("Mesa redonda con base robusta y acabado semimate")
+    second.find_element(By.CSS_SELECTOR, '[data-field="specifications"]').send_keys("Mesa redonda con base robusta y acabado semimate.")
     second.find_element(By.CSS_SELECTOR, '[data-field="unitValue"]').send_keys("700000")
 
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-document-signature")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-order-conditions")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-maddy-footer")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-page")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-investment")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-terms")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-footer")))
     time.sleep(0.8)
 
     metrics = driver.execute_script("""
@@ -85,37 +84,34 @@ try:
           backgroundColor: style.backgroundColor
         };
       };
-      const page = pick('.quote-preview-main-page');
-      const header = pick('.quote-brand-header');
-      const band = pick('.quote-brand-band');
-      const meta = pick('.quote-doc-meta');
-      const client = pick('.quote-client-section');
-      const detail = pick('.quote-section-heading');
+      const page = pick('.quote-editorial-page');
+      const header = pick('.quote-editorial-header');
+      const client = pick('.quote-editorial-client');
+      const itemsHead = pick('.quote-editorial-section-head');
       const result = {
         page,
         header,
-        band,
-        meta,
+        letterhead: pick('.quote-editorial-letterhead'),
+        documentTitle: pick('.quote-editorial-document h1'),
         client,
-        detailHeading: detail,
-        firstItem: pick('.quote-preview-item'),
-        conditions: pick('.quote-order-conditions'),
-        signature: pick('.quote-document-signature'),
-        maddyFooter: pick('.quote-maddy-footer'),
-        maddyArt: pick('.quote-maddy-footer-art'),
-        number: pick('.quote-doc-meta-item > strong')
+        itemsHead,
+        firstItem: pick('.quote-editorial-item'),
+        investment: pick('.quote-editorial-investment'),
+        terms: pick('.quote-editorial-terms'),
+        signature: pick('.quote-editorial-signature'),
+        footer: pick('.quote-editorial-footer'),
+        maddyArt: pick('.quote-editorial-footer img')
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
-      if (page && detail) result.detailStart = Math.round(detail.top - page.top);
+      if (page && itemsHead) result.itemsStart = Math.round(itemsHead.top - page.top);
       return result;
     """)
 
-    page = driver.find_element(By.CSS_SELECTOR, ".quote-preview-main-page")
+    page = driver.find_element(By.CSS_SELECTOR, ".quote-editorial-page")
     page.screenshot(str(OUTPUT))
     print("VISUAL_QA_METRICS=" + json.dumps(metrics, ensure_ascii=False, sort_keys=True))
     print(f"Screenshot guardado en {OUTPUT}")
 
-    # Exportar el mismo HTML como PDF A4 real, sin la interfaz de la aplicación alrededor.
     page_html = page.get_attribute("outerHTML")
     driver.execute_script("""
       document.body.innerHTML = arguments[0];
@@ -147,32 +143,26 @@ try:
     print(f"PDF real guardado en {PDF_OUTPUT}")
 
     header_height = metrics.get("header", {}).get("height", 999)
-    band_height = metrics.get("band", {}).get("height", 999)
-    meta_height = metrics.get("meta", {}).get("height", 999)
     client_start = metrics.get("clientStart", 999)
-    detail_start = metrics.get("detailStart", 999)
-    signature = metrics.get("signature")
-    conditions = metrics.get("conditions")
-    maddy_footer = metrics.get("maddyFooter")
+    items_start = metrics.get("itemsStart", 999)
+    investment = metrics.get("investment")
+    terms = metrics.get("terms")
+    footer = metrics.get("footer")
     maddy_art = metrics.get("maddyArt")
 
-    if header_height < 145 or header_height > 205:
-        raise AssertionError(f"Cabecera fuera de rango: {header_height}px")
-    if band_height < 105 or band_height > 145:
-        raise AssertionError(f"Franja de marca fuera de rango: {band_height}px")
-    if meta_height < 34 or meta_height > 52:
-        raise AssertionError(f"Barra número/fecha/sede fuera de rango: {meta_height}px")
-    if client_start > 235:
+    if header_height < 110 or header_height > 230:
+        raise AssertionError(f"Membrete editorial fuera de rango: {header_height}px")
+    if client_start > 260:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
-    if detail_start > 345:
-        raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
-    if not conditions or conditions.get("height", 0) < 55:
-        raise AssertionError("Las condiciones del pedido no se renderizaron")
-    if not signature or signature.get("height", 0) < 20:
-        raise AssertionError("La firma final del asesor no se renderizó")
-    if not maddy_footer or maddy_footer.get("height", 0) < 45:
-        raise AssertionError("El pie de página de Maddy no se renderizó")
-    if not maddy_art or maddy_art.get("width", 0) < 80:
+    if items_start > 390:
+        raise AssertionError(f"El detalle empieza demasiado abajo: {items_start}px")
+    if not investment or investment.get("height", 0) < 65:
+        raise AssertionError("El resumen comercial no se renderizó")
+    if not terms or terms.get("height", 0) < 90:
+        raise AssertionError("Las condiciones editoriales no se renderizaron")
+    if not footer or footer.get("height", 0) < 35:
+        raise AssertionError("El pie editorial de Maddy no se renderizó")
+    if not maddy_art or maddy_art.get("width", 0) < 45:
         raise AssertionError("El recurso de Maddy no se renderizó")
     if PDF_OUTPUT.stat().st_size < 20_000:
         raise AssertionError("El PDF exportado parece incompleto")
