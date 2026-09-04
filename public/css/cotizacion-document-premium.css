@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
+
 .quote-maderarte-page {
   padding: 0 0 28px;
 }
@@ -305,9 +307,9 @@
 .quote-document-signature span {
   display: block;
   color: #332d29;
-  font-family: "Snell Roundhand", "Segoe Script", "Bradley Hand", "Brush Script MT", cursive;
-  font-size: 1.3rem;
-  line-height: 1.05;
+  font-family: "Allura", "Snell Roundhand", "Segoe Script", "Bradley Hand", cursive;
+  font-size: 1.65rem;
+  line-height: .95;
   font-weight: 400;
   letter-spacing: .01em;
   transform: rotate(-1.5deg);
@@ -424,6 +426,6 @@
   }
 
   .quote-document-signature span {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
   }
 }
