@@ -131,10 +131,7 @@ function documentHeaderMarkup(data) {
       </div>
     </div>
 
-    <div class="quote-document-title">
-      <strong>COTIZACIÓN</strong>
-      <span>Propuesta comercial personalizada</span>
-    </div>
+    <div class="quote-document-title"><strong>COTIZACIÓN</strong></div>
   </header>`;
 }
 
