@@ -156,110 +156,88 @@ function documentHeaderMarkup(data) {
   </header>`;
 }
 
-function clientDetail(label, rawValue) {
+function clientField(label, rawValue, className = '') {
   const clean = String(rawValue || '').trim();
   return clean
-    ? `<span class="quote-editorial-client-detail"><small>${escapeHtml(label)}</small><strong>${escapeHtml(clean)}</strong></span>`
+    ? `<div class="quote-editorial-client-field ${className}"><small>${escapeHtml(label)}</small><strong>${escapeHtml(clean)}</strong></div>`
     : '';
 }
 
 function clientMarkup(client) {
   const location = [client.address, client.city].filter(Boolean).join(' · ');
-  const details = [
-    clientDetail('CC / NIT', client.document),
-    clientDetail('Tel.', client.phone),
-    clientDetail('Correo', client.email),
-    clientDetail('Dirección', location)
+  const fields = [
+    clientField('Cédula / NIT', client.document),
+    clientField('Nombre completo', client.name, 'quote-editorial-client-field-name'),
+    clientField('Teléfono', client.phone),
+    clientField('Correo electrónico', client.email),
+    clientField('Dirección / Ciudad', location, 'quote-editorial-client-field-wide')
   ].filter(Boolean);
 
-  if (!client.name && !details.length) return '';
+  if (!fields.length) return '';
 
   return `<section class="quote-editorial-client">
-    <div class="quote-editorial-client-heading"><span>Preparado para</span></div>
-    <div class="quote-editorial-client-copy">
-      ${client.name ? `<h2>${escapeHtml(client.name)}</h2>` : ''}
-      ${details.length ? `<div class="quote-editorial-client-line">${details.join('')}</div>` : ''}
-    </div>
+    <div class="quote-editorial-client-heading"><span>Información del cliente</span></div>
+    <div class="quote-editorial-client-grid">${fields.join('')}</div>
   </section>`;
 }
 
-function itemFact(label, rawValue) {
+function itemFact(rawValue) {
   const clean = String(rawValue || '').trim();
-  return clean ? `<span><small>${escapeHtml(label)}</small><strong>${escapeHtml(clean)}</strong></span>` : '';
+  return clean ? `<span><strong>${escapeHtml(clean)}</strong></span>` : '';
 }
 
 function itemMarkup(item) {
   const title = item.description || item.category || `Mueble ${item.position}`;
-  const facts = [
-    itemFact('Categoría', item.category),
-    itemFact('Tela / acabado', item.fabric),
-    itemFact('Madera / acabado', item.wood)
-  ].filter(Boolean).join('');
-  const quantityLabel = `${item.quantity} ${item.quantity === 1 ? 'unidad' : 'unidades'}`;
+  const facts = [itemFact(item.category), itemFact(item.fabric), itemFact(item.wood)].filter(Boolean).join('');
 
   return `<article class="quote-editorial-item">
     <div class="quote-editorial-item-number">${String(item.position).padStart(2, '0')}</div>
     <div class="quote-editorial-item-main">
-      <div class="quote-editorial-item-title">
-        <h3>${escapeHtml(title)}</h3>
-      </div>
+      <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
-    <div class="quote-editorial-item-price">
-      <small>${escapeHtml(quantityLabel)}</small>
-      ${item.unitValue > 0 ? `<strong>${escapeHtml(money(item.subtotal))}</strong>${item.quantity > 1 ? `<span>${escapeHtml(money(item.unitValue))} c/u</span>` : ''}` : ''}
-    </div>
+    <div class="quote-editorial-item-quantity">${escapeHtml(String(item.quantity))}</div>
+    <div class="quote-editorial-item-unit">${item.unitValue > 0 ? escapeHtml(money(item.unitValue)) : '—'}</div>
+    <div class="quote-editorial-item-total">${item.subtotal > 0 ? escapeHtml(money(item.subtotal)) : '—'}</div>
   </article>`;
 }
 
 function investmentMarkup(data) {
-  const countLabel = `${data.items.length} ${data.items.length === 1 ? 'mueble incluido' : 'muebles incluidos'} en esta cotización`;
-  const breakdown = data.discount > 0
-    ? `<div class="quote-editorial-price-breakdown">
-        <span>Subtotal <strong>${escapeHtml(money(data.subtotal))}</strong></span>
-        <span>Descuento <strong>− ${escapeHtml(money(data.discount))}</strong></span>
-      </div>`
-    : '';
+  const breakdown = `<div class="quote-editorial-price-breakdown">
+      <span>Subtotal <strong>${escapeHtml(money(data.subtotal))}</strong></span>
+      ${data.discount > 0 ? `<span>Descuento <strong>− ${escapeHtml(money(data.discount))}</strong></span>` : ''}
+    </div>`;
 
   return `<section class="quote-editorial-investment">
-    <div class="quote-editorial-investment-context">
-      <span>Inversión de la propuesta</span>
-      <strong>${escapeHtml(countLabel)}</strong>
-      <small>Valores expresados en pesos colombianos.</small>
-      ${breakdown}
-    </div>
+    <div class="quote-editorial-investment-context">${breakdown}</div>
     <div class="quote-editorial-total">
-      <span>Total cotizado</span>
+      <span>Total</span>
       <strong>${escapeHtml(money(data.total))}</strong>
-      ${data.total > 0 ? `<small>Para confirmar: ${COMMERCIAL_RULES.minimumOrderDepositPercent}% · ${escapeHtml(money(data.minimumDeposit))}</small>` : ''}
+      ${data.total > 0 ? `<small>Para confirmar ${COMMERCIAL_RULES.minimumOrderDepositPercent}% · ${escapeHtml(money(data.minimumDeposit))}</small>` : ''}
     </div>
   </section>`;
 }
 
 function commercialTermsMarkup(data) {
   return `<section class="quote-editorial-terms">
-    <div class="quote-editorial-section-kicker">Condiciones del pedido</div>
+    <div class="quote-editorial-section-kicker">Condiciones comerciales</div>
     <div class="quote-editorial-term-cards">
       <article class="quote-editorial-term-card quote-editorial-term-deposit">
         <div class="quote-editorial-term-icon"><img src="/assets/icons/wallet.svg" alt=""></div>
         <div class="quote-editorial-term-value">${COMMERCIAL_RULES.minimumOrderDepositPercent}%</div>
         <div class="quote-editorial-term-copy">
-          <strong>Abono para confirmar</strong>
-          <p>Activa la solicitud y el inicio del pedido.</p>
+          <strong>Abono mínimo para confirmar</strong>
           ${data.total > 0 ? `<span>${escapeHtml(money(data.minimumDeposit))}</span>` : ''}
         </div>
       </article>
       <article class="quote-editorial-term-card quote-editorial-term-time">
         <div class="quote-editorial-term-icon"><img src="/assets/icons/calendar-dots.svg" alt=""></div>
         <div class="quote-editorial-term-value">25–30<small>días</small></div>
-        <div class="quote-editorial-term-copy">
-          <strong>Fabricación estimada</strong>
-          <p>Desde la confirmación del pedido y el abono mínimo.</p>
-        </div>
+        <div class="quote-editorial-term-copy"><strong>Fabricación estimada</strong></div>
       </article>
     </div>
-    ${data.notes ? `<div class="quote-editorial-notes"><strong>Observaciones</strong><p>${escapeHtml(data.notes)}</p></div>` : ''}
+    ${data.notes ? `<div class="quote-editorial-notes"><strong>Observaciones especiales</strong><p>${escapeHtml(data.notes)}</p></div>` : ''}
   </section>`;
 }
 
@@ -269,65 +247,162 @@ function signatureMarkup(name) {
   return `<div class="quote-editorial-signature"><span>${escapeHtml(clean)}</span></div>`;
 }
 
-function footerMarkup() {
-  return `<footer class="quote-editorial-footer">
+function footerMarkup(pageNumber, totalPages) {
+  return `<footer class="quote-editorial-footer quote-document-footer">
     <img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
     <div class="quote-editorial-footer-copy">
       <strong>Maderarte · Sistema Maddy</strong>
       <span>Documento generado automáticamente · v${escapeHtml(APP_CONFIG.version)}</span>
       <span>${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
     </div>
+    <span class="quote-document-page-number">Página ${pageNumber} de ${totalPages}</span>
   </footer>`;
 }
 
-function appendixMarkup(items, number) {
-  const withPhotos = items.filter(item => item.photos.length > 0);
-  if (!withPhotos.length) return '';
+function documentDensity(data) {
+  const itemText = data.items.reduce((sum, item) => sum + [
+    item.description,
+    item.category,
+    item.fabric,
+    item.wood,
+    item.specifications
+  ].join(' ').length, 0);
+  const notesLength = String(data.notes || '').length;
 
-  return `<section class="quote-preview-page quote-preview-appendix-page">
-    <div class="quote-preview-annex-head">
-      <div><span>Anexo fotográfico</span><h3>Referencias por mueble</h3></div>
-      <strong>${escapeHtml(number)}</strong>
+  if (data.items.length <= 3 && itemText <= 1050 && notesLength <= 360) return 'relaxed';
+  if (data.items.length <= 4 && itemText <= 1550 && notesLength <= 520) return 'balanced';
+  return 'compact';
+}
+
+function photoGroups(items) {
+  const groups = [];
+  items.filter(item => item.photos.length > 0).forEach(item => {
+    for (let index = 0; index < item.photos.length; index += 4) {
+      groups.push({
+        item,
+        photos: item.photos.slice(index, index + 4),
+        continuation: index > 0,
+        groupIndex: Math.floor(index / 4) + 1
+      });
+    }
+  });
+  return groups;
+}
+
+function photoPages(items) {
+  const groups = photoGroups(items);
+  const pages = [];
+  let current = [];
+  let usedSlots = 0;
+
+  groups.forEach(group => {
+    const cost = group.photos.length === 1 ? 1 : 2;
+    if (current.length && usedSlots + cost > 2) {
+      pages.push(current);
+      current = [];
+      usedSlots = 0;
+    }
+    current.push(group);
+    usedSlots += cost;
+    if (usedSlots >= 2) {
+      pages.push(current);
+      current = [];
+      usedSlots = 0;
+    }
+  });
+
+  if (current.length) pages.push(current);
+  return pages;
+}
+
+function appendixGroupMarkup(group) {
+  const item = group.item;
+  const title = item.description || item.category || `Mueble ${item.position}`;
+  const continuationLabel = group.continuation ? ` · continuación ${group.groupIndex}` : '';
+
+  return `<article class="quote-appendix-group">
+    <div class="quote-appendix-group-head">
+      <div>
+        <span>Item ${item.position}${continuationLabel}</span>
+        <strong>${escapeHtml(title)}</strong>
+      </div>
+      <small>${group.photos.length} ${group.photos.length === 1 ? 'referencia' : 'referencias'}</small>
     </div>
-    ${withPhotos.map(item => {
-      const title = item.description || item.category || `Mueble ${item.position}`;
-      return `<article class="quote-appendix-item">
-        <div class="quote-appendix-item-head"><div><span>Item ${item.position}</span><strong>${escapeHtml(title)}</strong></div></div>
-        <div class="quote-appendix-photos">
-          ${item.photos.map((photo, index) => `<figure><img src="${escapeHtml(photo)}" alt="Referencia ${index + 1} del item ${item.position}"><figcaption>Referencia ${index + 1}</figcaption></figure>`).join('')}
-        </div>
-      </article>`;
-    }).join('')}
+    <div class="quote-appendix-photos" data-photo-count="${group.photos.length}">
+      ${group.photos.map((photo, index) => `<figure><img src="${escapeHtml(photo)}" alt="Referencia ${index + 1} del item ${item.position}"><figcaption>Referencia ${index + 1}</figcaption></figure>`).join('')}
+    </div>
+  </article>`;
+}
+
+function appendixPageMarkup(groups, number, pageNumber, totalPages) {
+  return `<section class="quote-preview-page quote-preview-appendix-page" data-page-number="${pageNumber}" data-page-count="${totalPages}" data-group-count="${groups.length}">
+    <div class="quote-annex-content">
+      <div class="quote-preview-annex-head">
+        <div><span>Anexo fotográfico</span><h3>Referencias por mueble</h3></div>
+        <strong>${escapeHtml(number)}</strong>
+      </div>
+      <div class="quote-appendix-groups">${groups.map(appendixGroupMarkup).join('')}</div>
+    </div>
+    ${footerMarkup(pageNumber, totalPages)}
   </section>`;
+}
+
+function fitMainPage() {
+  const page = document.querySelector('.quote-editorial-page');
+  if (!page || window.matchMedia('(max-width: 760px)').matches) return;
+
+  const modes = ['relaxed', 'balanced', 'compact'];
+  let index = modes.findIndex(mode => page.classList.contains(`quote-density-${mode}`));
+  if (index < 0) index = 0;
+
+  const fits = () => page.scrollHeight <= page.clientHeight + 2;
+  while (!fits() && index < modes.length - 1) {
+    page.classList.remove(`quote-density-${modes[index]}`);
+    index += 1;
+    page.classList.add(`quote-density-${modes[index]}`);
+  }
+
+  if (!fits()) page.classList.add('quote-density-overflow');
 }
 
 function renderDocumentPreview() {
   const data = collectDocumentData();
+  const density = documentDensity(data);
+  const annexPages = photoPages(data.items);
+  const totalPages = 1 + annexPages.length;
   const client = clientMarkup(data.client);
   const items = data.items.map(itemMarkup).join('');
 
-  const mainPage = `<section class="quote-preview-page quote-preview-main-page quote-editorial-page">
+  const mainPage = `<section class="quote-preview-page quote-preview-main-page quote-editorial-page quote-density-${density}" data-page-number="1" data-page-count="${totalPages}">
     ${documentHeaderMarkup(data)}
     <div class="quote-editorial-body">
       ${client}
       <section class="quote-editorial-items-section">
         <div class="quote-editorial-section-head">
-          <div><span>Mobiliario cotizado</span><h2>Detalle de la propuesta</h2></div>
+          <div><span>Mobiliario cotizado</span><h2>Detalle de productos</h2></div>
           <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
+        </div>
+        <div class="quote-editorial-table-head" aria-hidden="true">
+          <span>#</span><span>Descripción del artículo</span><span>Cant.</span><span>V. unitario</span><span>V. total</span>
         </div>
         <div class="quote-editorial-items">${items}</div>
       </section>
-      ${investmentMarkup(data)}
-      ${commercialTermsMarkup(data)}
+      <div class="quote-editorial-closing">
+        ${commercialTermsMarkup(data)}
+        ${investmentMarkup(data)}
+      </div>
       <div class="quote-editorial-signoff">
+        ${footerMarkup(1, totalPages)}
         ${signatureMarkup(data.advisor)}
-        ${footerMarkup()}
       </div>
     </div>
   </section>`;
 
+  const appendix = annexPages.map((groups, index) => appendixPageMarkup(groups, data.number, index + 2, totalPages)).join('');
   const target = document.getElementById('quote-preview-content');
-  if (target) target.innerHTML = mainPage + appendixMarkup(data.items, data.number);
+  if (!target) return;
+  target.innerHTML = mainPage + appendix;
+  window.requestAnimationFrame(fitMainPage);
 }
 
 function openPreview() {
