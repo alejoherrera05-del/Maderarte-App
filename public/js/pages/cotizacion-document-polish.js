@@ -88,8 +88,9 @@ function editorialHeaderMarkup(data) {
   const branchName = branch?.name || text('quote-meta-branch-name') || data.branchCode || 'Maderarte';
   const branchAddress = branch?.address || '';
   const pending = /pendiente/i.test(data.number);
-  const contactTop = `WhatsApp ${COMPANY_PROFILE.whatsapp}`;
-  const contactBottom = [`Cel. ${COMPANY_PROFILE.mobile}`, COMPANY_PROFILE.website, COMPANY_PROFILE.socialHandle].join(' · ');
+  const branchLine = [branchName, branchAddress].filter(Boolean).join(' · ');
+  const contactTop = `WhatsApp ${COMPANY_PROFILE.whatsapp} · Cel. ${COMPANY_PROFILE.mobile}`;
+  const contactBottom = [COMPANY_PROFILE.website, COMPANY_PROFILE.socialHandle].join(' · ');
 
   return `<header class="quote-editorial-header">
     <div class="quote-editorial-hero">
@@ -114,13 +115,11 @@ function editorialHeaderMarkup(data) {
     <div class="quote-editorial-strip">
       <div class="quote-editorial-strip-cell quote-editorial-company">
         <small>Empresa</small>
-        <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
-        <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span>
+        <strong>${escapeHtml(COMPANY_PROFILE.legalName)} <em>· NIT ${escapeHtml(COMPANY_PROFILE.nit)}</em></strong>
       </div>
       <div class="quote-editorial-strip-cell quote-editorial-branch">
         <small>Sede emisora</small>
-        <strong>${escapeHtml(branchName)}</strong>
-        ${branchAddress ? `<span>${escapeHtml(branchAddress)}</span>` : ''}
+        <strong>${escapeHtml(branchLine)}</strong>
         ${data.advisor ? `<span>Asesor: ${escapeHtml(data.advisor)}</span>` : ''}
       </div>
       <div class="quote-editorial-strip-cell quote-editorial-contact">
