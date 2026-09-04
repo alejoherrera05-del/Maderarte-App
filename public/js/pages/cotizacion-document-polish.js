@@ -1,4 +1,5 @@
 import { escapeHtml } from '../core/format.js';
+import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_RULES, minimumOrderDeposit } from '../core/commercial-rules.js';
 
@@ -193,28 +194,49 @@ function financeMarkup(data) {
   return `<div class="quote-preview-finance">
     <div><span>Subtotal</span><strong>${escapeHtml(money(data.subtotal))}</strong></div>
     ${data.discount > 0 ? `<div><span>Descuento</span><strong>− ${escapeHtml(money(data.discount))}</strong></div>` : ''}
-    <div><span>Total</span><strong>${escapeHtml(money(data.total))}</strong></div>
+    <div><span>Total cotizado</span><strong>${escapeHtml(money(data.total))}</strong></div>
+    ${data.total > 0 ? `<div class="quote-finance-minimum"><span>Abono mínimo</span><strong>${escapeHtml(money(data.minimumDeposit))}</strong></div>` : ''}
   </div>`;
 }
 
 function conditionsMarkup(data) {
-  return `<div class="quote-commercial-conditions">
-    <div class="quote-condition quote-condition-deposit">
-      <strong>${COMMERCIAL_RULES.minimumOrderDepositPercent}%</strong>
-      <div><span>Para solicitar el pedido</span><p>Abono mínimo requerido${data.total > 0 ? ` · ${escapeHtml(money(data.minimumDeposit))}` : ''}.</p></div>
+  return `<section class="quote-order-conditions">
+    <div class="quote-order-conditions-label">Condiciones del pedido</div>
+    <div class="quote-order-conditions-grid">
+      <article class="quote-order-condition quote-order-condition-deposit">
+        <div class="quote-order-condition-value">${COMMERCIAL_RULES.minimumOrderDepositPercent}%</div>
+        <div class="quote-order-condition-copy">
+          <strong>Abono inicial</strong>
+          <span>Requerido para solicitar e iniciar el pedido.</span>
+          ${data.total > 0 ? `<small>Monto mínimo: ${escapeHtml(money(data.minimumDeposit))}</small>` : ''}
+        </div>
+      </article>
+      <article class="quote-order-condition quote-order-condition-time">
+        <div class="quote-order-condition-value">25–30 <small>días</small></div>
+        <div class="quote-order-condition-copy">
+          <strong>Fabricación estimada</strong>
+          <span>Desde la confirmación del pedido y el cumplimiento del abono mínimo.</span>
+        </div>
+      </article>
     </div>
-    <div class="quote-condition quote-condition-time">
-      <strong>25–30</strong>
-      <div><span>Días de fabricación</span><p>Contados desde la confirmación del pedido y el abono mínimo.</p></div>
-    </div>
-    ${data.notes ? `<p class="quote-condition-notes"><b>Observaciones</b>${escapeHtml(data.notes)}</p>` : ''}
-  </div>`;
+    ${data.notes ? `<p class="quote-order-condition-notes"><b>Observaciones</b>${escapeHtml(data.notes)}</p>` : ''}
+  </section>`;
 }
 
 function signatureMarkup(name) {
   const clean = String(name || '').trim();
   if (!clean) return '';
   return `<div class="quote-document-signature"><span>${escapeHtml(clean)}</span></div>`;
+}
+
+function documentFooterMarkup() {
+  return `<footer class="quote-maddy-footer">
+    <img class="quote-maddy-footer-art" src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
+    <div class="quote-maddy-footer-copy">
+      <strong>Maderarte · ${escapeHtml(COMPANY_PROFILE.slogan)}</strong>
+      <span>Documento generado automáticamente · Sistema Maddy v${escapeHtml(APP_CONFIG.version)}</span>
+    </div>
+  </footer>`;
 }
 
 function appendixMarkup(items, number) {
@@ -267,6 +289,7 @@ function renderDocumentPreview() {
         ${financeMarkup(data)}
       </div>
       ${signatureMarkup(data.advisor)}
+      ${documentFooterMarkup()}
     </div>
   </section>`;
 
