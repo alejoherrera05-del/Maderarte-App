@@ -34,8 +34,10 @@ try:
 
     driver.execute_script("""
       const number = document.getElementById('quote-meta-number');
+      const date = document.getElementById('quote-meta-date');
       const advisor = document.getElementById('quote-meta-advisor');
       if (number) number.textContent = 'MP-0248';
+      if (date) date.textContent = '04 de sept de 2026';
       if (advisor) advisor.textContent = 'Alejandro Herrera';
     """)
 
@@ -66,7 +68,7 @@ try:
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-page")))
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-investment")))
-    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-terms")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-term-cards")))
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-editorial-footer")))
     time.sleep(0.8)
 
@@ -81,7 +83,9 @@ try:
           width: Math.round(rect.width), height: Math.round(rect.height),
           fontSize: style.fontSize, lineHeight: style.lineHeight,
           display: style.display, fontFamily: style.fontFamily,
-          backgroundColor: style.backgroundColor
+          backgroundColor: style.backgroundColor,
+          text: node.textContent.trim(),
+          overflowingX: node.scrollWidth > node.clientWidth + 1
         };
       };
       const page = pick('.quote-editorial-page');
@@ -93,14 +97,20 @@ try:
         header,
         letterhead: pick('.quote-editorial-letterhead'),
         documentTitle: pick('.quote-editorial-document h1'),
+        quoteNumber: pick('.quote-editorial-number strong'),
+        quoteDate: pick('.quote-editorial-secondary-meta span:first-child strong'),
+        quoteBranch: pick('.quote-editorial-secondary-meta span:last-child strong'),
         client,
         itemsHead,
         firstItem: pick('.quote-editorial-item'),
+        total: pick('.quote-editorial-total > strong'),
         investment: pick('.quote-editorial-investment'),
-        terms: pick('.quote-editorial-terms'),
+        termCards: pick('.quote-editorial-term-cards'),
+        firstTerm: pick('.quote-editorial-term-card'),
+        termValue: pick('.quote-editorial-term-value'),
         signature: pick('.quote-editorial-signature'),
         footer: pick('.quote-editorial-footer'),
-        maddyArt: pick('.quote-editorial-footer img')
+        maddyArt: pick('.quote-editorial-footer > img')
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
       if (page && itemsHead) result.itemsStart = Math.round(itemsHead.top - page.top);
@@ -142,28 +152,50 @@ try:
     PDF_OUTPUT.write_bytes(base64.b64decode(pdf["data"]))
     print(f"PDF real guardado en {PDF_OUTPUT}")
 
+    def px(metric, key="fontSize"):
+        raw = (metric or {}).get(key, "0")
+        try:
+            return float(str(raw).replace("px", ""))
+        except ValueError:
+            return 0
+
     header_height = metrics.get("header", {}).get("height", 999)
     client_start = metrics.get("clientStart", 999)
     items_start = metrics.get("itemsStart", 999)
     investment = metrics.get("investment")
-    terms = metrics.get("terms")
+    quote_number = metrics.get("quoteNumber")
+    quote_date = metrics.get("quoteDate")
+    quote_branch = metrics.get("quoteBranch")
+    total = metrics.get("total")
+    first_term = metrics.get("firstTerm")
+    term_value = metrics.get("termValue")
     footer = metrics.get("footer")
     maddy_art = metrics.get("maddyArt")
 
-    if header_height < 110 or header_height > 230:
+    if header_height < 130 or header_height > 270:
         raise AssertionError(f"Membrete editorial fuera de rango: {header_height}px")
-    if client_start > 260:
+    if client_start > 300:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
-    if items_start > 390:
+    if items_start > 430:
         raise AssertionError(f"El detalle empieza demasiado abajo: {items_start}px")
+    if not quote_number or px(quote_number) < 16:
+        raise AssertionError("El número de cotización volvió a quedar demasiado pequeño")
+    if not quote_date or px(quote_date) < 11.5 or quote_date.get("overflowingX"):
+        raise AssertionError("La fecha no es suficientemente legible o se está recortando")
+    if not quote_branch or px(quote_branch) < 11.5 or quote_branch.get("overflowingX"):
+        raise AssertionError("La sede no es suficientemente legible o se está recortando")
+    if not total or px(total) < 26:
+        raise AssertionError("El total no tiene la jerarquía visual necesaria")
     if not investment or investment.get("height", 0) < 65:
         raise AssertionError("El resumen comercial no se renderizó")
-    if not terms or terms.get("height", 0) < 90:
-        raise AssertionError("Las condiciones editoriales no se renderizaron")
-    if not footer or footer.get("height", 0) < 35:
-        raise AssertionError("El pie editorial de Maddy no se renderizó")
-    if not maddy_art or maddy_art.get("width", 0) < 45:
-        raise AssertionError("El recurso de Maddy no se renderizó")
+    if not first_term or first_term.get("height", 0) < 82:
+        raise AssertionError("Las tarjetas de condiciones no se renderizaron con suficiente presencia")
+    if not term_value or px(term_value) < 22:
+        raise AssertionError("Los valores de condiciones volvieron a quedar demasiado pequeños")
+    if not footer or footer.get("height", 0) < 60:
+        raise AssertionError("El pie editorial de Maddy no se renderizó con suficiente presencia")
+    if not maddy_art or maddy_art.get("width", 0) < 120:
+        raise AssertionError("Maddy volvió a quedar demasiado pequeña en el pie")
     if PDF_OUTPUT.stat().st_size < 20_000:
         raise AssertionError("El PDF exportado parece incompleto")
 finally:
