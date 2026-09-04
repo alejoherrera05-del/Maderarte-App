@@ -53,20 +53,21 @@ try:
         };
       };
       const page = pick('.quote-preview-main-page');
-      const header = pick('.quote-editorial-header');
-      const hero = pick('.quote-editorial-hero');
-      const strip = pick('.quote-editorial-strip');
-      const client = pick('.quote-editorial-client');
-      const detail = pick('.quote-editorial-section-heading');
+      const header = pick('.quote-brand-header');
+      const band = pick('.quote-brand-band');
+      const meta = pick('.quote-doc-meta');
+      const title = pick('.quote-document-title');
+      const client = pick('.quote-client-section');
+      const detail = pick('.quote-section-heading');
       const result = {
         page,
         header,
-        hero,
-        strip,
+        band,
+        meta,
+        title,
         client,
         detailHeading: detail,
-        document: pick('.quote-editorial-document'),
-        number: pick('.quote-editorial-document > strong')
+        number: pick('.quote-doc-meta-item > strong')
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
       if (page && detail) result.detailStart = Math.round(detail.top - page.top);
@@ -79,19 +80,20 @@ try:
     print(f"Screenshot guardado en {OUTPUT}")
 
     header_height = metrics.get("header", {}).get("height", 999)
-    hero_height = metrics.get("hero", {}).get("height", 999)
+    band_height = metrics.get("band", {}).get("height", 999)
+    meta_height = metrics.get("meta", {}).get("height", 999)
     client_start = metrics.get("clientStart", 999)
     detail_start = metrics.get("detailStart", 999)
 
-    if header_height < 135:
-        raise AssertionError(f"Cabecera demasiado comprimida: {header_height}px")
-    if header_height > 190:
-        raise AssertionError(f"Cabecera demasiado alta: {header_height}px")
-    if hero_height < 90 or hero_height > 120:
-        raise AssertionError(f"Pieza gráfica superior fuera de rango: {hero_height}px")
-    if client_start > 220:
+    if header_height < 145 or header_height > 205:
+        raise AssertionError(f"Cabecera fuera de rango: {header_height}px")
+    if band_height < 105 or band_height > 145:
+        raise AssertionError(f"Franja de marca fuera de rango: {band_height}px")
+    if meta_height < 34 or meta_height > 52:
+        raise AssertionError(f"Cápsula número/fecha fuera de rango: {meta_height}px")
+    if client_start > 235:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
-    if detail_start > 320:
+    if detail_start > 335:
         raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
 finally:
     driver.quit()
