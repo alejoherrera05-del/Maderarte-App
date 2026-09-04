@@ -46,18 +46,20 @@ assert.match(documentJs, /client\.document \?/);
 assert.match(documentJs, /data\.discount > 0 \?/);
 assert.doesNotMatch(documentJs, /Sin especificaciones adicionales/);
 
-assert.match(documentJs, /quote-minimal-header/);
-assert.match(documentJs, /quote-minimal-document/);
-assert.match(documentJs, /quote-minimal-contact/);
+assert.match(documentJs, /quote-editorial-header/);
+assert.match(documentJs, /quote-editorial-hero/);
+assert.match(documentJs, /quote-editorial-document/);
+assert.match(documentJs, /quote-editorial-strip/);
+assert.match(documentJs, /quote-editorial-client/);
 assert.doesNotMatch(documentJs, /quote-premium-doc-card/);
-assert.doesNotMatch(documentJs, /quote-premium-company-grid/);
 assert.doesNotMatch(documentJs, /quote-premium-context-band/);
 assert.doesNotMatch(documentJs, /quote-preview-footer/);
 
-assert.match(documentCss, /\.quote-minimal-header/);
-assert.match(documentCss, /\.quote-minimal-primary/);
-assert.match(documentCss, /\.quote-minimal-contact/);
+assert.match(documentCss, /\.quote-editorial-hero/);
+assert.match(documentCss, /\.quote-editorial-document/);
+assert.match(documentCss, /\.quote-editorial-strip/);
+assert.match(documentCss, /background:\s*#292724/);
 assert.doesNotMatch(documentCss, /\.quote-premium-contact-icon/);
 
 console.log('OK · cotización Maderarte protegida');
-console.log('OK · documento editorial minimalista protegido');
+console.log('OK · encabezado editorial equilibrado protegido');
