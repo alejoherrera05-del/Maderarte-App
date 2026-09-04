@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 
 BASE_URL = os.environ.get(
@@ -18,7 +18,7 @@ options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--window-size=1680,1400")
+options.add_argument("--window-size=1680,1500")
 options.add_argument("--force-device-scale-factor=1")
 
 driver = webdriver.Chrome(options=options)
@@ -37,15 +37,25 @@ try:
       if (advisor) advisor.textContent = 'Alejandro Herrera';
     """)
 
-    driver.find_element(By.ID, "quote-client-name").send_keys("Cliente de muestra")
-    driver.find_element(By.ID, "quote-client-document").send_keys("123456789")
-    driver.find_element(By.ID, "quote-client-phone").send_keys("3000000000")
-    driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="description"]').send_keys("Sofá de diseño personalizado")
-    driver.find_element(By.CSS_SELECTOR, '.quote-item [data-field="unitValue"]').send_keys("4500000")
+    driver.find_element(By.ID, "quote-client-name").send_keys("Daniela Torres García")
+    driver.find_element(By.ID, "quote-client-document").send_keys("1061760852")
+    driver.find_element(By.ID, "quote-client-phone").send_keys("3001234567")
+    driver.find_element(By.ID, "quote-client-email").send_keys("cliente@muestra.com")
+    driver.find_element(By.ID, "quote-client-address").send_keys("Calle 5 # 8-20")
+    driver.find_element(By.ID, "quote-client-city").send_keys("Popayán")
+
+    item = '.quote-item'
+    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="description"]').send_keys("Sofá Oslo 2.10 m")
+    Select(driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="category"]')).select_by_value("SALA")
+    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="fabric"]').send_keys("Bouclé marfil")
+    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="wood"]').send_keys("Madera natural tono champaña")
+    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="specifications"]').send_keys("Medidas 2.10 x 0.88 m · Espuma alta densidad · Cojines decorativos incluidos")
+    driver.find_element(By.CSS_SELECTOR, f'{item} [data-field="unitValue"]').send_keys("4500000")
 
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-document-signature")))
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-commercial-conditions")))
     time.sleep(0.6)
 
     metrics = driver.execute_script("""
@@ -58,7 +68,8 @@ try:
           top: Math.round(rect.top), bottom: Math.round(rect.bottom),
           width: Math.round(rect.width), height: Math.round(rect.height),
           fontSize: style.fontSize, lineHeight: style.lineHeight,
-          display: style.display, fontFamily: style.fontFamily
+          display: style.display, fontFamily: style.fontFamily,
+          backgroundColor: style.backgroundColor
         };
       };
       const page = pick('.quote-preview-main-page');
@@ -76,6 +87,8 @@ try:
         title,
         client,
         detailHeading: detail,
+        item: pick('.quote-preview-item'),
+        conditions: pick('.quote-commercial-conditions'),
         signature: pick('.quote-document-signature'),
         signatureName: pick('.quote-document-signature span'),
         number: pick('.quote-doc-meta-item > strong')
@@ -96,17 +109,20 @@ try:
     client_start = metrics.get("clientStart", 999)
     detail_start = metrics.get("detailStart", 999)
     signature = metrics.get("signature")
+    conditions = metrics.get("conditions")
 
     if header_height < 145 or header_height > 205:
         raise AssertionError(f"Cabecera fuera de rango: {header_height}px")
     if band_height < 105 or band_height > 145:
         raise AssertionError(f"Franja de marca fuera de rango: {band_height}px")
     if meta_height < 34 or meta_height > 52:
-        raise AssertionError(f"Cápsula número/fecha fuera de rango: {meta_height}px")
+        raise AssertionError(f"Barra número/fecha/sede fuera de rango: {meta_height}px")
     if client_start > 235:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
-    if detail_start > 335:
+    if detail_start > 345:
         raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
+    if not conditions or conditions.get("height", 0) < 45:
+        raise AssertionError("Las condiciones comerciales diseñadas no se renderizaron")
     if not signature or signature.get("height", 0) < 20:
         raise AssertionError("La firma final del asesor no se renderizó")
 finally:
