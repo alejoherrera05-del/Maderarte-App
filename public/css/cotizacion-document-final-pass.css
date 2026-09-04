@@ -1,8 +1,19 @@
-/* Final approval pass for the client-facing quotation.
- * Improves readability and information hierarchy without changing the approved visual direction.
+/* HomeEasy hybrid body for the client-facing Maderarte quotation.
+ * Keep the approved Maderarte letterhead; simplify everything below it using
+ * the calmer, proven HomeEasy document rhythm: client fields, product rows,
+ * observations, commercial conditions and a compact finance box.
  */
 
-/* Corporate information must remain easy to read when the document is viewed or printed. */
+.quote-editorial-page {
+  --hybrid-accent: #b85a2b;
+  --hybrid-ink: #302d2a;
+  --hybrid-muted: #77716b;
+  --hybrid-soft: #9a948e;
+  --hybrid-line: #e5e1dd;
+  --hybrid-surface: #fafafa;
+}
+
+/* Preserve the approved header and keep corporate information readable. */
 .quote-editorial-page .quote-editorial-company {
   padding: 10px 0;
 }
@@ -21,192 +32,568 @@
   line-height: 1.28;
 }
 
-/* Client data: labels give meaning to each datum without turning the document into a form. */
+/* From this point down, use the HomeEasy document language. */
+.quote-editorial-page .quote-editorial-body {
+  padding: 16px 36px 18px;
+}
+
+/* CLIENTE — simple labeled fields, not an editorial hero. */
+.quote-editorial-page .quote-editorial-client {
+  display: block;
+  padding: 0 0 16px;
+  border-bottom: 0;
+}
+
+.quote-editorial-page .quote-editorial-client-heading {
+  padding: 0 0 6px;
+  border-bottom: 2px solid #f0eeec;
+}
+
+.quote-editorial-page .quote-editorial-client-heading span {
+  font-size: 0;
+}
+
+.quote-editorial-page .quote-editorial-client-heading span::after {
+  content: 'Información del cliente';
+  color: var(--hybrid-accent);
+  font-size: .72rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-client-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 11px;
+}
+
+.quote-editorial-page .quote-editorial-client-copy h2 {
+  position: relative;
+  margin: 0;
+  padding: 15px 0 6px;
+  border-bottom: 1px solid #dedbd8;
+  color: var(--hybrid-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .90rem;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.quote-editorial-page .quote-editorial-client-copy h2::before {
+  content: 'Nombre completo';
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--hybrid-soft);
+  font-size: .54rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
 .quote-editorial-page .quote-editorial-client-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 7px 0;
-  margin-top: 10px;
-  font-size: .68rem;
-  line-height: 1.4;
+  display: grid;
+  grid-template-columns: .82fr .78fr 1.25fr 1.55fr;
+  gap: 14px;
+  margin-top: 0;
 }
 
 .quote-editorial-page .quote-editorial-client-detail {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 5px;
+  display: grid;
+  gap: 4px;
   min-width: 0;
-}
-
-.quote-editorial-page .quote-editorial-client-detail small {
-  color: #8c8680;
-  font-size: .54rem;
-  line-height: 1;
-  font-weight: 680;
-  letter-spacing: .035em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.quote-editorial-page .quote-editorial-client-detail strong {
-  color: #5c5651;
-  font-size: .68rem;
-  line-height: 1.35;
-  font-weight: 560;
-  overflow-wrap: anywhere;
+  padding: 0 0 6px;
+  border-bottom: 1px solid #dedbd8;
 }
 
 .quote-editorial-page .quote-editorial-client-detail + .quote-editorial-client-detail::before {
-  content: '';
-  width: 1px;
-  height: 12px;
-  margin: 0 11px;
-  background: #ddd8d3;
+  display: none;
 }
 
-/* Product facts gain a little more readability; quantity belongs with the commercial value. */
+.quote-editorial-page .quote-editorial-client-detail small {
+  color: var(--hybrid-soft);
+  font-size: .53rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-client-detail strong {
+  min-width: 0;
+  color: #4f4a46;
+  font-size: .68rem;
+  line-height: 1.3;
+  font-weight: 590;
+  overflow-wrap: anywhere;
+}
+
+/* PRODUCTOS — HomeEasy-style rows instead of labeled mini-columns everywhere. */
+.quote-editorial-page .quote-editorial-items-section {
+  margin-top: 5px;
+}
+
+.quote-editorial-page .quote-editorial-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 0 6px;
+  border-bottom: 2px solid var(--hybrid-accent);
+}
+
+.quote-editorial-page .quote-editorial-section-head > div > span {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-section-head h2 {
+  margin: 0;
+  color: var(--hybrid-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .72rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-section-head h2::after {
+  content: '';
+}
+
+.quote-editorial-page .quote-editorial-section-head > strong {
+  color: var(--hybrid-muted);
+  font-size: .62rem;
+  font-weight: 600;
+}
+
+.quote-editorial-page .quote-editorial-item {
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr) 142px;
+  gap: 12px;
+  align-items: start;
+  padding: 11px 0 10px;
+  border-bottom: 1px solid #efedeb;
+}
+
+.quote-editorial-page .quote-editorial-item-number {
+  padding-top: 2px;
+  color: var(--hybrid-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .70rem;
+  line-height: 1.1;
+  font-weight: 750;
+}
+
+.quote-editorial-page .quote-editorial-item-main {
+  min-width: 0;
+}
+
 .quote-editorial-page .quote-editorial-item-title {
   display: block;
 }
 
-.quote-editorial-page .quote-editorial-item-facts small {
-  font-size: .55rem;
-  letter-spacing: .035em;
+.quote-editorial-page .quote-editorial-item-title h3 {
+  margin: 0;
+  color: var(--hybrid-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .78rem;
+  line-height: 1.25;
+  font-weight: 650;
 }
 
-.quote-editorial-page .quote-editorial-item-facts strong,
+.quote-editorial-page .quote-editorial-item-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.quote-editorial-page .quote-editorial-item-facts > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+}
+
+.quote-editorial-page .quote-editorial-item-facts > span + span::before {
+  content: '·';
+  margin: 0 6px;
+  color: #c5c0bb;
+}
+
+.quote-editorial-page .quote-editorial-item-facts small {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-item-facts strong {
+  color: #706a64;
+  font-size: .61rem;
+  line-height: 1.35;
+  font-weight: 520;
+}
+
 .quote-editorial-page .quote-editorial-item-spec {
-  font-size: .68rem;
-  line-height: 1.44;
+  margin: 4px 0 0;
+  max-width: 88ch;
+  color: #817b75;
+  font-size: .59rem;
+  line-height: 1.35;
 }
 
 .quote-editorial-page .quote-editorial-item-price {
   display: grid;
   justify-items: end;
   align-content: start;
-  min-width: 138px;
-  padding-top: 1px;
+  min-width: 0;
+  padding-top: 0;
+  text-align: right;
 }
 
 .quote-editorial-page .quote-editorial-item-price small {
-  color: #7f7973;
-  font-size: .56rem;
+  color: var(--hybrid-muted);
+  font-size: .57rem;
   line-height: 1;
-  font-weight: 650;
-  letter-spacing: .025em;
+  font-weight: 600;
+  letter-spacing: 0;
   text-transform: none;
 }
 
 .quote-editorial-page .quote-editorial-item-price strong {
-  margin-top: 7px;
-  font-size: .92rem;
+  margin-top: 5px;
+  color: var(--hybrid-ink);
+  font-size: .78rem;
+  line-height: 1;
+  font-weight: 720;
 }
 
 .quote-editorial-page .quote-editorial-item-price span {
-  margin-top: 5px;
-  color: #8b857f;
-  font-size: .58rem;
-}
-
-/* The investment band now uses its left side intentionally instead of leaving visual dead space. */
-.quote-editorial-page .quote-editorial-investment {
-  grid-template-columns: minmax(0, 1fr) minmax(245px, auto);
-  gap: 28px;
-  align-items: center;
-  min-height: 82px;
-  padding: 14px 18px 15px;
-}
-
-.quote-editorial-page .quote-editorial-investment-context {
-  min-width: 0;
-  display: grid;
-  align-content: center;
-  justify-items: start;
-}
-
-.quote-editorial-page .quote-editorial-investment-context > span {
-  color: #8b857f;
+  margin-top: 4px;
+  color: #918b85;
   font-size: .55rem;
+}
+
+/* Bottom zone follows HomeEasy: conditions on the left, finance box on the right. */
+.quote-editorial-page .quote-editorial-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(255px, .78fr);
+  grid-template-areas:
+    'client client'
+    'items items'
+    'terms finance'
+    'signoff signoff';
+  column-gap: 24px;
+  align-content: start;
+}
+
+.quote-editorial-page .quote-editorial-client { grid-area: client; }
+.quote-editorial-page .quote-editorial-items-section { grid-area: items; }
+.quote-editorial-page .quote-editorial-terms { grid-area: terms; }
+.quote-editorial-page .quote-editorial-investment { grid-area: finance; }
+.quote-editorial-page .quote-editorial-signoff { grid-area: signoff; }
+
+/* CONDITIONS — simple commercial copy, no cards. */
+.quote-editorial-page .quote-editorial-terms {
+  margin-top: 16px;
+  min-width: 0;
+}
+
+.quote-editorial-page .quote-editorial-section-kicker {
+  margin: 0 0 7px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #f0eeec;
+  color: var(--hybrid-accent);
+  font-size: .66rem;
   line-height: 1;
-  font-weight: 700;
-  letter-spacing: .075em;
+  font-weight: 800;
+  letter-spacing: .065em;
   text-transform: uppercase;
 }
 
-.quote-editorial-page .quote-editorial-investment-context > strong {
-  margin-top: 6px;
-  color: #373330;
-  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
-  font-size: 1rem;
-  line-height: 1.1;
-  font-weight: 500;
-}
-
-.quote-editorial-page .quote-editorial-investment-context > small {
-  margin-top: 5px;
-  color: #7d7771;
-  font-size: .62rem;
-  line-height: 1.3;
-}
-
-.quote-editorial-page .quote-editorial-price-breakdown {
-  width: min(280px, 100%);
-  margin-top: 9px;
+.quote-editorial-page .quote-editorial-term-cards {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 5px;
+  border: 0;
 }
 
-.quote-editorial-page .quote-editorial-price-breakdown span {
-  font-size: .64rem;
+.quote-editorial-page .quote-editorial-term-card,
+.quote-editorial-page .quote-editorial-term-card + .quote-editorial-term-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-/* Secondary commercial text should be readable without increasing visual weight. */
-.quote-editorial-page .quote-editorial-section-head > div > span,
-.quote-editorial-page .quote-editorial-section-kicker {
-  font-size: .57rem;
+.quote-editorial-page .quote-editorial-term-icon {
+  display: none;
 }
 
-.quote-editorial-page .quote-editorial-section-head > strong {
-  font-size: .62rem;
+.quote-editorial-page .quote-editorial-term-value {
+  grid-column: 1;
+  color: var(--hybrid-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .68rem;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.quote-editorial-page .quote-editorial-term-time .quote-editorial-term-value {
+  color: #625c57;
+}
+
+.quote-editorial-page .quote-editorial-term-value small {
+  display: inline;
+  margin: 0 0 0 2px;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.quote-editorial-page .quote-editorial-term-copy {
+  grid-column: 2;
+  min-width: 0;
 }
 
 .quote-editorial-page .quote-editorial-term-copy strong {
-  font-size: .71rem;
+  display: block;
+  color: #514c47;
+  font-size: .64rem;
+  line-height: 1.3;
+  font-weight: 650;
 }
 
-.quote-editorial-page .quote-editorial-term-copy p,
-.quote-editorial-page .quote-editorial-term-copy span,
+.quote-editorial-page .quote-editorial-term-copy p {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-term-copy span {
+  display: inline;
+  margin: 0 0 0 5px;
+  color: var(--hybrid-muted);
+  font-size: .58rem;
+  font-weight: 550;
+}
+
+.quote-editorial-page .quote-editorial-notes {
+  margin: 10px 0 0;
+  padding: 8px 0 0;
+  border-top: 1px solid #ece9e6;
+}
+
+.quote-editorial-page .quote-editorial-notes strong {
+  display: block;
+  color: var(--hybrid-soft);
+  font-size: .54rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
 .quote-editorial-page .quote-editorial-notes p {
-  font-size: .62rem;
+  margin: 4px 0 0;
+  color: #6f6963;
+  font-size: .59rem;
+  line-height: 1.38;
+}
+
+/* FINANCE — adapted directly from the HomeEasy finance-box idea. */
+.quote-editorial-page .quote-editorial-investment {
+  display: block;
+  align-self: start;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 16px;
+  padding: 12px 14px 13px;
+  border: 0;
+  border-left: 5px solid #c2a468;
+  border-radius: 10px;
+  background: var(--hybrid-surface);
+}
+
+.quote-editorial-page .quote-editorial-investment-context {
+  display: block;
+}
+
+.quote-editorial-page .quote-editorial-investment-context > span,
+.quote-editorial-page .quote-editorial-investment-context > strong,
+.quote-editorial-page .quote-editorial-investment-context > small {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  gap: 6px;
+  margin: 0;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  color: #88827c;
+  font-size: .64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown strong {
+  color: #55504b;
+  font-size: .69rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.quote-editorial-page .quote-editorial-total {
+  min-width: 0;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 2px solid #eae7e4;
+  text-align: right;
+}
+
+.quote-editorial-page .quote-editorial-total > span {
+  color: var(--hybrid-accent);
+  font-size: .68rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-total > strong {
+  margin-top: 5px;
+  color: var(--hybrid-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 1.28rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.quote-editorial-page .quote-editorial-total > small {
+  margin-top: 5px;
+  color: #69635e;
+  font-size: .59rem;
+  line-height: 1.3;
+  font-weight: 580;
+}
+
+/* Footer: quiet, HomeEasy-like, with Maddy and advisor in one compact line. */
+.quote-editorial-page .quote-editorial-signoff {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: end;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #ece9e6;
+}
+
+.quote-editorial-page .quote-editorial-signature {
+  grid-column: 2;
+  grid-row: 1;
+  width: 170px;
+  margin: 0;
+  padding-top: 6px;
+  border-top: 1px solid #d6d1cc;
+  color: #58524d;
+  text-align: center;
+}
+
+.quote-editorial-page .quote-editorial-signature span {
+  font-size: .72rem;
+}
+
+.quote-editorial-page .quote-editorial-footer {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.quote-editorial-page .quote-editorial-footer > img {
+  width: 82px;
+  opacity: .46;
+}
+
+.quote-editorial-page .quote-editorial-footer-copy {
+  gap: 2px;
+}
+
+.quote-editorial-page .quote-editorial-footer-copy strong {
+  color: #6d6761;
+  font-size: .50rem;
+}
+
+.quote-editorial-page .quote-editorial-footer-copy span {
+  color: #9a948e;
+  font-size: .43rem;
 }
 
 @media (max-width: 760px) {
+  .quote-editorial-page .quote-editorial-body {
+    display: block;
+    padding: 16px 20px 18px;
+  }
+
   .quote-editorial-page .quote-editorial-client-line {
-    display: grid;
-    gap: 7px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .quote-editorial-page .quote-editorial-client-detail {
-    display: flex;
-  }
-
-  .quote-editorial-page .quote-editorial-client-detail + .quote-editorial-client-detail::before {
-    display: none;
+  .quote-editorial-page .quote-editorial-item {
+    grid-template-columns: 28px minmax(0, 1fr);
   }
 
   .quote-editorial-page .quote-editorial-item-price {
     grid-column: 2;
     justify-items: start;
-    min-width: 0;
+    margin-top: 2px;
     text-align: left;
   }
 
-  .quote-editorial-page .quote-editorial-investment {
+  .quote-editorial-page .quote-editorial-investment,
+  .quote-editorial-page .quote-editorial-terms {
+    margin-top: 16px;
+  }
+
+  .quote-editorial-page .quote-editorial-signoff {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
 
-  .quote-editorial-page .quote-editorial-total {
-    text-align: left;
+  .quote-editorial-page .quote-editorial-footer,
+  .quote-editorial-page .quote-editorial-signature {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .quote-editorial-page .quote-editorial-signature {
+    justify-self: end;
+  }
+}
+
+@media (max-width: 460px) {
+  .quote-editorial-page .quote-editorial-client-line {
+    grid-template-columns: 1fr;
   }
 }
