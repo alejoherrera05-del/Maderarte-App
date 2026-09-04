@@ -1,0 +1,568 @@
+.quote-editorial-page {
+  min-height: 1118px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #292624;
+}
+
+.quote-editorial-header {
+  padding: 29px 34px 0;
+}
+
+.quote-editorial-letterhead {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, .84fr) minmax(0, 1.16fr);
+  gap: 44px;
+  align-items: start;
+  padding-bottom: 21px;
+  border-bottom: 1px solid #d8d2cc;
+}
+
+.quote-editorial-letterhead::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 72px;
+  height: 2px;
+  background: #b65a2b;
+}
+
+.quote-editorial-brand {
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.quote-editorial-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.quote-editorial-brand-lockup img:first-child {
+  width: 51px;
+  height: 51px;
+  flex: 0 0 51px;
+  object-fit: contain;
+}
+
+.quote-editorial-brand-lockup img:last-child {
+  width: min(196px, calc(100% - 64px));
+  height: auto;
+}
+
+.quote-editorial-brand p {
+  margin: 9px 0 0 64px;
+  color: #837d77;
+  font-size: .52rem;
+  line-height: 1.35;
+  letter-spacing: .012em;
+}
+
+.quote-editorial-document {
+  min-width: 0;
+  padding-left: 31px;
+  border-left: 1px solid #ded8d2;
+}
+
+.quote-editorial-eyebrow,
+.quote-editorial-section-kicker,
+.quote-editorial-section-head > div > span,
+.quote-editorial-marker {
+  color: #a44e24;
+  font-size: .44rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-document h1 {
+  margin: 6px 0 15px;
+  color: #252220;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
+  font-size: 2.08rem;
+  line-height: .95;
+  font-weight: 500;
+  letter-spacing: .035em;
+}
+
+.quote-editorial-meta {
+  display: grid;
+  grid-template-columns: 1.2fr .9fr 1fr;
+  gap: 18px;
+}
+
+.quote-editorial-meta > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.quote-editorial-meta small {
+  color: #9a948e;
+  font-size: .42rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #393532;
+  font-size: .65rem;
+  line-height: 1.2;
+  font-weight: 620;
+  white-space: nowrap;
+}
+
+.quote-editorial-company {
+  display: grid;
+  grid-template-columns: 1.06fr 1.34fr 1.08fr;
+  gap: 17px;
+  align-items: start;
+  padding: 11px 0 12px;
+  border-bottom: 1px solid #eee9e4;
+  color: #77716b;
+  font-size: .46rem;
+  line-height: 1.38;
+}
+
+.quote-editorial-company > span {
+  min-width: 0;
+}
+
+.quote-editorial-company > span + span {
+  padding-left: 16px;
+  border-left: 1px solid #e7e1dc;
+}
+
+.quote-editorial-company strong {
+  color: #3f3a36;
+  font-weight: 650;
+}
+
+.quote-editorial-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 34px 22px;
+}
+
+.quote-editorial-client {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding: 12px 0 17px;
+  border-bottom: 1px solid #e9e4df;
+}
+
+.quote-editorial-marker {
+  min-height: 34px;
+  padding: 4px 0 0 10px;
+  border-left: 2px solid #b65a2b;
+}
+
+.quote-editorial-client-copy {
+  min-width: 0;
+}
+
+.quote-editorial-client-copy h2 {
+  margin: 0;
+  color: #2a2724;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
+  font-size: 1.27rem;
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: -.015em;
+}
+
+.quote-editorial-client-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 0;
+  margin-top: 8px;
+  color: #7d7771;
+  font-size: .51rem;
+  line-height: 1.35;
+}
+
+.quote-editorial-client-line span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.quote-editorial-client-line span + span::before {
+  content: '';
+  width: 1px;
+  height: 11px;
+  margin: 0 10px;
+  background: #ddd7d1;
+}
+
+.quote-editorial-items-section {
+  margin-top: 19px;
+}
+
+.quote-editorial-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #2e2a27;
+}
+
+.quote-editorial-section-head > div > span {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.quote-editorial-section-head h2 {
+  margin: 0;
+  color: #2a2724;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
+  font-size: 1.03rem;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.quote-editorial-section-head > strong {
+  color: #8c8680;
+  font-size: .50rem;
+  font-weight: 580;
+}
+
+.quote-editorial-items {
+  margin: 0;
+}
+
+.quote-editorial-item {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) minmax(120px, auto);
+  gap: 15px;
+  align-items: start;
+  padding: 16px 0 15px;
+  border-bottom: 1px solid #ebe6e1;
+}
+
+.quote-editorial-item-number {
+  padding-top: 2px;
+  color: #aa5428;
+  font-family: "Iowan Old Style", Baskerville, Georgia, serif;
+  font-size: .84rem;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.quote-editorial-item-main {
+  min-width: 0;
+}
+
+.quote-editorial-item-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.quote-editorial-item-title h3 {
+  margin: 0;
+  color: #2d2926;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
+  font-size: .93rem;
+  line-height: 1.12;
+  font-weight: 500;
+}
+
+.quote-editorial-item-title > span {
+  flex: 0 0 auto;
+  color: #96908a;
+  font-size: .48rem;
+  font-weight: 560;
+}
+
+.quote-editorial-item-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 9px;
+}
+
+.quote-editorial-item-facts > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.quote-editorial-item-facts small {
+  color: #9a948e;
+  font-size: .42rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-item-facts strong {
+  color: #5d5751;
+  font-size: .52rem;
+  line-height: 1.35;
+  font-weight: 560;
+}
+
+.quote-editorial-item-spec {
+  margin: 8px 0 0;
+  max-width: 62ch;
+  color: #77716b;
+  font-size: .53rem;
+  line-height: 1.45;
+}
+
+.quote-editorial-item-price {
+  min-width: 120px;
+  padding-top: 1px;
+  text-align: right;
+}
+
+.quote-editorial-item-price small {
+  display: block;
+  color: #9a948e;
+  font-size: .42rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-item-price strong {
+  display: block;
+  margin-top: 5px;
+  color: #2f2b28;
+  font-size: .76rem;
+  line-height: 1;
+  font-weight: 650;
+}
+
+.quote-editorial-item-price span {
+  display: block;
+  margin-top: 4px;
+  color: #97918b;
+  font-size: .45rem;
+}
+
+.quote-editorial-investment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(210px, .72fr);
+  gap: 32px;
+  align-items: end;
+  margin-top: 19px;
+  padding: 16px 0 17px;
+  border-top: 1px solid #2d2926;
+  border-bottom: 1px solid #ded8d2;
+}
+
+.quote-editorial-summary-lines {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px 26px;
+}
+
+.quote-editorial-summary-lines > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee9e4;
+}
+
+.quote-editorial-summary-lines span {
+  color: #7d7771;
+  font-size: .50rem;
+}
+
+.quote-editorial-summary-lines strong {
+  color: #3d3935;
+  font-size: .56rem;
+  font-weight: 620;
+}
+
+.quote-editorial-total {
+  text-align: right;
+}
+
+.quote-editorial-total > span {
+  display: block;
+  color: #a44e24;
+  font-size: .46rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-total > strong {
+  display: block;
+  margin-top: 7px;
+  color: #2a2724;
+  font-family: "Iowan Old Style", Baskerville, "Times New Roman", Georgia, serif;
+  font-size: 1.48rem;
+  line-height: .95;
+  font-weight: 500;
+  letter-spacing: -.025em;
+}
+
+.quote-editorial-terms {
+  margin-top: 18px;
+}
+
+.quote-editorial-section-kicker {
+  margin-bottom: 5px;
+}
+
+.quote-editorial-term-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 13px;
+  align-items: center;
+  min-height: 52px;
+  padding: 9px 0;
+  border-top: 1px solid #e4dfda;
+}
+
+.quote-editorial-term-row:last-of-type {
+  border-bottom: 1px solid #e4dfda;
+}
+
+.quote-editorial-term-index {
+  color: #a44e24;
+  font-family: "Iowan Old Style", Baskerville, Georgia, serif;
+  font-size: .64rem;
+}
+
+.quote-editorial-term-row strong {
+  display: block;
+  color: #37332f;
+  font-size: .58rem;
+  line-height: 1.2;
+  font-weight: 650;
+}
+
+.quote-editorial-term-row p {
+  margin: 3px 0 0;
+  color: #817b75;
+  font-size: .49rem;
+  line-height: 1.4;
+}
+
+.quote-editorial-term-row > b {
+  color: #2e2a27;
+  font-size: .59rem;
+  line-height: 1;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.quote-editorial-notes {
+  margin-top: 9px;
+  padding-left: 47px;
+}
+
+.quote-editorial-notes strong {
+  color: #4d4843;
+  font-size: .49rem;
+  font-weight: 650;
+}
+
+.quote-editorial-notes p {
+  margin: 3px 0 0;
+  color: #7d7771;
+  font-size: .49rem;
+  line-height: 1.42;
+}
+
+.quote-editorial-signoff {
+  margin-top: auto;
+  padding-top: 26px;
+}
+
+.quote-editorial-signature {
+  width: 190px;
+  margin: 0 0 18px auto;
+  padding-top: 7px;
+  border-top: 1px solid #cfc9c3;
+  color: #423d38;
+  text-align: center;
+}
+
+.quote-editorial-signature span {
+  font-family: "Iowan Old Style", Baskerville, Georgia, serif;
+  font-size: .84rem;
+  line-height: 1;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.quote-editorial-footer {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid #e5e0db;
+}
+
+.quote-editorial-footer img {
+  width: 70px;
+  height: auto;
+  opacity: .50;
+}
+
+.quote-editorial-footer > div {
+  display: grid;
+  gap: 2px;
+}
+
+.quote-editorial-footer strong {
+  color: #67615b;
+  font-size: .47rem;
+  line-height: 1.25;
+  font-weight: 590;
+}
+
+.quote-editorial-footer span {
+  color: #98928c;
+  font-size: .42rem;
+  line-height: 1.25;
+}
+
+.quote-editorial-footer-social {
+  text-align: right;
+  white-space: nowrap;
+}
+
+body.quote-print-export {
+  margin: 0 !important;
+  background: #fff !important;
+}
+
+body.quote-print-export .quote-preview-main-page {
+  width: 210mm !important;
+  min-height: 297mm !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@media print {
+  @page { size: A4; margin: 0; }
+}
