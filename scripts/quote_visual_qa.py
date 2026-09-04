@@ -18,10 +18,14 @@ driver = webdriver.Chrome(options=opts); wait = WebDriverWait(driver, 35)
 def setv(node, text):
     node.clear(); node.send_keys(str(text)); node.send_keys(' '); node.send_keys('\ue003')
 
+def set_quantity(node, text):
+    node.clear(); node.send_keys(str(text))
+    driver.execute_script("arguments[0].dispatchEvent(new Event('input',{bubbles:true}));", node)
+
 def fill(card, desc, cat, qty, fabric, wood, spec, price):
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="description"]'), desc)
     Select(card.find_element(By.CSS_SELECTOR,'[data-field="category"]')).select_by_value(cat)
-    setv(card.find_element(By.CSS_SELECTOR,'[data-field="quantity"]'), qty)
+    set_quantity(card.find_element(By.CSS_SELECTOR,'[data-field="quantity"]'), qty)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="fabric"]'), fabric)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="wood"]'), wood)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="specifications"]'), spec)
