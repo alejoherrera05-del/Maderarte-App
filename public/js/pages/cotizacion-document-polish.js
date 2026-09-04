@@ -111,7 +111,6 @@ function documentHeaderMarkup(data) {
         ${branchAddress ? `<span>${escapeHtml(branchAddress)}</span>` : ''}
         <span>${escapeHtml(contactLine)}</span>
         <span>${escapeHtml(digitalLine)}</span>
-        ${data.advisor ? `<span>Asesor: ${escapeHtml(data.advisor)}</span>` : ''}
       </div>
 
       <div class="quote-doc-meta" aria-label="Datos de la cotización">
@@ -179,6 +178,12 @@ function financeMarkup(data) {
   </div>`;
 }
 
+function signatureMarkup(name) {
+  const clean = String(name || '').trim();
+  if (!clean) return '';
+  return `<div class="quote-document-signature"><span>${escapeHtml(clean)}</span></div>`;
+}
+
 function appendixMarkup(items, number) {
   const withPhotos = items.filter(item => item.photos.length > 0);
   if (!withPhotos.length) return '';
@@ -234,6 +239,7 @@ function renderDocumentPreview() {
         </div>
         ${financeMarkup(data)}
       </div>
+      ${signatureMarkup(data.advisor)}
     </div>
   </section>`;
 
