@@ -1,0 +1,38 @@
+.tracking-card-actions.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tracking-card-head > div,
+.tracking-summary-copy {
+  min-width: 0;
+}
+
+@media (max-width: 430px) {
+  .tracking-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tracking-summary-card {
+    min-height: 96px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 14px 15px;
+  }
+
+  .tracking-summary-value {
+    font-size: 1.62rem;
+    white-space: nowrap;
+  }
+
+  .tracking-summary-note {
+    display: block;
+    font-size: .71rem;
+  }
+
+  .tracking-card-head {
+    gap: 9px;
+  }
+
+  .tracking-client-name {
+    font-size: 1.12rem;
+  }
+}
