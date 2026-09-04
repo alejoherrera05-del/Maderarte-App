@@ -27,7 +27,7 @@ function text(id) {
 
 function optionalDetail(label, rawValue) {
   const clean = String(rawValue || '').trim();
-  return clean ? `<span><b>${escapeHtml(label)}:</b> ${escapeHtml(clean)}</span>` : '';
+  return clean ? `<span><b>${escapeHtml(label)}</b>${escapeHtml(clean)}</span>` : '';
 }
 
 function itemFromCard(card, index) {
@@ -138,10 +138,10 @@ function documentHeaderMarkup(data) {
 function clientMarkup(client) {
   const location = [client.address, client.city].filter(Boolean).join(' · ');
   const fields = [
-    client.document ? `<span>Identificación<strong>${escapeHtml(client.document)}</strong></span>` : '',
-    client.phone ? `<span>Teléfono<strong>${escapeHtml(client.phone)}</strong></span>` : '',
-    client.email ? `<span>Correo<strong>${escapeHtml(client.email)}</strong></span>` : '',
-    location ? `<span>Dirección<strong>${escapeHtml(location)}</strong></span>` : ''
+    client.document ? `<span><small>Identificación</small><strong>${escapeHtml(client.document)}</strong></span>` : '',
+    client.phone ? `<span><small>Teléfono</small><strong>${escapeHtml(client.phone)}</strong></span>` : '',
+    client.email ? `<span><small>Correo</small><strong>${escapeHtml(client.email)}</strong></span>` : '',
+    location ? `<span><small>Dirección</small><strong>${escapeHtml(location)}</strong></span>` : ''
   ].filter(Boolean);
 
   if (!client.name && !fields.length) return '';
@@ -168,13 +168,14 @@ function itemMarkup(item) {
     ? `<div class="quote-preview-item-amount"><strong>${escapeHtml(money(item.subtotal))}</strong><span>${escapeHtml(`${item.quantity} × ${money(item.unitValue)}`)}</span></div>`
     : '';
 
-  return `<div class="quote-preview-item">
+  return `<article class="quote-preview-item">
+    <div class="quote-preview-item-index">${String(item.position).padStart(2, '0')}</div>
     <div class="quote-preview-item-copy">
-      <strong>${escapeHtml(`${item.position}. ${title}`)}</strong>
+      <strong>${escapeHtml(title)}</strong>
       ${details ? `<div class="quote-preview-item-details">${details}</div>` : ''}
     </div>
     ${amount}
-  </div>`;
+  </article>`;
 }
 
 function financeMarkup(data) {
@@ -182,6 +183,20 @@ function financeMarkup(data) {
     <div><span>Subtotal</span><strong>${escapeHtml(money(data.subtotal))}</strong></div>
     ${data.discount > 0 ? `<div><span>Descuento</span><strong>− ${escapeHtml(money(data.discount))}</strong></div>` : ''}
     <div><span>Total</span><strong>${escapeHtml(money(data.total))}</strong></div>
+  </div>`;
+}
+
+function conditionsMarkup(data) {
+  return `<div class="quote-commercial-conditions">
+    <div class="quote-condition quote-condition-deposit">
+      <strong>${COMMERCIAL_RULES.minimumOrderDepositPercent}%</strong>
+      <div><span>Para solicitar el pedido</span><p>Abono mínimo requerido${data.total > 0 ? ` · ${escapeHtml(money(data.minimumDeposit))}` : ''}.</p></div>
+    </div>
+    <div class="quote-condition quote-condition-time">
+      <strong>25–30</strong>
+      <div><span>Días de fabricación</span><p>Contados desde la confirmación del pedido y el abono mínimo.</p></div>
+    </div>
+    ${data.notes ? `<p class="quote-condition-notes"><b>Observaciones</b>${escapeHtml(data.notes)}</p>` : ''}
   </div>`;
 }
 
@@ -226,7 +241,6 @@ function renderDocumentPreview() {
   const data = collectDocumentData();
   const client = clientMarkup(data.client);
   const items = data.items.map(itemMarkup).join('');
-  const minimumText = data.total > 0 ? ` (${money(data.minimumDeposit)})` : '';
 
   const mainPage = `<section class="quote-preview-page quote-preview-main-page quote-maderarte-page">
     ${documentHeaderMarkup(data)}
@@ -238,12 +252,7 @@ function renderDocumentPreview() {
       </div>
       <div class="quote-preview-items">${items}</div>
       <div class="quote-preview-bottom">
-        <div class="quote-preview-terms">
-          <strong>Condiciones comerciales</strong>
-          <p>• Para solicitar e iniciar el pedido se requiere un abono mínimo del ${COMMERCIAL_RULES.minimumOrderDepositPercent}% del valor total${escapeHtml(minimumText)}.</p>
-          <p>• Tiempo estimado de fabricación: ${escapeHtml(manufacturingWindowLabel())}, contado desde la confirmación del pedido y el cumplimiento del abono mínimo.</p>
-          ${data.notes ? `<p><b>Observaciones:</b> ${escapeHtml(data.notes)}</p>` : ''}
-        </div>
+        ${conditionsMarkup(data)}
         ${financeMarkup(data)}
       </div>
       ${signatureMarkup(data.advisor)}
