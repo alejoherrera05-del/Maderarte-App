@@ -37,7 +37,7 @@ try:
 
     wait.until(EC.element_to_be_clickable((By.ID, "quote-preview-button"))).click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, ".quote-preview-main-page")))
-    time.sleep(0.5)
+    time.sleep(0.6)
 
     metrics = driver.execute_script("""
       const pick = (selector) => {
@@ -53,17 +53,20 @@ try:
         };
       };
       const page = pick('.quote-preview-main-page');
-      const detail = pick('.quote-minimal-section-heading');
-      const client = pick('.quote-minimal-client');
+      const header = pick('.quote-editorial-header');
+      const hero = pick('.quote-editorial-hero');
+      const strip = pick('.quote-editorial-strip');
+      const client = pick('.quote-editorial-client');
+      const detail = pick('.quote-editorial-section-heading');
       const result = {
         page,
-        header: pick('.quote-minimal-header'),
-        primary: pick('.quote-minimal-primary'),
-        identity: pick('.quote-minimal-identity'),
-        contact: pick('.quote-minimal-contact'),
+        header,
+        hero,
+        strip,
         client,
         detailHeading: detail,
-        number: pick('.quote-minimal-document strong')
+        document: pick('.quote-editorial-document'),
+        number: pick('.quote-editorial-document > strong')
       };
       if (page && client) result.clientStart = Math.round(client.top - page.top);
       if (page && detail) result.detailStart = Math.round(detail.top - page.top);
@@ -76,13 +79,19 @@ try:
     print(f"Screenshot guardado en {OUTPUT}")
 
     header_height = metrics.get("header", {}).get("height", 999)
+    hero_height = metrics.get("hero", {}).get("height", 999)
     client_start = metrics.get("clientStart", 999)
     detail_start = metrics.get("detailStart", 999)
-    if header_height > 110:
+
+    if header_height < 135:
+        raise AssertionError(f"Cabecera demasiado comprimida: {header_height}px")
+    if header_height > 190:
         raise AssertionError(f"Cabecera demasiado alta: {header_height}px")
-    if client_start > 130:
+    if hero_height < 90 or hero_height > 120:
+        raise AssertionError(f"Pieza gráfica superior fuera de rango: {hero_height}px")
+    if client_start > 220:
         raise AssertionError(f"El cliente empieza demasiado abajo: {client_start}px")
-    if detail_start > 235:
+    if detail_start > 320:
         raise AssertionError(f"El detalle empieza demasiado abajo: {detail_start}px")
 finally:
     driver.quit()
