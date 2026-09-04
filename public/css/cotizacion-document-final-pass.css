@@ -3,6 +3,14 @@
  */
 
 /* Corporate information must remain easy to read when the document is viewed or printed. */
+.quote-editorial-page .quote-editorial-company {
+  padding: 10px 0;
+}
+
+.quote-editorial-page .quote-editorial-company-block {
+  min-height: 44px;
+}
+
 .quote-editorial-page .quote-editorial-company-copy strong {
   font-size: .69rem;
   line-height: 1.22;
