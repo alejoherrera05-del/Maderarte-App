@@ -83,49 +83,51 @@ function collectDocumentData() {
   };
 }
 
-function editorialHeaderMarkup(data) {
+function documentHeaderMarkup(data) {
   const branch = data.branch;
   const branchName = branch?.name || text('quote-meta-branch-name') || data.branchCode || 'Maderarte';
   const branchAddress = branch?.address || '';
   const pending = /pendiente/i.test(data.number);
-  const branchLine = [branchName, branchAddress].filter(Boolean).join(' · ');
-  const contactTop = `WhatsApp ${COMPANY_PROFILE.whatsapp} · Cel. ${COMPANY_PROFILE.mobile}`;
-  const contactBottom = [COMPANY_PROFILE.website, COMPANY_PROFILE.socialHandle].join(' · ');
 
-  return `<header class="quote-editorial-header">
-    <div class="quote-editorial-hero">
-      <div class="quote-editorial-brand">
-        <img class="quote-editorial-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Maderarte">
-        <div class="quote-editorial-brand-copy">
-          <img class="quote-editorial-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
+  const contactLine = [
+    `WhatsApp ${COMPANY_PROFILE.whatsapp}`,
+    `Cel. ${COMPANY_PROFILE.mobile}`
+  ].join(' · ');
+  const digitalLine = [COMPANY_PROFILE.website, COMPANY_PROFILE.socialHandle].join(' · ');
+
+  return `<header class="quote-brand-header">
+    <div class="quote-brand-band">
+      <div class="quote-brand-lockup">
+        <img class="quote-brand-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Maderarte">
+        <div class="quote-brand-copy">
+          <img class="quote-brand-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
           <span>${escapeHtml(COMPANY_PROFILE.slogan)}</span>
         </div>
       </div>
 
-      <div class="quote-editorial-document">
-        <span>COTIZACIÓN</span>
-        <strong class="${pending ? 'is-pending' : ''}">${escapeHtml(data.number)}</strong>
-        <div class="quote-editorial-document-meta">
-          ${data.date ? `<span>${escapeHtml(data.date)}</span>` : ''}
-          <span>Borrador</span>
+      <div class="quote-company-info">
+        <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
+        <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)} · ${escapeHtml(branchName)}</span>
+        ${branchAddress ? `<span>${escapeHtml(branchAddress)}</span>` : ''}
+        <span>${escapeHtml(contactLine)}</span>
+        <span>${escapeHtml(digitalLine)}</span>
+        ${data.advisor ? `<span>Asesor: ${escapeHtml(data.advisor)}</span>` : ''}
+      </div>
+
+      <div class="quote-doc-meta" aria-label="Datos de la cotización">
+        <div class="quote-doc-meta-item">
+          <span>COTIZACIÓN N°</span>
+          <strong class="${pending ? 'is-pending' : ''}">${escapeHtml(data.number)}</strong>
+        </div>
+        <i aria-hidden="true"></i>
+        <div class="quote-doc-meta-item">
+          <span>FECHA</span>
+          <strong>${escapeHtml(data.date || '—')}</strong>
         </div>
       </div>
     </div>
 
-    <div class="quote-editorial-strip">
-      <div class="quote-editorial-strip-cell quote-editorial-company">
-        <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
-        <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span>
-      </div>
-      <div class="quote-editorial-strip-cell quote-editorial-branch">
-        <strong>${escapeHtml(branchLine)}</strong>
-        ${data.advisor ? `<span>Asesor: ${escapeHtml(data.advisor)}</span>` : ''}
-      </div>
-      <div class="quote-editorial-strip-cell quote-editorial-contact">
-        <strong>${escapeHtml(contactTop)}</strong>
-        <span>${escapeHtml(contactBottom)}</span>
-      </div>
-    </div>
+    <div class="quote-document-title">COTIZACIÓN</div>
   </header>`;
 }
 
@@ -140,8 +142,8 @@ function clientMarkup(client) {
 
   if (!client.name && !fields.length) return '';
 
-  return `<section class="quote-editorial-client">
-    <div class="quote-editorial-section-kicker">Cliente</div>
+  return `<section class="quote-client-section">
+    <div class="quote-section-label">Cliente</div>
     ${client.name ? `<h3>${escapeHtml(client.name)}</h3>` : ''}
     ${fields.length ? `<div class="quote-preview-client-grid">${fields.join('')}</div>` : ''}
   </section>`;
@@ -214,22 +216,24 @@ function renderDocumentPreview() {
   const items = data.items.map(itemMarkup).join('');
   const minimumText = data.total > 0 ? ` (${money(data.minimumDeposit)})` : '';
 
-  const mainPage = `<section class="quote-preview-page quote-preview-main-page quote-preview-editorial-page">
-    ${editorialHeaderMarkup(data)}
-    ${client}
-    <div class="quote-editorial-section-heading">
-      <div><span>Propuesta comercial</span><h3>Detalle de la cotización</h3></div>
-      <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
-    </div>
-    <div class="quote-preview-items">${items}</div>
-    <div class="quote-preview-bottom">
-      <div class="quote-preview-terms">
-        <strong>Condiciones comerciales</strong>
-        <p>• Para solicitar e iniciar el pedido se requiere un abono mínimo del ${COMMERCIAL_RULES.minimumOrderDepositPercent}% del valor total${escapeHtml(minimumText)}.</p>
-        <p>• Tiempo estimado de fabricación: ${escapeHtml(manufacturingWindowLabel())}, contado desde la confirmación del pedido y el cumplimiento del abono mínimo.</p>
-        ${data.notes ? `<p><b>Observaciones:</b> ${escapeHtml(data.notes)}</p>` : ''}
+  const mainPage = `<section class="quote-preview-page quote-preview-main-page quote-maderarte-page">
+    ${documentHeaderMarkup(data)}
+    <div class="quote-document-body">
+      ${client}
+      <div class="quote-section-heading">
+        <div><span>Propuesta comercial</span><h3>Detalle de la cotización</h3></div>
+        <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
       </div>
-      ${financeMarkup(data)}
+      <div class="quote-preview-items">${items}</div>
+      <div class="quote-preview-bottom">
+        <div class="quote-preview-terms">
+          <strong>Condiciones comerciales</strong>
+          <p>• Para solicitar e iniciar el pedido se requiere un abono mínimo del ${COMMERCIAL_RULES.minimumOrderDepositPercent}% del valor total${escapeHtml(minimumText)}.</p>
+          <p>• Tiempo estimado de fabricación: ${escapeHtml(manufacturingWindowLabel())}, contado desde la confirmación del pedido y el cumplimiento del abono mínimo.</p>
+          ${data.notes ? `<p><b>Observaciones:</b> ${escapeHtml(data.notes)}</p>` : ''}
+        </div>
+        ${financeMarkup(data)}
+      </div>
     </div>
   </section>`;
 
