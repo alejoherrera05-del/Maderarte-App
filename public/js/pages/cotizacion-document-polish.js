@@ -156,16 +156,29 @@ function documentHeaderMarkup(data) {
   </header>`;
 }
 
+function clientDetail(label, rawValue) {
+  const clean = String(rawValue || '').trim();
+  return clean
+    ? `<span class="quote-editorial-client-detail"><small>${escapeHtml(label)}</small><strong>${escapeHtml(clean)}</strong></span>`
+    : '';
+}
+
 function clientMarkup(client) {
   const location = [client.address, client.city].filter(Boolean).join(' · ');
-  const details = [client.document, client.phone, client.email, location].filter(Boolean);
+  const details = [
+    clientDetail('CC / NIT', client.document),
+    clientDetail('Tel.', client.phone),
+    clientDetail('Correo', client.email),
+    clientDetail('Dirección', location)
+  ].filter(Boolean);
+
   if (!client.name && !details.length) return '';
 
   return `<section class="quote-editorial-client">
     <div class="quote-editorial-client-heading"><span>Preparado para</span></div>
     <div class="quote-editorial-client-copy">
       ${client.name ? `<h2>${escapeHtml(client.name)}</h2>` : ''}
-      ${details.length ? `<div class="quote-editorial-client-line">${details.map(detail => `<span>${escapeHtml(detail)}</span>`).join('')}</div>` : ''}
+      ${details.length ? `<div class="quote-editorial-client-line">${details.join('')}</div>` : ''}
     </div>
   </section>`;
 }
@@ -182,22 +195,26 @@ function itemMarkup(item) {
     itemFact('Tela / acabado', item.fabric),
     itemFact('Madera / acabado', item.wood)
   ].filter(Boolean).join('');
+  const quantityLabel = `${item.quantity} ${item.quantity === 1 ? 'unidad' : 'unidades'}`;
 
   return `<article class="quote-editorial-item">
     <div class="quote-editorial-item-number">${String(item.position).padStart(2, '0')}</div>
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title">
         <h3>${escapeHtml(title)}</h3>
-        <span>${item.quantity} ${item.quantity === 1 ? 'unidad' : 'unidades'}</span>
       </div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
-    ${item.unitValue > 0 ? `<div class="quote-editorial-item-price"><small>Valor</small><strong>${escapeHtml(money(item.subtotal))}</strong>${item.quantity > 1 ? `<span>${escapeHtml(money(item.unitValue))} c/u</span>` : ''}</div>` : ''}
+    <div class="quote-editorial-item-price">
+      <small>${escapeHtml(quantityLabel)}</small>
+      ${item.unitValue > 0 ? `<strong>${escapeHtml(money(item.subtotal))}</strong>${item.quantity > 1 ? `<span>${escapeHtml(money(item.unitValue))} c/u</span>` : ''}` : ''}
+    </div>
   </article>`;
 }
 
 function investmentMarkup(data) {
+  const countLabel = `${data.items.length} ${data.items.length === 1 ? 'mueble incluido' : 'muebles incluidos'} en esta cotización`;
   const breakdown = data.discount > 0
     ? `<div class="quote-editorial-price-breakdown">
         <span>Subtotal <strong>${escapeHtml(money(data.subtotal))}</strong></span>
@@ -206,7 +223,12 @@ function investmentMarkup(data) {
     : '';
 
   return `<section class="quote-editorial-investment">
-    ${breakdown}
+    <div class="quote-editorial-investment-context">
+      <span>Inversión de la propuesta</span>
+      <strong>${escapeHtml(countLabel)}</strong>
+      <small>Valores expresados en pesos colombianos.</small>
+      ${breakdown}
+    </div>
     <div class="quote-editorial-total">
       <span>Total cotizado</span>
       <strong>${escapeHtml(money(data.total))}</strong>
