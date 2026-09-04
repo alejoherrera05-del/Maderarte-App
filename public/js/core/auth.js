@@ -157,6 +157,18 @@ export function previewApiData(action) {
   if (action === 'CLIENTE_OBTENER') return { ...common, data: null };
   if (action === 'ORDENES_LISTAR') return { ...common, data: { items: [], total: 0 } };
   if (action === 'ORDEN_OBTENER') return { ...common, data: null };
+  if (action === 'COTIZACIONES_LISTAR') {
+    const ago = days => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const items = [
+      { number: 'MP-0251', date: ago(2), branch: 'MP', document: '1061760852', client: 'María Fernanda López', phone: '3125559081', description: 'Sofá Oslo, poltronas Nova y mesa Mandala', observations: 'Cliente revisando tonos finales de tela antes de confirmar.', subtotal: 7300000, discount: 300000, total: 7000000, validityDays: 15, deliveryTime: '25–30 días', paymentTerms: '', status: 'ACTIVA', convertedOrder: '', pdfUrl: '', advisor: 'Alejandro Herrera' },
+      { number: 'TP-0128', date: ago(6), branch: 'TP', document: '1029456721', client: 'Carolina Ruiz', phone: '3154408921', description: 'Sala Canoa y mesa de centro', observations: 'Solicitó comparar dos opciones de tela antes de tomar decisión.', subtotal: 4950000, discount: 150000, total: 4800000, validityDays: 15, deliveryTime: '25–30 días', paymentTerms: '', status: 'ACTIVA', convertedOrder: '', pdfUrl: '', advisor: 'Laura Gómez' },
+      { number: 'MP-0247', date: ago(10), branch: 'MP', document: '76311842', client: 'Sergio Muñoz', phone: '3007182045', description: 'Comedor Mándala 6 puestos', observations: 'Pendiente confirmar acabado de madera y fecha estimada de entrega.', subtotal: 9350000, discount: 0, total: 9350000, validityDays: 15, deliveryTime: '25–30 días', paymentTerms: '', status: 'EN_SEGUIMIENTO', convertedOrder: '', pdfUrl: '', advisor: 'Alejandro Herrera' },
+      { number: 'TP-0124', date: ago(14), branch: 'TP', document: '34670281', client: 'Paula Gómez', phone: '3162229180', description: 'Cama Milán y mesas de noche', observations: '', subtotal: 3200000, discount: 0, total: 3200000, validityDays: 15, deliveryTime: '25–30 días', paymentTerms: '', status: 'ACTIVA', convertedOrder: '', pdfUrl: '', advisor: 'Laura Gómez' },
+      { number: 'MP-0239', date: ago(18), branch: 'MP', document: '1061734260', client: 'Andrés Burbano', phone: '3015507712', description: 'Sala Portobelo completa', observations: 'Sin respuesta después de enviar la propuesta. Requiere nuevo contacto comercial.', subtotal: 12400000, discount: 0, total: 12400000, validityDays: 15, deliveryTime: '25–30 días', paymentTerms: '', status: 'VENCIDA', convertedOrder: '', pdfUrl: '', advisor: 'Alejandro Herrera' },
+      { number: 'MP-0235', date: ago(23), branch: 'MP', document: '1085314702', client: 'Juliana Paz', phone: '3189012477', description: 'Alcoba Turqueza', observations: 'Cotización convertida en orden de pedido.', subtotal: 5750000, discount: 0, total: 5750000, validityDays: 15, deliveryTime: '25–30 días', paymentTerms: '', status: 'CONVERTIDA', convertedOrder: 'MP-0084', pdfUrl: '', advisor: 'Alejandro Herrera' }
+    ];
+    return { ...common, msg: 'Datos demostrativos locales para validar seguimiento.', data: { items, total: items.length, amount: items.reduce((sum, item) => sum + item.total, 0) } };
+  }
   if (action === 'SISTEMA_ESTADO') return { ...common, data: { appVersion: APP_CONFIG.version, mode: 'PREPARACION', commercialWrites: 'DESHABILITADAS', sheets: [], counts: { clients: 0, orders: 0, payments: 0, remissions: 0 } } };
   if (action === 'USUARIOS_LISTAR') return { ...common, data: { items: [], total: 0 } };
   return { ...common, data: {} };
