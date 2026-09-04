@@ -133,9 +133,25 @@ function documentHeaderMarkup(data) {
     </div>
 
     <div class="quote-editorial-company">
-      <div><strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong><span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span></div>
-      ${branchLocation ? `<div><span>${escapeHtml(branchLocation)}</span></div>` : ''}
-      <div><span>WhatsApp ${escapeHtml(COMPANY_PROFILE.whatsapp)} · ${escapeHtml(COMPANY_PROFILE.website)}</span></div>
+      <div class="quote-editorial-company-block quote-editorial-company-legal">
+        <span class="quote-editorial-company-icon" aria-hidden="true"></span>
+        <div class="quote-editorial-company-copy">
+          <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
+          <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span>
+        </div>
+      </div>
+      ${branchLocation ? `<div class="quote-editorial-company-block quote-editorial-company-location">
+        <span class="quote-editorial-company-icon" aria-hidden="true"></span>
+        <div class="quote-editorial-company-copy"><span>${escapeHtml(branchLocation)}</span></div>
+      </div>` : ''}
+      <div class="quote-editorial-company-block quote-editorial-company-contact">
+        <span class="quote-editorial-company-icon" aria-hidden="true"></span>
+        <div class="quote-editorial-company-copy">
+          <span>Cel. <b>${escapeHtml(COMPANY_PROFILE.mobile)}</b></span>
+          <span>WhatsApp <b>${escapeHtml(COMPANY_PROFILE.whatsapp)}</b></span>
+          <span>${escapeHtml(COMPANY_PROFILE.website)}</span>
+        </div>
+      </div>
     </div>
   </header>`;
 }
@@ -146,7 +162,7 @@ function clientMarkup(client) {
   if (!client.name && !details.length) return '';
 
   return `<section class="quote-editorial-client">
-    <div class="quote-editorial-marker">Preparado para</div>
+    <div class="quote-editorial-client-heading"><span>Preparado para</span></div>
     <div class="quote-editorial-client-copy">
       ${client.name ? `<h2>${escapeHtml(client.name)}</h2>` : ''}
       ${details.length ? `<div class="quote-editorial-client-line">${details.map(detail => `<span>${escapeHtml(detail)}</span>`).join('')}</div>` : ''}
