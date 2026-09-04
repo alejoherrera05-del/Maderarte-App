@@ -15,10 +15,10 @@ No se copian datos, URLs privadas, IDs, credenciales, PDFs, cachés, mascota Hom
 | `index.html` | Inicio editorial, acciones superiores, hero, navegación agrupada, bottom sheets, campana, footer | `public/index.html` | Mantener estructura HomeEasy; adaptar banner, logo, colores y controles explícitamente aprobados para Maderarte. |
 | `clientes.html` | Buscar cliente → transición → expediente → Órdenes/Cotizaciones → pagos/PDF/acciones | `public/clientes.html` | Debe portar el flujo real de HomeEasy. No convertir en tabla CRUD genérica. |
 | `ventas.html` | Historial de ventas, OP, pagos, saldos, filtros y acceso al expediente | `public/ordenes.html` | Equivalente de historial comercial de OP. |
-| `cotizacion.html` | Formulario de cotización | `public/cotizacion.html` | Estructura fuente para el flujo; Maderarte especializa el formulario para mobiliario y mejora el documento cliente. Mientras `COMMERCIAL_WRITES=false`, no habilitar creación real. |
+| `cotizacion.html` | Formulario de cotización y documento/PDF | `public/cotizacion.html` | Estructura fuente para el flujo y la jerarquía documental; Maderarte especializa el formulario para mobiliario y mejora el acabado visual sin perder la arquitectura. Mientras `COMMERCIAL_WRITES=false`, no habilitar creación real. |
 | `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/cotizaciones.html` | Portar lectura y seguimiento; adaptar estados de Maderarte. |
 | `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Fuente de la futura creación de OP. Reutilizar el sistema especializado de Cotización. No habilitar escritura todavía. |
-| `abono.html` | Registro de abono/recibo y relación con OP | `public/abono.html` | Fuente de UX para Abonos; escritura se habilita más adelante. |
+| `abono.html` | Registro de abono/recibo y relación con OP | `public/abono.html` | Fuente de UX para Abonos y Recibo de caja; escritura se habilita más adelante. |
 | `documentos.html` | Centro documental | `public/documentos.html` | Portar patrón cuando llegue el módulo de documentos. |
 | `calendario.html` | Agenda, eventos, recordatorios y navegación desde campana | `public/agenda.html` | Fuente para Agenda y notificaciones reales. |
 | `configuracion.html` | Configuración, integraciones, usuarios y parámetros | `public/configuracion.html` | Portar estructura por secciones; adaptar permisos/config Maderarte. |
@@ -58,7 +58,7 @@ Maderarte debe partir de ese flujo. En modo lectura, las acciones de edición/cr
 
 ## Cotización: especialización aprobada
 
-El formulario conserva la esencia de operación simple y directa, pero no replica la antigua hoja PDF editable. Para Maderarte:
+El formulario conserva la esencia de operación simple y directa, pero se especializa para mobiliario:
 
 - la sede es el primer paso y bloquea el resto del formulario hasta seleccionarla;
 - se muestran número previsto, fecha, asesor y sede antes de capturar información;
@@ -66,12 +66,22 @@ El formulario conserva la esencia de operación simple y directa, pero no replic
 - Referencia, Unidad y Medidas no vuelven a existir como campos independientes; medidas y detalles técnicos viven en Especificaciones;
 - el documento omite etiquetas/campos opcionales vacíos;
 - si no existen fotografías, no existe anexo fotográfico;
-- si solo algunos muebles tienen fotos, solo esos aparecen en el anexo;
-- el encabezado cliente debe ser compacto: marca + identificación documental + una sola franja corporativa; no repetir sede ni consumir media hoja;
-- número y fecha tienen jerarquía clara pero nunca deben convertirse en un cartel sobredimensionado;
-- Visual QA debe capturar el HTML real en Chrome y medir la geometría antes de aprobar cambios relevantes del documento.
+- si solo algunos muebles tienen fotos, solo esos aparecen en el anexo.
 
-Checkpoint visual aprobado de la cabecera compacta: en la segunda captura real, el detalle comienza a 272 px del borde superior del contenido, con tarjeta documental de 112 px, bloque de marca de 77 px, franja corporativa de 76 px y banda de contexto de 32 px. A ancho de documento 790 px, esa huella equivale aproximadamente al 24–25% de una página A4 proporcional.
+### Documento de cliente
+
+La cabecera de la cotización toma como base directa la arquitectura vigente de HomeEasy:
+
+- franja superior de marca;
+- logo + identidad a la izquierda;
+- datos corporativos y sede emisora integrados a la derecha;
+- cápsula blanca flotante con **COTIZACIÓN N°** y **FECHA** como información de lectura inmediata;
+- título `COTIZACIÓN` debajo antes de entrar al cuerpo;
+- el acabado Maderarte puede usar grafito/cobre/dorado, degradés muy sutiles y profundidad digital, pero no sustituir esta jerarquía por otra composición experimental.
+
+El asesor **no aparece en la cabecera del documento**. Se conserva como dato operativo del formulario y al final de la Cotización se renderiza una firma tipográfica con **solo su nombre**, sin cargo ni etiqueta. Esta misma regla aplica a la futura Orden de pedido y al Recibo de caja.
+
+Visual QA debe capturar el HTML real en Chrome, comprobar la geometría de cabecera/número/fecha y verificar que la firma final exista antes de aprobar cambios relevantes del documento.
 
 ## Desviaciones Maderarte permitidas
 
