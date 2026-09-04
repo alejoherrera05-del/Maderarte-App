@@ -46,20 +46,23 @@ assert.match(documentJs, /client\.document \?/);
 assert.match(documentJs, /data\.discount > 0 \?/);
 assert.doesNotMatch(documentJs, /Sin especificaciones adicionales/);
 
-assert.match(documentJs, /quote-editorial-header/);
-assert.match(documentJs, /quote-editorial-hero/);
-assert.match(documentJs, /quote-editorial-document/);
-assert.match(documentJs, /quote-editorial-strip/);
-assert.match(documentJs, /quote-editorial-client/);
-assert.doesNotMatch(documentJs, /quote-premium-doc-card/);
+assert.match(documentJs, /quote-brand-header/);
+assert.match(documentJs, /quote-brand-band/);
+assert.match(documentJs, /quote-doc-meta/);
+assert.match(documentJs, /quote-document-title/);
+assert.match(documentJs, /COTIZACIÓN N°/);
+assert.match(documentJs, />FECHA</);
+assert.match(documentJs, /quote-client-section/);
+assert.doesNotMatch(documentJs, /quote-editorial-strip/);
 assert.doesNotMatch(documentJs, /quote-premium-context-band/);
 assert.doesNotMatch(documentJs, /quote-preview-footer/);
 
-assert.match(documentCss, /\.quote-editorial-hero/);
-assert.match(documentCss, /\.quote-editorial-document/);
-assert.match(documentCss, /\.quote-editorial-strip/);
-assert.match(documentCss, /background:\s*#292724/);
-assert.doesNotMatch(documentCss, /\.quote-premium-contact-icon/);
+assert.match(documentCss, /\.quote-brand-band/);
+assert.match(documentCss, /\.quote-doc-meta/);
+assert.match(documentCss, /\.quote-document-title/);
+assert.match(documentCss, /position:\s*absolute/);
+assert.match(documentCss, /border-radius:\s*999px/);
+assert.match(documentCss, /background:\s*#2b2927/);
 
 console.log('OK · cotización Maderarte protegida');
-console.log('OK · encabezado editorial equilibrado protegido');
+console.log('OK · jerarquía de cabecera documental protegida');
