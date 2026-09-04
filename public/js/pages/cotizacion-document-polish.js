@@ -37,6 +37,15 @@ function text(id) {
   return document.getElementById(id)?.textContent?.trim() || '';
 }
 
+function compactDate(rawValue) {
+  return String(rawValue || '')
+    .trim()
+    .replace(/\s+de\s+/gi, ' ')
+    .replace(/septiembre/gi, 'sept')
+    .replace(/setiembre/gi, 'sept')
+    .replace(/\s{2,}/g, ' ');
+}
+
 function itemFromCard(card, index) {
   const field = name => card.querySelector(`[data-field="${name}"]`)?.value?.trim() || '';
   const quantity = Math.max(1, Number(field('quantity') || 1));
@@ -69,7 +78,7 @@ function collectDocumentData() {
 
   return {
     number: text('quote-meta-number') || 'Pendiente de asignar',
-    date: text('quote-meta-date'),
+    date: compactDate(text('quote-meta-date')),
     advisor: text('quote-meta-advisor'),
     branchCode,
     branch,
@@ -108,20 +117,25 @@ function documentHeaderMarkup(data) {
       </div>
 
       <div class="quote-editorial-document">
-        <span class="quote-editorial-eyebrow">Documento comercial</span>
+        <span class="quote-editorial-eyebrow">Propuesta comercial</span>
         <h1>COTIZACIÓN</h1>
-        <div class="quote-editorial-meta">
-          <span><small>N.º</small><strong>${escapeHtml(data.number)}</strong></span>
-          <span><small>Fecha</small><strong>${escapeHtml(data.date || '—')}</strong></span>
-          <span><small>Sede</small><strong>${escapeHtml(branchName)}</strong></span>
+        <div class="quote-editorial-document-identity">
+          <div class="quote-editorial-number">
+            <small>N.º de cotización</small>
+            <strong>${escapeHtml(data.number)}</strong>
+          </div>
+          <div class="quote-editorial-secondary-meta">
+            <span><small>Fecha</small><strong>${escapeHtml(data.date || '—')}</strong></span>
+            <span><small>Sede emisora</small><strong>${escapeHtml(branchName)}</strong></span>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="quote-editorial-company">
-      <span class="quote-editorial-company-legal"><strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong> · NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span>
-      ${branchLocation ? `<span>${escapeHtml(branchLocation)}</span>` : ''}
-      <span>WhatsApp ${escapeHtml(COMPANY_PROFILE.whatsapp)} · ${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
+      <div><strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong><span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span></div>
+      ${branchLocation ? `<div><span>${escapeHtml(branchLocation)}</span></div>` : ''}
+      <div><span>WhatsApp ${escapeHtml(COMPANY_PROFILE.whatsapp)} · ${escapeHtml(COMPANY_PROFILE.website)}</span></div>
     </div>
   </header>`;
 }
@@ -163,38 +177,49 @@ function itemMarkup(item) {
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
-    ${item.unitValue > 0 ? `<div class="quote-editorial-item-price"><small>Total ítem</small><strong>${escapeHtml(money(item.subtotal))}</strong>${item.quantity > 1 ? `<span>${escapeHtml(money(item.unitValue))} c/u</span>` : ''}</div>` : ''}
+    ${item.unitValue > 0 ? `<div class="quote-editorial-item-price"><small>Valor</small><strong>${escapeHtml(money(item.subtotal))}</strong>${item.quantity > 1 ? `<span>${escapeHtml(money(item.unitValue))} c/u</span>` : ''}</div>` : ''}
   </article>`;
 }
 
 function investmentMarkup(data) {
-  const balance = Math.max(0, data.total - data.minimumDeposit);
+  const breakdown = data.discount > 0
+    ? `<div class="quote-editorial-price-breakdown">
+        <span>Subtotal <strong>${escapeHtml(money(data.subtotal))}</strong></span>
+        <span>Descuento <strong>− ${escapeHtml(money(data.discount))}</strong></span>
+      </div>`
+    : '';
+
   return `<section class="quote-editorial-investment">
-    <div class="quote-editorial-summary-lines">
-      <div><span>Subtotal</span><strong>${escapeHtml(money(data.subtotal))}</strong></div>
-      ${data.discount > 0 ? `<div><span>Descuento</span><strong>− ${escapeHtml(money(data.discount))}</strong></div>` : ''}
-      ${data.total > 0 ? `<div><span>Anticipo para confirmar</span><strong>${escapeHtml(money(data.minimumDeposit))}</strong></div>` : ''}
-      ${data.total > 0 ? `<div><span>Saldo posterior</span><strong>${escapeHtml(money(balance))}</strong></div>` : ''}
-    </div>
+    ${breakdown}
     <div class="quote-editorial-total">
       <span>Total cotizado</span>
       <strong>${escapeHtml(money(data.total))}</strong>
+      ${data.total > 0 ? `<small>Para confirmar: ${COMMERCIAL_RULES.minimumOrderDepositPercent}% · ${escapeHtml(money(data.minimumDeposit))}</small>` : ''}
     </div>
   </section>`;
 }
 
 function commercialTermsMarkup(data) {
   return `<section class="quote-editorial-terms">
-    <div class="quote-editorial-section-kicker">Condiciones clave</div>
-    <div class="quote-editorial-term-row">
-      <span class="quote-editorial-term-index">01</span>
-      <div><strong>Confirmación del pedido</strong><p>El pedido entra a producción con un anticipo mínimo del ${COMMERCIAL_RULES.minimumOrderDepositPercent}%.</p></div>
-      <b>${COMMERCIAL_RULES.minimumOrderDepositPercent}%${data.total > 0 ? ` · ${escapeHtml(money(data.minimumDeposit))}` : ''}</b>
-    </div>
-    <div class="quote-editorial-term-row">
-      <span class="quote-editorial-term-index">02</span>
-      <div><strong>Fabricación estimada</strong><p>El tiempo se cuenta desde la confirmación y el cumplimiento del anticipo.</p></div>
-      <b>25–30 días</b>
+    <div class="quote-editorial-section-kicker">Condiciones del pedido</div>
+    <div class="quote-editorial-term-cards">
+      <article class="quote-editorial-term-card quote-editorial-term-deposit">
+        <div class="quote-editorial-term-icon"><img src="/assets/icons/wallet.svg" alt=""></div>
+        <div class="quote-editorial-term-value">${COMMERCIAL_RULES.minimumOrderDepositPercent}%</div>
+        <div class="quote-editorial-term-copy">
+          <strong>Abono para confirmar</strong>
+          <p>Activa la solicitud y el inicio del pedido.</p>
+          ${data.total > 0 ? `<span>${escapeHtml(money(data.minimumDeposit))}</span>` : ''}
+        </div>
+      </article>
+      <article class="quote-editorial-term-card quote-editorial-term-time">
+        <div class="quote-editorial-term-icon"><img src="/assets/icons/calendar-dots.svg" alt=""></div>
+        <div class="quote-editorial-term-value">25–30<small>días</small></div>
+        <div class="quote-editorial-term-copy">
+          <strong>Fabricación estimada</strong>
+          <p>Desde la confirmación del pedido y el abono mínimo.</p>
+        </div>
+      </article>
     </div>
     ${data.notes ? `<div class="quote-editorial-notes"><strong>Observaciones</strong><p>${escapeHtml(data.notes)}</p></div>` : ''}
   </section>`;
@@ -209,11 +234,11 @@ function signatureMarkup(name) {
 function footerMarkup() {
   return `<footer class="quote-editorial-footer">
     <img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
-    <div>
-      <strong>Maderarte · ${escapeHtml(COMPANY_PROFILE.slogan)}</strong>
-      <span>Documento generado automáticamente · Sistema Maddy v${escapeHtml(APP_CONFIG.version)}</span>
+    <div class="quote-editorial-footer-copy">
+      <strong>Maderarte · Sistema Maddy</strong>
+      <span>Documento generado automáticamente · v${escapeHtml(APP_CONFIG.version)}</span>
+      <span>${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
     </div>
-    <span class="quote-editorial-footer-social">${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
   </footer>`;
 }
 
@@ -249,7 +274,7 @@ function renderDocumentPreview() {
       ${client}
       <section class="quote-editorial-items-section">
         <div class="quote-editorial-section-head">
-          <div><span>Mobiliario cotizado</span><h2>Detalle de inversión</h2></div>
+          <div><span>Mobiliario cotizado</span><h2>Detalle de la propuesta</h2></div>
           <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
         </div>
         <div class="quote-editorial-items">${items}</div>
