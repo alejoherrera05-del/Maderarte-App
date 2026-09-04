@@ -102,13 +102,13 @@
 
 .tracking-legend-pill {
   position: relative;
-  min-height: 68px;
+  min-height: 70px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 4px;
-  padding: 12px 16px 11px;
+  gap: 5px;
+  padding: 13px 16px 12px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -128,41 +128,54 @@
   width: auto;
   height: auto;
   border-radius: 0;
-  background: none;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .tracking-legend-pill::before {
-  font-size: .65rem;
+  font-size: .68rem;
   line-height: 1;
-  font-weight: 740;
-  letter-spacing: .075em;
+  font-weight: 760;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
 .tracking-legend-pill::after {
   color: #3d3936;
-  font-size: .91rem;
+  font-size: .94rem;
   line-height: 1.08;
-  font-weight: 720;
+  font-weight: 725;
   letter-spacing: -.015em;
 }
 
 .tracking-legend-pill.recent {
   box-shadow: inset 0 3px 0 var(--track-green);
 }
-.tracking-legend-pill.recent::before { content: 'Reciente'; color: var(--track-green); }
+.tracking-legend-pill.recent::before {
+  content: 'Reciente';
+  color: var(--track-green);
+  background: transparent !important;
+}
 .tracking-legend-pill.recent::after { content: '0–7 días'; }
 
 .tracking-legend-pill.attention {
   box-shadow: inset 0 3px 0 var(--track-amber);
 }
-.tracking-legend-pill.attention::before { content: 'Atención'; color: var(--track-amber); }
+.tracking-legend-pill.attention::before {
+  content: 'Seguimiento';
+  color: var(--track-amber);
+  background: transparent !important;
+}
 .tracking-legend-pill.attention::after { content: '8–15 días'; }
 
 .tracking-legend-pill.priority {
   box-shadow: inset 0 3px 0 var(--track-red);
 }
-.tracking-legend-pill.priority::before { content: 'Prioridad'; color: var(--track-red); }
+.tracking-legend-pill.priority::before {
+  content: 'Prioridad';
+  color: var(--track-red);
+  background: transparent !important;
+}
 .tracking-legend-pill.priority::after { content: '+15 días'; }
 
 /* Card age chips keep their meaning without the generic status dot. */
@@ -287,17 +300,17 @@
   }
 
   .tracking-legend-pill {
-    min-height: 62px;
+    min-height: 64px;
     padding: 10px 11px;
   }
 
   .tracking-legend-pill::before {
-    font-size: .56rem;
-    letter-spacing: .055em;
+    font-size: .61rem;
+    letter-spacing: .045em;
   }
 
   .tracking-legend-pill::after {
-    font-size: .78rem;
+    font-size: .82rem;
   }
 
   .tracking-footer {
@@ -341,16 +354,16 @@
   }
 
   .tracking-legend-pill {
-    min-height: 59px;
+    min-height: 62px;
     padding-inline: 9px;
   }
 
   .tracking-legend-pill::before {
-    font-size: .52rem;
+    font-size: .58rem;
   }
 
   .tracking-legend-pill::after {
-    font-size: .73rem;
+    font-size: .78rem;
   }
 
   .tracking-footer {
