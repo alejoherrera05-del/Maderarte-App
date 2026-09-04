@@ -17,3 +17,8 @@
   background: transparent;
   box-shadow: none;
 }
+
+.quote-maderarte-page .quote-preview-item-details span::after {
+  content: none !important;
+  display: none !important;
+}
