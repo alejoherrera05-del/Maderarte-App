@@ -1,7 +1,7 @@
-/* HomeEasy hybrid body for the client-facing Maderarte quotation.
+/* Hybrid body for the client-facing Maderarte quotation.
  * Keep the approved Maderarte letterhead; simplify everything below it using
- * the calmer, proven HomeEasy document rhythm: client fields, product rows,
- * observations, commercial conditions and a compact finance box.
+ * a calmer document rhythm: client fields, product rows, observations,
+ * commercial conditions and a compact finance box.
  */
 
 .quote-editorial-page {
@@ -32,7 +32,7 @@
   line-height: 1.28;
 }
 
-/* From this point down, use the HomeEasy document language. */
+/* From this point down, use a compact client-document language. */
 .quote-editorial-page .quote-editorial-body {
   padding: 16px 36px 18px;
 }
@@ -133,7 +133,7 @@
   overflow-wrap: anywhere;
 }
 
-/* PRODUCTOS — HomeEasy-style rows instead of labeled mini-columns everywhere. */
+/* PRODUCTOS — clean rows instead of labeled mini-columns everywhere. */
 .quote-editorial-page .quote-editorial-items-section {
   margin-top: 5px;
 }
@@ -277,7 +277,7 @@
   font-size: .55rem;
 }
 
-/* Bottom zone follows HomeEasy: conditions on the left, finance box on the right. */
+/* Bottom zone: conditions on the left, finance box on the right. */
 .quote-editorial-page .quote-editorial-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(255px, .78fr);
@@ -408,7 +408,7 @@
   line-height: 1.38;
 }
 
-/* FINANCE — adapted directly from the HomeEasy finance-box idea. */
+/* FINANCE — compact financial box. */
 .quote-editorial-page .quote-editorial-investment {
   display: block;
   align-self: start;
@@ -493,7 +493,7 @@
   font-weight: 580;
 }
 
-/* Footer: quiet, HomeEasy-like, with Maddy and advisor in one compact line. */
+/* Footer: quiet, with Maddy and advisor in one compact line. */
 .quote-editorial-page .quote-editorial-signoff {
   display: grid;
   grid-template-columns: 1fr auto;
