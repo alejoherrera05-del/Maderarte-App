@@ -3,23 +3,235 @@
   padding: 35px 20px 12px;
 }
 
-.quote-maderarte-page .quote-commercial-conditions {
-  padding: 0;
-  border-left: 0;
-  border-right: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.quote-maderarte-page .quote-condition {
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
 .quote-maderarte-page .quote-preview-item-details span::before,
 .quote-maderarte-page .quote-preview-item-details span::after {
   content: none !important;
   display: none !important;
+}
+
+/* Conditions: editorial band, not a generic card. */
+.quote-maderarte-page .quote-preview-bottom {
+  grid-template-columns: minmax(0, 1.42fr) minmax(190px, .58fr);
+  gap: 30px;
+  align-items: end;
+  margin-top: 18px;
+}
+
+.quote-order-conditions {
+  min-width: 0;
+  padding-top: 9px;
+  border-top: 2px solid #2e2b28;
+}
+
+.quote-order-conditions-label {
+  margin-bottom: 9px;
+  color: #9b4d23;
+  font-size: .46rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+.quote-order-conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quote-order-condition {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 62px;
+  padding: 7px 16px 7px 0;
+}
+
+.quote-order-condition + .quote-order-condition {
+  padding-left: 17px;
+  border-left: 1px solid #dfdad5;
+}
+
+.quote-order-condition-value {
+  color: #a65025;
+  font-size: 1.35rem;
+  line-height: .92;
+  font-weight: 610;
+  letter-spacing: -.05em;
+  white-space: nowrap;
+}
+
+.quote-order-condition-time .quote-order-condition-value {
+  color: #302d2a;
+}
+
+.quote-order-condition-value small {
+  display: block;
+  margin-top: 2px;
+  color: #8b857f;
+  font-size: .43rem;
+  line-height: 1;
+  font-weight: 560;
+  letter-spacing: .02em;
+  text-align: right;
+}
+
+.quote-order-condition-copy {
+  min-width: 0;
+}
+
+.quote-order-condition-copy strong {
+  display: block;
+  color: #35312e;
+  font-size: .60rem;
+  line-height: 1.2;
+  font-weight: 650;
+}
+
+.quote-order-condition-copy span {
+  display: block;
+  margin-top: 3px;
+  color: #7d7771;
+  font-size: .50rem;
+  line-height: 1.35;
+}
+
+.quote-order-condition-copy small {
+  display: block;
+  margin-top: 4px;
+  color: #a65025;
+  font-size: .47rem;
+  line-height: 1.2;
+  font-weight: 610;
+}
+
+.quote-order-condition-notes {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #ebe7e2;
+  color: #77716b;
+  font-size: .50rem;
+  line-height: 1.4;
+}
+
+.quote-order-condition-notes b {
+  margin-right: 5px;
+  color: #49443f;
+  font-weight: 650;
+}
+
+.quote-maderarte-page .quote-preview-finance {
+  padding-top: 8px;
+  border-top: 2px solid #2e2b28;
+}
+
+.quote-maderarte-page .quote-preview-finance div {
+  padding: 7px 0;
+}
+
+.quote-maderarte-page .quote-preview-finance div:last-child {
+  padding-top: 9px;
+  color: #9b4d23;
+  font-size: .86rem;
+}
+
+.quote-finance-minimum {
+  color: #5b5550 !important;
+  font-size: .58rem !important;
+}
+
+.quote-finance-minimum strong {
+  color: #302d2a;
+}
+
+/* Advisor sign-off and Maddy document footer. */
+.quote-document-signature {
+  width: 210px;
+  margin: 23px 0 0 auto;
+  padding-top: 7px;
+  border-top: 1px solid #cfc9c3;
+  text-align: center;
+}
+
+.quote-document-signature span {
+  color: #3d3935;
+  font-size: .96rem;
+  letter-spacing: -.015em;
+}
+
+.quote-maddy-footer {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  margin-top: 18px;
+  padding: 13px 18px 3px;
+  border-top: 1px solid #e6e1dc;
+  text-align: center;
+}
+
+.quote-maddy-footer-art {
+  width: 108px;
+  height: auto;
+  opacity: .62;
+}
+
+.quote-maddy-footer-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.quote-maddy-footer-copy strong {
+  color: #655f59;
+  font-size: .48rem;
+  line-height: 1.25;
+  font-weight: 580;
+}
+
+.quote-maddy-footer-copy span {
+  color: #9a948e;
+  font-size: .43rem;
+  line-height: 1.25;
+  font-weight: 480;
+}
+
+/* Print/export mode used by the visual QA to generate the real client PDF. */
+body.quote-print-export {
+  margin: 0 !important;
+  background: #fff !important;
+}
+
+body.quote-print-export .quote-preview-main-page {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 760px) {
+  .quote-maderarte-page .quote-preview-bottom {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .quote-document-signature {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 460px) {
+  .quote-order-conditions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-order-condition + .quote-order-condition {
+    padding: 10px 0 7px;
+    border-left: 0;
+    border-top: 1px solid #e7e2dc;
+  }
+
+  .quote-maddy-footer-art {
+    width: 96px;
+  }
 }
