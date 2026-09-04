@@ -1,0 +1,18 @@
+/* Small finishing adjustments for the compact quotation body. */
+.quote-editorial-page .quote-editorial-term-card,
+.quote-editorial-page .quote-editorial-term-card + .quote-editorial-term-card {
+  grid-template-columns: 74px minmax(0, 1fr);
+}
+
+.quote-editorial-page .quote-editorial-term-value {
+  white-space: nowrap;
+}
+
+.quote-editorial-page .quote-editorial-term-value small {
+  display: inline-block;
+  margin-left: 3px;
+}
+
+.quote-editorial-page .quote-editorial-total > strong {
+  font-size: 1.72rem;
+}
