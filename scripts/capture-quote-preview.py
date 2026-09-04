@@ -29,6 +29,14 @@ try:
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="MP"]'))).click()
     wait.until(EC.visibility_of_element_located((By.ID, "quote-workspace")))
 
+    # Datos visuales representativos para que el screenshot muestre la jerarquía real.
+    driver.execute_script("""
+      const number = document.getElementById('quote-meta-number');
+      const advisor = document.getElementById('quote-meta-advisor');
+      if (number) number.textContent = 'MP-0248';
+      if (advisor) advisor.textContent = 'Alejandro Herrera';
+    """)
+
     driver.find_element(By.ID, "quote-client-name").send_keys("Cliente de muestra")
     driver.find_element(By.ID, "quote-client-document").send_keys("123456789")
     driver.find_element(By.ID, "quote-client-phone").send_keys("3000000000")
