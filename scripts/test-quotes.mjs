@@ -53,7 +53,8 @@ assert.match(documentJs, /quote-document-title/);
 assert.match(documentJs, /COTIZACIÓN N°/);
 assert.match(documentJs, />FECHA</);
 assert.match(documentJs, />SEDE</);
-assert.match(documentJs, /Propuesta comercial personalizada/);
+assert.match(documentJs, /<strong>COTIZACIÓN<\/strong>/);
+assert.doesNotMatch(documentJs, /Propuesta comercial personalizada/);
 assert.match(documentJs, /quote-client-heading/);
 assert.match(documentJs, /quote-document-signature/);
 assert.match(documentJs, /signatureMarkup\(data\.advisor\)/);
@@ -77,5 +78,5 @@ assert.match(documentCss, /font-style:\s*italic/);
 
 console.log('OK · cotización Maderarte protegida');
 console.log('OK · cabecera sólida con número, fecha y sede protegida');
-console.log('OK · COTIZACIÓN mantiene jerarquía principal');
+console.log('OK · COTIZACIÓN mantiene jerarquía principal sin subtítulo redundante');
 console.log('OK · asesor fuera del encabezado y firma final sobria');
