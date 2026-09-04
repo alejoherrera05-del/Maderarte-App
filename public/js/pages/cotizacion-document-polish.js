@@ -114,16 +114,14 @@ function editorialHeaderMarkup(data) {
 
     <div class="quote-editorial-strip">
       <div class="quote-editorial-strip-cell quote-editorial-company">
-        <small>Empresa</small>
-        <strong>${escapeHtml(COMPANY_PROFILE.legalName)} <em>· NIT ${escapeHtml(COMPANY_PROFILE.nit)}</em></strong>
+        <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
+        <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span>
       </div>
       <div class="quote-editorial-strip-cell quote-editorial-branch">
-        <small>Sede emisora</small>
         <strong>${escapeHtml(branchLine)}</strong>
         ${data.advisor ? `<span>Asesor: ${escapeHtml(data.advisor)}</span>` : ''}
       </div>
       <div class="quote-editorial-strip-cell quote-editorial-contact">
-        <small>Contacto</small>
         <strong>${escapeHtml(contactTop)}</strong>
         <span>${escapeHtml(contactBottom)}</span>
       </div>
