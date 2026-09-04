@@ -1,6 +1,17 @@
 import { escapeHtml } from '../core/format.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { COMMERCIAL_RULES, manufacturingWindowLabel, minimumOrderDeposit } from '../core/commercial-rules.js';
+import { COMMERCIAL_RULES, minimumOrderDeposit } from '../core/commercial-rules.js';
+
+function ensureDocumentRefinementStyles() {
+  if (document.querySelector('link[data-quote-document-refinement]')) return;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/css/cotizacion-document-refinement.css';
+  link.dataset.quoteDocumentRefinement = 'true';
+  document.head.appendChild(link);
+}
+
+ensureDocumentRefinementStyles();
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
