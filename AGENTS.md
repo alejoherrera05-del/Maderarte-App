@@ -115,6 +115,9 @@ Reglas visuales derivadas de esa referencia:
 - Las acciones superiores del Inicio deben sentirse ligeras: controles circulares independientes para notificaciones y perfil, con profundidad mínima y sin convertirlos en una barra pesada.
 - Evitar dobles cajas, bordes repetidos y sombras fuertes. Los grupos del Inicio deben parecer listas limpias tipo Settings: título de sección fuera de la superficie y una sola tarjeta/lista interior.
 - Copiar patrones de interacción y lógica, nunca colores, textos, marca, logos, mascota o identidad comercial de HomeEasy.
+- En documentos para cliente (Cotización, Orden de pedido y Recibo de caja), usar como base la arquitectura documental probada de HomeEasy: franja superior de marca, datos corporativos integrados, número/fecha con jerarquía inmediata y cuerpo claro. Maderarte puede mejorar proporciones, tipografía, color y profundidad visual, pero no reinventar la estructura sin necesidad.
+- Los degradés de documentos deben ser muy sutiles y funcionar como profundidad/luz, no como decoración protagonista ni como fondos pastel.
+- El asesor **no aparece en el encabezado** de Cotización, Orden de pedido ni Recibo de caja. En esos tres documentos se firma al final con una firma tipográfica que muestra **únicamente el nombre del asesor**, sin cargo, etiqueta ni texto adicional.
 
 ## Estado de escritura
 
