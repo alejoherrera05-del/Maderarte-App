@@ -2,7 +2,7 @@ const currentUrl = new URL(window.location.href);
 const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(currentUrl.hostname);
 
 export const APP_CONFIG = Object.freeze({
-  name: 'Maderarte App',
+  name: 'Maddy',
   version: '0.2.0',
   environment: 'preparacion',
   apiPath: '/api/maderarte',
