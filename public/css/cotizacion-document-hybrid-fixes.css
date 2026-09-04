@@ -46,3 +46,11 @@
 .quote-editorial-page .quote-editorial-total > strong {
   font-size: 1.72rem;
 }
+
+/* Annex pages share one footer row: Maddy, system data and page counter. */
+.quote-preview-appendix-page > .quote-document-footer .quote-document-page-number {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  align-self: center;
+}
