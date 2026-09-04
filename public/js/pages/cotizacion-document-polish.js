@@ -88,12 +88,8 @@ function documentHeaderMarkup(data) {
   const branchName = branch?.name || text('quote-meta-branch-name') || data.branchCode || 'Maderarte';
   const branchAddress = branch?.address || '';
   const pending = /pendiente/i.test(data.number);
-
-  const contactLine = [
-    `WhatsApp ${COMPANY_PROFILE.whatsapp}`,
-    `Cel. ${COMPANY_PROFILE.mobile}`
-  ].join(' · ');
-  const digitalLine = [COMPANY_PROFILE.website, COMPANY_PROFILE.socialHandle].join(' · ');
+  const contactLine = `WhatsApp ${COMPANY_PROFILE.whatsapp} · Cel. ${COMPANY_PROFILE.mobile}`;
+  const digitalLine = `${COMPANY_PROFILE.website} · ${COMPANY_PROFILE.socialHandle}`;
 
   return `<header class="quote-brand-header">
     <div class="quote-brand-band">
@@ -106,15 +102,19 @@ function documentHeaderMarkup(data) {
       </div>
 
       <div class="quote-company-info">
-        <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
-        <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)} · ${escapeHtml(branchName)}</span>
-        ${branchAddress ? `<span>${escapeHtml(branchAddress)}</span>` : ''}
-        <span>${escapeHtml(contactLine)}</span>
-        <span>${escapeHtml(digitalLine)}</span>
+        <div class="quote-company-legal">
+          <strong>${escapeHtml(COMPANY_PROFILE.legalName)}</strong>
+          <span>NIT ${escapeHtml(COMPANY_PROFILE.nit)}</span>
+        </div>
+        <div class="quote-company-lines">
+          ${branchAddress ? `<span>${escapeHtml(branchAddress)}</span>` : ''}
+          <span>${escapeHtml(contactLine)}</span>
+          <span>${escapeHtml(digitalLine)}</span>
+        </div>
       </div>
 
       <div class="quote-doc-meta" aria-label="Datos de la cotización">
-        <div class="quote-doc-meta-item">
+        <div class="quote-doc-meta-item quote-doc-number">
           <span>COTIZACIÓN N°</span>
           <strong class="${pending ? 'is-pending' : ''}">${escapeHtml(data.number)}</strong>
         </div>
@@ -123,10 +123,18 @@ function documentHeaderMarkup(data) {
           <span>FECHA</span>
           <strong>${escapeHtml(data.date || '—')}</strong>
         </div>
+        <i aria-hidden="true"></i>
+        <div class="quote-doc-meta-item">
+          <span>SEDE</span>
+          <strong>${escapeHtml(branchName)}</strong>
+        </div>
       </div>
     </div>
 
-    <div class="quote-document-title">COTIZACIÓN</div>
+    <div class="quote-document-title">
+      <strong>COTIZACIÓN</strong>
+      <span>Propuesta comercial personalizada</span>
+    </div>
   </header>`;
 }
 
@@ -142,8 +150,10 @@ function clientMarkup(client) {
   if (!client.name && !fields.length) return '';
 
   return `<section class="quote-client-section">
-    <div class="quote-section-label">Cliente</div>
-    ${client.name ? `<h3>${escapeHtml(client.name)}</h3>` : ''}
+    <div class="quote-client-heading">
+      <span>Cliente</span>
+      ${client.name ? `<h3>${escapeHtml(client.name)}</h3>` : ''}
+    </div>
     ${fields.length ? `<div class="quote-preview-client-grid">${fields.join('')}</div>` : ''}
   </section>`;
 }
