@@ -1,6 +1,6 @@
 import { apiRequest } from '../core/api.js';
 import { previewApiData } from '../core/auth.js';
-import { withPreview } from '../core/config.js';
+import { APP_CONFIG, withPreview } from '../core/config.js';
 import { date, escapeHtml, humanizeCode, money, safeExternalUrl, statusTone } from '../core/format.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 
@@ -112,11 +112,28 @@ function cardMarkup(item) {
   </article>`;
 }
 
+function updateRadar(items) {
+  const counts = { recent: 0, attention: 0, priority: 0 };
+  items.filter(item => !isClosed(item)).forEach(item => {
+    const days = ageDays(item.date);
+    if (days <= 7) counts.recent += 1;
+    else if (days <= 15) counts.attention += 1;
+    else counts.priority += 1;
+  });
+  const recent = document.getElementById('tracking-radar-recent-count');
+  const attention = document.getElementById('tracking-radar-attention-count');
+  const priority = document.getElementById('tracking-radar-priority-count');
+  if (recent) recent.textContent = String(counts.recent);
+  if (attention) attention.textContent = String(counts.attention);
+  if (priority) priority.textContent = String(counts.priority);
+}
+
 function updateSummary(items) {
   const active = items.filter(item => !isClosed(item));
   const amount = active.reduce((sum, item) => sum + Number(item.total || 0), 0);
   document.getElementById('tracking-summary-count').textContent = String(active.length);
   document.getElementById('tracking-summary-amount').textContent = money(amount);
+  updateRadar(items);
 }
 
 function updateResults(items) {
@@ -215,17 +232,32 @@ async function loadQuotes() {
 }
 
 function renderShell(root) {
-  root.innerHTML = `<header class="tracking-header">
-    <div class="tracking-header-inner">
+  const environment = String(APP_CONFIG.environment || '').trim().toUpperCase() || 'APP';
+  root.innerHTML = `<header class="tracking-header module-appbar">
+    <div class="tracking-header-inner module-appbar-inner">
       <a class="tracking-round" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Volver al inicio"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a>
-      <div class="tracking-brand"><img src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true"><div class="tracking-brand-copy"><strong>Seguimiento</strong><span>Cotizaciones · Maderarte</span></div></div>
+      <div class="tracking-brand module-brand" aria-label="Maderarte App">
+        <img class="module-brand-mark" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
+        <div class="module-brand-lockup"><img class="module-brand-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"><span class="module-brand-section">Seguimiento comercial</span></div>
+      </div>
       <button class="tracking-round" id="tracking-refresh" type="button" aria-label="Actualizar cotizaciones"><img src="/assets/icons/arrow-clockwise.svg" alt="" aria-hidden="true"></button>
     </div>
   </header>
   <main class="tracking-shell">
-    <section class="tracking-hero">
-      <div class="tracking-hero-copy"><div class="tracking-eyebrow"><span class="tracking-eyebrow-dot"></span><span>Radar comercial</span></div><h1>Seguimiento de cotizaciones</h1><p>Prioriza propuestas por antigüedad, revisa su valor y encuentra rápidamente las que necesitan una nueva gestión comercial.</p></div>
-      <div class="tracking-legend" aria-label="Antigüedad de cotizaciones"><span class="tracking-legend-pill recent">0–7 días</span><span class="tracking-legend-pill attention">8–15 días</span><span class="tracking-legend-pill priority">Más de 15 días</span></div>
+    <section class="tracking-command" aria-labelledby="tracking-title">
+      <div class="tracking-command-copy">
+        <div class="tracking-module-path"><span>Gestión comercial</span><b>/</b><span>Cotizaciones</span></div>
+        <h1 id="tracking-title">Seguimiento</h1>
+        <p>Un tablero para saber qué propuesta sigue viva, cuánto valor hay en juego y cuál necesita una nueva gestión comercial.</p>
+      </div>
+      <aside class="tracking-radar-panel" aria-label="Radar de oportunidades por antigüedad">
+        <div class="tracking-radar-head"><div><span>Radar de oportunidades</span><strong>Antigüedad de propuestas abiertas</strong></div><small>Rango visible</small></div>
+        <div class="tracking-radar-grid">
+          <article class="tracking-radar-segment recent"><span>Recientes</span><strong id="tracking-radar-recent-count">0</strong><small>0–7 días</small></article>
+          <article class="tracking-radar-segment attention"><span>Seguimiento</span><strong id="tracking-radar-attention-count">0</strong><small>8–15 días</small></article>
+          <article class="tracking-radar-segment priority"><span>Prioridad</span><strong id="tracking-radar-priority-count">0</strong><small>+15 días</small></article>
+        </div>
+      </aside>
     </section>
     <section class="tracking-summary" aria-label="Resumen de cotizaciones">
       <article class="tracking-summary-card"><span class="tracking-summary-icon"><img src="/assets/icons/file-text.svg" alt="" aria-hidden="true"></span><div class="tracking-summary-copy"><span class="tracking-summary-label">En seguimiento</span><strong class="tracking-summary-value" id="tracking-summary-count">0</strong><span class="tracking-summary-note">Propuestas abiertas en el rango visible</span></div></article>
@@ -242,7 +274,10 @@ function renderShell(root) {
       </div>
     </form>
     <section><div class="tracking-results-head"><strong>Cotizaciones</strong><span id="tracking-result-count">0 cotizaciones</span></div><div id="tracking-results">${loadingMarkup()}</div></section>
-    <footer class="tracking-footer"><img src="/assets/brand/maddy-by-maderarte.svg" alt="" aria-hidden="true"><span>Maderarte · Seguimiento comercial</span></footer>
+    <footer class="tracking-footer module-footer" aria-label="Información del sistema">
+      <div class="module-footer-identity"><img class="module-footer-maddy" src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte"><div class="module-footer-copy"><strong>Maderarte App</strong><span>Seguimiento comercial</span></div></div>
+      <div class="module-footer-meta"><strong>Versión ${escapeHtml(APP_CONFIG.version)}</strong><span>Entorno · ${escapeHtml(environment)}</span></div>
+    </footer>
   </main>
   <div class="tracking-pdf-overlay" id="tracking-pdf-overlay" aria-hidden="true">
     <section class="tracking-pdf-dialog" role="dialog" aria-modal="true" aria-labelledby="tracking-pdf-number">
