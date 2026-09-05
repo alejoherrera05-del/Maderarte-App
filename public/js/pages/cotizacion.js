@@ -353,12 +353,18 @@ function openPreview() {
   if (COMMERCIAL_DOCUMENT.isOrder) {
     const total = parseMoney(document.getElementById('quote-total').textContent);
     const entry = readOrderEntry(total);
-    if (!entry.saleMode || entry.error) {
-      const message = document.getElementById('order-payment-error');
-      message.textContent = entry.error || 'Elige la modalidad de esta venta antes de abrir el documento.';
-      const target = entry.error ? document.querySelectorAll('[data-payment-row]')[entry.errorIndex]?.querySelector('[data-payment-amount]') : document.querySelector('[name="order-sale-mode"]');
-      target?.focus();
-      message.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    if (!entry.saleMode) {
+      const message = document.getElementById('order-mode-help');
+      message.textContent = 'Elige la modalidad de esta venta antes de abrir el documento.';
+      message.classList.add('is-error');
+      document.querySelector('[name="order-sale-mode"]')?.focus();
+      return;
+    }
+    if (entry.error) {
+      document.getElementById('order-payment-error').textContent = entry.error;
+      const row = document.querySelectorAll('[data-payment-row]')[entry.errorIndex];
+      const method = row?.querySelector('[data-payment-method]');
+      (method?.value ? row.querySelector('[data-payment-amount]') : method)?.focus();
       return;
     }
   }

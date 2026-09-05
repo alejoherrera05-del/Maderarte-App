@@ -59,7 +59,11 @@ try {
     assert.equal(amount('quote-total'), 1900000);
     assert.equal(amount('order-paid'), 0);
     assert.equal(amount('order-balance'), 1900000);
+    document.getElementById('quote-preview-button').click();
+    assert.match(document.getElementById('order-mode-help').textContent, /Elige la modalidad/);
+    assert.equal(document.activeElement.name, 'order-sale-mode');
     document.querySelector('[value="SEPARADO"]').click();
+    assert.equal(document.getElementById('order-mode-help').classList.contains('is-error'), false);
     set('[data-payment-method]', 'TRANSFERENCIA');
     set('[data-payment-amount]', '50000');
     set('[data-payment-note]', 'INTERNO-A-NO-PUBLICAR');

@@ -56,7 +56,9 @@ export function bindOrderEntry(onChange) {
   });
   document.querySelectorAll('[name="order-sale-mode"]').forEach(input => input.addEventListener('change', () => {
     const mode = SALE_MODES.find(item => item.code === input.value);
-    document.getElementById('order-mode-help').textContent = mode?.terms || '';
+    const help = document.getElementById('order-mode-help');
+    help.textContent = mode?.terms || '';
+    help.classList.remove('is-error');
     onChange();
   }));
   addPayment();

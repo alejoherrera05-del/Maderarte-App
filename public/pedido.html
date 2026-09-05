@@ -127,6 +127,7 @@
             <section class="quote-editor-section" aria-labelledby="order-payments-title">
               <div class="quote-section-title"><div><span>Pagos</span><h2 id="order-payments-title">Abono o pago inicial</h2></div><small>Indica el valor acordado. Puedes combinar varios medios de pago.</small></div>
               <div id="order-payments" class="order-payments"></div>
+              <p class="quote-helper is-error" id="order-payment-error" role="status"></p>
               <button class="quote-add-item" id="order-add-payment" type="button">＋ Añadir otro pago</button>
               <p class="quote-helper" id="order-payment-privacy">Las notas de cada pago son internas y no aparecen en el documento del cliente.</p>
             </section>
@@ -149,7 +150,6 @@
               <div class="quote-summary-total"><span>Total del pedido</span><strong id="quote-total">$ 0</strong></div>
               <div class="quote-summary-row order-payment-summary"><span>Abono indicado</span><strong id="order-paid">$ 0</strong></div>
               <div class="quote-summary-row order-payment-summary"><span>Saldo por pagar</span><strong id="order-balance">$ 0</strong></div>
-              <p class="quote-helper is-error" id="order-payment-error" role="status"></p>
               <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
               <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Guardar orden de pedido</button>
               <p class="quote-write-note">Borrador para revisión: estos datos aún no se guardan. El número oficial y los abonos se registrarán al habilitar el guardado.</p>
