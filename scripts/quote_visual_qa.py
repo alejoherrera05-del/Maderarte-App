@@ -235,7 +235,9 @@ def check_order():
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
-    driver.find_element(By.ID, 'order-allocate-payments').click()
+    allocation_toggle = driver.find_element(By.ID, 'order-allocate-payments')
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation_toggle)
+    allocation_toggle.click()
     # An entirely available order has no factory deadline; changing it keeps payments.
     Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('DISPONIBLE')
     driver.find_element(By.ID, 'quote-preview-button').click()

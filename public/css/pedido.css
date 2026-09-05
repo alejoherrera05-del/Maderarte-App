@@ -156,3 +156,6 @@
 @media (max-width: 720px) {
   [data-commercial-document="order"] .quote-shell { padding-inline: 0; }
 }
+.order-operational-summary { grid-column: 1 / -1; }
+[data-commercial-document="order"] .quote-preview-button { min-height: 44px; }
+.order-check-option, .order-check-option input { scroll-margin-block: 100px; }
