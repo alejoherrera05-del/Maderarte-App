@@ -114,7 +114,9 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
         fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Sala de revisión', 'SALA', 1, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
         Select(driver.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('DISPONIBLE')
-        driver.find_element(By.ID, 'quote-add-item').click()
+        add_item = driver.find_element(By.ID, 'quote-add-item')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", add_item)
+        add_item.click()
         dining = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
         fill(dining, 'Comedor de revisión', 'COMEDOR', 1, '', 'Roble', '', 1000000)
         Select(dining.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('PARA_SOLICITAR')
