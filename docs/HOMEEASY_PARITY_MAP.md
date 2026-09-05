@@ -17,7 +17,7 @@ No se copian datos, URLs privadas, IDs, credenciales, PDFs, cachés, mascota Hom
 | `ventas.html` | Historial de ventas, OP, pagos, saldos, filtros y acceso al expediente | `public/ordenes.html` | Equivalente de historial comercial de OP. |
 | `cotizacion.html` | Formulario de cotización y documento/PDF | `public/cotizacion.html` | **APROBADO.** Formulario especializado para mobiliario + documento híbrido Maderarte/HomeEasy + paginación adaptativa. Mientras `COMMERCIAL_WRITES=false`, no habilitar creación real. |
 | `seguimiento.html` | Seguimiento/radar de cotizaciones | `public/cotizaciones.html` | **IMPLEMENTADO EN LECTURA.** Radar por antigüedad, valor, filtros, PDF y vínculo a OP convertida. Sin notas/archivo/escrituras todavía. |
-| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | Siguiente módulo. Reutilizar el sistema especializado y aprobado de Cotización. No habilitar escritura todavía. |
+| `pedido.html` | Formulario de Orden de Pedido y documento/PDF | `public/pedido.html` | **FORMULARIO Y DOCUMENTO EN PREPARACIÓN.** Reutiliza el sistema aprobado de Cotización. Sin guardado ni numeración oficial. |
 | `abono.html` | Registro de abono/recibo y relación con OP | `public/abono.html` | Fuente de UX para Abonos y Recibo de caja; escritura se habilita más adelante. |
 | `documentos.html` | Centro documental | `public/documentos.html` | Portar patrón cuando llegue el módulo de documentos. |
 | `calendario.html` | Agenda, eventos, recordatorios y navegación desde campana | `public/agenda.html` | Fuente para Agenda y notificaciones reales. |
@@ -122,3 +122,15 @@ Visual QA de Seguimiento valida Chrome desktop y móvil, protege el grid de tres
 - Formularios y documentos pueden mejorar el equivalente de HomeEasy cuando la mejora responde al negocio de mobiliario, sin perder su esencia minimalista y operativa.
 
 Cualquier otra desviación debe estar pedida explícitamente por el propietario o justificada por una diferencia real de negocio.
+
+## Orden de pedido: formulario y documento de preparación
+
+Fuente inspeccionada: `Homeeasy/main/pedido.html`, commit `aa21decbe809a91362a2cddfd272c7c5744dfddd` (5 de septiembre de 2026).
+
+Paridad: volver a Inicio, identificación con coincidencias en el mismo campo, datos del cliente y dirección de entrega, productos editables, subtotal/descuento/total, observaciones de fabricación y documento con marca/número/fecha/cierre. En móvil se conserva captura vertical y controles amplios.
+
+Adaptaciones Maderarte: selección de sede MP/TP, muebles y fotografías del sistema aprobado de Cotización, condiciones propias de 30% y 25–30 días, documento paginado y anexos solo cuando hay fotos. El asesor firma al final solo con su nombre.
+
+Límite de esta entrega: formulario de borrador, sin crear OP, cobrar abonos, convertir cotizaciones ni escribir en Sheets/Drive. No se reutiliza el consecutivo de cotizaciones: la OP muestra «Borrador» y el número se asignará al guardar. La dirección autocompletada puede editarse para la entrega, sin modificar el cliente. El cálculo del mínimo no representa un pago recibido.
+
+Cotización y Pedido comparten búsqueda, edición de muebles y un único renderizador paginado. Los IDs internos `quote-*` se conservan en ambos HTML para evitar duplicar lógica; los textos, permiso y tipo documental dependen de la pantalla.

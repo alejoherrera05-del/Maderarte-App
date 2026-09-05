@@ -1,10 +1,13 @@
 import { apiRequest } from '../core/api.js';
-import { APP_CONFIG } from '../core/config.js';
+import { APP_CONFIG, withPreview } from '../core/config.js';
+import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=order-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js';
-import { COMMERCIAL_RULES, manufacturingWindowLabel, minimumOrderDeposit, remainingAfterMinimumDeposit } from '../core/commercial-rules.js';
+import { minimumOrderDeposit, remainingAfterMinimumDeposit } from '../core/commercial-rules.js';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -85,24 +88,22 @@ async function requestClients(payload = {}) {
 
 function fallbackQuoteMeta(branch) {
   const base = BRANCH_FALLBACKS[branch] || { branch, branchName: branch };
+  const companyLocation = companyBranch(branch);
   return {
     ...base,
-    branchAddress: '',
-    branchPhone: '',
+    branchAddress: companyLocation?.address || '',
+    branchPhone: COMPANY_PROFILE.mobile,
     previewNumber: '',
     numberStatus: 'PENDIENTE',
     issuedAt: new Date().toISOString(),
     advisor: state.session?.profile?.name || '',
-    company: {
-      legalName: 'MADERARTE POPAYÁN S.A.S.',
-      nit: '',
-      website: 'maderartepopayan.com'
-    }
+    company: COMPANY_PROFILE
   };
 }
 
 async function requestQuoteMeta(branch) {
-  if (APP_CONFIG.preview.enabled) return fallbackQuoteMeta(branch);
+  // A draft order must never consume or display a quotation consecutive.
+  if (COMMERCIAL_DOCUMENT.isOrder || APP_CONFIG.preview.enabled) return fallbackQuoteMeta(branch);
   try {
     const response = await apiRequest('COTIZACION_META', { branch });
     return { ...fallbackQuoteMeta(branch), ...(response.data || {}) };
@@ -138,7 +139,7 @@ function setGateBusy(busy) {
 
 function updateDocumentMeta() {
   const meta = state.quoteMeta || fallbackQuoteMeta('');
-  const number = meta.previewNumber || 'Pendiente de asignar';
+  const number = meta.previewNumber || COMMERCIAL_DOCUMENT.pendingNumber;
   const status = meta.previewNumber ? 'Consecutivo previsto' : 'Se asigna al guardar';
   const numberEl = document.getElementById('quote-meta-number');
   const statusEl = document.getElementById('quote-number-status');
@@ -156,7 +157,8 @@ function updateDocumentMeta() {
 
 async function selectBranch(branch) {
   const code = String(branch || '').trim().toUpperCase();
-  if (!code) return;
+  const available = allowedBranches();
+  if (!Object.hasOwn(BRANCH_FALLBACKS, code) || (available.length && !available.includes(code))) return;
   const selectionTrigger = document.activeElement;
   setGateBusy(true);
   setGateMessage('Preparando los datos de emisión…');
@@ -183,7 +185,7 @@ async function selectBranch(branch) {
 function openBranchGate() {
   const gate = document.getElementById('quote-branch-gate');
   gate?.classList.remove('is-closed');
-  setGateMessage(state.quoteMeta ? 'Selecciona la sede que debe quedar asociada a esta propuesta.' : '');
+  setGateMessage(state.quoteMeta ? 'Selecciona la sede del documento.' : '');
 }
 
 function itemMarkup(id) {
@@ -321,31 +323,6 @@ function itemData(card, index) {
   };
 }
 
-function collectData() {
-  const items = Array.from(document.querySelectorAll('.quote-item')).map(itemData);
-  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const discount = Math.min(subtotal, parseMoney(document.getElementById('quote-discount')?.value));
-  const total = Math.max(0, subtotal - discount);
-  return {
-    meta: state.quoteMeta || fallbackQuoteMeta(''),
-    client: {
-      document: document.getElementById('quote-client-document')?.value.trim() || '',
-      name: document.getElementById('quote-client-name')?.value.trim() || '',
-      phone: document.getElementById('quote-client-phone')?.value.trim() || '',
-      email: document.getElementById('quote-client-email')?.value.trim() || '',
-      address: document.getElementById('quote-client-address')?.value.trim() || '',
-      city: document.getElementById('quote-client-city')?.value.trim() || ''
-    },
-    notes: document.getElementById('quote-notes')?.value.trim() || '',
-    items,
-    subtotal,
-    discount,
-    total,
-    minimumDeposit: minimumOrderDeposit(total),
-    remaining: remainingAfterMinimumDeposit(total)
-  };
-}
-
 function calculate() {
   const cards = Array.from(document.querySelectorAll('.quote-item'));
   let subtotal = 0;
@@ -364,66 +341,12 @@ function calculate() {
   document.getElementById('quote-remaining').textContent = money(remainingAfterMinimumDeposit(total));
 }
 
-function previewItemMarkup(item) {
-  const details = [item.category, item.fabric, item.wood, item.specifications].filter(Boolean).join(' · ');
-  return `<div class="quote-preview-item"><div class="quote-preview-item-copy"><strong>${escapeHtml(item.position + '. ' + (item.description || 'Mueble sin descripción'))}</strong><span>${escapeHtml(details || 'Sin especificaciones adicionales')}</span></div><div class="quote-preview-item-amount"><strong>${escapeHtml(money(item.subtotal))}</strong><span>${escapeHtml(`${item.quantity || 0} × ${money(item.unitValue)}`)}</span></div></div>`;
-}
-
-function companyInfoMarkup(meta) {
-  const company = meta.company || {};
-  const details = [meta.branchAddress, meta.branchPhone, company.website].filter(Boolean);
-  return `<div class="quote-preview-company"><div><strong>${escapeHtml(company.legalName || 'MADERARTE POPAYÁN S.A.S.')}</strong>${company.nit ? `<span>NIT ${escapeHtml(company.nit)}</span>` : ''}</div><div class="quote-preview-company-details"><span>${escapeHtml(meta.branchName || meta.branch || 'Sede Maderarte')}</span>${details.map(value => `<span>${escapeHtml(value)}</span>`).join('')}</div></div>`;
-}
-
-function appendixMarkup(data) {
-  const withPhotos = data.items.filter(item => item.photos.length);
-  const meta = data.meta;
-  if (!withPhotos.length) {
-    return `<section class="quote-preview-page quote-preview-appendix-page"><div class="quote-preview-annex-head"><div><span>Anexo fotográfico</span><h3>Referencias por mueble</h3></div><strong>${escapeHtml(meta.previewNumber || 'Borrador')}</strong></div><div class="quote-preview-empty-appendix">No se agregaron fotografías a esta propuesta.</div></section>`;
-  }
-  return `<section class="quote-preview-page quote-preview-appendix-page"><div class="quote-preview-annex-head"><div><span>Anexo fotográfico</span><h3>Referencias por mueble</h3></div><strong>${escapeHtml(meta.previewNumber || 'Borrador')}</strong></div>${withPhotos.map(item => {
-    const details = [item.category, item.fabric, item.wood, item.specifications].filter(Boolean).join(' · ');
-    return `<article class="quote-appendix-item"><div class="quote-appendix-item-head"><div><span>Item ${item.position}</span><strong>${escapeHtml(item.description || 'Mueble sin descripción')}</strong></div><p>${escapeHtml(details || 'Sin especificaciones adicionales')}</p></div><div class="quote-appendix-photos">${item.photos.map((photo, index) => `<figure><img src="${escapeHtml(photo.dataUrl)}" alt="Referencia ${index + 1} del item ${item.position}"><figcaption>Referencia ${index + 1}</figcaption></figure>`).join('')}</div></article>`;
-  }).join('')}</section>`;
-}
-
-function renderPreview() {
-  const data = collectData();
-  const meta = data.meta;
-  const clientLocation = [data.client.address, data.client.city].filter(Boolean).join(' · ');
-  const number = meta.previewNumber || 'Pendiente de asignar';
-  const mainPage = `<section class="quote-preview-page quote-preview-main-page">
-    <div class="quote-preview-letterhead"><div class="quote-preview-logo-lockup"><img src="/assets/brand/maderarte-logo-2026.webp" alt="Maderarte"><div><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"><span>Muebles con un estilo diferente para cada cliente</span></div></div><div class="quote-preview-doc-id"><span>COTIZACIÓN</span><strong>${escapeHtml(number)}</strong><small>${escapeHtml(formatDate(meta.issuedAt))}</small></div></div>
-    ${companyInfoMarkup(meta)}
-    <div class="quote-preview-context"><span><small>Sede emisora</small><strong>${escapeHtml(meta.branchName || meta.branch || '—')}</strong></span><span><small>Asesor</small><strong>${escapeHtml(meta.advisor || state.session?.profile?.name || '—')}</strong></span><span><small>Estado</small><strong>Borrador</strong></span></div>
-    <div class="quote-preview-client-title"><span>Cliente</span><h3>${escapeHtml(data.client.name || 'Cliente por definir')}</h3></div>
-    <div class="quote-preview-client"><span>Identificación<strong>${escapeHtml(data.client.document || '—')}</strong></span><span>Teléfono<strong>${escapeHtml(data.client.phone || '—')}</strong></span><span>Correo<strong>${escapeHtml(data.client.email || '—')}</strong></span><span>Dirección<strong>${escapeHtml(clientLocation || '—')}</strong></span></div>
-    <div class="quote-preview-items-head"><span>Detalle</span><strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong></div>
-    <div class="quote-preview-items">${data.items.map(previewItemMarkup).join('')}</div>
-    <div class="quote-preview-bottom"><div class="quote-preview-terms"><strong>Condiciones comerciales</strong><p>• Abono mínimo para solicitar e iniciar el pedido: ${COMMERCIAL_RULES.minimumOrderDepositPercent}% del valor total (${escapeHtml(money(data.minimumDeposit))} con el valor actual).</p><p>• Tiempo estimado de fabricación: ${escapeHtml(manufacturingWindowLabel())}, contado desde la confirmación del pedido y el abono mínimo requerido.</p>${data.notes ? `<p><b>Observaciones:</b> ${escapeHtml(data.notes)}</p>` : ''}</div><div class="quote-preview-finance"><div><span>Subtotal</span><strong>${escapeHtml(money(data.subtotal))}</strong></div><div><span>Descuento</span><strong>− ${escapeHtml(money(data.discount))}</strong></div><div><span>Total</span><strong>${escapeHtml(money(data.total))}</strong></div></div></div>
-    <footer class="quote-preview-footer"><span>${escapeHtml(meta.company?.website || 'maderartepopayan.com')}</span><span>Documento borrador · sin validez comercial</span></footer>
-  </section>`;
-  document.getElementById('quote-preview-content').innerHTML = mainPage + appendixMarkup(data);
-}
-
 function openPreview() {
   if (!state.quoteMeta) {
     openBranchGate();
     return;
   }
-  renderPreview();
-  const overlay = document.getElementById('quote-preview-overlay');
-  overlay?.classList.add('is-open');
-  overlay?.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  window.setTimeout(() => document.getElementById('quote-preview-close')?.focus(), 180);
-}
-
-function closePreview() {
-  const overlay = document.getElementById('quote-preview-overlay');
-  overlay?.classList.remove('is-open');
-  overlay?.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
+  openDocumentPreview();
 }
 
 function bindGlobalInteractions() {
@@ -434,12 +357,12 @@ function bindGlobalInteractions() {
   document.getElementById('quote-add-item')?.addEventListener('click', addItem);
   document.getElementById('quote-preview-button')?.addEventListener('click', openPreview);
   document.getElementById('quote-summary-preview')?.addEventListener('click', openPreview);
-  document.getElementById('quote-preview-close')?.addEventListener('click', closePreview);
+  document.getElementById('quote-preview-close')?.addEventListener('click', closeDocumentPreview);
   document.getElementById('quote-preview-overlay')?.addEventListener('click', event => {
-    if (event.target === event.currentTarget) closePreview();
+    if (event.target === event.currentTarget) closeDocumentPreview();
   });
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && document.getElementById('quote-preview-overlay')?.classList.contains('is-open')) closePreview();
+    if (event.key === 'Escape' && document.getElementById('quote-preview-overlay')?.classList.contains('is-open')) closeDocumentPreview();
   });
 
   const discount = document.getElementById('quote-discount');
@@ -472,11 +395,13 @@ function bindGlobalInteractions() {
 }
 
 guardStandalonePage({
-  permission: 'cotizaciones.read',
+  permission: COMMERCIAL_DOCUMENT.permission,
   async render({ session }) {
     state.session = session;
     const app = document.getElementById('quote-app');
     if (app) app.hidden = false;
+    const back = document.querySelector('.quote-header a');
+    if (back) back.href = withPreview('/index.html');
     renderBranchAvailability();
     bindGlobalInteractions();
     addItem();

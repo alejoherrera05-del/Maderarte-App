@@ -27,7 +27,7 @@ assert.match(html, /id="quote-workspace" hidden/);
 assert.match(html, /id="quote-meta-number"/);
 assert.match(html, /id="quote-meta-date"/);
 assert.match(html, /id="quote-meta-advisor"/);
-assert.match(html, /cotizacion-document-polish\.js/);
+assert.match(js, /cotizacion-document-polish\.js/);
 assert.match(html, /cotizacion-document-adaptive\.css/);
 
 assert.match(js, /apiRequest\('COTIZACION_META'/);
@@ -79,7 +79,8 @@ assert.match(documentJs, /compactDate/);
 assert.match(documentJs, /quote-editorial-header/);
 assert.match(documentJs, /quote-editorial-document-identity/);
 assert.match(documentJs, /quote-editorial-number/);
-assert.match(documentJs, /<h1>COTIZACIÓN<\/h1>/);
+assert.match(documentJs, /COMMERCIAL_DOCUMENT.title/);
+assert.match(read('public/js/core/commercial-document.js'), /'ORDEN DE PEDIDO' : 'COTIZACIÓN'/);
 assert.match(documentJs, /quote-editorial-client/);
 assert.match(documentJs, /Información del cliente/);
 assert.match(documentJs, /quote-editorial-item/);

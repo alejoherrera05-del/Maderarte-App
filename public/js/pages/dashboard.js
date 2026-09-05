@@ -13,8 +13,8 @@ const MENU_GROUPS = Object.freeze([
         { label: 'Seguimiento', description: 'Radar comercial por antigüedad y valor', href: '/cotizaciones.html' }
       ] },
       { key: 'pedido', label: 'Orden de pedido', description: 'Crear y consultar expedientes', icon: 'clipboard-text', permission: 'ordenes.read', options: [
-        { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' },
-        { label: 'Formulario', description: 'Registrar una nueva OP en la etapa de escrituras', disabled: true }
+        { label: 'Formulario', description: 'Preparar el pedido y revisar su documento', href: '/pedido.html' },
+        { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' }
       ] }
     ]
   },

@@ -8,7 +8,7 @@ const version = '0.2.0';
 const required = [
   'README.md', 'AGENTS.md', 'package.json', 'package-lock.json', 'wrangler.toml',
   '.github/workflows/quality.yml',
-  'public/login.html', 'public/activar-cuenta.html', 'public/index.html', 'public/clientes.html', 'public/cotizacion.html', 'public/ordenes.html',
+  'public/login.html', 'public/activar-cuenta.html', 'public/index.html', 'public/clientes.html', 'public/cotizacion.html', 'public/pedido.html', 'public/ordenes.html',
   'public/orden.html', 'public/perfil.html', 'public/configuracion.html', 'public/404.html',
   'public/manifest.webmanifest', 'public/_headers', 'public/_redirects',
   'public/assets/brand/README.md', 'public/css/clientes-parity.css', 'public/css/cotizacion-form.css', 'public/css/dashboard-parity.css',

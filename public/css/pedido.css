@@ -1,0 +1,25 @@
+/* Order-specific copy uses the existing form and document proportions. */
+.order-document-page .quote-editorial-document h1 {
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+/* The advisor signs with their name only. */
+.order-document-page .quote-editorial-signature::before {
+  content: none;
+  display: none;
+}
+
+.order-document-page .quote-editorial-signature span {
+  font-family: "Iowan Old Style", Baskerville, Georgia, serif !important;
+  font-size: 1.05rem !important;
+  font-style: italic !important;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  [data-commercial-document="order"] .quote-header-brand strong {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+}
