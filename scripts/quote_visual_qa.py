@@ -25,6 +25,9 @@ def set_quantity(node, text):
     driver.execute_script("arguments[0].dispatchEvent(new Event('input',{bubbles:true}));", node)
 
 def fill(card, desc, cat, qty, fabric, wood, spec, price):
+    details = card.find_element(By.CSS_SELECTOR, '.quote-item-details')
+    if not details.get_attribute('open'):
+        details.find_element(By.TAG_NAME, 'summary').click()
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="description"]'), desc)
     Select(card.find_element(By.CSS_SELECTOR,'[data-field="category"]')).select_by_value(cat)
     set_quantity(card.find_element(By.CSS_SELECTOR,'[data-field="quantity"]'), qty)
@@ -32,6 +35,7 @@ def fill(card, desc, cat, qty, fabric, wood, spec, price):
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="wood"]'), wood)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="specifications"]'), spec)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="unitValue"]'), price)
+    details.find_element(By.TAG_NAME, 'summary').click()
 
 def metric(selector):
     return driver.execute_script('''
@@ -113,16 +117,15 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-phone'), '0000000011')
         setv(driver.find_element(By.ID, 'quote-client-alternatePhone'), '0000000022')
         setv(driver.find_element(By.ID, 'quote-client-email'), 'cliente@example.com')
-        if width == 1440:
-            driver.find_element(By.ID, 'order-separated').click()
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
         fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Sala de revisión', 'SALA', 1, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
-        Select(driver.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('DISPONIBLE')
+        Select(driver.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('ENTREGA_HOY')
         add_item = driver.find_element(By.ID, 'quote-add-item')
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", add_item)
         add_item.click()
         dining = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
         fill(dining, 'Comedor de revisión', 'COMEDOR', 1, '', 'Roble', '', 1000000)
+        Select(dining.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('SEPARADO')
         Select(dining.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('PARA_SOLICITAR')
         setv(driver.find_element(By.ID, 'quote-discount'), '100000')
         setv(driver.find_element(By.ID, 'quote-notes'), 'Obsequio de cojines. Transporte incluido a Cali.')
@@ -145,8 +148,23 @@ def check_order():
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.quote-items-section'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-muebles-{width}.png')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-payments-title'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-pagos-{width}.png')))
+        allocation = driver.find_element(By.ID, 'order-allocate-payments')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation)
+        allocation.click()
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-item-allocation="1"]'), '100000')
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-item-allocation="2"]'), '50000')
+        assert driver.find_element(By.ID, 'order-allocation-error').text == ''
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-allocations'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-distribucion-{width}.png')))
         driver.find_element(By.ID, 'quote-preview-button').click()
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
+        assert len(driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')) == 2
+        assert '850.000' in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')[0].text
+        assert '900.000' in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')[1].text
         document_metrics = driver.execute_script("""
           const pages=[...document.querySelectorAll('.quote-preview-page')];
           return {pages:pages.length, titles:pages.map(p=>p.querySelector('h1')?.textContent),
@@ -186,9 +204,10 @@ def check_order():
         assert 'INTERNO-QA' not in document_metrics['html'], 'Las notas internas no llegan al HTML del documento'
         assert 'Abono indicado' in document_metrics['text'] and 'Saldo por pagar' in document_metrics['text']
         assert '30%' not in document_metrics['text']
-        assert document_metrics['availability'] == ['DISPONIBLE', 'PARA_SOLICITAR']
+        assert document_metrics['availability'] == ['PARA_SOLICITAR']
+        assert 'Se entrega hoy' in document_metrics['text'] and 'Queda separado' in document_metrics['text']
         assert '25 a 30 días' in document_metrics['conditions']
-        assert ('Separado.' in document_metrics['conditions']) == (width == 1440)
+        assert 'muebles señalados como separados' in document_metrics['conditions']
         finance = driver.execute_script("""
           const box=document.querySelector('.order-finance'), figures=box.querySelector('.order-finance-figures');
           const rect=box.getBoundingClientRect(), cells=[...figures.children];
@@ -213,6 +232,7 @@ def check_order():
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
+    driver.find_element(By.ID, 'order-allocate-payments').click()
     # An entirely available order has no factory deadline; changing it keeps payments.
     Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('DISPONIBLE')
     driver.find_element(By.ID, 'quote-preview-button').click()
@@ -258,7 +278,7 @@ def check_order():
     assert 'INTERNO-QA' not in pdf_text, 'La nota interna tampoco aparece en el PDF real'
     assert '30%' not in pdf_text and 'fabricación estimada de 25 a 30 días' in pdf_text
     assert 'Sala de revisión' in pdf_text and 'Comedor de revisión' in pdf_text
-    assert 'Disponible para entrega inmediata' in pdf_text and 'Solicitar a fábrica' in pdf_text
+    assert 'Se entrega hoy' in pdf_text and 'Queda separado' in pdf_text and 'Solicitar a fábrica' in pdf_text
     assert pdf_text.count('Saldo por pagar') == 1 and pdf_text.count('Abono indicado') == 1
     assert all('Borrador' in page.extract_text() for page in exported.pages)
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]

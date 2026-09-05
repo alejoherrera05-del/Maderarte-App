@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { COMMERCIAL_RULES, PAYMENT_METHODS, ITEM_FULFILLMENTS, summarizePayments, paymentAmount, manufacturingWindowLabel } from '../public/js/core/commercial-rules.js';
+import { COMMERCIAL_RULES, PAYMENT_METHODS, ITEM_FULFILLMENTS, summarizePayments, paymentAmount, manufacturingWindowLabel, distributeDiscount } from '../public/js/core/commercial-rules.js';
 
 assert.equal(COMMERCIAL_RULES.minimumOrderDepositPercent, undefined);
 assert.equal(manufacturingWindowLabel(), '25 a 30 días');
@@ -39,3 +39,11 @@ for (const entries of [
   [{ method: 'EFECTIVO', amount: '700000' }, { method: 'TARJETA', amount: '400000' }]
 ]) assert.ok(summarizePayments(1000000, entries).error, JSON.stringify(entries));
 console.log('OK · separados de importe libre, pagos combinados, saldo, importes inválidos y notas internas excluidas');
+
+assert.deepEqual(distributeDiscount([{subtotal:2000000},{subtotal:1500000}],350000).map(item=>item.net),[1800000,1350000]);
+assert.deepEqual(distributeDiscount([{subtotal:1},{subtotal:1},{subtotal:1}],1).map(item=>item.net),[0,1,1]);
+assert.equal(distributeDiscount([{subtotal:1}],2).length,0);
+assert.deepEqual(distributeDiscount([{subtotal:0},{subtotal:0}],0).map(item=>item.net),[0,0]);
+const large=distributeDiscount([{subtotal:4000000000000000},{subtotal:4000000000000000}],7000000000000001);
+assert.equal(large.reduce((sum,item)=>sum+item.discount,0),7000000000000001);
+assert.equal(large.reduce((sum,item)=>sum+item.net,0),999999999999999);

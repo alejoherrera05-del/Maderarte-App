@@ -51,8 +51,9 @@ export function bindOrderEntry(onChange) {
       row.querySelector('[data-remove-payment]').disabled = list.children.length === 1;
     });
   }
-  function addPayment() {
-    const id = nextId++;
+  function addPayment(restoredId) {
+    const id = Number.isSafeInteger(restoredId) && restoredId > 0 ? restoredId : nextId++;
+    nextId = Math.max(nextId, id + 1);
     const row = document.createElement('article');
     row.className = 'order-payment';
     row.dataset.paymentRow = String(id);
@@ -86,6 +87,7 @@ export function bindOrderEntry(onChange) {
   document.getElementById('order-no-payment')?.addEventListener('change', onChange);
   document.getElementById('order-allocate-payments')?.addEventListener('change', onChange);
   addPayment();
+  return { addPayment, clear: () => list.replaceChildren() };
 }
 
 export function syncOrderAllocation(values, onChange) {

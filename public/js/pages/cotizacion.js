@@ -10,6 +10,7 @@ import { bindClientLookup } from '../core/client-lookup.js';
 import { ITEM_FULFILLMENTS, ITEM_AGREEMENTS, paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
 import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=agreements-1';
 
+import { bindFormDraft } from '../core/form-draft.js?v=agreements-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=agreements-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
@@ -171,6 +172,7 @@ async function selectBranch(branch) {
     document.getElementById('quote-preview-button').disabled = false;
     document.getElementById('quote-branch-gate').classList.add('is-closed');
     setGateMessage('');
+    state.draft?.save();
     window.setTimeout(() => {
       const idleFocus = document.activeElement === document.body || document.activeElement === selectionTrigger;
       if (idleFocus && !window.matchMedia?.('(pointer: coarse)').matches) {
@@ -253,6 +255,7 @@ function renderPhotos(itemId) {
       current.splice(Number(button.dataset.removePhoto), 1);
       state.photos.set(itemId, current);
       renderPhotos(itemId);
+      state.draft?.changed();
     });
   });
 }
@@ -273,6 +276,7 @@ async function addPhotos(itemId, files) {
   const current = state.photos.get(itemId) || [];
   state.photos.set(itemId, current.concat(loaded));
   renderPhotos(itemId);
+  state.draft?.changed();
 }
 
 function bindItem(card) {
@@ -283,6 +287,7 @@ function bindItem(card) {
     card.remove();
     renumberItems();
     calculate();
+    state.draft?.changed();
   });
 
   card.querySelectorAll('[data-field="quantity"], [data-field="unitValue"]').forEach(input => {
@@ -326,16 +331,18 @@ function bindItem(card) {
   });
 }
 
-function addItem() {
+function addItem(restoredId) {
   const root = document.getElementById('quote-items');
   if (!root) return;
-  const id = state.nextItemId++;
+  const id = Number.isSafeInteger(restoredId) && restoredId > 0 ? restoredId : state.nextItemId++;
+  state.nextItemId = Math.max(state.nextItemId, id + 1);
   root.insertAdjacentHTML('beforeend', itemMarkup(id));
   state.photos.set(id, []);
   const card = root.querySelector(`.quote-item[data-item-id="${id}"]`);
   if (card) bindItem(card);
   renumberItems();
   calculate();
+  state.draft?.changed();
 }
 
 function calculate() {
@@ -348,6 +355,7 @@ function calculate() {
   document.getElementById('quote-subtotal').textContent = money(values.subtotal);
   document.getElementById('quote-total').textContent = money(values.total);
   if (COMMERCIAL_DOCUMENT.isOrder) {
+    document.getElementById('order-discount-summary').textContent = money(values.discount);
     syncOrderAllocation(values, calculate);
     const entry = readOrderEntry(values.total);
     document.getElementById('order-paid').textContent = money(entry.paid);
@@ -502,6 +510,52 @@ function bindGlobalInteractions() {
   });
 }
 
+function captureDraft() {
+  return {
+    branch: state.quoteMeta?.branch || '',
+    itemIds: [...document.querySelectorAll('.quote-item')].map(card => Number(card.dataset.itemId)),
+    paymentIds: [...document.querySelectorAll('[data-payment-row]')].map(row => Number(row.dataset.paymentRow)),
+    fields: [...document.querySelectorAll('#quote-form input[id]:not([type=file]), #quote-form select[id], #quote-form textarea[id]')]
+      .map(input => ({ id: input.id, value: input.value, checked: input.checked })),
+    photos: [...state.photos].filter(([, photos]) => photos.length)
+  };
+}
+
+async function restoreDraft(data) {
+  if (!data || !Array.isArray(data.itemIds) || !data.itemIds.length || data.itemIds.length > 100
+    || !data.itemIds.every(id => Number.isSafeInteger(id) && id > 0) || new Set(data.itemIds).size !== data.itemIds.length
+    || !Array.isArray(data.fields) || data.fields.length > 2000
+    || !Array.isArray(data.paymentIds) || data.paymentIds.length > 100
+    || !data.paymentIds.every(id => Number.isSafeInteger(id) && id > 0)) throw new Error('Borrador incompatible');
+  document.getElementById('quote-items').replaceChildren();
+  state.photos.clear();
+  data.itemIds.forEach(addItem);
+  if (state.payments) { state.payments.clear(); data.paymentIds.forEach(state.payments.addPayment); }
+  for (const saved of data.fields) {
+    const input = document.getElementById(saved.id);
+    if (!input?.closest('#quote-form') || input.type === 'file') continue;
+    input.value = typeof saved.value === 'string' ? saved.value : '';
+    if (input.type === 'checkbox') input.checked = Boolean(saved.checked);
+  }
+  // Allocation inputs are created from the restored furniture IDs, then populated.
+  calculate();
+  for (const saved of data.fields.filter(field => field.id.startsWith('order-allocation-'))) {
+    const input = document.getElementById(saved.id);
+    if (input) input.value = String(saved.value || '');
+  }
+  for (const card of document.querySelectorAll('.quote-item')) {
+    for (const input of card.querySelectorAll('[data-item-agreement], [data-item-fulfillment]')) input.dispatchEvent(new window.Event('change'));
+    if ([...card.querySelectorAll('details [data-field]')].some(input => input.value)) card.querySelector('details').open = true;
+  }
+  for (const [id, photos] of Array.isArray(data.photos) ? data.photos : []) {
+    if (!data.itemIds.includes(id) || !Array.isArray(photos)) continue;
+    state.photos.set(id, photos.filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo.dataUrl || '')));
+    renderPhotos(id);
+  }
+  if (data.branch && allowedBranches().includes(data.branch)) await selectBranch(data.branch);
+  calculate();
+}
+
 guardStandalonePage({
   permission: COMMERCIAL_DOCUMENT.permission,
   async render({ session }) {
@@ -513,6 +567,11 @@ guardStandalonePage({
     renderBranchAvailability();
     bindGlobalInteractions();
     addItem();
-    if (COMMERCIAL_DOCUMENT.isOrder) bindOrderEntry(calculate);
+    if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
+    // QA preview stays ephemeral; real sessions recover only their own tab draft.
+    if (!APP_CONFIG.preview.enabled) {
+      state.draft = bindFormDraft({ session, type: COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote', capture: captureDraft, restore: restoreDraft });
+      await state.draft?.ready;
+    }
   }
 });
