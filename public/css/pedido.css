@@ -52,6 +52,10 @@
 .order-document-conditions p { margin: 0 0 6px; color: #69635d; font-size: 12px; line-height: 1.5; }
 .order-document-conditions strong { font-weight: 600; }
 .order-document-closing { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: auto; padding-top: 16px; }
+.order-document-closing .quote-editorial-notes { margin-top: 8px; padding: 0; border: 0; }
+.order-document-closing .quote-editorial-notes strong { display: inline; font-size: 12px; font-weight: 600; line-height: 1.5; letter-spacing: normal; text-transform: none; }
+.order-document-closing .quote-editorial-notes strong::after { content: ': '; }
+.order-document-closing .quote-editorial-notes p { display: inline; margin: 0; font-size: 12px; line-height: 1.5; }
 .order-finance { min-width: 0; padding: 14px 20px; border-top: 2px solid #b85a2b; border-bottom: 1px solid #ddd5cb; background: #faf8f5; color: #302d2a; break-inside: avoid; font-variant-numeric: tabular-nums; }
 .order-finance-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; }
 .order-finance-heading h2 { margin: 0; color: #8f4829; font-size: 12px; font-weight: 600; line-height: 1.4; letter-spacing: .055em; text-transform: uppercase; }
