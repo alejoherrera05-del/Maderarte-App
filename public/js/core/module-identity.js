@@ -11,8 +11,10 @@ function applyModuleIdentity() {
   document.querySelectorAll('.module-footer-copy').forEach(copy => {
     const name = copy.querySelector('strong');
     const detail = copy.querySelector('span');
-    if (name) name.textContent = SYSTEM_NAME;
-    if (detail) detail.textContent = moduleLabel ? `${moduleLabel} · ${COMPANY_NAME}` : `Sistema ${COMPANY_NAME}`;
+    // Assigning even the same text replaces child nodes and notifies this observer.
+    if (name && name.textContent !== SYSTEM_NAME) name.textContent = SYSTEM_NAME;
+    const detailText = moduleLabel ? `${moduleLabel} · ${COMPANY_NAME}` : `Sistema ${COMPANY_NAME}`;
+    if (detail && detail.textContent !== detailText) detail.textContent = detailText;
   });
 
   if (document.title.includes('Maderarte App')) {
