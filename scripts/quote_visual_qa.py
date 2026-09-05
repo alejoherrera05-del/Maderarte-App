@@ -158,6 +158,20 @@ def check_order():
             availability:[...document.querySelectorAll('.order-document-fulfillment')].map(n=>n.dataset.fulfillment)};
         """)
         assert all(title == 'ORDEN DE PEDIDO' for title in document_metrics['titles'])
+        if width == 1440 and document_metrics['pages'] != 1:
+            layout = driver.execute_script("""
+              const pages=[...document.querySelectorAll('.order-document-page')], full=pages[0].cloneNode(true);
+              full.classList.remove('quote-continuation-page');
+              full.querySelector('.quote-editorial-items').replaceChildren(...pages.flatMap(p=>[...p.querySelectorAll('.quote-editorial-item')].map(n=>n.cloneNode(true))));
+              const body=full.querySelector('.quote-editorial-body');
+              body.querySelector('.quote-editorial-signoff').remove();
+              body.append(pages.at(-1).querySelector('.order-document-closing').cloneNode(true), pages.at(-1).querySelector('.quote-editorial-signoff').cloneNode(true));
+              document.getElementById('quote-preview-content').append(full);
+              const measure=n=>{const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {class:n.className,width:r.width,height:r.height,marginTop:s.marginTop,padding:s.padding,gap:s.gap};};
+              const result={page:measure(full),scrollHeight:full.scrollHeight,header:measure(full.querySelector('header')),body:[...body.children].map(measure),closing:[...full.querySelector('.order-document-closing').children].map(measure)};
+              full.remove();return result;
+            """)
+            raise AssertionError('El pedido corto debe aprovechar una sola hoja: ' + json.dumps(layout))
         assert not document_metrics['overflow'] and not document_metrics['pageOverflow']
         assert document_metrics['draft'] and document_metrics['annex'] == 0 and document_metrics['totals'] == 1
         assert 'Dirección de entrega de prueba' in document_metrics['address']
