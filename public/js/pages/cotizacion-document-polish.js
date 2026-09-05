@@ -249,9 +249,9 @@ function commercialTermsMarkup(data) {
   const hasFactory = data.items.some(item => item.fulfillment?.code === 'PARA_SOLICITAR');
   const hasPending = data.items.some(item => item.fulfillment?.code === 'POR_DEFINIR');
   const terms = data.order
-    ? `<div class="order-document-conditions">${data.order.separated ? '<p><strong>Separado.</strong> El cliente continúa pagando según lo acordado. No inicia una solicitud a fábrica por sí solo.</p>' : ''}
-        <p>La disponibilidad se indica en cada mueble. Las entregas se coordinan con el cliente.</p>
-        ${hasFactory ? '<p>Para los muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
+    ? `<div class="order-document-conditions">${data.order.separated ? '<p><strong>Separado.</strong> Abonos según lo acordado con el cliente.</p>' : ''}
+        ${!hasFactory && !hasPending ? '<p>Entrega de productos disponibles, coordinada con el cliente.</p>' : ''}
+        ${hasFactory ? '<p>Muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
         ${hasPending ? '<p>Los muebles por definir quedan pendientes de acordar disponibilidad y entrega.</p>' : ''}
       </div>`
     : `<div class="quote-editorial-term-cards"><article class="quote-editorial-term-card quote-editorial-term-time">

@@ -108,7 +108,9 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-document'), '909090')
         wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
         setv(driver.find_element(By.ID, 'quote-client-name'), 'Cliente de revisión del pedido')
+        setv(driver.find_element(By.ID, 'quote-client-phone'), '0000000011')
         setv(driver.find_element(By.ID, 'quote-client-alternatePhone'), '0000000022')
+        setv(driver.find_element(By.ID, 'quote-client-email'), 'cliente@example.com')
         if width == 1440:
             driver.find_element(By.ID, 'order-separated').click()
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
@@ -175,7 +177,8 @@ def check_order():
         assert not document_metrics['overflow'] and not document_metrics['pageOverflow']
         assert document_metrics['draft'] and document_metrics['annex'] == 0 and document_metrics['totals'] == 1
         assert 'Dirección de entrega de prueba' in document_metrics['address']
-        assert '0000000022' in document_metrics['address']
+        assert '0000000022' in document_metrics['address'] and '0000000011' in document_metrics['address']
+        assert 'cliente@example.com' in document_metrics['address']
         assert 'Obsequio de cojines' in document_metrics['text'] and 'Transporte incluido a Cali' in document_metrics['text']
         assert 'INTERNO-QA' not in document_metrics['html'], 'Las notas internas no llegan al HTML del documento'
         assert 'Abono indicado' in document_metrics['text'] and 'Saldo por pagar' in document_metrics['text']
