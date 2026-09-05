@@ -1,14 +1,16 @@
 import { apiRequest } from '../core/api.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=mixed-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=mixed-1';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=agreements-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js';
-import { ITEM_FULFILLMENTS } from '../core/commercial-rules.js?v=mixed-1';
-import { bindOrderEntry, readOrderEntry } from '../core/order-entry.js?v=mixed-1';
+import { ITEM_FULFILLMENTS, ITEM_AGREEMENTS, paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
+import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=agreements-1';
+
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=agreements-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -37,12 +39,11 @@ const state = {
 
 function money(value) {
   const number = Number(value);
-  return moneyFormatter.format(Number.isFinite(number) ? number : 0);
+  return Number.isFinite(number) ? moneyFormatter.format(number) : '—';
 }
 
 function parseMoney(value) {
-  const digits = String(value || '').replace(/[^0-9]/g, '');
-  return Number(digits || 0);
+  return paymentAmount(value);
 }
 
 function formatDate(value = new Date()) {
@@ -192,31 +193,39 @@ function openBranchGate() {
 function itemMarkup(id) {
   return `<article class="quote-item" data-item-id="${id}">
     <div class="quote-item-head">
-      <div class="quote-item-index"><span data-item-position>01</span><div><strong>Mueble</strong><small>Detalle comercial y técnico</small></div></div>
+      <div class="quote-item-index"><span data-item-position>01</span><div><strong>Mueble</strong><small data-item-caption>Descripción, valor y acuerdos</small></div></div>
       <button class="quote-remove-item" type="button" data-remove-item>Eliminar</button>
     </div>
-    <div class="quote-item-grid">
-      <div class="quote-field quote-item-description"><label for="quote-item-${id}-description">Descripción</label><input id="quote-item-${id}-description" data-field="description" placeholder="Ej. Sofá Oslo 2.10 m en bouclé"></div>
-      <div class="quote-field quote-item-category"><label for="quote-item-${id}-category">Categoría</label><select id="quote-item-${id}-category" data-field="category"><option value="">Seleccionar</option><option value="SALA">Sala</option><option value="COMEDOR">Comedor</option><option value="ALCOBA">Alcoba</option><option value="INFANTIL">Infantil</option><option value="OFICINA">Oficina</option><option value="COMPLEMENTO">Complemento</option><option value="OTRO">Otro</option></select></div>
-      <div class="quote-field quote-item-quantity"><label for="quote-item-${id}-quantity">Cantidad</label><input id="quote-item-${id}-quantity" data-field="quantity" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
-      <div class="quote-field quote-item-value"><label for="quote-item-${id}-unitValue">Valor unitario</label><input id="quote-item-${id}-unitValue" data-field="unitValue" inputmode="numeric" placeholder="$ 0"></div>
-      <div class="quote-field quote-item-fabric"><label for="quote-item-${id}-fabric">Tela / acabado</label><input id="quote-item-${id}-fabric" data-field="fabric" placeholder="Tela, tono, textura o acabado"></div>
-      <div class="quote-field quote-item-wood"><label for="quote-item-${id}-wood">Madera / acabado</label><input id="quote-item-${id}-wood" data-field="wood" placeholder="Madera, pintura, tono o acabado"></div>
-      <div class="quote-field quote-item-specifications"><label for="quote-item-${id}-specifications">Especificaciones</label><textarea id="quote-item-${id}-specifications" data-field="specifications" rows="4" placeholder="Medidas, distribución, espuma, herrajes, detalles de diseño, cambios especiales…"></textarea></div>
-      <div class="quote-item-line-total"><span>Total del mueble</span><strong data-line-total>$ 0</strong></div>
+    <div class="quote-item-grid quote-item-essential">
+      <div class="quote-field quote-item-description"><label for="quote-item-${id}-description">¿Qué mueble lleva?</label><input id="quote-item-${id}-description" data-field="description" placeholder="Ej. Sala Oslo de 2.10 m" required></div>
+      <div class="quote-field quote-item-quantity"><label for="quote-item-${id}-quantity">Cantidad</label><input id="quote-item-${id}-quantity" data-field="quantity" type="number" min="1" step="1" value="1" inputmode="numeric" required></div>
+      <div class="quote-field quote-item-value"><label for="quote-item-${id}-unitValue">Precio por unidad</label><input id="quote-item-${id}-unitValue" data-field="unitValue" inputmode="numeric" placeholder="$ 0" required></div>
+      <div class="quote-item-line-total"><span>Total de este mueble</span><strong data-line-total>$ 0</strong></div>
     </div>
-    ${COMMERCIAL_DOCUMENT.isOrder ? `<div class="order-item-fulfillment">
-      <div class="quote-field"><label for="order-item-${id}-fulfillment">Disponibilidad y entrega de este mueble</label>
-        <select id="order-item-${id}-fulfillment" data-item-fulfillment aria-describedby="order-item-${id}-help"><option value="">Seleccionar disponibilidad</option>${ITEM_FULFILLMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.label)}</option>`).join('')}</select>
-        <p class="quote-helper" id="order-item-${id}-help" data-fulfillment-help role="status">Si algunas unidades tienen otra entrega, añádelas como un mueble aparte.</p>
+    ${COMMERCIAL_DOCUMENT.isOrder ? `<div class="order-item-agreements">
+      <div class="quote-field"><label for="order-item-${id}-agreement">¿Qué acordamos con este mueble?</label>
+        <select id="order-item-${id}-agreement" data-item-agreement required aria-describedby="order-item-${id}-agreement-help"><option value="">Seleccionar acuerdo</option>${ITEM_AGREEMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.label)}</option>`).join('')}</select>
+        <p class="quote-helper" id="order-item-${id}-agreement-help" data-agreement-help role="status"></p>
+      </div>
+      <div class="quote-field" data-availability-field hidden><label for="order-item-${id}-fulfillment">¿Está disponible o necesita fábrica?</label>
+        <select id="order-item-${id}-fulfillment" data-item-fulfillment aria-describedby="order-item-${id}-help"><option value="">Seleccionar disponibilidad</option>${ITEM_FULFILLMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.code === 'DISPONIBLE' ? 'Está disponible' : option.code === 'PARA_SOLICITAR' ? 'Necesita fábrica' : 'Aún por definir')}</option>`).join('')}</select>
+        <p class="quote-helper" id="order-item-${id}-help" data-fulfillment-help role="status"></p>
       </div>
     </div>` : ''}
-    <div class="quote-photo-area">
-      <div class="quote-photo-head"><div><strong>Referencias visuales</strong><span>Fotos, bocetos o inspiración que deben acompañar este mueble.</span></div><small>Se enviarán al anexo fotográfico.</small></div>
-      <button class="quote-photo-drop" type="button" data-add-photos><span class="quote-photo-plus">＋</span><span><strong>Agregar fotografías</strong><small>Puedes seleccionar varias imágenes.</small></span></button>
-      <input class="quote-photo-input" data-photo-input type="file" accept="image/*" multiple>
-      <div class="quote-photo-list" data-photo-list></div>
-    </div>
+    <details class="quote-item-details"><summary>Personalización y referencias <span>Opcional</span></summary>
+      <div class="quote-item-grid quote-item-customization">
+        <div class="quote-field quote-item-category"><label for="quote-item-${id}-category">Categoría</label><select id="quote-item-${id}-category" data-field="category"><option value="">Seleccionar</option><option value="SALA">Sala</option><option value="COMEDOR">Comedor</option><option value="ALCOBA">Alcoba</option><option value="INFANTIL">Infantil</option><option value="OFICINA">Oficina</option><option value="COMPLEMENTO">Complemento</option><option value="OTRO">Otro</option></select></div>
+        <div class="quote-field quote-item-fabric"><label for="quote-item-${id}-fabric">Tela / acabado</label><input id="quote-item-${id}-fabric" data-field="fabric" placeholder="Tela, tono o textura"></div>
+        <div class="quote-field quote-item-wood"><label for="quote-item-${id}-wood">Madera / acabado</label><input id="quote-item-${id}-wood" data-field="wood" placeholder="Madera, pintura o tono"></div>
+        <div class="quote-field quote-item-specifications"><label for="quote-item-${id}-specifications">Medidas y especificaciones</label><textarea id="quote-item-${id}-specifications" data-field="specifications" rows="3" placeholder="Medidas, distribución, espuma, herrajes o cambios especiales…"></textarea></div>
+      </div>
+      <div class="quote-photo-area">
+        <div class="quote-photo-head"><div><strong>Referencias visuales</strong><span>Fotos o bocetos de este mueble.</span></div><small>Se incluyen en el anexo del documento.</small></div>
+        <button class="quote-photo-drop" type="button" data-add-photos><span class="quote-photo-plus">＋</span><span><strong>Agregar fotografías</strong><small>Puedes seleccionar varias imágenes.</small></span></button>
+        <input class="quote-photo-input" data-photo-input type="file" accept="image/*" multiple>
+        <div class="quote-photo-list" data-photo-list></div>
+      </div>
+    </details>
   </article>`;
 }
 
@@ -229,7 +238,7 @@ function renumberItems() {
     if (remove) remove.disabled = cards.length === 1;
   });
   const count = document.getElementById('quote-item-count');
-  if (count) count.textContent = `${cards.length} ${cards.length === 1 ? 'item' : 'items'}`;
+  if (count) count.textContent = `${cards.length} ${cards.length === 1 ? 'mueble' : 'muebles'}`;
 }
 
 function renderPhotos(itemId) {
@@ -283,13 +292,22 @@ function bindItem(card) {
   const unitValue = card.querySelector('[data-field="unitValue"]');
   unitValue?.addEventListener('blur', () => {
     const value = parseMoney(unitValue.value);
-    unitValue.value = value ? money(value) : '';
+    if (Number.isFinite(value)) unitValue.value = value ? money(value) : '';
   });
   unitValue?.addEventListener('focus', () => {
     const value = parseMoney(unitValue.value);
-    unitValue.value = value ? String(value) : '';
+    if (Number.isFinite(value)) unitValue.value = value ? String(value) : '';
   });
 
+  const agreement = card.querySelector('[data-item-agreement]');
+  agreement?.addEventListener('change', () => {
+    const choice = ITEM_AGREEMENTS.find(option => option.code === agreement.value);
+    card.querySelector('[data-agreement-help]').textContent = choice?.help || '';
+    const availability = card.querySelector('[data-availability-field]');
+    availability.hidden = !choice || choice.code === 'ENTREGA_HOY';
+    calculate();
+  });
+  card.querySelector('[data-field="description"]').addEventListener('input', calculate);
   const fulfillment = card.querySelector('[data-item-fulfillment]');
   fulfillment?.addEventListener('change', () => {
     const choice = ITEM_FULFILLMENTS.find(option => option.code === fulfillment.value);
@@ -297,6 +315,7 @@ function bindItem(card) {
     help.textContent = choice?.help || 'Selecciona la disponibilidad de este mueble.';
     help.classList.remove('is-error');
     fulfillment.removeAttribute('aria-invalid');
+    calculate();
   });
 
   const photoInput = card.querySelector('[data-photo-input]');
@@ -319,73 +338,110 @@ function addItem() {
   calculate();
 }
 
-function itemData(card, index) {
-  const field = name => card.querySelector(`[data-field="${name}"]`)?.value?.trim() || '';
-  const quantity = Math.max(0, Number(field('quantity') || 0));
-  const unitValue = parseMoney(field('unitValue'));
-  const itemId = Number(card.dataset.itemId);
-  return {
-    position: index + 1,
-    itemId,
-    description: field('description'),
-    category: field('category'),
-    quantity,
-    fabric: field('fabric'),
-    wood: field('wood'),
-    specifications: field('specifications'),
-    unitValue,
-    subtotal: quantity * unitValue,
-    photos: state.photos.get(itemId) || []
-  };
+function calculate() {
+  const values = readCommercialValues();
+  [...document.querySelectorAll('.quote-item')].forEach((card, index) => {
+    const item = values.items[index];
+    card.querySelector('[data-line-total]').textContent = money(item.subtotal);
+    card.querySelector('[data-item-caption]').textContent = item.description || 'Descripción, valor y acuerdos';
+  });
+  document.getElementById('quote-subtotal').textContent = money(values.subtotal);
+  document.getElementById('quote-total').textContent = money(values.total);
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    syncOrderAllocation(values, calculate);
+    const entry = readOrderEntry(values.total);
+    document.getElementById('order-paid').textContent = money(entry.paid);
+    document.getElementById('order-balance').textContent = Number.isFinite(values.total) ? money(Math.max(0, values.total - entry.paid)) : '—';
+    const hasPaymentContent = [...document.querySelectorAll('[data-payment-row] input, [data-payment-row] select')].some(input => input.value);
+    document.getElementById('order-payment-error').textContent = hasPaymentContent || state.validating ? entry.error : '';
+    const noPayment = document.getElementById('order-no-payment').checked;
+    document.getElementById('order-payment-editor').hidden = noPayment && !hasPaymentContent;
+    document.getElementById('order-allocation-error').textContent = entry.allocate ? entry.allocationError : '';
+    const assigned = entry.allocation.reduce((sum, item) => sum + (Number.isFinite(item.amount) ? item.amount : 0), 0);
+    document.getElementById('order-allocation-total').textContent = entry.allocate ? `Abono: ${money(entry.paid)} · Asignado: ${money(assigned)} · ${assigned > entry.paid ? 'Exceso' : 'Falta'}: ${money(Math.abs(entry.paid - assigned))}` : '';
+    document.getElementById('order-operational-summary').replaceChildren(...values.items.map(item => {
+      const row = document.createElement('li');
+      const title = document.createElement('strong');
+      title.textContent = item.description || `Mueble ${item.position}`;
+      const detail = document.createElement('span');
+      detail.textContent = item.agreement ? `${item.quantity || '—'} · ${item.agreement.label}${item.fulfillment?.code === 'PARA_SOLICITAR' ? ' · necesita fábrica' : ''}` : 'Acuerdo pendiente';
+      row.append(title, detail);
+      return row;
+    }));
+    for (const [id, value] of [['order-live-total', values.total], ['order-live-paid', entry.paid], ['order-live-balance', Number.isFinite(values.total) ? Math.max(0, values.total - entry.paid) : NaN]]) {
+      document.getElementById(id).textContent = money(value);
+    }
+  }
 }
 
-function calculate() {
-  const cards = Array.from(document.querySelectorAll('.quote-item'));
-  let subtotal = 0;
-  cards.forEach((card, index) => {
-    const item = itemData(card, index);
-    subtotal += item.subtotal;
-    const line = card.querySelector('[data-line-total]');
-    if (line) line.textContent = money(item.subtotal);
-  });
-  const discountInput = document.getElementById('quote-discount');
-  const discount = Math.min(subtotal, parseMoney(discountInput?.value));
-  const total = Math.max(0, subtotal - discount);
-  document.getElementById('quote-subtotal').textContent = money(subtotal);
-  document.getElementById('quote-total').textContent = money(total);
-  if (COMMERCIAL_DOCUMENT.isOrder) {
-    const entry = readOrderEntry(total);
-    document.getElementById('order-paid').textContent = money(entry.paid);
-    document.getElementById('order-balance').textContent = entry.error ? '—' : money(entry.balance);
-    document.getElementById('order-payment-error').textContent = entry.error;
+function showFieldError(input, message) {
+  if (!input) return;
+  input.setAttribute('aria-invalid', 'true');
+  const details = input.closest('details');
+  if (details) details.open = true;
+  const field = input.closest('.quote-field') || input.closest('.quote-discount-field');
+  let error = field?.querySelector('[data-field-error]');
+  if (field && !error) {
+    error = document.createElement('p');
+    error.className = 'quote-helper is-error';
+    error.dataset.fieldError = '';
+    error.id = `${input.id}-error`;
+    field.append(error);
+    input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), error.id].filter(Boolean).join(' '));
   }
+  if (error) error.textContent = message;
+  document.getElementById('quote-form-error').textContent = message;
+  input.focus();
+}
+
+function validateForm() {
+  const missing = (selector, message, invalid) => {
+    const input = document.querySelector(selector);
+    if (input && (invalid ? invalid(input) : !input.value.trim())) { showFieldError(input, message); return true; }
+    return false;
+  };
+  for (const [selector, message] of [
+    ['#quote-client-document', 'Escribe la cédula o NIT del cliente.'],
+    ['#quote-client-name', 'Escribe el nombre del cliente.'],
+    ['#quote-client-phone', 'Escribe un teléfono de contacto.']
+  ]) if (missing(selector, message)) return false;
+  if (missing('#quote-client-email', 'Revisa el formato del correo o déjalo vacío.', input => Boolean(input.value && !input.validity.valid))) return false;
+  for (const card of document.querySelectorAll('.quote-item')) {
+    const prefix = `.quote-item[data-item-id="${card.dataset.itemId}"]`;
+    const item = readFurniture(card);
+    if (missing(`${prefix} [data-field="description"]`, 'Describe el mueble que estás incluyendo.')) return false;
+    if (missing(`${prefix} [data-field="quantity"]`, 'La cantidad debe ser un número entero mayor que cero.', () => !Number.isSafeInteger(item.quantity))) return false;
+    if (missing(`${prefix} [data-field="unitValue"]`, 'Escribe un precio mayor que cero, en pesos completos y sin negativos.', () => !Number.isSafeInteger(item.unitValue) || item.unitValue <= 0 || !Number.isSafeInteger(item.subtotal))) return false;
+    if (COMMERCIAL_DOCUMENT.isOrder) {
+      if (missing(`${prefix} [data-item-agreement]`, 'Selecciona qué acordaron para este mueble.', () => !item.agreement)) return false;
+      if (missing(`${prefix} [data-item-fulfillment]`, 'Selecciona la disponibilidad de este mueble.', () => !item.fulfillment)) return false;
+    }
+  }
+  const values = readCommercialValues();
+  if (missing('#quote-discount', 'El descuento debe ser válido y no superar el subtotal.', () => !Number.isSafeInteger(values.total))) return false;
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    const entry = readOrderEntry(values.total);
+    if (entry.error) {
+      const row = document.querySelectorAll('[data-payment-row]')[entry.errorIndex];
+      const method = row?.querySelector('[data-payment-method]');
+      showFieldError(method?.value ? row.querySelector('[data-payment-amount]') : method, entry.error);
+      return false;
+    }
+    if (entry.allocationError) {
+      const input = [...document.querySelectorAll('[data-item-allocation]')].find(node => node.dataset.itemAllocation === entry.allocationErrorId) || document.querySelector('[data-item-allocation]');
+      showFieldError(input, entry.allocationError);
+      return false;
+    }
+  }
+  return true;
 }
 
 function openPreview() {
-  if (!state.quoteMeta) {
-    openBranchGate();
-    return;
-  }
-  if (COMMERCIAL_DOCUMENT.isOrder) {
-    const total = parseMoney(document.getElementById('quote-total').textContent);
-    const entry = readOrderEntry(total);
-    const missing = [...document.querySelectorAll('[data-item-fulfillment]')].find(input => !ITEM_FULFILLMENTS.some(option => option.code === input.value));
-    if (missing) {
-      const message = missing.closest('.quote-item').querySelector('[data-fulfillment-help]');
-      message.textContent = 'Selecciona la disponibilidad de este mueble antes de abrir el documento.';
-      message.classList.add('is-error');
-      missing.setAttribute('aria-invalid', 'true');
-      missing.focus();
-      return;
-    }
-    if (entry.error) {
-      document.getElementById('order-payment-error').textContent = entry.error;
-      const row = document.querySelectorAll('[data-payment-row]')[entry.errorIndex];
-      const method = row?.querySelector('[data-payment-method]');
-      (method?.value ? row.querySelector('[data-payment-amount]') : method)?.focus();
-      return;
-    }
-  }
+  if (!state.quoteMeta) { openBranchGate(); return; }
+  state.validating = true;
+  calculate();
+  if (!validateForm()) return;
+  document.getElementById('quote-form-error').textContent = '';
   openDocumentPreview();
 }
 
@@ -409,12 +465,12 @@ function bindGlobalInteractions() {
   discount?.addEventListener('input', calculate);
   discount?.addEventListener('blur', () => {
     const value = parseMoney(discount.value);
-    discount.value = value ? money(value) : '';
+    if (Number.isFinite(value)) discount.value = value ? money(value) : '';
     calculate();
   });
   discount?.addEventListener('focus', () => {
     const value = parseMoney(discount.value);
-    discount.value = value ? String(value) : '';
+    if (Number.isFinite(value)) discount.value = value ? String(value) : '';
   });
 
   bindClientLookup({
@@ -431,7 +487,19 @@ function bindGlobalInteractions() {
       return response.data?.client || null;
     }
   });
-  document.getElementById('quote-form')?.addEventListener('submit', event => event.preventDefault());
+  const form = document.getElementById('quote-form');
+  form.addEventListener('submit', event => event.preventDefault());
+  form.addEventListener('input', event => {
+    event.target.removeAttribute('aria-invalid');
+    const error = event.target.closest('.quote-field, .quote-discount-field')?.querySelector('[data-field-error]');
+    if (error) error.textContent = '';
+    document.getElementById('quote-form-error').textContent = '';
+  });
+  form.addEventListener('change', event => {
+    event.target.removeAttribute('aria-invalid');
+    const error = event.target.closest('.quote-field')?.querySelector('[data-field-error]');
+    if (error) error.textContent = '';
+  });
 }
 
 guardStandalonePage({

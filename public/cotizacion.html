@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/cotizacion-form.css">
   <link rel="stylesheet" href="/css/cotizacion-brand-polish.css">
-  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=mixed-1">
+  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=agreements-1">
   <link rel="stylesheet" href="/css/cotizacion-document-premium.css?v=compact-2">
   <link rel="stylesheet" href="/css/cotizacion-document-header-refined.css?v=final-editorial-3">
   <link rel="stylesheet" href="/css/cotizacion-document-final-pass.css?v=hybrid-clean-1">
@@ -79,6 +79,8 @@
           </div>
         </section>
 
+        <p id="quote-form-error" class="quote-form-error" role="alert"></p>
+        <div id="quote-draft-status" class="quote-draft-status" role="status"></div>
         <form id="quote-form" class="quote-form" novalidate>
           <div class="quote-editor">
             <section class="quote-editor-section">
@@ -91,17 +93,17 @@
                 <div class="quote-field quote-client-lookup">
                   <label for="quote-client-document">Cédula / NIT</label>
                   <div class="quote-client-control">
-                    <input id="quote-client-document" type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message">
+                    <input id="quote-client-document" required type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message">
                     <div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" aria-label="Clientes coincidentes" hidden></div>
                   </div>
                   <p id="quote-client-message" class="quote-helper" role="status" aria-live="polite"></p>
                 </div>
-                <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
-                <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
+                <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" required autocomplete="name"></div>
+                <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" required type="tel" inputmode="tel" autocomplete="tel"></div>
                 <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono (opcional)</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Otro número de contacto"></div>
-                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
+                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo (opcional)</label><input id="quote-client-email" type="email" autocomplete="email"></div>
                 <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección</label><input id="quote-client-address" autocomplete="street-address"></div>
-                <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" autocomplete="address-level2"></div>
+                <div class="quote-field"><label for="quote-client-city">Ciudad (opcional)</label><input id="quote-client-city" autocomplete="address-level2"></div>
               </div>
             </section>
 
@@ -150,6 +152,6 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=mixed-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=agreements-1"></script>
 </body>
 </html>
