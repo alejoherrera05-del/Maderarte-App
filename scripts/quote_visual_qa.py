@@ -13,6 +13,7 @@ PNG.parent.mkdir(parents=True, exist_ok=True); PDF.parent.mkdir(parents=True, ex
 opts = webdriver.ChromeOptions()
 for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--window-size=1680,2200','--force-device-scale-factor=1'):
     opts.add_argument(arg)
+opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
 driver = webdriver.Chrome(options=opts); wait = WebDriverWait(driver, 35)
 
 def setv(node, text):
@@ -90,5 +91,70 @@ try:
     assert metrics['pageCount']==3 and metrics['annexCount']==2 and metrics['footerCount']==3
     assert metrics['pageNumbers']==['Página 1 de 3','Página 2 de 3','Página 3 de 3']
     assert 'Item 1' in annex_text and 'Item 3' in annex_text and PDF.stat().st_size>=80000
+    # Exercise the actual form and document with data beyond the old one-page case.
+    driver.get(URL)
+    wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-quote-branch="MP"]'))).click()
+    wait.until(EC.visibility_of_element_located((By.ID,'quote-workspace')))
+    setv(driver.find_element(By.ID,'quote-client-name'),'Cliente de prueba de paginación')
+    expected_names = []
+    for index in range(25):
+        if index:
+            driver.find_element(By.ID,'quote-add-item').click()
+        card = driver.find_elements(By.CSS_SELECTOR,'.quote-item')[index]
+        name = f'QA Mueble {index + 1:02d}'
+        expected_names.append(name)
+        setv(card.find_element(By.CSS_SELECTOR,'[data-field="description"]'), name)
+        setv(card.find_element(By.CSS_SELECTOR,'[data-field="unitValue"]'), 10000)
+    long_spec = 'Detalle técnico de prueba que debe conservarse completo. ' * 100
+    long_notes = 'Condición comercial de prueba que continúa entre páginas. ' * 80
+    setv(driver.find_elements(By.CSS_SELECTOR,'.quote-item')[0].find_element(By.CSS_SELECTOR,'[data-field="specifications"]'), long_spec)
+    setv(driver.find_element(By.ID,'quote-notes'), long_notes)
+    driver.find_element(By.ID,'quote-preview-button').click()
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR,'.quote-editorial-page')))
+    long_metrics = driver.execute_script("""
+      const pages=[...document.querySelectorAll('#quote-preview-content > .quote-preview-page')];
+      const items=[...document.querySelectorAll('.quote-editorial-item')];
+      return {pages:pages.length, numbers:pages.map(p=>p.querySelector('.quote-document-page-number').textContent.trim()),
+        overflow:pages.some(p=>p.scrollHeight>p.clientHeight+2),
+        originals:items.filter(p=>p.dataset.continuation==='false').map(p=>p.querySelector('h3').textContent),
+        continuations:items.filter(p=>p.dataset.continuation==='true').length,
+        spec:items.map(p=>p.querySelector('.quote-editorial-item-spec')?.textContent||'').join(''),
+        notes:[...document.querySelectorAll('.quote-editorial-notes p')].map(p=>p.textContent).join(''),
+        total:[...document.querySelectorAll('.quote-editorial-total > strong')].map(p=>p.textContent),
+        client:document.querySelector('.quote-editorial-client-field-name')?.textContent||'',
+        measuringFrames:document.querySelectorAll('.quote-pagination-measure').length};
+    """)
+    assert long_metrics['pages'] > 3 and not long_metrics['overflow']
+    assert long_metrics['originals'] == expected_names and long_metrics['continuations'] > 0
+    assert ''.join(long_metrics['spec'].split()) == ''.join(long_spec.split())
+    assert ''.join(long_metrics['notes'].split()) == ''.join(long_notes.split())
+    assert len(long_metrics['total']) == 1 and '250.000' in long_metrics['total'][0]
+    assert 'Cliente de prueba de paginación' in long_metrics['client']
+    assert long_metrics['measuringFrames'] == 0
+    assert long_metrics['numbers'] == [f'Página {i+1} de {long_metrics["pages"]}' for i in range(long_metrics['pages'])]
+    driver.find_elements(By.CSS_SELECTOR,'.quote-editorial-page')[-1].screenshot(str(PNG.with_name('cotizacion-extensa-cierre.png')))
+    long_html=''.join(p.get_attribute('outerHTML') for p in driver.find_elements(By.CSS_SELECTOR,'#quote-preview-content > .quote-preview-page'))
+
+    driver.set_window_size(390,844)
+    driver.find_element(By.ID,'quote-preview-close').click()
+    driver.find_element(By.ID,'quote-preview-button').click()
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR,'.quote-editorial-page')))
+    mobile = driver.execute_script("""
+      const root=document.getElementById('quote-preview-content');
+      return {width:window.innerWidth, overflow:document.documentElement.scrollWidth>window.innerWidth+1,
+        pages:root.querySelectorAll(':scope > .quote-preview-page').length,
+        inputSizes:[...document.querySelectorAll('#quote-workspace input:not([type="file"]), #quote-workspace textarea')].map(n=>parseFloat(getComputedStyle(n).fontSize))};
+    """)
+    assert not mobile['overflow'] and mobile['pages'] == long_metrics['pages']
+    assert min(mobile['inputSizes']) >= 16
+    driver.save_screenshot(str(PNG.with_name('cotizacion-extensa-mobile.png')))
+    errors=[entry['message'] for entry in driver.get_log('browser') if entry['level']=='SEVERE' and 'favicon.ico' not in entry['message']]
+    assert not errors, errors
+    print('STABILITY_QA='+json.dumps({'mainPages':long_metrics['pages'],'continuations':long_metrics['continuations'],'all25ItemsPresent':True,'completeText':True,'uniqueTotal':True,'overflow':False,'mobile':mobile,'consoleErrors':errors},ensure_ascii=False))
+
+    driver.set_window_size(1680,2200)
+    driver.execute_script("document.body.innerHTML=arguments[0];document.body.className='quote-print-export';",long_html)
+    pdf=driver.execute_cdp_cmd('Page.printToPDF',{'printBackground':True,'paperWidth':8.27,'paperHeight':11.69,'marginTop':0,'marginBottom':0,'marginLeft':0,'marginRight':0,'displayHeaderFooter':False,'scale':1})
+    PDF.with_name('cotizacion-extensa.pdf').write_bytes(base64.b64decode(pdf['data']))
 finally:
     driver.quit()

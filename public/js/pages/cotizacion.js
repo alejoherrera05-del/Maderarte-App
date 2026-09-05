@@ -157,6 +157,7 @@ function updateDocumentMeta() {
 async function selectBranch(branch) {
   const code = String(branch || '').trim().toUpperCase();
   if (!code) return;
+  const selectionTrigger = document.activeElement;
   setGateBusy(true);
   setGateMessage('Preparando los datos de emisión…');
   try {
@@ -166,7 +167,12 @@ async function selectBranch(branch) {
     document.getElementById('quote-preview-button').disabled = false;
     document.getElementById('quote-branch-gate').classList.add('is-closed');
     setGateMessage('');
-    window.setTimeout(() => document.getElementById('quote-client-search')?.focus(), 340);
+    window.setTimeout(() => {
+      const idleFocus = document.activeElement === document.body || document.activeElement === selectionTrigger;
+      if (idleFocus && !window.matchMedia?.('(pointer: coarse)').matches) {
+        document.getElementById('quote-client-search')?.focus({ preventScroll: true });
+      }
+    }, 340);
   } catch (error) {
     setGateMessage(error.message || 'No fue posible preparar la sede seleccionada.', true);
   } finally {
@@ -187,13 +193,13 @@ function itemMarkup(id) {
       <button class="quote-remove-item" type="button" data-remove-item>Eliminar</button>
     </div>
     <div class="quote-item-grid">
-      <div class="quote-field quote-item-description"><label>Descripción</label><input data-field="description" placeholder="Ej. Sofá Oslo 2.10 m en bouclé"></div>
-      <div class="quote-field quote-item-category"><label>Categoría</label><select data-field="category"><option value="">Seleccionar</option><option value="SALA">Sala</option><option value="COMEDOR">Comedor</option><option value="ALCOBA">Alcoba</option><option value="INFANTIL">Infantil</option><option value="OFICINA">Oficina</option><option value="COMPLEMENTO">Complemento</option><option value="OTRO">Otro</option></select></div>
-      <div class="quote-field quote-item-quantity"><label>Cantidad</label><input data-field="quantity" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
-      <div class="quote-field quote-item-value"><label>Valor unitario</label><input data-field="unitValue" inputmode="numeric" placeholder="$ 0"></div>
-      <div class="quote-field quote-item-fabric"><label>Tela / acabado</label><input data-field="fabric" placeholder="Tela, tono, textura o acabado"></div>
-      <div class="quote-field quote-item-wood"><label>Madera / acabado</label><input data-field="wood" placeholder="Madera, pintura, tono o acabado"></div>
-      <div class="quote-field quote-item-specifications"><label>Especificaciones</label><textarea data-field="specifications" rows="4" placeholder="Medidas, distribución, espuma, herrajes, detalles de diseño, cambios especiales…"></textarea></div>
+      <div class="quote-field quote-item-description"><label for="quote-item-${id}-description">Descripción</label><input id="quote-item-${id}-description" data-field="description" placeholder="Ej. Sofá Oslo 2.10 m en bouclé"></div>
+      <div class="quote-field quote-item-category"><label for="quote-item-${id}-category">Categoría</label><select id="quote-item-${id}-category" data-field="category"><option value="">Seleccionar</option><option value="SALA">Sala</option><option value="COMEDOR">Comedor</option><option value="ALCOBA">Alcoba</option><option value="INFANTIL">Infantil</option><option value="OFICINA">Oficina</option><option value="COMPLEMENTO">Complemento</option><option value="OTRO">Otro</option></select></div>
+      <div class="quote-field quote-item-quantity"><label for="quote-item-${id}-quantity">Cantidad</label><input id="quote-item-${id}-quantity" data-field="quantity" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+      <div class="quote-field quote-item-value"><label for="quote-item-${id}-unitValue">Valor unitario</label><input id="quote-item-${id}-unitValue" data-field="unitValue" inputmode="numeric" placeholder="$ 0"></div>
+      <div class="quote-field quote-item-fabric"><label for="quote-item-${id}-fabric">Tela / acabado</label><input id="quote-item-${id}-fabric" data-field="fabric" placeholder="Tela, tono, textura o acabado"></div>
+      <div class="quote-field quote-item-wood"><label for="quote-item-${id}-wood">Madera / acabado</label><input id="quote-item-${id}-wood" data-field="wood" placeholder="Madera, pintura, tono o acabado"></div>
+      <div class="quote-field quote-item-specifications"><label for="quote-item-${id}-specifications">Especificaciones</label><textarea id="quote-item-${id}-specifications" data-field="specifications" rows="4" placeholder="Medidas, distribución, espuma, herrajes, detalles de diseño, cambios especiales…"></textarea></div>
       <div class="quote-item-line-total"><span>Total del mueble</span><strong data-line-total>$ 0</strong></div>
     </div>
     <div class="quote-photo-area">

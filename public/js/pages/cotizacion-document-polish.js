@@ -1,4 +1,5 @@
 import { escapeHtml } from '../core/format.js';
+import { paginateQuoteDocument } from '../core/quote-pagination.js';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_RULES, minimumOrderDeposit } from '../core/commercial-rules.js';
@@ -187,19 +188,19 @@ function itemFact(rawValue) {
 }
 
 function itemMarkup(item) {
-  const title = item.description || item.category || `Mueble ${item.position}`;
+  const title = item.description || item.category || `Mueble ${item.position}${item.continuation ? ' · continuación' : ''}`;
   const facts = [itemFact(item.category), itemFact(item.fabric), itemFact(item.wood)].filter(Boolean).join('');
 
-  return `<article class="quote-editorial-item">
-    <div class="quote-editorial-item-number">${String(item.position).padStart(2, '0')}</div>
+  return `<article class="quote-editorial-item" data-item-position="${item.position}" data-continuation="${Boolean(item.continuation)}">
+    <div class="quote-editorial-item-number">${String(item.position).padStart(2, '0')}${item.continuation ? ' ↳' : ''}</div>
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
-    <div class="quote-editorial-item-quantity">${escapeHtml(String(item.quantity))}</div>
-    <div class="quote-editorial-item-unit">${item.unitValue > 0 ? escapeHtml(money(item.unitValue)) : '—'}</div>
-    <div class="quote-editorial-item-total">${item.subtotal > 0 ? escapeHtml(money(item.subtotal)) : '—'}</div>
+    <div class="quote-editorial-item-quantity">${item.continuation ? '—' : escapeHtml(String(item.quantity))}</div>
+    <div class="quote-editorial-item-unit">${!item.continuation && item.unitValue > 0 ? escapeHtml(money(item.unitValue)) : '—'}</div>
+    <div class="quote-editorial-item-total">${!item.continuation && item.subtotal > 0 ? escapeHtml(money(item.subtotal)) : '—'}</div>
   </article>`;
 }
 
@@ -257,21 +258,6 @@ function footerMarkup(pageNumber, totalPages) {
     </div>
     <span class="quote-document-page-number">Página ${pageNumber} de ${totalPages}</span>
   </footer>`;
-}
-
-function documentDensity(data) {
-  const itemText = data.items.reduce((sum, item) => sum + [
-    item.description,
-    item.category,
-    item.fabric,
-    item.wood,
-    item.specifications
-  ].join(' ').length, 0);
-  const notesLength = String(data.notes || '').length;
-
-  if (data.items.length <= 3 && itemText <= 1050 && notesLength <= 360) return 'relaxed';
-  if (data.items.length <= 4 && itemText <= 1550 && notesLength <= 520) return 'balanced';
-  return 'compact';
 }
 
 function photoGroups(items) {
@@ -347,37 +333,15 @@ function appendixPageMarkup(groups, number, pageNumber, totalPages) {
   </section>`;
 }
 
-function fitMainPage() {
-  const page = document.querySelector('.quote-editorial-page');
-  if (!page || window.matchMedia('(max-width: 760px)').matches) return;
-
-  const modes = ['relaxed', 'balanced', 'compact'];
-  let index = modes.findIndex(mode => page.classList.contains(`quote-density-${mode}`));
-  if (index < 0) index = 0;
-
-  const fits = () => page.scrollHeight <= page.clientHeight + 2;
-  while (!fits() && index < modes.length - 1) {
-    page.classList.remove(`quote-density-${modes[index]}`);
-    index += 1;
-    page.classList.add(`quote-density-${modes[index]}`);
-  }
-
-  if (!fits()) page.classList.add('quote-density-overflow');
-}
-
-function renderDocumentPreview() {
-  const data = collectDocumentData();
-  const density = documentDensity(data);
-  const annexPages = photoPages(data.items);
-  const totalPages = 1 + annexPages.length;
-  const client = clientMarkup(data.client);
-  const items = data.items.map(itemMarkup).join('');
-
-  const mainPage = `<section class="quote-preview-page quote-preview-main-page quote-editorial-page quote-density-${density}" data-page-number="1" data-page-count="${totalPages}">
+function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
+  const client = page.client ? clientMarkup(data.client) : '';
+  const items = page.items.map(itemMarkup).join('');
+  const notes = page.notes && !page.closing ? `<section class="quote-editorial-notes quote-editorial-notes-page"><strong>Observaciones especiales</strong><p>${escapeHtml(page.notes)}</p></section>` : '';
+  return `<section class="quote-preview-page quote-preview-main-page quote-editorial-page quote-density-relaxed${page.closing ? '' : ' quote-continuation-page'}" data-page-number="${pageNumber}" data-page-count="${totalPages}">
     ${documentHeaderMarkup(data)}
     <div class="quote-editorial-body">
       ${client}
-      <section class="quote-editorial-items-section">
+      ${page.items.length ? `<section class="quote-editorial-items-section">
         <div class="quote-editorial-section-head">
           <div><span>Mobiliario cotizado</span><h2>Detalle de productos</h2></div>
           <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
@@ -386,33 +350,91 @@ function renderDocumentPreview() {
           <span>#</span><span>Descripción del artículo</span><span>Cant.</span><span>V. unitario</span><span>V. total</span>
         </div>
         <div class="quote-editorial-items">${items}</div>
-      </section>
-      <div class="quote-editorial-closing">
-        ${commercialTermsMarkup(data)}
+      </section>` : ''}
+      ${notes}
+      ${page.closing ? `<div class="quote-editorial-closing">
+        ${commercialTermsMarkup({ ...data, notes: page.notes })}
         ${investmentMarkup(data)}
-      </div>
+      </div>` : ''}
       <div class="quote-editorial-signoff">
-        ${footerMarkup(1, totalPages)}
-        ${signatureMarkup(data.advisor)}
+        ${footerMarkup(pageNumber, totalPages)}
+        ${page.closing ? signatureMarkup(data.advisor) : ''}
       </div>
     </div>
   </section>`;
+}
 
-  const appendix = annexPages.map((groups, index) => appendixPageMarkup(groups, data.number, index + 2, totalPages)).join('');
+async function measuredPages(data) {
+  const frame = document.createElement('iframe');
+  frame.className = 'quote-pagination-measure';
+  frame.setAttribute('aria-hidden', 'true');
+  frame.tabIndex = -1;
+  frame.title = 'Preparación del documento';
+  document.body.appendChild(frame);
+  let timeout;
+  try {
+    const measured = frame.contentDocument;
+    measured.documentElement.lang = 'es';
+    measured.body.className = 'quote-page';
+    const ready = [];
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(source => {
+      const link = measured.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = source.href;
+      ready.push(new Promise((resolve, reject) => { link.onload = resolve; link.onerror = reject; }));
+      measured.head.appendChild(link);
+    });
+    const root = measured.createElement('div');
+    root.id = 'quote-preview-content';
+    measured.body.appendChild(root);
+    root.innerHTML = mainPageMarkup(data, { client: true, items: [], closing: true, notes: '' });
+    ready.push(...Array.from(measured.images).map(image => image.complete ? Promise.resolve() : new Promise(resolve => { image.onload = resolve; image.onerror = resolve; })));
+    await Promise.race([
+      Promise.all(ready).then(() => measured.fonts?.ready),
+      new Promise((_, reject) => { timeout = window.setTimeout(() => reject(new Error('No se cargó el documento a tiempo. Intenta abrir la vista previa nuevamente.')), 8000); })
+    ]);
+    return paginateQuoteDocument(data, page => {
+      root.innerHTML = mainPageMarkup(data, page);
+      const element = root.firstElementChild;
+      return element.clientHeight > 0 && element.scrollHeight <= element.clientHeight + 1;
+    });
+  } finally {
+    window.clearTimeout(timeout);
+    frame.remove();
+  }
+}
+
+let previewGeneration = 0;
+async function renderDocumentPreview() {
+  const generation = ++previewGeneration;
   const target = document.getElementById('quote-preview-content');
   if (!target) return;
-  target.innerHTML = mainPage + appendix;
-  window.requestAnimationFrame(fitMainPage);
+  target.setAttribute('aria-busy', 'true');
+  target.innerHTML = '<p class="quote-preview-preparing" role="status">Preparando las páginas del documento…</p>';
+  try {
+    const data = collectDocumentData();
+    const pages = await measuredPages(data);
+    if (generation !== previewGeneration) return;
+    const annexPages = photoPages(data.items);
+    const totalPages = pages.length + annexPages.length;
+    target.innerHTML = pages.map((page, index) => mainPageMarkup(data, page, index + 1, totalPages)).join('')
+      + annexPages.map((groups, index) => appendixPageMarkup(groups, data.number, pages.length + index + 1, totalPages)).join('');
+  } catch (error) {
+    if (generation !== previewGeneration) return;
+    target.innerHTML = `<p class="quote-preview-preparing" role="alert">${escapeHtml(error?.message || 'No se pudo preparar el documento. Cierra la vista previa e inténtalo nuevamente.')}</p>`;
+  } finally {
+    if (generation === previewGeneration) target.setAttribute('aria-busy', 'false');
+  }
 }
 
 function openPreview() {
-  renderDocumentPreview();
   const overlay = document.getElementById('quote-preview-overlay');
   if (!overlay) return;
   overlay.classList.add('is-open');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
-  window.setTimeout(() => document.getElementById('quote-preview-close')?.focus(), 120);
+  document.getElementById('quote-preview-close')?.focus();
+  void renderDocumentPreview();
 }
 
 document.addEventListener('click', event => {

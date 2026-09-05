@@ -8,6 +8,8 @@ on:
       - 'public/css/cotizacion-*.css'
       - 'public/js/pages/cotizacion*.js'
       - 'public/js/core/company-profile.js'
+      - 'public/js/core/quote-pagination.js'
+      - 'scripts/quote_visual_qa.py'
       - 'scripts/capture-quote-preview.py'
       - '.github/workflows/quote-visual-qa.yml'
 
@@ -43,4 +45,7 @@ jobs:
           path: |
             artifacts/cotizacion-preview.png
             artifacts/cotizacion-preview.pdf
+            artifacts/cotizacion-extensa-cierre.png
+            artifacts/cotizacion-extensa-mobile.png
+            artifacts/cotizacion-extensa.pdf
           if-no-files-found: error

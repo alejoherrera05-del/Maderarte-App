@@ -7,6 +7,10 @@ on:
       - 'public/css/quote-tracking.css'
       - 'public/js/pages/cotizaciones.js'
       - 'public/js/core/auth.js'
+      - 'public/js/core/module-identity.js'
+      - 'public/js/core/quote-tracking.js'
+      - 'public/js/core/document-url.js'
+      - 'public/_headers'
       - 'scripts/capture-tracking-preview.py'
       - '.github/workflows/tracking-visual-qa.yml'
 

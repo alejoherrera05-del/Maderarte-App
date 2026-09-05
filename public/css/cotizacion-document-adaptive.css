@@ -20,11 +20,23 @@
     overflow: hidden;
   }
 
-  .quote-editorial-page.quote-density-overflow {
-    height: auto;
-    overflow: visible;
-  }
 }
+
+.quote-pagination-measure {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 794px;
+  height: 1118px;
+  visibility: hidden;
+  pointer-events: none;
+  border: 0;
+}
+.quote-preview-preparing { padding: 32px; font-size: 1rem; line-height: 1.5; }
+.quote-editorial-page.quote-continuation-page .quote-editorial-signoff { margin-top: auto !important; }
+.quote-editorial-page .quote-editorial-notes-page { margin-top: 20px; }
+.quote-editorial-page .quote-editorial-notes p,
+.quote-editorial-page .quote-editorial-item-spec { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .quote-editorial-page .quote-editorial-body {
   flex: 1;
