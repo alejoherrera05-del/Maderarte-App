@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'public/cotizacion.html'
+      - 'public/index.html'
+      - 'public/css/dashboard-*.css'
+      - 'public/js/pages/dashboard.js'
+      - 'public/js/core/client-lookup.js'
       - 'public/assets/brand/maddy-by-maderarte.svg'
       - 'public/css/cotizacion-*.css'
       - 'public/js/pages/cotizacion*.js'
@@ -48,4 +52,6 @@ jobs:
             artifacts/cotizacion-extensa-cierre.png
             artifacts/cotizacion-extensa-mobile.png
             artifacts/cotizacion-extensa.pdf
+            artifacts/cotizacion-formulario-*.png
+            artifacts/inicio-*.png
           if-no-files-found: error

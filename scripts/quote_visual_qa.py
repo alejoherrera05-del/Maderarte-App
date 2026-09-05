@@ -40,7 +40,56 @@ def metric(selector):
       return {height:Math.round(r.height),width:Math.round(r.width),fontSize:parseFloat(s.fontSize)||0,
               text:n.textContent.trim(),overflowY:n.scrollHeight>n.clientHeight+2};''', selector)
 
+def check_editor_and_home():
+    results = []
+    for width in (1440, 768, 390, 320):
+        driver.set_window_size(width, 1000)
+        driver.get(URL)
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="MP"]'))).click()
+        wait.until(EC.visibility_of_element_located((By.ID, 'quote-workspace')))
+        identification = driver.find_element(By.ID, 'quote-client-document')
+        setv(identification, '909090')
+        wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
+        name = driver.find_element(By.ID, 'quote-client-name')
+        setv(name, 'Cliente de revisión visual')
+        editor = driver.execute_script('''
+          const fields=[...document.querySelectorAll('.quote-editor input:not([type=file]),.quote-editor select,.quote-editor textarea')];
+          return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
+            label:parseFloat(getComputedStyle(document.querySelector('.quote-field > label')).fontSize),
+            fieldSizes:fields.map(n=>parseFloat(getComputedStyle(n).fontSize)),
+            documentFirst:document.querySelector('.quote-field-grid-client input').id==='quote-client-document',
+            separateSearch:!!document.getElementById('quote-client-search'),
+            name:document.getElementById('quote-client-name').value,
+            writes:!document.getElementById('quote-submit').disabled};''')
+        assert not editor['overflow'] and editor['label'] >= 15 and min(editor['fieldSizes']) >= 16
+        assert editor['documentFirst'] and not editor['separateSearch'] and not editor['writes']
+        assert editor['name'] == 'Cliente de revisión visual'
+        driver.execute_script("const s=document.querySelector('.quote-editor-section');window.scrollTo(0,s.getBoundingClientRect().top+scrollY-95);")
+        driver.save_screenshot(str(PNG.with_name(f'cotizacion-formulario-{width}.png')))
+        driver.get(URL.split('/cotizacion.html')[0] + '/index.html?preview=1')
+        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.dashboard-menu-item')))
+        home = driver.execute_script('''
+          const row=document.querySelector('.dashboard-menu-item');
+          return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
+            rowHeight:row.getBoundingClientRect().height,
+            titleSize:parseFloat(getComputedStyle(row.querySelector('strong')).fontSize),
+            descriptionSize:parseFloat(getComputedStyle(row.querySelector('.dashboard-menu-copy > span')).fontSize)};''')
+        assert not home['overflow'] and home['rowHeight'] >= 94 and home['titleSize'] >= 18 and home['descriptionSize'] >= 15
+        driver.save_screenshot(str(PNG.with_name(f'inicio-{width}.png')))
+        if width == 390:
+            menu = driver.find_element(By.CSS_SELECTOR, '[data-menu-key="cotizaciones"]')
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
+            menu.click()
+            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.dashboard-sheet-overlay.active')))
+            assert driver.find_element(By.ID, 'dashboard-dialog-title').text == 'Cotización'
+            assert driver.find_element(By.CSS_SELECTOR, '.dashboard-dialog-option').size['height'] >= 88
+            driver.save_screenshot(str(PNG.with_name('inicio-opciones-mobile.png')))
+        results.append({'editor': editor, 'home': home})
+    print('EDITOR_HOME_QA=' + json.dumps(results, ensure_ascii=False))
+    driver.set_window_size(1680, 2200)
+
 try:
+    check_editor_and_home()
     driver.get(URL)
     wait.until(EC.visibility_of_element_located((By.ID,'quote-app')))
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-quote-branch="MP"]'))).click()
