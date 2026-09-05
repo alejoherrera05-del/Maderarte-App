@@ -2,7 +2,7 @@
 
 ## Estado de salida
 
-**Correcciones implementadas, publicadas y verificadas por pruebas automatizadas. Candidata a cierre de estabilidad de la etapa de lectura; la validación integrada del despliegue sigue pendiente.**
+**Correcciones implementadas, publicadas y verificadas por pruebas automatizadas. El usuario instaló el Cerebro y completó pruebas manuales de ingreso, búsqueda de clientes y seguimiento vacío. El cierre de estabilidad de toda la etapa sigue pendiente.**
 
 Este documento continúa `CHECKPOINT_2026-09-05_REVISION.md`. Los defectos reproducidos de identidad y seguimiento están corregidos en el repositorio. También se corrigieron la configuración del visor documental, la paginación de cotizaciones extensas y un salto de foco encontrado durante la revisión ampliada.
 
@@ -72,7 +72,9 @@ Se añadió JSDOM como dependencia de desarrollo para ejecutar los módulos y su
 
 Las capturas y PDFs de QA pertenecen a los artefactos de GitHub Actions y emplean datos sintéticos. No se guardan documentos comerciales ni credenciales en el repositorio.
 
-## Paso pendiente: actualizar el Cerebro oficial
+## Procedimiento inicial para actualizar el Cerebro oficial
+
+Este apartado conserva el procedimiento definido antes de la instalación manual. El avance posterior se registra a continuación en «Instalación y prueba manual con el propietario».
 
 Cloudflare publica frontend y Worker; no actualiza por sí solo el proyecto separado de Apps Script. La implementación de `apps-script/Quotes.gs` requiere desplegarse allí para que el seguimiento disponga de paginación e indicadores completos.
 
@@ -89,8 +91,33 @@ Procedimiento para la cuenta que administra **Maderarte App — Cerebro**:
 
 Compatibilidad durante la transición: las respuestas completas del backend anterior, incluida la base vacía, siguen siendo utilizables. Si el backend devuelve un conjunto incompleto sin el nuevo contrato, la interfaz muestra un error explícito y no inventa indicadores completos.
 
+## Instalación y prueba manual con el propietario
+
+Después del bloqueo del navegador de revisión, el propietario indicó que el editor del proyecto no contenía código y pidió un archivo completo para copiar y pegar. Se entregó la exportación de `e0d27053069a8071b07aaeac5382aba1b5f91638`: nueve módulos y 85 funciones, sin duplicados, junto con `appsscript.json` y `INSTALACION_CEREBRO_MANUAL.md`. Los módulos de negocio son los mismos que ya habían superado las pruebas del checkpoint.
+
+El propietario confirmó que pegó y guardó el código y el manifiesto, configuró las propiedades de Sheet, Drive y Firebase, guardó un mismo token de conexión en Apps Script y Cloudflare, publicó la aplicación web y actualizó su dirección en el secreto del Worker. Los identificadores de destino y valores privados se mantienen fuera de GitHub.
+
+La comprobación automática del enlace de la aplicación web no estuvo disponible. Por ello, la evidencia remota de este apartado procede del registro y las capturas aportados por el propietario; no se presenta como una inspección directa del navegador del agente ni como una comparación exacta del código instalado.
+
+| Comprobación | Evidencia aportada | Alcance confirmado |
+| --- | --- | --- |
+| `verificarBaseCero()` | Registro finalizado sin error, `ok: true`, versión `0.2.0`, 23 pestañas, un propietario, sedes MP y TP, modo PREPARACION, escrituras comerciales deshabilitadas y raíz `02_DOCUMENTOS_CLIENTES`. | Estructura y estado inicial de la base y acceso a la carpeta documental. |
+| Base comercial | Los diez recuentos del diagnóstico son cero. | No hay registros comerciales en ese momento. |
+| Ingreso | El propietario indicó que ingresó correctamente y mostró el inicio con su sesión. | Prueba manual satisfactoria del ingreso. |
+| Clientes | Captura de la búsqueda `prueba` con «No encontramos clientes con esa búsqueda». | Consulta con respuesta vacía y sin error visible. El frontend admite compatibilidad con base cero; esta captura no identifica por sí sola la versión exacta de la respuesta del backend. |
+| Cotizaciones | Captura de seguimiento con cero cotizaciones, valor de cero, las tres categorías del radar en cero y «No hay cotizaciones en este rango». | Carga manual del seguimiento vacío sin error visible. No prueba todavía paginación con registros ni el contrato `paginationVersion: 1`. |
+
+No se solicitaron ventas, clientes ni documentos comerciales de prueba. El registro de diagnóstico y las capturas permanecen en la conversación, fuera del repositorio público.
+
+### Pendientes concretos después de esta prueba
+
+- Completar y confirmar `APP_BASE_URL` en las propiedades del script: es necesaria para crear enlaces de invitación. Añadir también `MODO_OPERACION=PREPARACION` según la guía; el diagnóstico ya confirmó el modo en la pestaña Configuracion.
+- Comprobar el recorrido de cotización/documento y móvil en la versión corregida; no confundir la prueba automatizada anterior con una prueba física posterior a instalar Apps Script.
+- Confirmar el contrato actualizado de cotizaciones y el visor de un documento autorizado de Drive sin cargar datos comerciales de prueba.
+- Identificar la versión exacta que sirve el dominio de producción antes de dar por publicadas allí todas las correcciones. Al revisar GitHub después de estas capturas, `main` seguía en `d5ead3483841227cf38cf8f2c959c3cb0b0ce01c` y el PR #7 seguía abierto, sin fusionar. El bot de Cloudflare había publicado correctamente la rama en `e0d2705`; eso no acredita por sí solo qué versión sirve el dominio tras los cambios manuales de configuración.
+
 ## Criterio de cierre
 
-El checkpoint técnico está publicado. Para declarar cerrada la estabilidad de esta etapa falta evidencia del backend actualizado y del recorrido integrado con sesión real; el PR debe conservar el proceso de revisión del propietario. La nueva orden de pedido continúa como siguiente módulo después de ese cierre.
+El checkpoint técnico y el avance de integración manual están publicados. El ingreso y las consultas vacías tienen evidencia del propietario. Para declarar cerrada la estabilidad de toda esta etapa deben resolverse los pendientes concretos anteriores; el PR conserva el proceso de revisión del propietario. La nueva orden de pedido continúa como siguiente módulo después de ese cierre.
 
 La identidad del manifiesto instalable y la discrepancia documental sobre la etiqueta del asesor se conservan como decisiones de coherencia pendientes, sin alterar el diseño vigente durante estas correcciones.
