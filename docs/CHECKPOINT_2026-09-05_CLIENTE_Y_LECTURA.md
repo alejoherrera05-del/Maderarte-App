@@ -27,4 +27,25 @@ El propietario aportó una captura posterior al despliegue del Cerebro con `MP-C
 
 La conexión del navegador del agente volvió a fallar al listar pestañas, antes de interactuar con las páginas. La referencia HomeEasy se inspeccionó en su código vigente; no se presenta como una captura remota nueva.
 
-Se añadieron pruebas DOM de coincidencias, selección, completado de dirección, ceros iniciales, captura manual, errores y respuestas atrasadas. Las verificaciones visuales automatizadas y la vista de rama deben revisarse antes de cerrar esta corrección o fusionar el PR. La captura física previa corresponde al formulario anterior a esta simplificación.
+Se añadieron pruebas DOM de coincidencias, selección, completado de dirección, ceros iniciales, captura manual, errores y respuestas atrasadas. `npm ci --no-audit --no-fund` y `npm test` finalizaron correctamente.
+
+## Validación publicada
+
+Código de interfaz: `31ef7c317312e98a59594ea4476ae95aed72bb72`. Commit que añade las comprobaciones de escala de esta entrega: `8e1e1bb444b5b74a46f69237c581d07986b97838`.
+
+| Comprobación del commit 8e1e1bb | Resultado |
+| --- | --- |
+| [Calidad 33991494943](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/33991494943) | Correcta: suite Node y empaquetado del Worker. |
+| [Cotización 33991494840](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/33991494840) | Correcta: formulario, inicio, documento estándar y documento extenso. |
+| [Seguimiento 33991494845](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/33991494845) | Correcta. |
+| Anchos reales de Chrome | 320, 390, 768 y 1440 px; sin desplazamiento horizontal en formulario e inicio. |
+| Formulario | Primer campo Cédula/NIT; buscador separado ausente; entradas 17 px; etiquetas 15 px; conserva el nombre escrito; emisión deshabilitada. |
+| Inicio | Títulos 18 px, descripciones 15 px, filas de al menos 96 px en los casos ejecutados. Ventana de Cotización comprobada a 390 px. |
+| Documento extenso | Siete páginas, 25 muebles completos, un total, sin desbordamiento, cero errores de consola. PDF físico también de siete páginas. |
+| Cloudflare | El bot informó despliegue correcto de 8e1e1bb a las 20:55 UTC del 5 de septiembre de 2026. |
+
+La vista del commit publicada por Cloudflare es [9ce12db8](https://9ce12db8-maderarte-app.alejoherrera05.workers.dev). El PR continúa en revisión; no se presenta esta URL como el dominio de producción ya actualizado.
+
+Las capturas y los PDFs quedaron en el artefacto `cotizacion-visual-qa` del run indicado. La descarga materializada devolvió HTTP 403 / código 1010 al intentar abrirla en el entorno, por lo que el agente no inspeccionó visualmente esos PNG; los resultados anteriores proceden de las mediciones y aserciones automatizadas. No se atribuye esa limitación a la app del usuario.
+
+Pendiente: revisión visual del propietario en la vista corregida, especialmente en su teléfono. La captura física previa corresponde al formulario anterior a esta simplificación. No se declara cerrada la estabilidad global ni se fusiona el PR sin esa revisión. Esta entrega modifica frontend y pruebas; no requiere volver a instalar el Cerebro.

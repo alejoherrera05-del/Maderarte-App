@@ -6,6 +6,8 @@
 
 Este documento continúa `CHECKPOINT_2026-09-05_REVISION.md`. Los defectos reproducidos de identidad y seguimiento están corregidos en el repositorio. También se corrigieron la configuración del visor documental, la paginación de cotizaciones extensas y un salto de foco encontrado durante la revisión ampliada.
 
+Continuación posterior: [cliente por cédula y lectura](CHECKPOINT_2026-09-05_CLIENTE_Y_LECTURA.md) registra la confirmación del número corregido en la app, la escritura normal en el teléfono reportada por el propietario y la simplificación del formulario y ampliación del inicio solicitadas después.
+
 La aplicación conserva la versión declarada `0.2.0`, el modo de preparación y las escrituras comerciales deshabilitadas. El PR permanece abierto; este checkpoint no equivale a un merge ni a una certificación del backend remoto.
 
 ## Referencias verificadas
@@ -121,7 +123,7 @@ Después del cambio se completaron correctamente `npm ci --no-audit --no-fund` y
 
 ### Pendientes concretos después de esta prueba
 
-- Actualizar el código del Cerebro en Apps Script, publicar una nueva versión de la implementación existente y comprobar que el número previsto no duplica el guion.
+- El propietario ya aportó la captura del número `MP-COT-0001` después de actualizar el Cerebro. La siguiente revisión de interfaz corresponde a la versión descrita en el checkpoint de cliente y lectura.
 - Comprobar el recorrido de cotización/documento y móvil en la versión corregida; no confundir la prueba automatizada anterior con una prueba física posterior a instalar Apps Script.
 - Confirmar el contrato actualizado de cotizaciones y el visor de un documento autorizado de Drive sin cargar datos comerciales de prueba.
 - Identificar la versión exacta que sirve el dominio de producción antes de dar por publicadas allí todas las correcciones. Al revisar GitHub después de estas capturas, `main` seguía en `d5ead3483841227cf38cf8f2c959c3cb0b0ce01c` y el PR #7 seguía abierto, sin fusionar. El bot de Cloudflare había publicado correctamente la rama en `e0d2705`; eso no acredita por sí solo qué versión sirve el dominio tras los cambios manuales de configuración.
