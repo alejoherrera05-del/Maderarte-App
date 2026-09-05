@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { COMMERCIAL_RULES, PAYMENT_METHODS, SALE_MODES, summarizePayments, paymentAmount, manufacturingWindowLabel } from '../public/js/core/commercial-rules.js';
+import { COMMERCIAL_RULES, PAYMENT_METHODS, ITEM_FULFILLMENTS, summarizePayments, paymentAmount, manufacturingWindowLabel } from '../public/js/core/commercial-rules.js';
 
 assert.equal(COMMERCIAL_RULES.minimumOrderDepositPercent, undefined);
 assert.equal(manufacturingWindowLabel(), '25 a 30 días');
-assert.deepEqual(SALE_MODES.map(mode => mode.code), ['SEPARADO', 'PARA_SOLICITAR', 'ENTREGA_INMEDIATA']);
+assert.deepEqual(ITEM_FULFILLMENTS.map(mode => mode.code), ['DISPONIBLE', 'PARA_SOLICITAR', 'POR_DEFINIR']);
 assert.deepEqual(PAYMENT_METHODS.map(method => method.code), ['EFECTIVO', 'TRANSFERENCIA', 'TARJETA', 'ADDI']);
 for (const amount of [1, 50000, 100000, 1000000]) {
   const summary = summarizePayments(1000000, [{ amount, method: 'EFECTIVO' }]);
