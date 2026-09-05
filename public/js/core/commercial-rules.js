@@ -3,10 +3,11 @@ export const COMMERCIAL_RULES = Object.freeze({
   manufacturingDaysMax: 30
 });
 
-export const SALE_MODES = Object.freeze([
-  { code: 'SEPARADO', label: 'Separado', description: 'El cliente separa y continúa pagando.', terms: 'Entrega por acordar. La separación no inicia fabricación por sí sola.' },
-  { code: 'PARA_SOLICITAR', label: 'Pedido para solicitar', description: 'El mueble requiere solicitud o fabricación.', terms: 'Fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.' },
-  { code: 'ENTREGA_INMEDIATA', label: 'Entrega inmediata', description: 'El cliente se lleva un producto disponible.', terms: 'Producto disponible para entrega inmediata.' }
+// Availability belongs to each furniture line, independently of payments.
+export const ITEM_FULFILLMENTS = Object.freeze([
+  { code: 'DISPONIBLE', label: 'Disponible para entrega inmediata', help: 'Disponible para coordinar la entrega. Aún no se registra como entregado.' },
+  { code: 'PARA_SOLICITAR', label: 'Solicitar a fábrica', help: 'Fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.' },
+  { code: 'POR_DEFINIR', label: 'Por definir con el cliente', help: 'La disponibilidad y la entrega de este mueble quedan por acordar.' }
 ].map(Object.freeze));
 
 export const PAYMENT_METHODS = Object.freeze([

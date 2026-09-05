@@ -11,14 +11,14 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/cotizacion-form.css">
   <link rel="stylesheet" href="/css/cotizacion-brand-polish.css">
-  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=payments-1">
+  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=mixed-1">
   <link rel="stylesheet" href="/css/cotizacion-document-premium.css?v=compact-2">
   <link rel="stylesheet" href="/css/cotizacion-document-header-refined.css?v=final-editorial-3">
   <link rel="stylesheet" href="/css/cotizacion-document-final-pass.css?v=hybrid-clean-1">
   <link rel="stylesheet" href="/css/cotizacion-document-hybrid-fixes.css?v=1">
   <link rel="stylesheet" href="/css/cotizacion-document-adaptive.css?v=adaptive-1">
   <link rel="stylesheet" href="/css/cotizacion-document-final-approval.css?v=approval-1">
-  <link rel="stylesheet" href="/css/pedido.css?v=payments-1">
+  <link rel="stylesheet" href="/css/pedido.css?v=mixed-1">
   <title>Nueva orden de pedido · Maderarte App</title>
 </head>
 <body class="quote-page" data-commercial-document="order">
@@ -106,26 +106,18 @@
               </div>
             </section>
 
-            <section class="quote-editor-section">
-              <div class="quote-section-title"><div><span>Venta</span><h2>¿Cómo se hará esta venta?</h2></div><small>Elige lo acordado con el cliente.</small></div>
-              <fieldset class="order-sale-modes"><legend class="sr-only">Modalidad de venta</legend>
-                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="SEPARADO"><span><strong>Separado</strong><small>Separa ahora y continúa pagando.</small></span></label>
-                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="PARA_SOLICITAR"><span><strong>Pedido para solicitar</strong><small>Requiere solicitud o fabricación.</small></span></label>
-                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="ENTREGA_INMEDIATA"><span><strong>Entrega inmediata</strong><small>Se lleva un producto disponible.</small></span></label>
-              </fieldset>
-              <p class="quote-helper" id="order-mode-help" role="status">El abono lo defines tú según lo acordado; no hay un porcentaje obligatorio.</p>
-            </section>
-
             <section class="quote-editor-section quote-items-section">
               <div class="quote-section-title quote-items-title">
                 <div><span>Mobiliario</span><h2>Muebles del pedido</h2></div>
                 <button class="quote-add-item" id="quote-add-item" type="button">＋ Añadir mueble</button>
               </div>
+              <p class="quote-helper order-items-help">Indica la disponibilidad de cada mueble. Puedes combinar entrega inmediata y solicitud a fábrica en este mismo pedido.</p>
               <div id="quote-items" class="quote-items"></div>
             </section>
 
             <section class="quote-editor-section" aria-labelledby="order-payments-title">
               <div class="quote-section-title"><div><span>Pagos</span><h2 id="order-payments-title">Abono o pago inicial</h2></div><small>Indica el valor acordado. Puedes combinar varios medios de pago.</small></div>
+              <label class="order-separated-option"><input id="order-separated" type="checkbox"><span><strong>Este pedido es un separado</strong><small>El cliente separa con el importe acordado y continúa pagando. La disponibilidad se indica en cada mueble.</small></span></label>
               <div id="order-payments" class="order-payments"></div>
               <p class="quote-helper is-error" id="order-payment-error" role="status"></p>
               <button class="quote-add-item" id="order-add-payment" type="button">＋ Añadir otro pago</button>
@@ -170,6 +162,6 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=payments-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=mixed-1"></script>
 </body>
 </html>

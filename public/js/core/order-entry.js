@@ -1,14 +1,14 @@
-import { PAYMENT_METHODS, SALE_MODES, summarizePayments } from './commercial-rules.js?v=payments-1';
+import { PAYMENT_METHODS, summarizePayments } from './commercial-rules.js?v=mixed-1';
 import { escapeHtml } from './format.js';
 
 export function readOrderEntry(total, root = document) {
-  const saleMode = SALE_MODES.find(mode => mode.code === root.querySelector('[name="order-sale-mode"]:checked')?.value) || null;
+  const separated = Boolean(root.querySelector('#order-separated')?.checked);
   const entries = [...root.querySelectorAll('[data-payment-row]')].map(row => ({
     method: row.querySelector('[data-payment-method]').value,
     amount: row.querySelector('[data-payment-amount]').value,
     internalNote: row.querySelector('[data-payment-note]').value
   }));
-  return { saleMode, ...summarizePayments(total, entries) };
+  return { separated, ...summarizePayments(total, entries) };
 }
 
 export function bindOrderEntry(onChange) {
@@ -54,12 +54,6 @@ export function bindOrderEntry(onChange) {
     addPayment();
     list.lastElementChild.querySelector('select').focus({ preventScroll: true });
   });
-  document.querySelectorAll('[name="order-sale-mode"]').forEach(input => input.addEventListener('change', () => {
-    const mode = SALE_MODES.find(item => item.code === input.value);
-    const help = document.getElementById('order-mode-help');
-    help.textContent = mode?.terms || '';
-    help.classList.remove('is-error');
-    onChange();
-  }));
+  document.getElementById('order-separated')?.addEventListener('change', onChange);
   addPayment();
 }
