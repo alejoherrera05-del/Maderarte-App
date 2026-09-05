@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/cotizacion-form.css">
   <link rel="stylesheet" href="/css/cotizacion-brand-polish.css">
-  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=approval-1">
+  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=payments-1">
   <link rel="stylesheet" href="/css/cotizacion-document-premium.css?v=compact-2">
   <link rel="stylesheet" href="/css/cotizacion-document-header-refined.css?v=final-editorial-3">
   <link rel="stylesheet" href="/css/cotizacion-document-final-pass.css?v=hybrid-clean-1">
@@ -98,7 +98,8 @@
                 </div>
                 <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
                 <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
-                <div class="quote-field"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
+                <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono (opcional)</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Otro número de contacto"></div>
+                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
                 <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección</label><input id="quote-client-address" autocomplete="street-address"></div>
                 <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" autocomplete="address-level2"></div>
               </div>
@@ -118,10 +119,7 @@
                 <small>Información que debe quedar clara antes de confirmar el pedido.</small>
               </div>
               <div class="quote-field"><label for="quote-notes">Observaciones especiales</label><textarea id="quote-notes" rows="4" placeholder="Instalación, accesos, cambios acordados, aclaraciones o cualquier condición especial de esta propuesta."></textarea></div>
-              <div class="quote-conditions" aria-label="Condiciones comerciales">
-                <div class="quote-condition"><span class="quote-condition-mark">30%</span><div><strong>Abono mínimo para solicitar</strong><p>El pedido entra a proceso cuando se confirma y completa al menos el 30% del valor total.</p></div></div>
-                <div class="quote-condition"><span class="quote-condition-mark">25–30</span><div><strong>Días estimados de fabricación</strong><p>Contados desde la confirmación del pedido y el cumplimiento del abono mínimo.</p></div></div>
-              </div>
+              <p class="quote-helper">Las condiciones de pago y entrega se acuerdan con el cliente. Si requiere fabricación, el plazo estimado es de 25 a 30 días desde la confirmación de la solicitud.</p>
             </section>
           </div>
 
@@ -131,12 +129,7 @@
               <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
               <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
               <div class="quote-summary-total"><span>Total cotizado</span><strong id="quote-total">$ 0</strong></div>
-              <div class="quote-deposit-box">
-                <span>Abono mínimo para solicitar</span>
-                <strong id="quote-minimum-deposit">$ 0</strong>
-                <small>30% del total cotizado</small>
-              </div>
-              <div class="quote-summary-row quote-summary-muted"><span>Saldo después del mínimo</span><strong id="quote-remaining">$ 0</strong></div>
+              <p class="quote-helper">El abono se acuerda con el cliente y se indica al preparar el pedido.</p>
               <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
               <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Emitir cotización</button>
               <p class="quote-write-note">La emisión se habilitará al activar las escrituras comerciales. El formulario actual no guarda información.</p>
@@ -157,6 +150,6 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=order-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=payments-1"></script>
 </body>
 </html>

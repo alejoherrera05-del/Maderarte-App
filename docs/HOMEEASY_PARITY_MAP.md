@@ -129,8 +129,14 @@ Fuente inspeccionada: `Homeeasy/main/pedido.html`, commit `aa21decbe809a91362a2c
 
 Paridad: volver a Inicio, identificación con coincidencias en el mismo campo, datos del cliente y dirección de entrega, productos editables, subtotal/descuento/total, observaciones de fabricación y documento con marca/número/fecha/cierre. En móvil se conserva captura vertical y controles amplios.
 
-Adaptaciones Maderarte: selección de sede MP/TP, muebles y fotografías del sistema aprobado de Cotización, condiciones propias de 30% y 25–30 días, documento paginado y anexos solo cuando hay fotos. El asesor firma al final solo con su nombre.
+Adaptaciones Maderarte: selección de sede MP/TP, muebles y fotografías del sistema aprobado de Cotización, modalidades y pagos acordados, y plazo de fabricación solo cuando corresponde, documento paginado y anexos solo cuando hay fotos. El asesor firma al final solo con su nombre.
 
 Límite de esta entrega: formulario de borrador, sin crear OP, cobrar abonos, convertir cotizaciones ni escribir en Sheets/Drive. No se reutiliza el consecutivo de cotizaciones: la OP muestra «Borrador» y el número se asignará al guardar. La dirección autocompletada puede editarse para la entrega, sin modificar el cliente. El cálculo del mínimo no representa un pago recibido.
 
 Cotización y Pedido comparten búsqueda, edición de muebles y un único renderizador paginado. Los IDs internos `quote-*` se conservan en ambos HTML para evitar duplicar lógica; los textos, permiso y tipo documental dependen de la pantalla.
+
+## Corrección operativa del propietario — 5 de septiembre de 2026
+
+La aclaración posterior al primer formulario de OP sustituye cualquier regla histórica de abono obligatorio del 30%. Maderarte maneja separado, solicitud/fabricación y entrega inmediata. Se portan de `Homeeasy/main/pedido.html` y `abono.html` (commit `aa21decbe809a91362a2cddfd272c7c5744dfddd`) la captura directa del importe, medio y saldo; se amplían por petición expresa a pagos combinados, Addi, notas internas y segundo teléfono. Las observaciones del pedido son acuerdos visibles para el cliente. La nota del pago es interna y se excluye del documento.
+
+Las cifras de mínimos en checkpoints anteriores son evidencia histórica de una regla corregida, no una instrucción vigente. La fuente actual es `BUSINESS_RULES.md`.

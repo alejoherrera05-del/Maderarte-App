@@ -10,5 +10,5 @@ export const COMMERCIAL_DOCUMENT = Object.freeze({
   pendingNumber: isOrder ? 'Borrador' : 'Pendiente de asignar',
   itemsLabel: isOrder ? 'Mobiliario del pedido' : 'Mobiliario cotizado',
   addressLabel: isOrder ? 'Dirección de entrega / Ciudad' : 'Dirección / Ciudad',
-  notesLabel: isOrder ? 'Indicaciones de fabricación y entrega' : 'Observaciones especiales'
+  notesLabel: isOrder ? 'Observaciones del pedido' : 'Observaciones especiales'
 });

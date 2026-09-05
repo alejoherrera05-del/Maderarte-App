@@ -1,9 +1,9 @@
 import { escapeHtml } from '../core/format.js';
 import { paginateQuoteDocument } from '../core/quote-pagination.js';
-import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=payments-1';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { COMMERCIAL_RULES, minimumOrderDeposit } from '../core/commercial-rules.js';
+import { readOrderEntry } from '../core/order-entry.js?v=payments-1';
 
 function ensureEditorialStyles() {
   if (document.querySelector('link[data-quote-editorial]')) return;
@@ -88,6 +88,7 @@ function collectDocumentData() {
       document: value('quote-client-document'),
       name: value('quote-client-name'),
       phone: value('quote-client-phone'),
+      alternatePhone: value('quote-client-alternatePhone'),
       email: value('quote-client-email'),
       address: value('quote-client-address'),
       city: value('quote-client-city')
@@ -97,7 +98,7 @@ function collectDocumentData() {
     subtotal,
     discount,
     total,
-    minimumDeposit: minimumOrderDeposit(total)
+    order: COMMERCIAL_DOCUMENT.isOrder ? readOrderEntry(total) : null
   };
 }
 
@@ -171,6 +172,7 @@ function clientMarkup(client) {
     clientField('Cédula / NIT', client.document),
     clientField('Nombre completo', client.name, 'quote-editorial-client-field-name'),
     clientField('Teléfono', client.phone),
+    clientField('Segundo teléfono', client.alternatePhone),
     clientField('Correo electrónico', client.email),
     clientField(COMMERCIAL_DOCUMENT.addressLabel, location, 'quote-editorial-client-field-wide')
   ].filter(Boolean);
@@ -216,29 +218,28 @@ function investmentMarkup(data) {
     <div class="quote-editorial-total">
       <span>Total</span>
       <strong>${escapeHtml(money(data.total))}</strong>
-      ${data.total > 0 ? `<small>Para confirmar ${COMMERCIAL_RULES.minimumOrderDepositPercent}% · ${escapeHtml(money(data.minimumDeposit))}</small>` : ''}
+
     </div>
+    ${data.order ? `<div class="order-document-payments">
+      ${Object.entries(data.order.payments.reduce((groups, payment) => { groups[payment.label] = (groups[payment.label] || 0) + payment.amount; return groups; }, {})).map(([method, amount]) => `<div><span>${escapeHtml(method)}</span><strong>${escapeHtml(money(amount))}</strong></div>`).join('')}
+      <div><span>Abono indicado</span><strong>${escapeHtml(money(data.order.paid))}</strong></div>
+      <div class="order-document-balance"><span>Saldo por pagar</span><strong>${escapeHtml(money(data.order.balance))}</strong></div>
+    </div>` : ''}
   </section>`;
 }
 
 function commercialTermsMarkup(data) {
-  return `<section class="quote-editorial-terms">
-    <div class="quote-editorial-section-kicker">Condiciones comerciales</div>
-    <div class="quote-editorial-term-cards">
-      <article class="quote-editorial-term-card quote-editorial-term-deposit">
-        <div class="quote-editorial-term-icon"><img src="/assets/icons/wallet.svg" alt=""></div>
-        <div class="quote-editorial-term-value">${COMMERCIAL_RULES.minimumOrderDepositPercent}%</div>
-        <div class="quote-editorial-term-copy">
-          <strong>Abono mínimo para confirmar</strong>
-          ${data.total > 0 ? `<span>${escapeHtml(money(data.minimumDeposit))}</span>` : ''}
-        </div>
-      </article>
-      <article class="quote-editorial-term-card quote-editorial-term-time">
+  const mode = data.order?.saleMode;
+  const terms = mode
+    ? `<article class="order-document-mode"><strong>${escapeHtml(mode.label)}</strong><p>${escapeHtml(mode.terms)}</p></article>`
+    : `<div class="quote-editorial-term-cards"><article class="quote-editorial-term-card quote-editorial-term-time">
         <div class="quote-editorial-term-icon"><img src="/assets/icons/calendar-dots.svg" alt=""></div>
         <div class="quote-editorial-term-value">25–30<small>días</small></div>
-        <div class="quote-editorial-term-copy"><strong>Fabricación estimada</strong>${COMMERCIAL_DOCUMENT.isOrder ? '<span>Desde la confirmación del pedido y el abono requerido.</span>' : ''}</div>
-      </article>
-    </div>
+        <div class="quote-editorial-term-copy"><strong>Si requiere fabricación</strong></div>
+      </article></div>`;
+  return `<section class="quote-editorial-terms">
+    <div class="quote-editorial-section-kicker">Condiciones comerciales</div>
+    ${terms}
     ${data.notes ? `<div class="quote-editorial-notes"><strong>${escapeHtml(COMMERCIAL_DOCUMENT.notesLabel)}</strong><p>${escapeHtml(data.notes)}</p></div>` : ''}
   </section>`;
 }
