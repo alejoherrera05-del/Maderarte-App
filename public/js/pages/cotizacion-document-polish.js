@@ -55,6 +55,7 @@ function itemFromCard(card, index) {
 function collectDocumentData() {
   const items = Array.from(document.querySelectorAll('.quote-item')).map(itemFromCard);
   const { subtotal, discount, total } = readCommercialValues();
+  const order = COMMERCIAL_DOCUMENT.isOrder ? readOrderEntry(total) : null;
   const branchCode = text('quote-meta-branch').toUpperCase();
   const branch = companyBranch(branchCode);
 
@@ -74,11 +75,11 @@ function collectDocumentData() {
       city: value('quote-client-city')
     },
     notes: value('quote-notes'),
-    items: items.map(item => ({ ...item, allocation: COMMERCIAL_DOCUMENT.isOrder ? readOrderEntry(total).allocation.find(part => part.itemId === item.itemId) : null })),
+    items: items.map(item => ({ ...item, allocation: order?.allocation.find(part => part.itemId === item.itemId) || null })),
     subtotal,
     discount,
     total,
-    order: COMMERCIAL_DOCUMENT.isOrder ? readOrderEntry(total) : null
+    order
   };
 }
 
@@ -179,14 +180,13 @@ function itemMarkup(item) {
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
-      ${item.agreement && !item.continuation ? `<p class="order-document-agreement">${escapeHtml(item.agreement.label)}</p>` : ''}
-      ${item.fulfillment && item.agreement?.code !== 'ENTREGA_HOY' && !item.continuation ? `<p class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</p>` : ''}
-      ${item.allocation && !item.continuation ? `<p class="order-document-allocation">${item.allocation.discount > 0 ? `Valor con descuento: ${escapeHtml(money(item.allocation.net))} · ` : ''}Abono indicado: ${escapeHtml(money(item.allocation.amount))} · Saldo: ${escapeHtml(money(item.allocation.balance))}</p>` : ''}
+      ${item.agreement && !item.continuation ? `<p class="order-document-agreement">${escapeHtml(item.agreement.label)}${item.fulfillment && item.agreement.code !== 'ENTREGA_HOY' ? ` · <span class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</span>` : ''}</p>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
     <div class="quote-editorial-item-quantity">${item.continuation ? '—' : escapeHtml(String(item.quantity))}</div>
     <div class="quote-editorial-item-unit">${!item.continuation && item.unitValue > 0 ? escapeHtml(money(item.unitValue)) : '—'}</div>
     <div class="quote-editorial-item-total">${!item.continuation && item.subtotal > 0 ? escapeHtml(money(item.subtotal)) : '—'}</div>
+    ${item.allocation && !item.continuation ? `<p class="order-document-allocation">${item.allocation.discount > 0 ? `Valor con descuento: ${escapeHtml(money(item.allocation.net))} · ` : ''}Abono indicado: ${escapeHtml(money(item.allocation.amount))} · Saldo: ${escapeHtml(money(item.allocation.balance))}</p>` : ''}
   </article>`;
 }
 
@@ -229,8 +229,7 @@ function commercialTermsMarkup(data) {
   const hasFactory = data.items.some(item => item.fulfillment?.code === 'PARA_SOLICITAR');
   const hasPending = data.items.some(item => item.fulfillment?.code === 'POR_DEFINIR');
   const terms = data.order
-    ? `<div class="order-document-conditions">${data.items.some(item => item.agreement?.code === 'SEPARADO') ? '<p>Los muebles señalados como separados continúan con abonos según lo acordado.</p>' : ''}
-        <p>Los acuerdos por mueble no confirman entregas realizadas ni solicitudes enviadas a fábrica.</p>
+    ? `<div class="order-document-conditions">
         ${hasFactory ? '<p>Muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
         ${hasPending ? '<p>Los muebles por definir quedan pendientes de acordar disponibilidad y entrega.</p>' : ''}
       </div>`

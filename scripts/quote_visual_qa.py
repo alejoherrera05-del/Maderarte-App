@@ -207,7 +207,6 @@ def check_order():
         assert document_metrics['availability'] == ['PARA_SOLICITAR']
         assert 'Se entrega hoy' in document_metrics['text'] and 'Queda separado' in document_metrics['text']
         assert '25 a 30 días' in document_metrics['conditions']
-        assert 'muebles señalados como separados' in document_metrics['conditions']
         finance = driver.execute_script("""
           const box=document.querySelector('.order-finance'), figures=box.querySelector('.order-finance-figures');
           const rect=box.getBoundingClientRect(), cells=[...figures.children];

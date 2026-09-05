@@ -140,3 +140,16 @@
   .order-payment-fields { grid-template-columns: 1fr; }
   .order-discount-entry { max-width: none; }
 }
+
+/* Item balances span the product width, without repeating the agreement below. */
+.order-document-agreement .order-document-fulfillment { display: inline; margin: 0; padding: 0; border: 0; font-size: inherit; font-weight: 500; }
+.order-document-page .order-document-allocation { grid-column: 2 / -1; margin: 0; line-height: 1.45; padding: 6px 0 0; border-top: 1px dotted #e5ddd4; font-variant-numeric: tabular-nums; }
+.order-document-page .quote-editorial-items-section { margin-top: 16px; }
+.order-document-page .quote-editorial-section-head > div > span { display: none; }
+.order-document-page .quote-editorial-item { row-gap: 4px; padding-block: 12px; }
+.order-document-page .quote-editorial-client-grid { gap: 10px 24px; }
+.order-document-page .quote-editorial-client-field { padding-bottom: 6px; }
+.order-document-page .quote-editorial-signoff { margin-top: 14px !important; }
+@media screen and (max-width: 760px) {
+  .order-document-page .order-document-allocation { grid-column: 1 / -1; }
+}

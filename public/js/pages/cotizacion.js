@@ -6,7 +6,7 @@ import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
-import { bindClientLookup } from '../core/client-lookup.js';
+import { bindClientLookup } from '../core/client-lookup.js?v=agreements-1';
 import { ITEM_FULFILLMENTS, ITEM_AGREEMENTS, paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
 import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=agreements-1';
 
@@ -486,6 +486,7 @@ function bindGlobalInteractions() {
     list: document.getElementById('quote-client-suggestions'),
     message: document.getElementById('quote-client-message'),
     fields: Object.fromEntries(['name', 'phone', 'alternatePhone', 'email', 'address', 'city'].map(key => [key, document.getElementById(`quote-client-${key}`)])),
+    onSelect: () => state.draft?.changed(),
     async search(query) {
       const response = await requestClients({ query, limit: 8 });
       return response.data?.items || [];
