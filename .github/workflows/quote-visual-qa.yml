@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Instalar Selenium
-        run: pip install selenium==4.35.0
+        run: pip install selenium==4.35.0 pypdf==5.9.0
       - name: Servir la rama actual
         run: |
           node scripts/serve.mjs > /tmp/maderarte-serve.log 2>&1 &

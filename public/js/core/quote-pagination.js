@@ -59,7 +59,21 @@ export function paginateQuoteDocument(data, fits) {
   const closing = { ...current, closing: true, notes: data.notes };
   if (fits(closing)) { pages[pages.length - 1] = closing; return pages; }
   const closingAlone = { ...page(), closing: true, notes: data.notes };
-  if (fits(closingAlone)) { pages.push(closingAlone); return pages; }
+  if (fits(closingAlone)) {
+    // Keep the closing with the last product when there is room, instead of
+    // leaving totals alone on a mostly empty sheet.
+    if (current.items.length > 1) {
+      const lastItem = current.items.at(-1);
+      const withLastItem = { ...closingAlone, items: [lastItem] };
+      if (fits(withLastItem)) {
+        current.items.pop();
+        pages.push(withLastItem);
+        return pages;
+      }
+    }
+    pages.push(closingAlone);
+    return pages;
+  }
 
   // Long notes receive their own pages. Commercial terms and totals appear
   // exactly once, at the end; no content is cropped to force a one-page quote.

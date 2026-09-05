@@ -1,5 +1,6 @@
 import base64, json, os, time
 from pathlib import Path
+from pypdf import PdfReader
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -73,7 +74,7 @@ try:
     gap=driver.execute_script("const p=document.querySelector('.quote-editorial-page'),f=p.querySelector('.quote-document-footer');return Math.round(p.getBoundingClientRect().bottom-f.getBoundingClientRect().bottom);")
     metrics={'pageCount':len(pages),'pageNumbers':nums,'footerCount':footer_count,'annexCount':annex_count,'footerGap':gap,
              'page':metric('.quote-editorial-page'),'header':metric('.quote-editorial-header'),'total':metric('.quote-editorial-total > strong'),
-             'investment':metric('.quote-editorial-investment'),'third':metric('.quote-editorial-item:nth-child(3)'),'footer':metric('.quote-editorial-page .quote-document-footer')}
+             'investment':metric('.quote-editorial-investment'),'third':metric('.quote-editorial-item[data-item-position="3"]'),'footer':metric('.quote-editorial-page .quote-document-footer')}
     print('VISUAL_QA_METRICS='+json.dumps(metrics,ensure_ascii=False,sort_keys=True))
     driver.find_element(By.CSS_SELECTOR,'.quote-editorial-page').screenshot(str(PNG))
 
@@ -88,9 +89,12 @@ try:
     assert metrics['investment'] and metrics['investment']['height'] >= 95
     assert metrics['footer'] and metrics['footer']['height'] >= 28
     assert not metrics['page']['overflowY'] and metrics['footerGap'] <= 55
-    assert metrics['pageCount']==3 and metrics['annexCount']==2 and metrics['footerCount']==3
-    assert metrics['pageNumbers']==['Página 1 de 3','Página 2 de 3','Página 3 de 3']
+    # The full client name and readable text now occupy two main pages.
+    assert metrics['pageCount']==4 and metrics['annexCount']==2 and metrics['footerCount']==4
+    assert metrics['pageNumbers']==['Página 1 de 4','Página 2 de 4','Página 3 de 4','Página 4 de 4']
+    assert 'María Fernanda López' in metrics['page']['text']
     assert 'Item 1' in annex_text and 'Item 3' in annex_text and PDF.stat().st_size>=80000
+    assert len(PdfReader(PDF).pages) == metrics['pageCount'], 'El PDF debe tener las mismas páginas que la vista previa'
     # Exercise the actual form and document with data beyond the old one-page case.
     driver.get(URL)
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-quote-branch="MP"]'))).click()
@@ -156,5 +160,10 @@ try:
     driver.execute_script("document.body.innerHTML=arguments[0];document.body.className='quote-print-export';",long_html)
     pdf=driver.execute_cdp_cmd('Page.printToPDF',{'printBackground':True,'paperWidth':8.27,'paperHeight':11.69,'marginTop':0,'marginBottom':0,'marginLeft':0,'marginRight':0,'displayHeaderFooter':False,'scale':1})
     PDF.with_name('cotizacion-extensa.pdf').write_bytes(base64.b64decode(pdf['data']))
+    exported=PdfReader(PDF.with_name('cotizacion-extensa.pdf'))
+    assert len(exported.pages)==long_metrics['pages'], 'El PDF extenso debe conservar su numeración'
+    exported_text=' '.join(page.extract_text() for page in exported.pages)
+    assert all(name in exported_text for name in expected_names), 'Todos los muebles deben estar en el PDF final'
+    print('PDF_STABILITY_QA='+json.dumps({'pages':len(exported.pages),'all25ItemsPresent':True,'matchesPreview':True}))
 finally:
     driver.quit()
