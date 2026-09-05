@@ -54,6 +54,7 @@ try {
   assert.equal(event.defaultPrevented,true,'Advierte al salir si no puede respaldar el borrador');
   clearFormDrafts();
   assert.equal(window.sessionStorage.getItem(key),null);
-  assert.equal(requests,0);
+  await new Promise(resolve=>setTimeout(resolve,400));
+  assert.equal(requests,0,'Restaurar no vuelve a buscar al cliente ni sobreescribe sus datos');
   console.log('OK · recupera cliente, IDs de muebles/pagos, acuerdos y distribución; aísla usuarios y advierte al fallar almacenamiento');
 } finally {window.close();globalThis.fetch=originalFetch;delete globalThis.window;delete globalThis.document;}

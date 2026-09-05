@@ -143,7 +143,10 @@ def check_order():
             total:amount('quote-total'), paid:amount('order-paid'), balance:amount('order-balance'),
             writeDisabled:document.getElementById('quote-submit').disabled};
         """)
-        assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled']
+        if editor['overflow']:
+            editor['overflowNodes'] = driver.execute_script("return [...document.querySelectorAll('#quote-app *')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+1||r.left < -1)}).slice(0,25).map(n=>({tag:n.tagName,id:n.id,class:n.className,width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));")
+            driver.save_screenshot(str(PNG.with_name(f'pedido-overflow-{width}.png')))
+        assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled'], editor
         assert editor['width'] == width, editor
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")

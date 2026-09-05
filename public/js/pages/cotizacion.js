@@ -158,7 +158,7 @@ function updateDocumentMeta() {
   if (branchNameEl) branchNameEl.textContent = meta.branchName || 'Sede sin definir';
 }
 
-async function selectBranch(branch) {
+async function selectBranch(branch, { focusClient = true } = {}) {
   const code = String(branch || '').trim().toUpperCase();
   const available = allowedBranches();
   if (!Object.hasOwn(BRANCH_FALLBACKS, code) || (available.length && !available.includes(code))) return;
@@ -175,7 +175,7 @@ async function selectBranch(branch) {
     state.draft?.save();
     window.setTimeout(() => {
       const idleFocus = document.activeElement === document.body || document.activeElement === selectionTrigger;
-      if (idleFocus && !window.matchMedia?.('(pointer: coarse)').matches) {
+      if (focusClient && idleFocus && !window.matchMedia?.('(pointer: coarse)').matches) {
         document.getElementById('quote-client-document')?.focus({ preventScroll: true });
       }
     }, 340);
@@ -214,6 +214,7 @@ function itemMarkup(id) {
         <p class="quote-helper" id="order-item-${id}-help" data-fulfillment-help role="status"></p>
       </div>
     </div>` : ''}
+    <p class="quote-helper" data-quantity-help hidden>Si las unidades tienen acuerdos distintos, añádelas en líneas separadas.</p>
     <details class="quote-item-details"><summary>Personalización y referencias <span>Opcional</span></summary>
       <div class="quote-item-grid quote-item-customization">
         <div class="quote-field quote-item-category"><label for="quote-item-${id}-category">Categoría</label><select id="quote-item-${id}-category" data-field="category"><option value="">Seleccionar</option><option value="SALA">Sala</option><option value="COMEDOR">Comedor</option><option value="ALCOBA">Alcoba</option><option value="INFANTIL">Infantil</option><option value="OFICINA">Oficina</option><option value="COMPLEMENTO">Complemento</option><option value="OTRO">Otro</option></select></div>
@@ -223,7 +224,7 @@ function itemMarkup(id) {
       </div>
       <div class="quote-photo-area">
         <div class="quote-photo-head"><div><strong>Referencias visuales</strong><span>Fotos o bocetos de este mueble.</span></div><small>Se incluyen en el anexo del documento.</small></div>
-        <button class="quote-photo-drop" type="button" data-add-photos><span class="quote-photo-plus">＋</span><span><strong>Agregar fotografías</strong><small>Puedes seleccionar varias imágenes.</small></span></button>
+        <button class="quote-photo-drop" type="button" data-add-photos><span class="quote-photo-plus">+</span><span><strong>Agregar fotografías</strong><small>Puedes seleccionar varias imágenes.</small></span></button>
         <input class="quote-photo-input" data-photo-input type="file" accept="image/*" multiple>
         <div class="quote-photo-list" data-photo-list></div>
       </div>
@@ -351,6 +352,8 @@ function calculate() {
     const item = values.items[index];
     card.querySelector('[data-line-total]').textContent = money(item.subtotal);
     card.querySelector('[data-item-caption]').textContent = item.description || 'Descripción, valor y acuerdos';
+    const splitHelp = card.querySelector('[data-quantity-help]');
+    if (splitHelp) splitHelp.hidden = !(item.quantity > 1);
   });
   document.getElementById('quote-subtotal').textContent = money(values.subtotal);
   document.getElementById('quote-total').textContent = money(values.total);
@@ -553,7 +556,7 @@ async function restoreDraft(data) {
     state.photos.set(id, photos.filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo.dataUrl || '')));
     renderPhotos(id);
   }
-  if (data.branch && allowedBranches().includes(data.branch)) await selectBranch(data.branch);
+  if (data.branch && allowedBranches().includes(data.branch)) await selectBranch(data.branch, { focusClient: false });
   calculate();
 }
 

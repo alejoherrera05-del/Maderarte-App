@@ -153,3 +153,6 @@
 @media screen and (max-width: 760px) {
   .order-document-page .order-document-allocation { grid-column: 1 / -1; }
 }
+@media (max-width: 720px) {
+  [data-commercial-document="order"] .quote-shell { padding-inline: 0; }
+}

@@ -240,3 +240,10 @@
   .quote-item-index small { max-width: 17ch; }
   .quote-draft-status { flex-direction: column; align-items: flex-start; gap: 0; }
 }
+
+.quote-editor, .quote-summary-column, .quote-editor-section, .quote-field, .quote-items, .quote-item, .quote-item-index > div { min-width: 0; }
+.quote-editor-section { scroll-margin-top: 92px; }
+.quote-field > label { font-weight: 500; }
+@media (max-width: 360px) {
+  .quote-item-essential .quote-field > label { min-height: 44px; display: flex; align-items: end; }
+}
