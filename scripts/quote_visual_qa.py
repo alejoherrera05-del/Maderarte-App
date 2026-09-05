@@ -103,7 +103,9 @@ try:
     expected_names = []
     for index in range(25):
         if index:
-            driver.find_element(By.ID,'quote-add-item').click()
+            add_button=driver.find_element(By.ID,'quote-add-item')
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});",add_button)
+            add_button.click()
         card = driver.find_elements(By.CSS_SELECTOR,'.quote-item')[index]
         name = f'QA Mueble {index + 1:02d}'
         expected_names.append(name)
