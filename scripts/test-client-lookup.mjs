@@ -9,10 +9,10 @@ const doc = window.document;
 const input = doc.getElementById('quote-client-document');
 const list = doc.getElementById('quote-client-suggestions');
 const message = doc.getElementById('quote-client-message');
-const fields = Object.fromEntries(['name', 'phone', 'email', 'address', 'city'].map(key => [key, doc.getElementById(`quote-client-${key}`)]));
+const fields = Object.fromEntries(['name', 'phone', 'alternatePhone', 'email', 'address', 'city'].map(key => [key, doc.getElementById(`quote-client-${key}`)]));
 const records = [
-  { document: '001234', name: 'Cliente sintético A', phone: '0000000001', email: 'a@example.test', address: 'Dirección sintética A', city: 'Ciudad A' },
-  { document: '001299', name: 'Cliente sintético B', phone: '0000000002', email: 'b@example.test', address: 'Dirección sintética B', city: 'Ciudad B' }
+  { document: '001234', name: 'Cliente sintético A', phone: '0000000001', alternatePhone: '0000000011', email: 'a@example.test', address: 'Dirección sintética A', city: 'Ciudad A' },
+  { document: '001299', name: 'Cliente sintético B', phone: '0000000002', alternatePhone: '0000000022', email: 'b@example.test', address: 'Dirección sintética B', city: 'Ciudad B' }
 ];
 const searches = [];
 const loads = [];
@@ -61,6 +61,7 @@ try {
   await until(() => fields.address.value === records[0].address);
   assert.equal(input.value, '001234');
   assert.equal(loads.at(-1), '001234');
+  assert.equal(fields.alternatePhone.value, '0000000011');
   assert.equal(list.hidden, true);
   assert.equal(doc.activeElement, input);
 
@@ -75,6 +76,7 @@ try {
   assert.equal(input.value, '9090');
   assert.equal(fields.name.value, 'Nombre escrito a mano');
   assert.equal(fields.phone.value, '');
+  assert.equal(fields.alternatePhone.value, '', 'El segundo teléfono tampoco queda asociado a otra cédula');
   assert.equal(fields.address.value, '');
 
   type('88');

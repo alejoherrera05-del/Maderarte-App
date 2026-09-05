@@ -74,7 +74,7 @@ La versión aprobada ya no intenta copiar literalmente el PDF de HomeEasy. Usa u
 
 - **encabezado propio Maderarte** con logo, wordmark, eslogan, `COTIZACIÓN`, número, fecha, sede y datos corporativos;
 - debajo del encabezado, **cuerpo calmado tipo HomeEasy**, con información del cliente, detalle comercial de productos, subtotal/descuento/total y condiciones legibles;
-- el cliente no ve la regla interna del 30% ni en el total ni en las condiciones del PDF;
+- el documento no impone un porcentaje obligatorio de abono; las condiciones de pago se acuerdan con el cliente;
 - la cantidad, valor unitario y valor total tienen columnas alineadas;
 - el cierre usa la altura disponible de la hoja en vez de comprimir todo hacia arriba;
 - el asesor aparece al cierre como bloque legible `Asesor comercial` + nombre;

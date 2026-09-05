@@ -92,7 +92,7 @@ def check_order():
     order_url = URL.replace('/cotizacion.html', '/pedido.html')
     home_url = URL.replace('/cotizacion.html', '/index.html')
     results = []
-    for width in (1440, 390, 320):
+    for width, mode in ((1440, 'SEPARADO'), (390, 'PARA_SOLICITAR'), (320, 'ENTREGA_INMEDIATA')):
         driver.set_window_size(width, 1100)
         driver.get(home_url)
         menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="pedido"]')))
@@ -108,19 +108,28 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-document'), '909090')
         wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
         setv(driver.find_element(By.ID, 'quote-client-name'), 'Cliente de revisión del pedido')
+        setv(driver.find_element(By.ID, 'quote-client-alternatePhone'), '0000000022')
+        driver.find_element(By.CSS_SELECTOR, f'[name="order-sale-mode"][value="{mode}"]').click()
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
         fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Mueble de revisión del pedido', 'SALA', 2, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
         setv(driver.find_element(By.ID, 'quote-discount'), '100000')
-        setv(driver.find_element(By.ID, 'quote-notes'), 'Entrega con acceso por escalera. Coordinar antes del envío.')
+        setv(driver.find_element(By.ID, 'quote-notes'), 'Obsequio de cojines. Transporte incluido a Cali.')
+        Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('TRANSFERENCIA')
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-amount]'), '50000')
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-note]'), 'INTERNO-QA-CUENTA-A')
+        driver.find_element(By.ID, 'order-add-payment').click()
+        Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-payment-method]')).select_by_value('EFECTIVO')
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-payment-amount]'), '100000')
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-payment-note]'), 'INTERNO-QA-CUENTA-B')
         editor = driver.execute_script("""
           const amount=id=>Number(document.getElementById(id).textContent.replace(/[^0-9]/g,''));
           return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
             sizes:[...document.querySelectorAll('.quote-editor input:not([type=file]),.quote-editor textarea')].map(n=>parseFloat(getComputedStyle(n).fontSize)),
-            total:amount('quote-total'), minimum:amount('quote-minimum-deposit'), remaining:amount('quote-remaining'),
+            total:amount('quote-total'), paid:amount('order-paid'), balance:amount('order-balance'),
             writeDisabled:document.getElementById('quote-submit').disabled};
         """)
         assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled']
-        assert [editor['total'], editor['minimum'], editor['remaining']] == [1900000, 570000, 1330000]
+        assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
         driver.find_element(By.ID, 'quote-preview-button').click()
@@ -134,18 +143,44 @@ def check_order():
             address:document.querySelector('.quote-editorial-client').textContent,
             signatureLabel:getComputedStyle(document.querySelector('.quote-editorial-signature'),'::before').content,
             annex:document.querySelectorAll('.quote-preview-appendix-page').length,
-            totals:document.querySelectorAll('.quote-editorial-total > strong').length};
+            totals:document.querySelectorAll('.quote-editorial-total > strong').length,
+            text:document.getElementById('quote-preview-content').textContent,
+            html:document.getElementById('quote-preview-content').innerHTML,
+            mode:document.querySelector('.order-document-mode').textContent};
         """)
         assert all(title == 'ORDEN DE PEDIDO' for title in document_metrics['titles'])
         assert not document_metrics['overflow'] and not document_metrics['pageOverflow']
         assert document_metrics['draft'] and document_metrics['annex'] == 0 and document_metrics['totals'] == 1
         assert 'Dirección de entrega de prueba' in document_metrics['address']
+        assert '0000000022' in document_metrics['address']
+        assert 'Obsequio de cojines' in document_metrics['text'] and 'Transporte incluido a Cali' in document_metrics['text']
+        assert 'INTERNO-QA' not in document_metrics['html'], 'Las notas internas no llegan al HTML del documento'
+        assert 'Abono indicado' in document_metrics['text'] and 'Saldo por pagar' in document_metrics['text']
+        assert '30%' not in document_metrics['text']
+        if mode == 'ENTREGA_INMEDIATA':
+            assert 'Entrega inmediata' in document_metrics['mode']
+            assert 'fabricación' not in document_metrics['mode'] and '25' not in document_metrics['mode']
+        elif mode == 'PARA_SOLICITAR':
+            assert '25 a 30 días' in document_metrics['mode']
+        else:
+            assert 'Separado' in document_metrics['mode']
+        # Keep logs concise; assertions above inspect the complete HTML/text.
+        del document_metrics['text'], document_metrics['html']
         assert document_metrics['signatureLabel'] in ('none', 'normal')
         driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
         driver.find_element(By.ID, 'quote-preview-close').click()
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
+    # A full Addi payment is valid; an overpayment is not printed as a paid order.
+    driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-remove-payment]').click()
+    Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('ADDI')
+    setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-amount]'), '1900001')
+    driver.find_element(By.ID, 'quote-preview-button').click()
+    assert not driver.find_element(By.ID, 'quote-preview-overlay').is_displayed()
+    assert 'superan' in driver.find_element(By.ID, 'order-payment-error').text
+    setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-amount]'), '1900000')
+    assert driver.find_element(By.ID, 'order-balance').text.replace('$', '').strip() == '0'
     # A real file input exercises reference photos and their separate annex.
     driver.find_element(By.CSS_SELECTOR, '[data-photo-input]').send_keys(str(Path('public/assets/brand/maderarte-logo-2026.webp').resolve()))
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.quote-photo-thumb img')))
@@ -171,6 +206,9 @@ def check_order():
     assert 'ORDEN DE PEDIDO' in pdf_text and 'COTIZACIÓN' not in pdf_text
     assert 'Cliente de revisión del pedido' in pdf_text and 'Dirección de entrega de prueba' in pdf_text
     assert 'Asesor comercial' not in pdf_text
+    assert '0000000022' in pdf_text and 'Addi' in pdf_text
+    assert 'INTERNO-QA' not in pdf_text, 'La nota interna tampoco aparece en el PDF real'
+    assert '30%' not in pdf_text and 'Fabricación estimada' not in pdf_text
     assert all('Borrador' in page.extract_text() for page in exported.pages)
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
     assert not errors, errors

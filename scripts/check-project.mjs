@@ -150,7 +150,7 @@ assert.match(clientsSource, /function listClients_\(/, 'Falta listClients_');
 assert.match(clientsSource, /function getClient_\(/, 'Falta getClient_');
 
 const commercialRulesSource = readFileSync(join(root, 'public/js/core/commercial-rules.js'), 'utf8');
-assert.match(commercialRulesSource, /minimumOrderDepositPercent:\s*30/, 'El frontend debe conservar el abono mínimo del 30%');
+assert.doesNotMatch(commercialRulesSource, /minimumOrderDepositPercent/, 'No debe volver un porcentaje de abono obligatorio');
 assert.match(commercialRulesSource, /manufacturingDaysMin:\s*25/, 'El frontend debe conservar fabricación mínima de 25 días');
 assert.match(commercialRulesSource, /manufacturingDaysMax:\s*30/, 'El frontend debe conservar fabricación máxima de 30 días');
 
