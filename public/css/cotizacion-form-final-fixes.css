@@ -86,3 +86,10 @@
     font-size: .66rem !important;
   }
 }
+
+/* Keep text entry legible and avoid automatic focus zoom on iPhone. */
+@media (max-width: 760px) {
+  .quote-page input,
+  .quote-page select,
+  .quote-page textarea { font-size: 16px !important; }
+}

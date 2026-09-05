@@ -4,10 +4,13 @@ import { APP_CONFIG, withPreview } from '../core/config.js';
 import { date, escapeHtml, humanizeCode, money, safeExternalUrl, statusTone } from '../core/format.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { quoteDateInput, quoteAgeDays, resolveQuotePage } from '../core/quote-tracking.js';
+import { documentSources } from '../core/document-url.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PAGE_SIZE = 50;
 const state = { offset: 0, total: 0, hasMore: false, requestId: 0, searchTimer: null };
+let pdfOpener = null;
+let previousOverflow = '';
 
 function readFilters(offset = 0) {
   const filters = {
@@ -163,26 +166,39 @@ function resetFilters(load = true) {
 
 function closePdf() {
   const overlay = document.getElementById('tracking-pdf-overlay');
+  if (!overlay?.classList.contains('is-open')) return;
   const frame = document.getElementById('tracking-pdf-frame');
   overlay?.classList.remove('is-open');
   overlay?.setAttribute('aria-hidden', 'true');
   if (frame) frame.src = 'about:blank';
-  document.body.style.overflow = '';
+  document.getElementById('tracking-pdf-open')?.removeAttribute('href');
+  document.getElementById('tracking-app').inert = false;
+  document.body.style.overflow = previousOverflow;
+  if (pdfOpener?.isConnected) pdfOpener.focus();
+  pdfOpener = null;
 }
 
 function openPdf(url, number) {
-  const safe = safeExternalUrl(url);
-  if (!safe) return;
+  const sources = documentSources(url);
+  if (!sources.external) return;
   const overlay = document.getElementById('tracking-pdf-overlay');
   const frame = document.getElementById('tracking-pdf-frame');
   const title = document.getElementById('tracking-pdf-number');
   if (!overlay || !frame) return;
   if (title) title.textContent = number || 'Cotización';
-  frame.src = safe;
+  pdfOpener = document.activeElement;
+  previousOverflow = document.body.style.overflow;
+  document.getElementById('tracking-pdf-open').href = sources.external;
+  document.getElementById('tracking-pdf-help').textContent = sources.preview
+    ? 'Si el documento no aparece o solicita acceso, ábrelo en otra pestaña con tu cuenta autorizada.'
+    : 'Este documento se consulta en otra pestaña.';
+  frame.hidden = !sources.preview;
+  frame.src = sources.preview || 'about:blank';
   overlay.classList.add('is-open');
   overlay.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
-  window.setTimeout(() => document.getElementById('tracking-pdf-close')?.focus(), 120);
+  document.getElementById('tracking-app').inert = true;
+  document.getElementById('tracking-pdf-close')?.focus();
 }
 
 function bindPdfButtons() {
@@ -283,7 +299,8 @@ function renderShell(root) {
   <div class="tracking-pdf-overlay" id="tracking-pdf-overlay" aria-hidden="true">
     <section class="tracking-pdf-dialog" role="dialog" aria-modal="true" aria-labelledby="tracking-pdf-number">
       <header class="tracking-pdf-head"><div><span>Documento</span><strong id="tracking-pdf-number">Cotización</strong></div><button class="tracking-pdf-close" id="tracking-pdf-close" type="button" aria-label="Cerrar">×</button></header>
-      <iframe class="tracking-pdf-frame" id="tracking-pdf-frame" title="Vista de cotización" src="about:blank"></iframe>
+      <div class="tracking-pdf-help"><p id="tracking-pdf-help"></p><a class="tracking-action" id="tracking-pdf-open" target="_blank" rel="noopener noreferrer">Abrir documento en otra pestaña</a></div>
+      <iframe class="tracking-pdf-frame" id="tracking-pdf-frame" title="Vista de cotización" src="about:blank" referrerpolicy="no-referrer"></iframe>
     </section>
   </div>`;
 }
