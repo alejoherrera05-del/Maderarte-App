@@ -86,16 +86,30 @@ function normalizeQuote_(row) {
 function quoteDateInRange_(value, from, to) {
   if (!from && !to) return true;
   var timestamp = new Date(value || 0).getTime();
-  if (!timestamp) return false;
+  if (!isFinite(timestamp)) return false;
   if (from) {
-    var fromTime = new Date(String(from) + 'T00:00:00').getTime();
+    var fromTime = new Date(String(from) + 'T00:00:00-05:00').getTime();
     if (fromTime && timestamp < fromTime) return false;
   }
   if (to) {
-    var toTime = new Date(String(to) + 'T23:59:59').getTime();
+    var toTime = new Date(String(to) + 'T23:59:59.999-05:00').getTime();
     if (toTime && timestamp > toTime) return false;
   }
   return true;
+}
+
+function quoteTrackingSummary_(items) {
+  var summary = { activeCount: 0, activeAmount: 0, radar: { recent: 0, attention: 0, priority: 0 } };
+  var today = Math.floor((now_().getTime() - 18000000) / 86400000);
+  items.forEach(function(item) {
+    if (String(item.convertedOrder || '').trim() || ['CONVERTIDA', 'ARCHIVADA', 'ANULADA'].indexOf(item.status) !== -1) return;
+    summary.activeCount += 1;
+    summary.activeAmount += valueNumber_(item.total);
+    var issued = new Date(item.date || 0).getTime();
+    var age = isFinite(issued) ? Math.max(0, today - Math.floor((issued - 18000000) / 86400000)) : 0;
+    summary.radar[age <= 7 ? 'recent' : age <= 15 ? 'attention' : 'priority'] += 1;
+  });
+  return summary;
 }
 
 function listQuotes_(payload, session) {
@@ -105,7 +119,18 @@ function listQuotes_(payload, session) {
   var status = normalizeCode_(payload && payload.status);
   var from = String(payload && payload.from || '').trim();
   var to = String(payload && payload.to || '').trim();
-  var limit = Math.min(MADERARTE_APP.MAX_PAGE_SIZE, Math.max(1, Number(payload && payload.limit || 100)));
+  var requestedLimit = Number(payload && payload.limit || 100);
+  var offset = Number(payload && payload.offset || 0);
+  if (!isFinite(requestedLimit) || !isFinite(offset) || offset < 0 || offset !== Math.floor(offset)) {
+    throw appError_('QUOTE_PAGE_INVALID', 'La página solicitada no es válida.', 400);
+  }
+  var limit = Math.min(MADERARTE_APP.MAX_PAGE_SIZE, Math.max(1, Math.floor(requestedLimit)));
+  [from, to].forEach(function(day) {
+    if (day && (!/^\d{4}-\d{2}-\d{2}$/.test(day) || isNaN(new Date(day).getTime()) || new Date(day).toISOString().slice(0, 10) !== day)) {
+      throw appError_('QUOTE_DATE_INVALID', 'Selecciona una fecha válida.', 400);
+    }
+  });
+  if (from && to && from > to) throw appError_('QUOTE_DATE_RANGE_INVALID', 'La fecha inicial debe ser anterior o igual a la final.', 400);
   var allowedBranches = session && session.profile && Array.isArray(session.profile.branches)
     ? session.profile.branches.map(function(value) { return normalizeCode_(value); }).filter(Boolean)
     : [];
@@ -125,13 +150,18 @@ function listQuotes_(payload, session) {
       .toLowerCase()
       .indexOf(query) !== -1;
   }).sort(function(a, b) {
-    return new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime();
+    var dateDifference = (new Date(b.date || b.createdAt || 0).getTime() || 0) - (new Date(a.date || a.createdAt || 0).getTime() || 0);
+    return dateDifference || a.number.localeCompare(b.number) || a.branch.localeCompare(b.branch);
   });
 
   return {
-    items: items.slice(0, limit),
+    items: items.slice(offset, offset + limit),
     total: items.length,
     amount: items.reduce(function(sum, item) { return sum + valueNumber_(item.total); }, 0),
-    limit: limit
+    limit: limit,
+    offset: offset,
+    hasMore: offset + limit < items.length,
+    paginationVersion: 1,
+    summary: quoteTrackingSummary_(items)
   };
 }

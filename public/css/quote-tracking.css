@@ -267,6 +267,10 @@ a { color: inherit; }
 }
 .tracking-results-head strong { font-size: 1rem; font-weight: 700; }
 .tracking-results-head span { color: var(--track-muted); font-size: .82rem; font-weight: 590; }
+.tracking-pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; margin-top: 22px; }
+.tracking-pagination[hidden] { display: none; }
+.tracking-pagination > span { color: var(--track-muted); font-size: .95rem; }
+.tracking-pagination button { min-height: 44px; font-size: .95rem; }
 .tracking-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

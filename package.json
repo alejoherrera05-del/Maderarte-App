@@ -13,8 +13,9 @@
     "test:clients": "node scripts/test-clients.mjs",
     "test:commercial-rules": "node scripts/test-commercial-rules.mjs",
     "test:quotes": "node scripts/test-quotes.mjs",
-    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:quotes && npm run test:edge && npm run test:worker && npm run test:identity",
-    "test:identity": "node scripts/test-module-identity.mjs"
+    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:quotes && npm run test:edge && npm run test:worker && npm run test:identity && npm run test:tracking",
+    "test:identity": "node scripts/test-module-identity.mjs",
+    "test:tracking": "node scripts/test-quote-pagination.mjs && node scripts/test-tracking-dom.mjs"
   },
   "engines": {
     "node": ">=20"

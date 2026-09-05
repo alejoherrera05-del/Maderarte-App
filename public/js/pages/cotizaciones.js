@@ -3,47 +3,44 @@ import { previewApiData } from '../core/auth.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { date, escapeHtml, humanizeCode, money, safeExternalUrl, statusTone } from '../core/format.js';
 import { guardStandalonePage } from '../core/page-guard.js';
+import { quoteDateInput, quoteAgeDays, resolveQuotePage } from '../core/quote-tracking.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const state = { items: [], filtered: [] };
+const PAGE_SIZE = 50;
+const state = { offset: 0, total: 0, hasMore: false, requestId: 0, searchTimer: null };
 
-function requestData() {
-  return previewApiData('COTIZACIONES_LISTAR') || apiRequest('COTIZACIONES_LISTAR', { limit: 100 });
+function readFilters(offset = 0) {
+  const filters = {
+    query: document.getElementById('tracking-search').value.trim(),
+    from: document.getElementById('tracking-from').value,
+    to: document.getElementById('tracking-to').value,
+    branch: document.getElementById('tracking-branch').value,
+    limit: PAGE_SIZE,
+    offset
+  };
+  if (filters.from && filters.to && filters.from > filters.to) {
+    throw new Error('La fecha inicial debe ser anterior o igual a la final.');
+  }
+  return filters;
 }
 
-function localDateInput(dateValue) {
-  const dateObject = dateValue instanceof Date ? dateValue : new Date(dateValue);
-  if (Number.isNaN(dateObject.getTime())) return '';
-  const year = dateObject.getFullYear();
-  const month = String(dateObject.getMonth() + 1).padStart(2, '0');
-  const day = String(dateObject.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+async function requestData(filters) {
+  const preview = previewApiData('COTIZACIONES_LISTAR');
+  const response = preview || await apiRequest('COTIZACIONES_LISTAR', filters);
+  return resolveQuotePage(response.data, filters, Boolean(preview));
 }
 
 function startDefaultRange() {
   return new Date(Date.now() - 30 * DAY_MS);
 }
 
-function ageDays(value) {
-  const issued = new Date(value || 0);
-  if (Number.isNaN(issued.getTime())) return 0;
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const issuedStart = new Date(issued.getFullYear(), issued.getMonth(), issued.getDate()).getTime();
-  return Math.max(0, Math.floor((todayStart - issuedStart) / DAY_MS));
-}
-
 function isConverted(item) {
   return Boolean(String(item.convertedOrder || '').trim()) || String(item.status || '').toUpperCase() === 'CONVERTIDA';
 }
 
-function isClosed(item) {
-  return isConverted(item) || ['ARCHIVADA', 'ANULADA'].includes(String(item.status || '').toUpperCase());
-}
-
 function ageMeta(item) {
   if (isConverted(item)) return { className: 'is-converted', label: 'Convertida' };
-  const days = ageDays(item.date);
+  const days = quoteAgeDays(item.date);
   if (days <= 7) return { className: 'age-recent', label: days === 0 ? 'Hoy' : `${days} ${days === 1 ? 'día' : 'días'}` };
   if (days <= 15) return { className: 'age-attention', label: `${days} días` };
   return { className: 'age-priority', label: `${days} días` };
@@ -112,72 +109,56 @@ function cardMarkup(item) {
   </article>`;
 }
 
-function updateRadar(items) {
-  const counts = { recent: 0, attention: 0, priority: 0 };
-  items.filter(item => !isClosed(item)).forEach(item => {
-    const days = ageDays(item.date);
-    if (days <= 7) counts.recent += 1;
-    else if (days <= 15) counts.attention += 1;
-    else counts.priority += 1;
-  });
-  const recent = document.getElementById('tracking-radar-recent-count');
-  const attention = document.getElementById('tracking-radar-attention-count');
-  const priority = document.getElementById('tracking-radar-priority-count');
-  if (recent) recent.textContent = String(counts.recent);
-  if (attention) attention.textContent = String(counts.attention);
-  if (priority) priority.textContent = String(counts.priority);
+function updateSummary(summary = null) {
+  document.getElementById('tracking-summary-count').textContent = summary ? String(summary.activeCount) : '—';
+  document.getElementById('tracking-summary-amount').textContent = summary ? money(summary.activeAmount) : '—';
+  for (const key of ['recent', 'attention', 'priority']) {
+    document.getElementById(`tracking-radar-${key}-count`).textContent = summary ? String(summary.radar[key]) : '—';
+  }
 }
 
-function updateSummary(items) {
-  const active = items.filter(item => !isClosed(item));
-  const amount = active.reduce((sum, item) => sum + Number(item.total || 0), 0);
-  document.getElementById('tracking-summary-count').textContent = String(active.length);
-  document.getElementById('tracking-summary-amount').textContent = money(amount);
-  updateRadar(items);
+function updatePagination(loading = false) {
+  document.getElementById('tracking-pagination').hidden = state.total <= PAGE_SIZE;
+  document.getElementById('tracking-previous').disabled = loading || state.offset === 0;
+  document.getElementById('tracking-next').disabled = loading || !state.hasMore;
+  document.getElementById('tracking-page-label').textContent = `Página ${Math.floor(state.offset / PAGE_SIZE) + 1} de ${Math.max(1, Math.ceil(state.total / PAGE_SIZE))}`;
 }
 
-function updateResults(items) {
-  state.filtered = items;
-  updateSummary(items);
+function updateResults(page) {
+  state.offset = page.offset;
+  state.total = page.total;
+  state.hasMore = page.hasMore;
+  updateSummary(page.summary);
   const count = document.getElementById('tracking-result-count');
   const root = document.getElementById('tracking-results');
-  count.textContent = `${items.length} ${items.length === 1 ? 'cotización' : 'cotizaciones'}`;
-  if (!items.length) {
-    root.innerHTML = emptyMarkup();
-    return;
-  }
-  root.innerHTML = `<div class="tracking-cards">${items.map(cardMarkup).join('')}</div>`;
+  const totalLabel = `${page.total} ${page.total === 1 ? 'cotización' : 'cotizaciones'}`;
+  count.textContent = page.total > PAGE_SIZE && page.items.length
+    ? `${page.offset + 1}–${page.offset + page.items.length} de ${totalLabel}`
+    : totalLabel;
+  root.innerHTML = page.items.length ? `<div class="tracking-cards">${page.items.map(cardMarkup).join('')}</div>` : emptyMarkup();
+  updatePagination();
   bindPdfButtons();
 }
 
 function filterItems() {
-  const query = document.getElementById('tracking-search').value.trim().toLowerCase();
-  const from = document.getElementById('tracking-from').value;
-  const to = document.getElementById('tracking-to').value;
-  const branch = document.getElementById('tracking-branch').value;
-  const fromTime = from ? new Date(`${from}T00:00:00`).getTime() : 0;
-  const toTime = to ? new Date(`${to}T23:59:59`).getTime() : Number.POSITIVE_INFINITY;
-
-  const filtered = state.items.filter(item => {
-    const timestamp = new Date(item.date || 0).getTime();
-    if (from && (!timestamp || timestamp < fromTime)) return false;
-    if (to && (!timestamp || timestamp > toTime)) return false;
-    if (branch && String(item.branch || '') !== branch) return false;
-    if (!query) return true;
-    return [item.number, item.document, item.client, item.phone, item.description, item.observations]
-      .join(' ')
-      .toLowerCase()
-      .includes(query);
-  });
-  updateResults(filtered);
+  window.clearTimeout(state.searchTimer);
+  return loadQuotes(0);
 }
 
-function resetFilters() {
+function queueSearch() {
+  window.clearTimeout(state.searchTimer);
+  state.requestId += 1; // Invalidate an in-flight response as soon as the query changes.
+  updateSummary();
+  updatePagination(true);
+  state.searchTimer = window.setTimeout(filterItems, 250);
+}
+
+function resetFilters(load = true) {
   document.getElementById('tracking-search').value = '';
-  document.getElementById('tracking-from').value = localDateInput(startDefaultRange());
-  document.getElementById('tracking-to').value = localDateInput(new Date());
+  document.getElementById('tracking-from').value = quoteDateInput(startDefaultRange());
+  document.getElementById('tracking-to').value = quoteDateInput(new Date());
   document.getElementById('tracking-branch').value = '';
-  filterItems();
+  if (load) return filterItems();
 }
 
 function closePdf() {
@@ -210,24 +191,38 @@ function bindPdfButtons() {
   });
 }
 
-async function loadQuotes() {
+async function loadQuotes(offset = 0) {
+  window.clearTimeout(state.searchTimer);
+  const requestId = ++state.requestId;
   const refresh = document.getElementById('tracking-refresh');
   const results = document.getElementById('tracking-results');
   refresh.disabled = true;
+  results.setAttribute('aria-busy', 'true');
   results.innerHTML = loadingMarkup();
+  updateSummary();
+  updatePagination(true);
   document.getElementById('tracking-result-count').textContent = 'Consultando…';
   try {
-    const response = await requestData();
-    state.items = Array.isArray(response.data?.items) ? response.data.items : [];
-    filterItems();
+    let page = await requestData(readFilters(offset));
+    if (requestId !== state.requestId) return;
+    // A deletion or status change may remove the page that was just requested.
+    if (offset > 0 && !page.items.length) page = await requestData(readFilters(0));
+    if (requestId !== state.requestId) return;
+    updateResults(page);
   } catch (error) {
-    state.items = [];
-    state.filtered = [];
-    updateSummary([]);
-    document.getElementById('tracking-result-count').textContent = 'Sin datos';
+    if (requestId !== state.requestId) return;
+    state.offset = 0;
+    state.total = 0;
+    state.hasMore = false;
+    updateSummary();
+    updatePagination();
+    document.getElementById('tracking-result-count').textContent = 'Consulta pendiente';
     results.innerHTML = errorMarkup(error.message);
   } finally {
-    refresh.disabled = false;
+    if (requestId === state.requestId) {
+      refresh.disabled = false;
+      results.setAttribute('aria-busy', 'false');
+    }
   }
 }
 
@@ -264,7 +259,7 @@ function renderShell(root) {
       <article class="tracking-summary-card amount"><span class="tracking-summary-icon gold"><img src="/assets/icons/chart-bar.svg" alt="" aria-hidden="true"></span><div class="tracking-summary-copy"><span class="tracking-summary-label">Valor en seguimiento</span><strong class="tracking-summary-value" id="tracking-summary-amount">$0</strong><span class="tracking-summary-note">Potencial comercial de propuestas abiertas</span></div></article>
     </section>
     <form class="tracking-filters" id="tracking-filter-form">
-      <div class="tracking-filters-head"><div class="tracking-filters-title"><strong>Filtrar seguimiento</strong><span>Por defecto mostramos los últimos 30 días para no esconder oportunidades antiguas.</span></div><button class="tracking-reset" id="tracking-reset" type="button">Últimos 30 días</button></div>
+      <div class="tracking-filters-head"><div class="tracking-filters-title"><strong>Filtrar seguimiento</strong><span>Mostramos los últimos 30 días. Amplía el rango para consultar propuestas anteriores.</span></div><button class="tracking-reset" id="tracking-reset" type="button">Últimos 30 días</button></div>
       <div class="tracking-filter-grid">
         <div class="tracking-field search"><label for="tracking-search">Buscar</label><input class="tracking-control" id="tracking-search" type="search" placeholder="Cotización, cliente, identificación o teléfono" autocomplete="off"></div>
         <div class="tracking-field"><label for="tracking-from">Desde</label><input class="tracking-control" id="tracking-from" type="date"></div>
@@ -273,7 +268,13 @@ function renderShell(root) {
         <button class="tracking-apply" type="submit">Aplicar</button>
       </div>
     </form>
-    <section><div class="tracking-results-head"><strong>Cotizaciones</strong><span id="tracking-result-count">0 cotizaciones</span></div><div id="tracking-results">${loadingMarkup()}</div></section>
+    <section><div class="tracking-results-head"><strong>Cotizaciones</strong><span id="tracking-result-count" role="status" aria-live="polite">0 cotizaciones</span></div><div id="tracking-results">${loadingMarkup()}</div>
+      <nav class="tracking-pagination" id="tracking-pagination" aria-label="Páginas de cotizaciones" hidden>
+        <button class="tracking-action" id="tracking-previous" type="button" disabled>Anterior</button>
+        <span id="tracking-page-label" role="status" aria-live="polite"></span>
+        <button class="tracking-action" id="tracking-next" type="button" disabled>Siguiente</button>
+      </nav>
+    </section>
     <footer class="tracking-footer module-footer" aria-label="Información del sistema">
       <div class="module-footer-identity"><img class="module-footer-maddy" src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte"><div class="module-footer-copy"><strong>Maderarte App</strong><span>Seguimiento comercial</span></div></div>
       <div class="module-footer-meta"><strong>Versión ${escapeHtml(APP_CONFIG.version)}</strong><span>Entorno · ${escapeHtml(environment)}</span></div>
@@ -293,14 +294,16 @@ guardStandalonePage({
     const root = document.getElementById('tracking-app');
     renderShell(root);
     root.hidden = false;
-    resetFilters();
+    resetFilters(false);
     document.getElementById('tracking-filter-form').addEventListener('submit', event => { event.preventDefault(); filterItems(); });
-    document.getElementById('tracking-reset').addEventListener('click', resetFilters);
-    document.getElementById('tracking-refresh').addEventListener('click', loadQuotes);
-    document.getElementById('tracking-search').addEventListener('input', filterItems);
+    document.getElementById('tracking-reset').addEventListener('click', () => resetFilters());
+    document.getElementById('tracking-refresh').addEventListener('click', () => loadQuotes(state.offset));
+    document.getElementById('tracking-search').addEventListener('input', queueSearch);
     document.getElementById('tracking-branch').addEventListener('change', filterItems);
     document.getElementById('tracking-from').addEventListener('change', filterItems);
     document.getElementById('tracking-to').addEventListener('change', filterItems);
+    document.getElementById('tracking-previous').addEventListener('click', () => loadQuotes(Math.max(0, state.offset - PAGE_SIZE)));
+    document.getElementById('tracking-next').addEventListener('click', () => loadQuotes(state.offset + PAGE_SIZE));
     document.getElementById('tracking-pdf-close').addEventListener('click', closePdf);
     document.getElementById('tracking-pdf-overlay').addEventListener('click', event => { if (event.target.id === 'tracking-pdf-overlay') closePdf(); });
     document.addEventListener('keydown', event => { if (event.key === 'Escape') closePdf(); });
