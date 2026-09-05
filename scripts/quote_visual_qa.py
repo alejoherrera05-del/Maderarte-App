@@ -30,6 +30,11 @@ def close_preview():
     wait.until(EC.invisibility_of_element_located((By.ID, 'quote-preview-overlay')))
 
 def setv(node, text):
+    details = node.find_elements(By.XPATH, 'ancestor::details[1]')
+    if details and not details[0].get_attribute('open'):
+        summary = details[0].find_element(By.TAG_NAME, 'summary')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", summary)
+        summary.click()
     node.clear(); node.send_keys(str(text)); node.send_keys(' '); node.send_keys('\ue003')
 
 def set_quantity(node, text):
