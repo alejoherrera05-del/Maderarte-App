@@ -1,13 +1,14 @@
 import { apiRequest } from '../core/api.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=payments-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=payments-1';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=mixed-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=mixed-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js';
-import { bindOrderEntry, readOrderEntry } from '../core/order-entry.js?v=payments-1';
+import { ITEM_FULFILLMENTS } from '../core/commercial-rules.js?v=mixed-1';
+import { bindOrderEntry, readOrderEntry } from '../core/order-entry.js?v=mixed-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -204,6 +205,12 @@ function itemMarkup(id) {
       <div class="quote-field quote-item-specifications"><label for="quote-item-${id}-specifications">Especificaciones</label><textarea id="quote-item-${id}-specifications" data-field="specifications" rows="4" placeholder="Medidas, distribución, espuma, herrajes, detalles de diseño, cambios especiales…"></textarea></div>
       <div class="quote-item-line-total"><span>Total del mueble</span><strong data-line-total>$ 0</strong></div>
     </div>
+    ${COMMERCIAL_DOCUMENT.isOrder ? `<div class="order-item-fulfillment">
+      <div class="quote-field"><label for="order-item-${id}-fulfillment">Disponibilidad y entrega de este mueble</label>
+        <select id="order-item-${id}-fulfillment" data-item-fulfillment aria-describedby="order-item-${id}-help"><option value="">Seleccionar disponibilidad</option>${ITEM_FULFILLMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.label)}</option>`).join('')}</select>
+        <p class="quote-helper" id="order-item-${id}-help" data-fulfillment-help role="status">Si algunas unidades tienen otra entrega, añádelas como un mueble aparte.</p>
+      </div>
+    </div>` : ''}
     <div class="quote-photo-area">
       <div class="quote-photo-head"><div><strong>Referencias visuales</strong><span>Fotos, bocetos o inspiración que deben acompañar este mueble.</span></div><small>Se enviarán al anexo fotográfico.</small></div>
       <button class="quote-photo-drop" type="button" data-add-photos><span class="quote-photo-plus">＋</span><span><strong>Agregar fotografías</strong><small>Puedes seleccionar varias imágenes.</small></span></button>
@@ -283,6 +290,15 @@ function bindItem(card) {
     unitValue.value = value ? String(value) : '';
   });
 
+  const fulfillment = card.querySelector('[data-item-fulfillment]');
+  fulfillment?.addEventListener('change', () => {
+    const choice = ITEM_FULFILLMENTS.find(option => option.code === fulfillment.value);
+    const help = card.querySelector('[data-fulfillment-help]');
+    help.textContent = choice?.help || 'Selecciona la disponibilidad de este mueble.';
+    help.classList.remove('is-error');
+    fulfillment.removeAttribute('aria-invalid');
+  });
+
   const photoInput = card.querySelector('[data-photo-input]');
   card.querySelector('[data-add-photos]')?.addEventListener('click', () => photoInput?.click());
   photoInput?.addEventListener('change', async () => {
@@ -353,11 +369,13 @@ function openPreview() {
   if (COMMERCIAL_DOCUMENT.isOrder) {
     const total = parseMoney(document.getElementById('quote-total').textContent);
     const entry = readOrderEntry(total);
-    if (!entry.saleMode) {
-      const message = document.getElementById('order-mode-help');
-      message.textContent = 'Elige la modalidad de esta venta antes de abrir el documento.';
+    const missing = [...document.querySelectorAll('[data-item-fulfillment]')].find(input => !ITEM_FULFILLMENTS.some(option => option.code === input.value));
+    if (missing) {
+      const message = missing.closest('.quote-item').querySelector('[data-fulfillment-help]');
+      message.textContent = 'Selecciona la disponibilidad de este mueble antes de abrir el documento.';
       message.classList.add('is-error');
-      document.querySelector('[name="order-sale-mode"]')?.focus();
+      missing.setAttribute('aria-invalid', 'true');
+      missing.focus();
       return;
     }
     if (entry.error) {

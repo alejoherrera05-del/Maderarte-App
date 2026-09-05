@@ -1,9 +1,10 @@
 import { escapeHtml } from '../core/format.js';
 import { paginateQuoteDocument } from '../core/quote-pagination.js';
-import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=payments-1';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=mixed-1';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { readOrderEntry } from '../core/order-entry.js?v=payments-1';
+import { ITEM_FULFILLMENTS } from '../core/commercial-rules.js?v=mixed-1';
+import { readOrderEntry } from '../core/order-entry.js?v=mixed-1';
 
 function ensureEditorialStyles() {
   if (document.querySelector('link[data-quote-editorial]')) return;
@@ -64,6 +65,7 @@ function itemFromCard(card, index) {
     fabric: field('fabric'),
     wood: field('wood'),
     specifications: field('specifications'),
+    fulfillment: COMMERCIAL_DOCUMENT.isOrder ? ITEM_FULFILLMENTS.find(option => option.code === card.querySelector('[data-item-fulfillment]')?.value) || null : null,
     unitValue,
     subtotal: quantity * unitValue,
     photos
@@ -199,6 +201,7 @@ function itemMarkup(item) {
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
+      ${item.fulfillment && !item.continuation ? `<p class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</p>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
     <div class="quote-editorial-item-quantity">${item.continuation ? '—' : escapeHtml(String(item.quantity))}</div>
@@ -207,7 +210,26 @@ function itemMarkup(item) {
   </article>`;
 }
 
+function orderInvestmentMarkup(data) {
+  const payments = Object.entries(data.order.payments.reduce((groups, payment) => {
+    groups[payment.label] = (groups[payment.label] || 0) + payment.amount;
+    return groups;
+  }, {}));
+  return `<section class="order-finance" aria-label="Resumen económico del pedido">
+    <div class="order-finance-heading"><h2>Resumen del pedido</h2>
+      <div class="order-finance-calculation"><span>Subtotal <b>${escapeHtml(money(data.subtotal))}</b></span>${data.discount > 0 ? `<span>Descuento <b>− ${escapeHtml(money(data.discount))}</b></span>` : ''}</div>
+    </div>
+    <dl class="order-finance-figures">
+      <div class="order-finance-total"><dt>Total del pedido</dt><dd>${escapeHtml(money(data.total))}</dd></div>
+      <div class="order-finance-paid"><dt>Abono indicado</dt><dd>${escapeHtml(money(data.order.paid))}</dd></div>
+      <div class="order-finance-balance"><dt>Saldo por pagar</dt><dd>${escapeHtml(money(data.order.balance))}</dd></div>
+    </dl>
+    ${payments.length ? `<div class="order-finance-payments"><span>Medios de pago</span><dl>${payments.map(([method, amount]) => `<div><dt>${escapeHtml(method)}</dt><dd>${escapeHtml(money(amount))}</dd></div>`).join('')}</dl></div>` : ''}
+  </section>`;
+}
+
 function investmentMarkup(data) {
+  if (data.order) return orderInvestmentMarkup(data);
   const breakdown = `<div class="quote-editorial-price-breakdown">
       <span>Subtotal <strong>${escapeHtml(money(data.subtotal))}</strong></span>
       ${data.discount > 0 ? `<span>Descuento <strong>− ${escapeHtml(money(data.discount))}</strong></span>` : ''}
@@ -220,18 +242,18 @@ function investmentMarkup(data) {
       <strong>${escapeHtml(money(data.total))}</strong>
 
     </div>
-    ${data.order ? `<div class="order-document-payments">
-      ${Object.entries(data.order.payments.reduce((groups, payment) => { groups[payment.label] = (groups[payment.label] || 0) + payment.amount; return groups; }, {})).map(([method, amount]) => `<div><span>${escapeHtml(method)}</span><strong>${escapeHtml(money(amount))}</strong></div>`).join('')}
-      <div><span>Abono indicado</span><strong>${escapeHtml(money(data.order.paid))}</strong></div>
-      <div class="order-document-balance"><span>Saldo por pagar</span><strong>${escapeHtml(money(data.order.balance))}</strong></div>
-    </div>` : ''}
   </section>`;
 }
 
 function commercialTermsMarkup(data) {
-  const mode = data.order?.saleMode;
-  const terms = mode
-    ? `<article class="order-document-mode"><strong>${escapeHtml(mode.label)}</strong><p>${escapeHtml(mode.terms)}</p></article>`
+  const hasFactory = data.items.some(item => item.fulfillment?.code === 'PARA_SOLICITAR');
+  const hasPending = data.items.some(item => item.fulfillment?.code === 'POR_DEFINIR');
+  const terms = data.order
+    ? `<div class="order-document-conditions">${data.order.separated ? '<p><strong>Separado.</strong> Abonos según lo acordado con el cliente.</p>' : ''}
+        ${!hasFactory && !hasPending ? '<p>Entrega de productos disponibles, coordinada con el cliente.</p>' : ''}
+        ${hasFactory ? '<p>Muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
+        ${hasPending ? '<p>Los muebles por definir quedan pendientes de acordar disponibilidad y entrega.</p>' : ''}
+      </div>`
     : `<div class="quote-editorial-term-cards"><article class="quote-editorial-term-card quote-editorial-term-time">
         <div class="quote-editorial-term-icon"><img src="/assets/icons/calendar-dots.svg" alt=""></div>
         <div class="quote-editorial-term-value">25–30<small>días</small></div>
@@ -354,7 +376,7 @@ function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
         <div class="quote-editorial-items">${items}</div>
       </section>` : ''}
       ${notes}
-      ${page.closing ? `<div class="quote-editorial-closing">
+      ${page.closing ? `<div class="${data.order ? 'order-document-closing' : 'quote-editorial-closing'}">
         ${commercialTermsMarkup({ ...data, notes: page.notes })}
         ${investmentMarkup(data)}
       </div>` : ''}

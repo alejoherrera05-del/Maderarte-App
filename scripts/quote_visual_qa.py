@@ -92,7 +92,9 @@ def check_order():
     order_url = URL.replace('/cotizacion.html', '/pedido.html')
     home_url = URL.replace('/cotizacion.html', '/index.html')
     results = []
-    for width, mode in ((1440, 'SEPARADO'), (390, 'PARA_SOLICITAR'), (320, 'ENTREGA_INMEDIATA')):
+    for width in (1440, 390, 320):
+        # Element screenshots can leave a device viewport override in Chrome.
+        driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
         driver.set_window_size(width, 1100)
         driver.get(home_url)
         menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="pedido"]')))
@@ -108,10 +110,20 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-document'), '909090')
         wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
         setv(driver.find_element(By.ID, 'quote-client-name'), 'Cliente de revisión del pedido')
+        setv(driver.find_element(By.ID, 'quote-client-phone'), '0000000011')
         setv(driver.find_element(By.ID, 'quote-client-alternatePhone'), '0000000022')
-        driver.find_element(By.CSS_SELECTOR, f'[name="order-sale-mode"][value="{mode}"]').click()
+        setv(driver.find_element(By.ID, 'quote-client-email'), 'cliente@example.com')
+        if width == 1440:
+            driver.find_element(By.ID, 'order-separated').click()
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
-        fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Mueble de revisión del pedido', 'SALA', 2, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
+        fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Sala de revisión', 'SALA', 1, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
+        Select(driver.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('DISPONIBLE')
+        add_item = driver.find_element(By.ID, 'quote-add-item')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", add_item)
+        add_item.click()
+        dining = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
+        fill(dining, 'Comedor de revisión', 'COMEDOR', 1, '', 'Roble', '', 1000000)
+        Select(dining.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('PARA_SOLICITAR')
         setv(driver.find_element(By.ID, 'quote-discount'), '100000')
         setv(driver.find_element(By.ID, 'quote-notes'), 'Obsequio de cojines. Transporte incluido a Cali.')
         Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('TRANSFERENCIA')
@@ -129,6 +141,7 @@ def check_order():
             writeDisabled:document.getElementById('quote-submit').disabled};
         """)
         assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled']
+        assert editor['width'] == width, editor
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
@@ -143,27 +156,55 @@ def check_order():
             address:document.querySelector('.quote-editorial-client').textContent,
             signatureLabel:getComputedStyle(document.querySelector('.quote-editorial-signature'),'::before').content,
             annex:document.querySelectorAll('.quote-preview-appendix-page').length,
-            totals:document.querySelectorAll('.quote-editorial-total > strong').length,
+            totals:document.querySelectorAll('.order-finance-total dd').length,
             text:document.getElementById('quote-preview-content').textContent,
             html:document.getElementById('quote-preview-content').innerHTML,
-            mode:document.querySelector('.order-document-mode').textContent};
+            conditions:document.querySelector('.order-document-conditions').textContent,
+            availability:[...document.querySelectorAll('.order-document-fulfillment')].map(n=>n.dataset.fulfillment)};
         """)
         assert all(title == 'ORDEN DE PEDIDO' for title in document_metrics['titles'])
+        if width == 1440 and document_metrics['pages'] != 1:
+            layout = driver.execute_script("""
+              const pages=[...document.querySelectorAll('.order-document-page')], full=pages[0].cloneNode(true);
+              full.classList.remove('quote-continuation-page');
+              full.querySelector('.quote-editorial-items').replaceChildren(...pages.flatMap(p=>[...p.querySelectorAll('.quote-editorial-item')].map(n=>n.cloneNode(true))));
+              const body=full.querySelector('.quote-editorial-body');
+              body.querySelector('.quote-editorial-signoff').remove();
+              body.append(pages.at(-1).querySelector('.order-document-closing').cloneNode(true), pages.at(-1).querySelector('.quote-editorial-signoff').cloneNode(true));
+              document.getElementById('quote-preview-content').append(full);
+              const measure=n=>{const r=n.getBoundingClientRect(),s=getComputedStyle(n);return {class:n.className,width:r.width,height:r.height,marginTop:s.marginTop,padding:s.padding,gap:s.gap};};
+              const result={page:measure(full),scrollHeight:full.scrollHeight,header:measure(full.querySelector('header')),body:[...body.children].map(measure),closing:[...full.querySelector('.order-document-closing').children].map(measure)};
+              full.remove();return result;
+            """)
+            raise AssertionError('El pedido corto debe aprovechar una sola hoja: ' + json.dumps(layout))
         assert not document_metrics['overflow'] and not document_metrics['pageOverflow']
         assert document_metrics['draft'] and document_metrics['annex'] == 0 and document_metrics['totals'] == 1
         assert 'Dirección de entrega de prueba' in document_metrics['address']
-        assert '0000000022' in document_metrics['address']
+        assert '0000000022' in document_metrics['address'] and '0000000011' in document_metrics['address']
+        assert 'cliente@example.com' in document_metrics['address']
         assert 'Obsequio de cojines' in document_metrics['text'] and 'Transporte incluido a Cali' in document_metrics['text']
         assert 'INTERNO-QA' not in document_metrics['html'], 'Las notas internas no llegan al HTML del documento'
         assert 'Abono indicado' in document_metrics['text'] and 'Saldo por pagar' in document_metrics['text']
         assert '30%' not in document_metrics['text']
-        if mode == 'ENTREGA_INMEDIATA':
-            assert 'Entrega inmediata' in document_metrics['mode']
-            assert 'fabricación' not in document_metrics['mode'] and '25' not in document_metrics['mode']
-        elif mode == 'PARA_SOLICITAR':
-            assert '25 a 30 días' in document_metrics['mode']
-        else:
-            assert 'Separado' in document_metrics['mode']
+        assert document_metrics['availability'] == ['DISPONIBLE', 'PARA_SOLICITAR']
+        assert '25 a 30 días' in document_metrics['conditions']
+        assert ('Separado.' in document_metrics['conditions']) == (width == 1440)
+        finance = driver.execute_script("""
+          const box=document.querySelector('.order-finance'), figures=box.querySelector('.order-finance-figures');
+          const rect=box.getBoundingClientRect(), cells=[...figures.children];
+          const r=cells.map(n=>n.getBoundingClientRect());
+          return {viewport:innerWidth, width:rect.width, leftInset:r[0].left-rect.left, rightInset:rect.right-r.at(-1).right,
+            values:cells.map(n=>Number(n.querySelector('dd').textContent.replace(/[^0-9]/g,''))),
+            fonts:cells.map(n=>parseFloat(getComputedStyle(n.querySelector('dd')).fontSize)),
+            noClip:[box,...box.querySelectorAll('*')].every(n=>n.scrollWidth<=n.clientWidth+1 || getComputedStyle(n).display==='inline'),
+            sameRow:Math.abs(r[0].top-r[2].top)<2};
+        """)
+        assert finance['leftInset'] <= 24 and finance['rightInset'] <= 24, finance
+        assert finance['noClip'] and min(finance['fonts']) >= 22, finance
+        assert finance['values'] == [1900000, 150000, 1750000]
+        assert finance['viewport'] == width and finance['sameRow'] == (width == 1440), {'target': width, 'editor': editor, 'finance': finance}
+        driver.find_element(By.CSS_SELECTOR, '.order-finance').screenshot(str(PNG.with_name(f'pedido-resumen-{width}.png')))
+        document_metrics['finance'] = finance
         # Keep logs concise; assertions above inspect the complete HTML/text.
         del document_metrics['text'], document_metrics['html']
         assert document_metrics['signatureLabel'] in ('none', 'normal')
@@ -172,6 +213,13 @@ def check_order():
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
+    # An entirely available order has no factory deadline; changing it keeps payments.
+    Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('DISPONIBLE')
+    driver.find_element(By.ID, 'quote-preview-button').click()
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-finance')))
+    assert '25 a 30 días' not in driver.find_element(By.CSS_SELECTOR, '.order-document-conditions').text
+    driver.find_element(By.ID, 'quote-preview-close').click()
+    Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('PARA_SOLICITAR')
     # A full Addi payment is valid; an overpayment is not printed as a paid order.
     driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-remove-payment]').click()
     Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('ADDI')
@@ -208,7 +256,10 @@ def check_order():
     assert 'Asesor comercial' not in pdf_text
     assert '0000000022' in pdf_text and 'Addi' in pdf_text
     assert 'INTERNO-QA' not in pdf_text, 'La nota interna tampoco aparece en el PDF real'
-    assert '30%' not in pdf_text and 'Fabricación estimada' not in pdf_text
+    assert '30%' not in pdf_text and 'fabricación estimada de 25 a 30 días' in pdf_text
+    assert 'Sala de revisión' in pdf_text and 'Comedor de revisión' in pdf_text
+    assert 'Disponible para entrega inmediata' in pdf_text and 'Solicitar a fábrica' in pdf_text
+    assert pdf_text.count('Saldo por pagar') == 1 and pdf_text.count('Abono indicado') == 1
     assert all('Borrador' in page.extract_text() for page in exported.pages)
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
     assert not errors, errors

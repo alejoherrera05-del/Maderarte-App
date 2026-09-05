@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { paginateQuoteDocument } from '../public/js/core/quote-pagination.js';
 
 const fields = ['description', 'category', 'fabric', 'wood', 'specifications'];
-const item = index => ({ position: index, description: `Mueble ${index}`, category: 'SALA', fabric: '', wood: '', specifications: '', quantity: 1, unitValue: 100, subtotal: 100 });
+const item = index => ({ position: index, description: `Mueble ${index}`, category: 'SALA', fabric: '', wood: '', specifications: '', quantity: 1, unitValue: 100, subtotal: 100, fulfillment: { code: index % 2 ? 'DISPONIBLE' : 'PARA_SOLICITAR' } });
 const weight = page => 10 + (page.client ? 20 : 0) + (page.closing ? 30 : 0) + page.notes.length / 5 + page.items.reduce((sum, entry) => sum + 15 + fields.reduce((n, field) => n + String(entry[field] || '').length / 5, 0), 0);
 const fits = page => weight(page) <= 100;
 
@@ -25,6 +25,7 @@ for (const data of [
   assert.deepEqual(fragments.filter(entry => !entry.continuation).map(entry => entry.position), data.items.map(entry => entry.position));
   for (const source of data.items) {
     const pieces = fragments.filter(entry => entry.position === source.position);
+    assert.ok(pieces.every(piece => piece.fulfillment.code === source.fulfillment.code), 'Cada fragmento conserva la disponibilidad de su mueble');
     for (const field of fields) {
       // A word without spaces may split at a physical page edge.
       const actual = pieces.map(entry => entry[field] || '').join('');

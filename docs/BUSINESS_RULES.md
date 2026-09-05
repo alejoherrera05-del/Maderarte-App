@@ -18,11 +18,12 @@ Los datos públicos de empresa usados por formularios y documentos viven en `pub
 - `Valor_Total`, `Abonado_Total` y `Saldo_Pendiente` deben permanecer consistentes.
 - Una OP anulada conserva registros, documentos y auditoría.
 - Por aclaración del propietario del 5 de septiembre de 2026, **no existe un porcentaje obligatorio de abono**. El asesor indica el valor acordado; se admiten separados con $50.000, $100.000 u otro importe positivo.
-- Modalidades: `SEPARADO`, `PARA_SOLICITAR` y `ENTREGA_INMEDIATA`. El formulario pide elegir la modalidad; no la deduce del valor pagado.
-- Un separado puede recibir pagos sucesivos. Separar no autoriza automáticamente fabricación.
-- Un pedido para solicitar requiere gestionar la solicitud/fabricación. La referencia de **25 a 30 días** aplica solo a fabricación, desde la confirmación de la solicitud, sin umbral automático de pago.
-- Una venta de producto disponible puede entregarse inmediatamente, sin pasar por fabricación. Elegir esta modalidad no crea por sí solo una remisión ni marca una entrega realizada.
-- Modalidad, saldo, solicitud a fábrica y entrega son estados diferentes. Pagar el total no debe marcar automáticamente un mueble como entregado.
+- **Un pedido puede ser mixto**: sala disponible para entrega inmediata y comedor por solicitar a fábrica, dentro de una misma OP.
+- La disponibilidad pertenece a cada línea de `Orden_Items`: `DISPONIBLE`, `PARA_SOLICITAR` o `POR_DEFINIR`. No se deduce de los pagos y no se preselecciona en el formulario. Si unidades del mismo mueble tienen disponibilidades distintas, se capturan en líneas separadas.
+- **Separado** es una condición opcional del pedido, independiente de la disponibilidad por mueble. Permite pagos sucesivos y no autoriza automáticamente fabricación.
+- La referencia de **25 a 30 días** aplica solo a los muebles por solicitar, desde la confirmación de su solicitud. No se impone un plazo de fabricación a los disponibles ni un umbral automático de pago.
+- Marcar un mueble como disponible no crea una remisión ni confirma una entrega realizada. El borrador tampoco envía solicitudes a fábrica.
+- Saldo, separado, solicitud a fábrica y cantidades entregadas son estados diferentes. Pagar el total no marca automáticamente ningún mueble como entregado.
 
 ## Contacto y observaciones
 
@@ -66,6 +67,6 @@ Los datos públicos de empresa usados por formularios y documentos viven en `pub
 
 ## Preparación actual y siguiente contrato de escritura
 
-El formulario de preparación permite indicar modalidad, pagos y notas internas, pero todavía no guarda ni confirma cobros. El documento los identifica como «Abono indicado» y conserva la marca de borrador. Sin pagos, el abono indicado es cero y el saldo corresponde al total; no se emite un recibo ficticio. Valores negativos, medios faltantes y sumas superiores al total deben corregirse antes de generar la vista previa.
+El formulario de preparación permite indicar disponibilidad por mueble, separado, pagos y notas internas, pero todavía no guarda ni confirma cobros. El documento los identifica como «Abono indicado» y conserva la marca de borrador. Sin pagos, el abono indicado es cero y el saldo corresponde al total; no se emite un recibo ficticio. Valores negativos, medios faltantes y sumas superiores al total deben corregirse antes de generar la vista previa.
 
-Antes de activar escrituras: persistir `Modalidad_Venta`, el teléfono alterno del cliente y cada pago por separado; agregar un campo dedicado `Nota_Interna` (o contrato equivalente explícito) a Abonos, con pruebas de privacidad en OP/recibos. El schema instalado no se modifica desde esta entrega de interfaz. Ningún dato de pago se envía a Apps Script en modo preparación.
+Antes de activar escrituras: acordar un campo independiente de separado en la cabecera y uno de disponibilidad en `Orden_Items`, sin reutilizar la antigua modalidad global para ocultar pedidos mixtos; persistir el teléfono alterno del cliente y cada pago por separado; agregar un campo dedicado `Nota_Interna` (o contrato equivalente explícito) a Abonos, con pruebas de privacidad en OP/recibos. El schema instalado no se modifica desde esta entrega de interfaz. Ningún dato de pago se envía a Apps Script en modo preparación.
