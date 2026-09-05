@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f1f1f0">
-  <meta name="description" content="Formulario interno de cotización de Maderarte.">
+  <meta name="description" content="Formulario interno de orden de pedido de Maderarte.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
@@ -18,9 +18,10 @@
   <link rel="stylesheet" href="/css/cotizacion-document-hybrid-fixes.css?v=1">
   <link rel="stylesheet" href="/css/cotizacion-document-adaptive.css?v=adaptive-1">
   <link rel="stylesheet" href="/css/cotizacion-document-final-approval.css?v=approval-1">
-  <title>Nueva cotización · Maderarte App</title>
+  <link rel="stylesheet" href="/css/pedido.css">
+  <title>Nueva orden de pedido · Maderarte App</title>
 </head>
-<body class="quote-page">
+<body class="quote-page" data-commercial-document="order">
   <main id="quote-app" class="quote-app" data-document-layout="compact-v2" hidden>
     <header class="quote-header">
       <div class="quote-header-inner">
@@ -29,7 +30,7 @@
         </a>
         <div class="quote-header-brand">
           <img src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
-          <span><strong>Cotizaciones</strong><small>Documento comercial</small></span>
+          <span><strong>Orden de pedido</strong><small>Borrador del pedido</small></span>
         </div>
         <button class="quote-preview-button" id="quote-preview-button" type="button" disabled>Vista previa</button>
       </div>
@@ -41,9 +42,9 @@
           <img src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
           <img src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
         </div>
-        <p class="quote-gate-eyebrow">Nueva cotización</p>
-        <h1 id="quote-gate-title">¿Desde qué sede se emite?</h1>
-        <p class="quote-gate-intro">La sede define el consecutivo, los datos del documento y la operación que quedará asociada a la propuesta.</p>
+        <p class="quote-gate-eyebrow">Nueva orden de pedido</p>
+        <h1 id="quote-gate-title">¿Desde qué sede se toma el pedido?</h1>
+        <p class="quote-gate-intro">Elige la sede del pedido. Después completa el cliente, los muebles y las condiciones de entrega.</p>
         <div class="quote-gate-options" id="quote-gate-options">
           <button class="quote-gate-option" type="button" data-quote-branch="MP">
             <span class="quote-gate-code">MP</span>
@@ -64,7 +65,7 @@
       <div class="quote-shell">
         <section class="quote-document-head" aria-label="Datos de emisión">
           <div class="quote-document-identity">
-            <p class="quote-document-kicker">Cotización · borrador</p>
+            <p class="quote-document-kicker">Orden de pedido · borrador</p>
             <div class="quote-document-number-row">
               <h1 id="quote-meta-number">Pendiente</h1>
               <span class="quote-document-status" id="quote-number-status">Se asigna al guardar</span>
@@ -83,7 +84,7 @@
           <div class="quote-editor">
             <section class="quote-editor-section">
               <div class="quote-section-title">
-                <div><span>Cliente</span><h2>Datos de la propuesta</h2></div>
+                <div><span>Cliente</span><h2>Datos del pedido</h2></div>
                 <small>Empieza por la cédula. Si el cliente es nuevo, continúa con sus datos.</small>
               </div>
 
@@ -99,14 +100,14 @@
                 <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
                 <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
                 <div class="quote-field"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
-                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección</label><input id="quote-client-address" autocomplete="street-address"></div>
+                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección de entrega</label><input id="quote-client-address" autocomplete="street-address"></div>
                 <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" autocomplete="address-level2"></div>
               </div>
             </section>
 
             <section class="quote-editor-section quote-items-section">
               <div class="quote-section-title quote-items-title">
-                <div><span>Mobiliario</span><h2>Items de la cotización</h2></div>
+                <div><span>Mobiliario</span><h2>Muebles del pedido</h2></div>
                 <button class="quote-add-item" id="quote-add-item" type="button">＋ Añadir mueble</button>
               </div>
               <div id="quote-items" class="quote-items"></div>
@@ -114,10 +115,10 @@
 
             <section class="quote-editor-section">
               <div class="quote-section-title">
-                <div><span>Cierre</span><h2>Observaciones y condiciones</h2></div>
+                <div><span>Cierre</span><h2>Fabricación y entrega</h2></div>
                 <small>Información que debe quedar clara antes de confirmar el pedido.</small>
               </div>
-              <div class="quote-field"><label for="quote-notes">Observaciones especiales</label><textarea id="quote-notes" rows="4" placeholder="Instalación, accesos, cambios acordados, aclaraciones o cualquier condición especial de esta propuesta."></textarea></div>
+              <div class="quote-field"><label for="quote-notes">Indicaciones de fabricación y entrega</label><textarea id="quote-notes" rows="4" placeholder="Accesos, instalación, acabados acordados y condiciones de entrega de este pedido."></textarea></div>
               <div class="quote-conditions" aria-label="Condiciones comerciales">
                 <div class="quote-condition"><span class="quote-condition-mark">30%</span><div><strong>Abono mínimo para solicitar</strong><p>El pedido entra a proceso cuando se confirma y completa al menos el 30% del valor total.</p></div></div>
                 <div class="quote-condition"><span class="quote-condition-mark">25–30</span><div><strong>Días estimados de fabricación</strong><p>Contados desde la confirmación del pedido y el cumplimiento del abono mínimo.</p></div></div>
@@ -130,16 +131,16 @@
               <div class="quote-summary-head"><span>Resumen comercial</span><small id="quote-item-count">1 item</small></div>
               <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
               <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
-              <div class="quote-summary-total"><span>Total cotizado</span><strong id="quote-total">$ 0</strong></div>
+              <div class="quote-summary-total"><span>Total del pedido</span><strong id="quote-total">$ 0</strong></div>
               <div class="quote-deposit-box">
                 <span>Abono mínimo para solicitar</span>
                 <strong id="quote-minimum-deposit">$ 0</strong>
-                <small>30% del total cotizado</small>
+                <small>30% del total del pedido</small>
               </div>
-              <div class="quote-summary-row quote-summary-muted"><span>Saldo después del mínimo</span><strong id="quote-remaining">$ 0</strong></div>
+              <div class="quote-summary-row quote-summary-muted"><span>Restante si se abona el mínimo</span><strong id="quote-remaining">$ 0</strong></div>
               <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
-              <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Emitir cotización</button>
-              <p class="quote-write-note">La emisión se habilitará al activar las escrituras comerciales. El formulario actual no guarda información.</p>
+              <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Guardar orden de pedido</button>
+              <p class="quote-write-note">Borrador para revisión: estos datos aún no se guardan. El número oficial y los abonos se registrarán al habilitar el guardado.</p>
             </section>
           </aside>
         </form>
@@ -150,7 +151,7 @@
       <section class="quote-preview-sheet" role="dialog" aria-modal="true" aria-labelledby="quote-preview-title">
         <div class="quote-preview-handle" aria-hidden="true"></div>
         <header class="quote-preview-header">
-          <div><p>Documento</p><h2 id="quote-preview-title">Vista previa de cotización</h2></div>
+          <div><p>Documento</p><h2 id="quote-preview-title">Vista previa del pedido</h2></div>
           <button class="quote-preview-close" id="quote-preview-close" type="button" aria-label="Cerrar">×</button>
         </header>
         <div id="quote-preview-content" class="quote-preview-content"></div>

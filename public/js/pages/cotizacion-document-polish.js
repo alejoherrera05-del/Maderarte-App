@@ -1,5 +1,6 @@
 import { escapeHtml } from '../core/format.js';
 import { paginateQuoteDocument } from '../core/quote-pagination.js';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_RULES, minimumOrderDeposit } from '../core/commercial-rules.js';
@@ -78,7 +79,7 @@ function collectDocumentData() {
   const branch = companyBranch(branchCode);
 
   return {
-    number: text('quote-meta-number') || 'Pendiente de asignar',
+    number: text('quote-meta-number') || COMMERCIAL_DOCUMENT.pendingNumber,
     date: compactDate(text('quote-meta-date')),
     advisor: text('quote-meta-advisor'),
     branchCode,
@@ -119,10 +120,10 @@ function documentHeaderMarkup(data) {
 
       <div class="quote-editorial-document">
         <span class="quote-editorial-eyebrow">Propuesta comercial</span>
-        <h1>COTIZACIÓN</h1>
+        <h1>${escapeHtml(COMMERCIAL_DOCUMENT.title)}</h1>
         <div class="quote-editorial-document-identity">
           <div class="quote-editorial-number">
-            <small>N.º de cotización</small>
+            <small>${escapeHtml(COMMERCIAL_DOCUMENT.numberLabel)}</small>
             <strong>${escapeHtml(data.number)}</strong>
           </div>
           <div class="quote-editorial-secondary-meta">
@@ -171,7 +172,7 @@ function clientMarkup(client) {
     clientField('Nombre completo', client.name, 'quote-editorial-client-field-name'),
     clientField('Teléfono', client.phone),
     clientField('Correo electrónico', client.email),
-    clientField('Dirección / Ciudad', location, 'quote-editorial-client-field-wide')
+    clientField(COMMERCIAL_DOCUMENT.addressLabel, location, 'quote-editorial-client-field-wide')
   ].filter(Boolean);
 
   if (!fields.length) return '';
@@ -235,10 +236,10 @@ function commercialTermsMarkup(data) {
       <article class="quote-editorial-term-card quote-editorial-term-time">
         <div class="quote-editorial-term-icon"><img src="/assets/icons/calendar-dots.svg" alt=""></div>
         <div class="quote-editorial-term-value">25–30<small>días</small></div>
-        <div class="quote-editorial-term-copy"><strong>Fabricación estimada</strong></div>
+        <div class="quote-editorial-term-copy"><strong>Fabricación estimada</strong>${COMMERCIAL_DOCUMENT.isOrder ? '<span>Desde la confirmación del pedido y el abono requerido.</span>' : ''}</div>
       </article>
     </div>
-    ${data.notes ? `<div class="quote-editorial-notes"><strong>Observaciones especiales</strong><p>${escapeHtml(data.notes)}</p></div>` : ''}
+    ${data.notes ? `<div class="quote-editorial-notes"><strong>${escapeHtml(COMMERCIAL_DOCUMENT.notesLabel)}</strong><p>${escapeHtml(data.notes)}</p></div>` : ''}
   </section>`;
 }
 
@@ -253,7 +254,7 @@ function footerMarkup(pageNumber, totalPages) {
     <img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
     <div class="quote-editorial-footer-copy">
       <strong>Maderarte · Sistema Maddy</strong>
-      <span>Documento generado automáticamente · v${escapeHtml(APP_CONFIG.version)}</span>
+      <span>${COMMERCIAL_DOCUMENT.isOrder ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente'} · v${escapeHtml(APP_CONFIG.version)}</span>
       <span>${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
     </div>
     <span class="quote-document-page-number">Página ${pageNumber} de ${totalPages}</span>
@@ -336,14 +337,14 @@ function appendixPageMarkup(groups, number, pageNumber, totalPages) {
 function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
   const client = page.client ? clientMarkup(data.client) : '';
   const items = page.items.map(itemMarkup).join('');
-  const notes = page.notes && !page.closing ? `<section class="quote-editorial-notes quote-editorial-notes-page"><strong>Observaciones especiales</strong><p>${escapeHtml(page.notes)}</p></section>` : '';
-  return `<section class="quote-preview-page quote-preview-main-page quote-editorial-page quote-density-relaxed${page.closing ? '' : ' quote-continuation-page'}" data-page-number="${pageNumber}" data-page-count="${totalPages}">
+  const notes = page.notes && !page.closing ? `<section class="quote-editorial-notes quote-editorial-notes-page"><strong>${escapeHtml(COMMERCIAL_DOCUMENT.notesLabel)}</strong><p>${escapeHtml(page.notes)}</p></section>` : '';
+  return `<section class="quote-preview-page quote-preview-main-page quote-editorial-page quote-density-relaxed${COMMERCIAL_DOCUMENT.isOrder ? ' order-document-page' : ''}${page.closing ? '' : ' quote-continuation-page'}" data-page-number="${pageNumber}" data-page-count="${totalPages}">
     ${documentHeaderMarkup(data)}
     <div class="quote-editorial-body">
       ${client}
       ${page.items.length ? `<section class="quote-editorial-items-section">
         <div class="quote-editorial-section-head">
-          <div><span>Mobiliario cotizado</span><h2>Detalle de productos</h2></div>
+          <div><span>${escapeHtml(COMMERCIAL_DOCUMENT.itemsLabel)}</span><h2>Detalle de productos</h2></div>
           <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
         </div>
         <div class="quote-editorial-table-head" aria-hidden="true">
@@ -427,21 +428,35 @@ async function renderDocumentPreview() {
   }
 }
 
-function openPreview() {
+let previewTrigger = null;
+
+export function openDocumentPreview() {
   const overlay = document.getElementById('quote-preview-overlay');
   if (!overlay) return;
+  previewTrigger = document.activeElement;
   overlay.classList.add('is-open');
   overlay.setAttribute('aria-hidden', 'false');
+  document.querySelectorAll('.quote-header, .quote-workspace, .quote-branch-gate').forEach(node => { node.inert = true; });
   document.body.style.overflow = 'hidden';
   document.getElementById('quote-preview-close')?.focus();
   void renderDocumentPreview();
 }
 
-document.addEventListener('click', event => {
-  const previewButton = event.target.closest('#quote-preview-button, #quote-summary-preview');
-  if (!previewButton || previewButton.disabled) return;
+export function closeDocumentPreview() {
+  const overlay = document.getElementById('quote-preview-overlay');
+  if (!overlay?.classList.contains('is-open')) return;
+  ++previewGeneration;
+  overlay.classList.remove('is-open');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.querySelectorAll('.quote-header, .quote-workspace, .quote-branch-gate').forEach(node => { node.inert = false; });
+  document.body.style.overflow = '';
+  if (previewTrigger?.isConnected) previewTrigger.focus({ preventScroll: true });
+}
+
+document.addEventListener('keydown', event => {
+  const overlay = document.getElementById('quote-preview-overlay');
+  if (event.key !== 'Tab' || !overlay?.classList.contains('is-open')) return;
+  // The current preview contains only one interactive control.
   event.preventDefault();
-  event.stopPropagation();
-  event.stopImmediatePropagation();
-  openPreview();
-}, true);
+  document.getElementById('quote-preview-close')?.focus();
+});
