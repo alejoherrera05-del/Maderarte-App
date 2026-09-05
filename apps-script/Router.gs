@@ -18,6 +18,10 @@ function routeAction_(action, payload, context) {
     case 'INVITACION_VALIDAR': return validateInvitation_(payload);
     case 'INVITACION_ACTIVAR': return activateInvitation_(payload, context.proxyMeta);
     case 'DASHBOARD_RESUMEN': return dashboardSummary_(context.session);
+    case 'CLIENTES_LISTAR': return listClients_(payload, context.session);
+    case 'CLIENTE_OBTENER': return getClient_(payload, context.session);
+    case 'COTIZACION_META': return quoteMeta_(payload, context.session);
+    case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
     case 'ORDENES_LISTAR': return listOrders_(payload, context.session);
     case 'ORDEN_OBTENER': return getOrder_(payload, context.session);
     case 'SISTEMA_ESTADO': return systemState_(context.session);

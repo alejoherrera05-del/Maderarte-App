@@ -1,0 +1,57 @@
+name: Visual QA Cotización
+
+on:
+  pull_request:
+    paths:
+      - 'public/cotizacion.html'
+      - 'public/index.html'
+      - 'public/css/dashboard-*.css'
+      - 'public/js/pages/dashboard.js'
+      - 'public/js/core/client-lookup.js'
+      - 'public/assets/brand/maddy-by-maderarte.svg'
+      - 'public/css/cotizacion-*.css'
+      - 'public/js/pages/cotizacion*.js'
+      - 'public/js/core/company-profile.js'
+      - 'public/js/core/quote-pagination.js'
+      - 'scripts/quote_visual_qa.py'
+      - 'scripts/capture-quote-preview.py'
+      - '.github/workflows/quote-visual-qa.yml'
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Selenium
+        run: pip install selenium==4.35.0 pypdf==5.9.0
+      - name: Servir la rama actual
+        run: |
+          node scripts/serve.mjs > /tmp/maderarte-serve.log 2>&1 &
+          echo $! > /tmp/maderarte-serve.pid
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/cotizacion.html?preview=1 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/maderarte-serve.log
+          exit 1
+      - name: Capturar documento real en Chrome
+        env:
+          QUOTE_PREVIEW_URL: http://127.0.0.1:4173/cotizacion.html?preview=1
+        run: python scripts/capture-quote-preview.py
+      - name: Publicar PNG y PDF reales
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cotizacion-visual-qa
+          path: |
+            artifacts/cotizacion-preview.png
+            artifacts/cotizacion-preview.pdf
+            artifacts/cotizacion-extensa-cierre.png
+            artifacts/cotizacion-extensa-mobile.png
+            artifacts/cotizacion-extensa.pdf
+            artifacts/cotizacion-formulario-*.png
+            artifacts/inicio-*.png
+          if-no-files-found: error

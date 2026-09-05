@@ -2,13 +2,14 @@ const currentUrl = new URL(window.location.href);
 const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(currentUrl.hostname);
 
 export const APP_CONFIG = Object.freeze({
-  name: 'Maderarte App',
+  name: 'Maddy',
   version: '0.2.0',
   environment: 'preparacion',
   apiPath: '/api/maderarte',
   requestTimeoutMs: 18_000,
   sessionCacheKey: 'MADERARTE_APP_SESSION_SNAPSHOT_V1',
   deviceIdKey: 'MADERARTE_APP_DEVICE_ID_V1',
+  deviceNameKey: 'MADERARTE_APP_DEVICE_NAME_V1',
   themeKey: 'MADERARTE_APP_THEME_V1',
   loginPath: '/login.html',
   homePath: '/index.html',

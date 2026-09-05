@@ -1,19 +1,46 @@
 import { apiRequest } from '../core/api.js';
 import { previewApiData } from '../core/auth.js';
-import { date, dateTime, escapeHtml, money, safeExternalUrl, text } from '../core/format.js';
+import { date, dateTime, escapeHtml, humanizeCode, money, safeExternalUrl, text } from '../core/format.js';
 import { withPreview } from '../core/config.js';
-import { guardPage } from '../core/page-guard.js';
-import { emptyState, errorState, loadingState, statusBadge } from '../core/ui.js';
+import { guardStandalonePage } from '../core/page-guard.js';
 
 const number = new URL(window.location.href).searchParams.get('op') || '';
 
-function keyValue(label, value) {
-  return `<div class="key-value"><span>${escapeHtml(label)}</span><strong>${escapeHtml(text(value))}</strong></div>`;
+function link(url, label) {
+  const safe = safeExternalUrl(url);
+  return safe ? `<a class="od-link" href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer"><span><strong>${escapeHtml(label)}</strong><span>Abrir documento</span></span><span class="od-link-arrow">↗</span></a>` : '';
 }
 
-function externalLink(url, label) {
-  const safe = safeExternalUrl(url);
-  return safe ? `<a class="link-row" href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer"><span class="link-copy"><strong>${escapeHtml(label)}</strong><span>Abrir documento en Drive</span></span><span>↗</span></a>` : '';
+function kv(label, value) {
+  return `<div class="od-kv-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(text(value))}</strong></div>`;
+}
+
+function loading() {
+  return `<div class="od-loading"><div><div class="od-spinner"></div><strong>Abriendo expediente</strong></div></div>`;
+}
+
+function empty(message) {
+  return `<div class="od-loading"><div><strong>${escapeHtml(message)}</strong></div></div>`;
+}
+
+function renderItems(items) {
+  if (!items.length) return '<div class="od-empty">La orden todavía no tiene productos asociados.</div>';
+  return `<div class="od-items">${items.map(item => `<article class="od-item"><div class="od-item-copy"><strong>${escapeHtml(item.description || 'Producto')}</strong><span>${escapeHtml([item.reference, item.measures, item.fabricColor, item.woodColor, item.specifications].filter(Boolean).join(' · ') || 'Sin especificaciones adicionales')}</span></div><div class="od-item-amount"><strong>${escapeHtml(String(item.quantity ?? 0))}</strong><span>${escapeHtml(item.unit || 'UNIDAD')}</span><small>${escapeHtml(money(item.subtotal))}</small></div></article>`).join('')}</div>`;
+}
+
+function renderPayments(payments) {
+  if (!payments.length) return '<div class="od-empty">Todavía no hay abonos asociados a esta OP.</div>';
+  return `<div class="od-timeline">${payments.map(payment => `<article class="od-timeline-row"><span class="od-money-pill">${escapeHtml(money(payment.value))}</span><span class="od-timeline-copy"><strong>${escapeHtml(dateTime(payment.date))} · ${escapeHtml(humanizeCode(payment.method || 'PAGO'))}</strong><span>${escapeHtml(payment.comment || payment.reference || 'Sin comentario')}</span></span>${link(payment.pdfUrl, 'Recibo')}</article>`).join('')}</div>`;
+}
+
+function renderRemissions(items) {
+  if (!items.length) return '<div class="od-empty">No hay remisiones asociadas.</div>';
+  return `<div class="od-timeline">${items.map(item => `<article class="od-timeline-row"><span class="od-timeline-copy"><strong>${escapeHtml(item.number || 'Remisión')}</strong><span>${escapeHtml(dateTime(item.date))} · ${escapeHtml(item.receiver || 'Sin receptor')}</span></span></article>`).join('')}</div>`;
+}
+
+function renderDocuments(items) {
+  const links = items.map(item => link(item.url, item.name || item.type || 'Documento')).filter(Boolean).join('');
+  return links || '<div class="od-empty">No hay documentos adicionales.</div>';
 }
 
 function renderOrder(data) {
@@ -22,49 +49,35 @@ function renderOrder(data) {
   const payments = Array.isArray(data.payments) ? data.payments : [];
   const remissions = Array.isArray(data.remissions) ? data.remissions : [];
   const documents = Array.isArray(data.documents) ? data.documents : [];
-  const primaryLinks = [
-    externalLink(order.pdfUrl, 'Orden de pedido'),
-    externalLink(order.clientFolderUrl, 'Carpeta del cliente'),
-    externalLink(order.orderFolderUrl, 'Carpeta de la OP')
-  ].filter(Boolean).join('');
-
-  return `<div class="page-header"><div class="page-heading"><a class="link-action" href="${escapeHtml(withPreview('/ordenes.html'))}">← Volver a órdenes</a><h1>${escapeHtml(order.number || number)}</h1><p>${escapeHtml(order.client || 'Expediente de orden de pedido')}</p></div><div class="page-actions">${statusBadge(order.status)}${statusBadge(order.productionStatus)}</div></div>
-    <div class="metric-strip"><article class="metric"><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong><small>Valor vigente de la orden</small></article><article class="metric"><span>Total abonado</span><strong>${escapeHtml(money(order.paid))}</strong><small>${payments.length} ${payments.length === 1 ? 'abono' : 'abonos'}</small></article><article class="metric"><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong><small>Saldo calculado por el backend</small></article><article class="metric"><span>Entrega estimada</span><strong>${escapeHtml(date(order.deliveryDate))}</strong><small>${escapeHtml(order.branch || '—')}</small></article></div>
-    <div class="order-layout">
-      <div class="stack">
-        <section class="card panel"><div class="panel-header"><h2>Datos de la orden</h2></div><div class="key-value-grid">${keyValue('Cliente', order.client)}${keyValue('Cédula o NIT', order.document)}${keyValue('Teléfono', order.phone)}${keyValue('Dirección de entrega', order.address)}${keyValue('Responsable', order.owner)}${keyValue('Modalidad', order.saleMode)}${keyValue('Descripción', order.description)}${keyValue('Observaciones', order.notes)}</div></section>
-        <section class="card panel"><div class="panel-header"><h2>Productos</h2><span class="status-badge info">${items.length}</span></div>${items.length ? `<div class="item-list">${items.map(item => `<article class="item-row"><div class="item-row-copy"><strong>${escapeHtml(item.description || 'Producto')}</strong><span>${escapeHtml([item.reference, item.measures, item.fabricColor, item.woodColor].filter(Boolean).join(' · ') || 'Sin especificaciones adicionales')}</span></div><div class="item-row-amount"><strong>${escapeHtml(String(item.quantity ?? 0))}</strong><span>${escapeHtml(item.unit || 'UNIDAD')}</span><small>${escapeHtml(money(item.subtotal))}</small></div></article>`).join('')}</div>` : emptyState({ icon: '0', title: 'Sin productos', message: 'La orden no tiene productos asociados.' })}</section>
-        <section class="card panel"><div class="panel-header"><h2>Abonos</h2><span class="status-badge info">${payments.length}</span></div>${payments.length ? `<div class="timeline-list">${payments.map(payment => `<article class="timeline-row"><span class="status-badge success">${escapeHtml(money(payment.value))}</span><span class="timeline-copy"><strong>${escapeHtml(dateTime(payment.date))} · ${escapeHtml(payment.method || 'Pago')}</strong><span>${escapeHtml(payment.comment || payment.reference || 'Sin comentario')}</span></span>${externalLink(payment.pdfUrl, 'Recibo')}</article>`).join('')}</div>` : emptyState({ icon: '0', title: 'Sin abonos', message: 'Todavía no hay pagos asociados a esta OP.' })}</section>
-      </div>
-      <aside class="stack">
-        <section class="card panel"><div class="panel-header"><h2>Enlaces</h2></div><div class="link-list">${primaryLinks || '<p>No hay enlaces disponibles todavía.</p>'}</div></section>
-        <section class="card panel"><div class="panel-header"><h2>Remisiones</h2><span class="status-badge info">${remissions.length}</span></div>${remissions.length ? `<div class="timeline-list">${remissions.map(item => `<article class="timeline-row"><span class="timeline-copy"><strong>${escapeHtml(item.number || 'Remisión')}</strong><span>${escapeHtml(dateTime(item.date))} · ${escapeHtml(item.receiver || '')}</span></span></article>`).join('')}</div>` : '<p>No hay remisiones asociadas.</p>'}</section>
-        <section class="card panel"><div class="panel-header"><h2>Documentos</h2><span class="status-badge info">${documents.length}</span></div><div class="link-list">${documents.map(item => externalLink(item.url, item.name || item.type || 'Documento')).join('') || '<p>No hay documentos adicionales.</p>'}</div></section>
-      </aside>
-    </div>`;
+  const primaryLinks = [link(order.pdfUrl, 'Orden de pedido'), link(order.clientFolderUrl, 'Carpeta del cliente'), link(order.orderFolderUrl, 'Carpeta de la OP')].filter(Boolean).join('');
+  return `<header class="od-header"><div class="od-header-inner"><a class="od-round" href="${escapeHtml(withPreview('/ordenes.html'))}" aria-label="Volver al historial"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a><div class="od-brand"><strong>${escapeHtml(order.number || number)}</strong><span>Expediente de orden</span></div><a class="od-round" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Ir al inicio"><img src="/assets/icons/house.svg" alt="" aria-hidden="true"></a></div></header>
+  <main class="od-shell">
+    <section class="od-hero"><div class="od-hero-top"><div><span class="od-kicker">Orden de pedido</span><h1>${escapeHtml(order.number || number)}</h1><p>${escapeHtml(order.client || 'Expediente comercial')}</p></div><div class="od-status-group"><span class="od-pill">${escapeHtml(humanizeCode(order.status))}</span><span class="od-pill">${escapeHtml(humanizeCode(order.productionStatus))}</span></div></div></section>
+    <section class="od-metrics"><article class="od-metric"><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong><small>Valor vigente</small></article><article class="od-metric"><span>Total abonado</span><strong>${escapeHtml(money(order.paid))}</strong><small>${payments.length} ${payments.length === 1 ? 'abono' : 'abonos'}</small></article><article class="od-metric"><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong><small>Por recaudar</small></article><article class="od-metric"><span>Entrega estimada</span><strong>${escapeHtml(date(order.deliveryDate))}</strong><small>${escapeHtml(order.branch || '—')}</small></article></section>
+    <div class="od-layout"><div class="od-stack"><section class="od-card"><div class="od-card-head"><h2>Datos de la orden</h2></div><div class="od-kv">${kv('Cliente', order.client)}${kv('Cédula o NIT', order.document)}${kv('Teléfono', order.phone)}${kv('Dirección de entrega', order.address)}${kv('Responsable', order.owner)}${kv('Modalidad', humanizeCode(order.saleMode))}${kv('Descripción', order.description)}${kv('Observaciones', order.notes)}</div></section><section class="od-card"><div class="od-card-head"><h2>Productos</h2><span class="od-count">${items.length}</span></div>${renderItems(items)}</section><section class="od-card"><div class="od-card-head"><h2>Abonos</h2><span class="od-count">${payments.length}</span></div>${renderPayments(payments)}</section></div>
+    <aside class="od-stack"><section class="od-card"><div class="od-card-head"><h2>Documentos principales</h2></div>${primaryLinks || '<div class="od-empty">No hay enlaces disponibles todavía.</div>'}</section><section class="od-card"><div class="od-card-head"><h2>Remisiones</h2><span class="od-count">${remissions.length}</span></div>${renderRemissions(remissions)}</section><section class="od-card"><div class="od-card-head"><h2>Documentos</h2><span class="od-count">${documents.length}</span></div>${renderDocuments(documents)}</section></aside></div>
+  </main>`;
 }
 
-guardPage({
+guardStandalonePage({
   permission: 'ordenes.read',
-  activeKey: 'ordenes',
-  title: number ? `Expediente ${number}` : 'Expediente de orden',
-  subtitle: 'Productos, pagos, saldo, documentos y entregas en un solo lugar.',
-  async render({ content }) {
-    content.innerHTML = `<section class="page" id="order-body">${loadingState('Consultando el expediente')}</section>`;
-    const body = document.getElementById('order-body');
+  async render() {
+    const root = document.getElementById('order-app');
+    root.innerHTML = loading();
+    root.hidden = false;
     if (!number) {
-      body.innerHTML = emptyState({ icon: 'OP', title: 'Falta el número de orden', message: 'Abre el expediente desde el listado de órdenes.' });
+      root.innerHTML = empty('Falta el número de la orden.');
       return;
     }
     try {
       const response = previewApiData('ORDEN_OBTENER') || await apiRequest('ORDEN_OBTENER', { number });
       if (!response.data) {
-        body.innerHTML = emptyState({ icon: '0', title: 'Orden no encontrada', message: `No existe una orden ${number} en la base actual.` });
+        root.innerHTML = empty(`No existe la orden ${number} en la base actual.`);
         return;
       }
-      body.innerHTML = renderOrder(response.data);
+      root.innerHTML = renderOrder(response.data);
     } catch (error) {
-      body.innerHTML = errorState(error.message, error.requestId);
+      root.innerHTML = empty(error.message || 'No fue posible abrir el expediente.');
     }
   }
 });

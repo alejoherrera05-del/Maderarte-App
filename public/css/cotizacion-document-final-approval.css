@@ -1,0 +1,215 @@
+/* Final visual approval pass for the client-facing quotation.
+ * Keeps the approved Maderarte letterhead and adaptive pagination while
+ * resolving the last alignment, advisor, footer and commercial-detail issues.
+ */
+
+/* HEADER — only the document name remains. */
+.quote-editorial-page .quote-editorial-eyebrow {
+  display: none !important;
+}
+
+.quote-editorial-page .quote-editorial-document {
+  padding-top: 5px;
+}
+
+.quote-editorial-page .quote-editorial-document h1 {
+  margin: 0 0 20px !important;
+  text-align: left;
+}
+
+.quote-editorial-page .quote-editorial-document-identity {
+  align-items: end;
+}
+
+/* PRODUCTS — quantity belongs unmistakably to its own centered column. */
+.quote-editorial-page .quote-editorial-table-head span:nth-child(3) {
+  text-align: center !important;
+}
+
+.quote-editorial-page .quote-editorial-item-quantity {
+  justify-self: center;
+  align-self: start;
+  width: 100%;
+  padding-top: 2px;
+  color: #4f4944;
+  font-size: .70rem;
+  line-height: 1.25;
+  font-weight: 650;
+  text-align: center !important;
+}
+
+.quote-editorial-page .quote-editorial-item-unit,
+.quote-editorial-page .quote-editorial-item-total {
+  justify-self: stretch;
+  padding-top: 2px;
+  text-align: right !important;
+}
+
+/* CLIENT-FACING COMMERCIAL CLOSING — do not expose the 30% rule in the PDF. */
+.quote-editorial-page .quote-editorial-term-deposit,
+.quote-editorial-page .quote-editorial-total > small {
+  display: none !important;
+}
+
+.quote-editorial-page .quote-editorial-term-cards {
+  gap: 0;
+}
+
+.quote-editorial-page .quote-editorial-term-time {
+  grid-template-columns: 80px minmax(0, 1fr) !important;
+}
+
+.quote-editorial-page .quote-editorial-investment {
+  min-height: 118px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.quote-editorial-page .quote-editorial-total {
+  margin-top: 12px;
+}
+
+/* ADVISOR — make the responsible advisor legible and intentional. */
+.quote-editorial-page .quote-editorial-signoff {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+  align-items: end;
+  margin-top: 22px !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+.quote-editorial-page .quote-editorial-signature {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  justify-self: end;
+  width: 220px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  color: #46413d;
+  text-align: left !important;
+}
+
+.quote-editorial-page .quote-editorial-signature::before {
+  content: 'Asesor comercial';
+  display: block;
+  margin-bottom: 6px;
+  color: #9a948e;
+  font-size: .54rem;
+  line-height: 1;
+  font-weight: 720;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-signature span {
+  display: block;
+  padding-top: 8px;
+  border-top: 1px solid #cec8c2;
+  color: #3e3935;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif !important;
+  font-size: .82rem !important;
+  font-style: normal !important;
+  line-height: 1.2;
+  font-weight: 620;
+}
+
+/* FOOTER — Maddy and system information sit visually centered on every page. */
+.quote-document-footer,
+.quote-editorial-page .quote-editorial-footer {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 78px auto !important;
+  justify-content: center !important;
+  align-items: center;
+  column-gap: 12px !important;
+  width: 100%;
+  min-height: 40px;
+  padding-top: 11px !important;
+  border-top: 1px solid #e7e3df !important;
+}
+
+.quote-editorial-page .quote-editorial-footer {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+}
+
+.quote-document-footer > img,
+.quote-editorial-page .quote-editorial-footer > img {
+  grid-column: 1;
+  width: 78px !important;
+  justify-self: end;
+}
+
+.quote-document-footer .quote-editorial-footer-copy,
+.quote-editorial-page .quote-editorial-footer-copy {
+  grid-column: 2;
+  justify-self: start;
+  text-align: left;
+}
+
+.quote-document-page-number {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  grid-column: auto !important;
+  grid-row: auto !important;
+  justify-self: auto !important;
+}
+
+/* Higher specificity is required here because an earlier annex rule assigned
+ * the counter to a third grid column. Keep it absolutely anchored instead. */
+.quote-preview-appendix-page > .quote-document-footer .quote-document-page-number {
+  position: absolute !important;
+  right: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  justify-self: auto !important;
+  align-self: auto !important;
+  display: block !important;
+}
+
+.quote-preview-appendix-page > .quote-document-footer {
+  margin-top: auto;
+}
+
+@media (max-width: 760px) {
+  .quote-editorial-page .quote-editorial-document {
+    padding-top: 0;
+  }
+
+  .quote-editorial-page .quote-editorial-item-quantity,
+  .quote-editorial-page .quote-editorial-item-unit,
+  .quote-editorial-page .quote-editorial-item-total {
+    justify-self: start;
+    width: auto;
+    text-align: left !important;
+  }
+
+  .quote-editorial-page .quote-editorial-signature {
+    justify-self: stretch;
+    width: 100% !important;
+  }
+
+  .quote-document-footer,
+  .quote-editorial-page .quote-editorial-footer {
+    grid-template-columns: 66px auto !important;
+    justify-content: center !important;
+    padding-right: 0 !important;
+  }
+
+  .quote-document-page-number,
+  .quote-preview-appendix-page > .quote-document-footer .quote-document-page-number {
+    position: static !important;
+    grid-column: 1 / -1 !important;
+    justify-self: center !important;
+    transform: none !important;
+    margin-top: 6px;
+  }
+}

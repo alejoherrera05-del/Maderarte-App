@@ -1,0 +1,56 @@
+/* Finishing overrides shared by the adaptive quotation body. */
+.quote-editorial-page .quote-editorial-client-heading span {
+  font-size: .70rem;
+}
+
+/* The previous hybrid layer generated this label with a pseudo-element.
+ * The adaptive layout now writes the real heading in the HTML, so suppress the duplicate. */
+.quote-editorial-page .quote-editorial-client-heading span::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Reset named grid areas from the earlier hybrid experiment. The adaptive page
+ * uses flex for the document body and its own two-column closing grid. */
+.quote-editorial-page .quote-editorial-client,
+.quote-editorial-page .quote-editorial-items-section,
+.quote-editorial-page .quote-editorial-terms,
+.quote-editorial-page .quote-editorial-investment,
+.quote-editorial-page .quote-editorial-signoff,
+.quote-editorial-closing > .quote-editorial-terms,
+.quote-editorial-closing > .quote-editorial-investment {
+  grid-area: auto;
+}
+
+/* Pin every product datum to its intended commercial table column. */
+.quote-editorial-page .quote-editorial-item-number { grid-column: 1; }
+.quote-editorial-page .quote-editorial-item-main { grid-column: 2; }
+.quote-editorial-page .quote-editorial-item-quantity { grid-column: 3; }
+.quote-editorial-page .quote-editorial-item-unit { grid-column: 4; }
+.quote-editorial-page .quote-editorial-item-total { grid-column: 5; }
+
+.quote-editorial-page .quote-editorial-term-card,
+.quote-editorial-page .quote-editorial-term-card + .quote-editorial-term-card {
+  grid-template-columns: 80px minmax(0, 1fr);
+}
+
+.quote-editorial-page .quote-editorial-term-value {
+  white-space: nowrap;
+}
+
+.quote-editorial-page .quote-editorial-term-value small {
+  display: inline-block;
+  margin-left: 3px;
+}
+
+.quote-editorial-page .quote-editorial-total > strong {
+  font-size: 1.72rem;
+}
+
+/* Annex pages share one footer row: Maddy, system data and page counter. */
+.quote-preview-appendix-page > .quote-document-footer .quote-document-page-number {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  justify-self: end !important;
+  align-self: center;
+}

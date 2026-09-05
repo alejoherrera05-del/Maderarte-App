@@ -8,20 +8,21 @@ const version = '0.2.0';
 const required = [
   'README.md', 'AGENTS.md', 'package.json', 'package-lock.json', 'wrangler.toml',
   '.github/workflows/quality.yml',
-  'public/login.html', 'public/activar-cuenta.html', 'public/index.html', 'public/ordenes.html',
+  'public/login.html', 'public/activar-cuenta.html', 'public/index.html', 'public/clientes.html', 'public/cotizacion.html', 'public/ordenes.html',
   'public/orden.html', 'public/perfil.html', 'public/configuracion.html', 'public/404.html',
   'public/manifest.webmanifest', 'public/_headers', 'public/_redirects',
-  'public/assets/brand/README.md',
-  'public/js/core/config.js', 'public/js/core/format.js', 'public/js/core/session.js',
+  'public/assets/brand/README.md', 'public/css/clientes-parity.css', 'public/css/cotizacion-form.css', 'public/css/dashboard-parity.css',
+  'public/js/core/config.js', 'public/js/core/format.js', 'public/js/core/session.js', 'public/js/core/commercial-rules.js',
   'public/js/core/api.js', 'public/js/core/auth.js', 'public/js/core/permissions.js',
   'public/js/core/ui.js', 'public/js/core/shell.js', 'public/js/core/page-guard.js',
   'public/js/pages/login.js', 'public/js/pages/activar-cuenta.js', 'public/js/pages/dashboard.js',
-  'public/js/pages/ordenes.js', 'public/js/pages/orden.js', 'public/js/pages/perfil.js',
+  'public/js/pages/clientes.js', 'public/js/pages/cotizacion.js', 'public/js/pages/ordenes.js', 'public/js/pages/orden.js', 'public/js/pages/perfil.js',
   'public/js/pages/configuracion.js', 'functions/api/maderarte.js',
-  'worker/index.js', 'scripts/test-worker.mjs', 'scripts/test-apps-script.mjs',
+  'worker/index.js', 'scripts/test-worker.mjs', 'scripts/test-apps-script.mjs', 'scripts/test-clients.mjs', 'scripts/test-commercial-rules.mjs',
   'apps-script/Config.gs', 'apps-script/SheetHelpers.gs', 'apps-script/Schema.gs',
-  'apps-script/DriveFolders.gs', 'apps-script/Auth.gs', 'apps-script/Orders.gs',
-  'apps-script/Router.gs', 'apps-script/appsscript.json', 'apps-script/README.md'
+  'apps-script/DriveFolders.gs', 'apps-script/Auth.gs', 'apps-script/Clients.gs', 'apps-script/Orders.gs',
+  'apps-script/Router.gs', 'apps-script/appsscript.json', 'apps-script/README.md',
+  'docs/HOMEEASY_PARITY_MAP.md'
 ];
 
 function walk(directory) {
@@ -41,9 +42,7 @@ for (const file of relativeFiles) assert.ok(!forbiddenExtensions.has(extname(fil
 
 const textExtensions = new Set(['.md', '.json', '.toml', '.yml', '.yaml', '.html', '.css', '.js', '.mjs', '.gs', '.txt', '']);
 const textFiles = files.filter(file => textExtensions.has(extname(file).toLowerCase()) || ['.gitignore', '.editorconfig', '.env.example', '_headers', '_redirects', '.nojekyll'].includes(file.split('/').pop()));
-const joinedText = textFiles
-  .map(file => readFileSync(file, 'utf8'))
-  .join('\n');
+const joinedText = textFiles.map(file => readFileSync(file, 'utf8')).join('\n');
 const publicText = textFiles
   .filter(file => relative(root, file).replaceAll('\\', '/').startsWith('public/'))
   .map(file => readFileSync(file, 'utf8'))
@@ -114,7 +113,7 @@ for (const [jsPath, htmlPath] of Object.entries(staticIdChecks)) {
 
 const router = readFileSync(join(root, 'apps-script/Router.gs'), 'utf8');
 const routeActions = new Set([...router.matchAll(/case '([A-Z0-9_]+)'/g)].map(match => match[1]));
-const requiredActions = ['AUTH_LOGIN', 'AUTH_SESSION_VALIDATE', 'AUTH_LOGOUT', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR', 'DASHBOARD_RESUMEN', 'ORDENES_LISTAR', 'ORDEN_OBTENER', 'SISTEMA_ESTADO', 'USUARIOS_LISTAR', 'INVITACION_CREAR'];
+const requiredActions = ['AUTH_LOGIN', 'AUTH_SESSION_VALIDATE', 'AUTH_LOGOUT', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR', 'DASHBOARD_RESUMEN', 'CLIENTES_LISTAR', 'CLIENTE_OBTENER', 'ORDENES_LISTAR', 'ORDEN_OBTENER', 'SISTEMA_ESTADO', 'USUARIOS_LISTAR', 'INVITACION_CREAR'];
 for (const action of requiredActions) assert.ok(routeActions.has(action), `Falta la acción ${action} en Router.gs`);
 
 const schemaSource = readFileSync(join(root, 'apps-script/Schema.gs'), 'utf8');
@@ -145,6 +144,16 @@ assert.match(configSource, /COMMERCIAL_WRITES:\s*false/, 'Las escrituras comerci
 const routerSource = readFileSync(join(root, 'apps-script/Router.gs'), 'utf8');
 assert.match(routerSource, /requiredProperty_\('MADERARTE_PROXY_TOKEN'\)/, 'Apps Script debe usar MADERARTE_PROXY_TOKEN');
 
+const clientsSource = readFileSync(join(root, 'apps-script/Clients.gs'), 'utf8');
+assert.match(clientsSource, /requirePermission_\(session, 'clientes\.read'\)/, 'Clientes debe exigir clientes.read');
+assert.match(clientsSource, /function listClients_\(/, 'Falta listClients_');
+assert.match(clientsSource, /function getClient_\(/, 'Falta getClient_');
+
+const commercialRulesSource = readFileSync(join(root, 'public/js/core/commercial-rules.js'), 'utf8');
+assert.match(commercialRulesSource, /minimumOrderDepositPercent:\s*30/, 'El frontend debe conservar el abono mínimo del 30%');
+assert.match(commercialRulesSource, /manufacturingDaysMin:\s*25/, 'El frontend debe conservar fabricación mínima de 25 días');
+assert.match(commercialRulesSource, /manufacturingDaysMax:\s*30/, 'El frontend debe conservar fabricación máxima de 30 días');
+
 const formatSource = readFileSync(join(root, 'public/js/core/format.js'), 'utf8');
 assert.match(formatSource, /export function safeInternalUrl\(/, 'Falta safeInternalUrl');
 const versionFiles = ['public/js/core/config.js', 'functions/api/maderarte.js', 'apps-script/Config.gs', 'README.md'];
@@ -157,5 +166,7 @@ console.log('OK · referencias HTML y recursos locales');
 console.log('OK · sin datos comerciales, IDs privados ni secretos');
 console.log('OK · contratos de API y versión 0.2.0 coherentes');
 console.log('OK · Cloudflare Worker y Static Assets protegidos');
+console.log('OK · Clientes protegido por permisos y rutas de lectura');
+console.log('OK · formulario de cotización y reglas comerciales protegidos');
 console.log('OK · encabezados únicos y contrato de Sedes protegido');
 console.log('OK · recursos de marca sin derivados no aprobados');

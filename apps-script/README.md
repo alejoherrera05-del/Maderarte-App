@@ -9,6 +9,10 @@ Este código se instala en un proyecto nuevo de Google Apps Script. No se reutil
 - Escrituras comerciales deshabilitadas en `apps-script/Config.gs`.
 - El proyecto de Apps Script se crea una sola vez y después GitHub queda como fuente del código.
 
+## Instalación manual en un proyecto existente
+
+Para copiar y pegar todo el Cerebro en un solo archivo, ejecuta `node scripts/export-cerebro.mjs`. Genera el código completo, el manifiesto y una guía en `dist/cerebro-manual/`. Sigue [Instalación manual del Cerebro](../docs/INSTALACION_CEREBRO_MANUAL.md). No instales a la vez el archivo completo y los módulos separados.
+
 ## Instalación recomendada con Codex y clasp
 
 Desde una copia limpia de este repositorio:

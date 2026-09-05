@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f6f7">
+  <meta name="description" content="Consulta de clientes de Maderarte.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/clientes-parity.css">
+  <title>Maderarte · Clientes</title>
+</head>
+<body class="clients-page">
+  <main id="clients-app" class="clients-app" hidden>
+    <section id="clients-search-screen" class="clients-search-screen" aria-labelledby="clients-search-title">
+      <a class="clients-cover-back" href="/index.html" aria-label="Volver al inicio">
+        <img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true">
+      </a>
+
+      <div class="clients-search-center">
+        <div class="clients-brand-lockup" aria-label="Maderarte">
+          <img class="clients-brand-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
+          <img class="clients-brand-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
+        </div>
+
+        <div class="clients-cover-copy">
+          <p class="clients-eyebrow">Directorio comercial</p>
+          <h1 id="clients-search-title">Buscar cliente</h1>
+          <p>Consulta datos, órdenes de pedido, cotizaciones y abonos desde un solo expediente.</p>
+        </div>
+
+        <form id="clients-search-form" class="clients-search-form" autocomplete="off">
+          <div class="clients-search-field">
+            <img src="/assets/icons/magnifying-glass.svg" alt="" aria-hidden="true">
+            <input id="clients-search-input" type="search" inputmode="search" placeholder="Identificación o nombre del cliente" aria-label="Buscar cliente">
+          </div>
+          <div id="clients-suggestions" class="clients-suggestions" role="listbox" hidden></div>
+          <p id="clients-search-message" class="clients-search-message" role="status"></p>
+        </form>
+      </div>
+
+      <div class="clients-cover-footer" aria-hidden="true">
+        <img src="/assets/brand/maderarte-logo-2026.webp" alt="">
+        <span></span>
+      </div>
+    </section>
+
+    <section id="clients-result-screen" class="clients-result-screen" aria-label="Expediente del cliente">
+      <header class="clients-result-header">
+        <div class="clients-result-header-inner">
+          <button id="clients-result-back" class="clients-header-back" type="button" aria-label="Volver al inicio">
+            <img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true">
+          </button>
+          <div class="clients-header-title">
+            <img src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
+            <span>Clientes</span>
+          </div>
+          <button id="clients-new-search" class="clients-new-search" type="button">Nueva búsqueda</button>
+        </div>
+      </header>
+
+      <div class="clients-result-shell">
+        <div id="clients-result-content" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="/js/pages/clientes.js"></script>
+</body>
+</html>

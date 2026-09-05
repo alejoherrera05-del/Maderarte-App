@@ -10,9 +10,18 @@
     "test:edge": "node scripts/test-edge.mjs",
     "test:worker": "node scripts/test-worker.mjs",
     "test:brain": "node scripts/test-apps-script.mjs",
-    "test": "npm run check && npm run test:brain && npm run test:edge && npm run test:worker"
+    "test:clients": "node scripts/test-clients.mjs && node scripts/test-client-lookup.mjs",
+    "test:commercial-rules": "node scripts/test-commercial-rules.mjs",
+    "test:quotes": "node scripts/test-quotes.mjs",
+    "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:quotes && npm run test:edge && npm run test:worker && npm run test:identity && npm run test:tracking && npm run test:documents",
+    "test:identity": "node scripts/test-module-identity.mjs",
+    "test:tracking": "node scripts/test-quote-pagination.mjs && node scripts/test-tracking-dom.mjs",
+    "test:documents": "node scripts/test-document-url.mjs && node scripts/test-quote-document-pagination.mjs && node scripts/test-quote-form-dom.mjs"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0"
   }
 }

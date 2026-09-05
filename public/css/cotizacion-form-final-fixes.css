@@ -1,0 +1,198 @@
+/* Final polish for the internal quotation form only.
+ * Do not alter the approved client-facing PDF/document layout.
+ */
+
+/* Conditions: replace the oversized solid tiles with compact, readable badges. */
+.quote-conditions {
+  gap: 12px;
+}
+
+.quote-condition {
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  padding: 15px 16px;
+  align-items: center;
+}
+
+.quote-condition-mark {
+  width: auto !important;
+  min-width: 64px;
+  height: 36px !important;
+  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  justify-self: start;
+  padding: 0 10px;
+  overflow: visible !important;
+  border: 1px solid rgba(200, 97, 37, .20);
+  border-radius: 999px !important;
+  background: rgba(200, 97, 37, .08) !important;
+  color: var(--quote-copper-deep) !important;
+  font-size: .875rem !important;
+  line-height: 1 !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+
+.quote-condition:nth-child(2) .quote-condition-mark {
+  border-color: rgba(154, 119, 61, .24);
+  background: rgba(154, 119, 61, .09) !important;
+  color: #80612f !important;
+}
+
+.quote-condition > div:last-child {
+  min-width: 0;
+}
+
+.quote-condition strong {
+  line-height: 1.25;
+}
+
+.quote-condition p {
+  max-width: 62ch;
+  line-height: 1.45;
+}
+
+/* Keep the cards calm and aligned when the form becomes one column. */
+@media (max-width: 720px) {
+  .quote-condition {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .quote-condition-mark {
+    min-width: 60px;
+    height: 34px !important;
+    padding-inline: 8px;
+    font-size: .875rem !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .quote-condition {
+    grid-template-columns: 64px minmax(0, 1fr) !important;
+    gap: 10px;
+    padding: 13px !important;
+  }
+
+  .quote-condition-mark {
+    min-width: 58px;
+    height: 32px !important;
+    padding-inline: 7px;
+    font-size: .875rem !important;
+  }
+}
+
+/* Comfortable reading in the editor, independent of the A4 document. */
+.quote-form { gap: 26px; }
+.quote-editor-section { padding: 32px; }
+.quote-section-title { align-items: flex-start; flex-direction: column; gap: 9px; margin-bottom: 28px; }
+.quote-section-title > div > span { font-size: .8125rem; }
+.quote-section-title h2 { font-size: 1.5rem; line-height: 1.25; font-weight: 600; }
+.quote-section-title > small { max-width: 60ch; font-size: .9375rem; line-height: 1.5; text-align: left; }
+.quote-items-title { flex-direction: row; align-items: center; }
+.quote-field-grid, .quote-item-grid { gap: 24px 20px; align-items: start; }
+.quote-field > label, .quote-discount-field > label {
+  margin-bottom: 10px;
+  color: #5f5a56;
+  font-size: .9375rem;
+  line-height: 1.4;
+  font-weight: 550;
+}
+.quote-editor input, .quote-editor select, .quote-editor textarea,
+.quote-discount-field input { font-size: 17px; }
+.quote-field input, .quote-field select { min-height: 56px; padding: 12px 16px; }
+.quote-field textarea { min-height: 132px; padding: 15px 16px; line-height: 1.6; }
+.quote-field input, .quote-field select, .quote-field textarea { scroll-margin-block: 110px; }
+.quote-helper { font-size: .875rem; line-height: 1.5; margin-top: 10px; }
+.quote-helper:empty { display: none; }
+.quote-client-lookup, .quote-client-control { position: relative; min-width: 0; }
+.quote-client-suggestions {
+  top: calc(100% + 8px);
+  width: min(540px, calc(100vw - 72px));
+  min-width: 100%;
+  max-height: min(320px, 38dvh);
+  overscroll-behavior: contain;
+  padding: 6px;
+}
+.quote-client-option { min-height: 74px; grid-template-columns: minmax(0, 1fr) auto; padding: 12px 14px; }
+.quote-client-option[aria-selected="true"] { background: #f5eee9; }
+.quote-client-option-copy { gap: 5px; }
+.quote-client-option-copy strong { color: var(--quote-copper-deep); font-size: 1rem; }
+.quote-client-option-copy span { font-size: .9375rem; white-space: normal; line-height: 1.4; }
+.quote-item { padding: 24px; }
+.quote-items { gap: 24px; }
+.quote-item-head { margin-bottom: 24px; }
+.quote-item-index strong { font-size: 1.0625rem; font-weight: 600; }
+.quote-item-index small { font-size: .875rem; }
+.quote-item-index > span { width: 44px; height: 44px; font-size: .875rem; }
+.quote-add-item, .quote-remove-item { min-height: 46px; font-size: .9375rem; }
+.quote-item-line-total span { font-size: .875rem; }
+.quote-item-line-total strong { font-size: 1.375rem; }
+.quote-photo-area { margin-top: 24px; padding-top: 22px; }
+.quote-photo-head strong, .quote-photo-drop strong { font-size: 1rem; }
+.quote-photo-head span, .quote-photo-head > small, .quote-photo-drop small { font-size: .875rem; line-height: 1.5; }
+.quote-photo-drop { min-height: 88px; }
+.quote-conditions { gap: 18px; margin-top: 24px; }
+.quote-condition { align-items: start; padding: 18px; }
+.quote-condition strong { font-size: .9375rem; line-height: 1.4; }
+.quote-condition p { font-size: .875rem; line-height: 1.6; }
+.quote-summary-card { padding: 24px; }
+.quote-summary-head > span { font-size: 1.125rem; }
+.quote-summary-head small { font-size: .875rem; }
+.quote-summary-row, .quote-summary-total span { font-size: .9375rem; }
+.quote-summary-row strong { font-size: 1.0625rem; }
+.quote-summary-total { padding-block: 24px; }
+.quote-summary-total strong { font-size: 2rem; }
+.quote-discount-field > div { min-height: 54px; }
+.quote-deposit-box { padding: 18px; }
+.quote-deposit-box span { font-size: .9375rem; }
+.quote-deposit-box small { font-size: .875rem; }
+.quote-deposit-box strong { font-size: 1.5rem; }
+.quote-write-note { font-size: .8125rem; line-height: 1.5; margin-top: 14px; }
+.quote-secondary-action, .quote-primary-action { min-height: 54px; font-size: 1rem; }
+.quote-document-head { margin-bottom: 26px; padding: 28px; }
+.quote-document-kicker { font-size: .8125rem; }
+.quote-document-status { font-size: .8125rem; }
+.quote-document-identity > p:last-child { font-size: .9375rem; }
+.quote-meta-cell span { font-size: .8125rem; }
+.quote-meta-cell strong { font-size: .9375rem; white-space: normal; line-height: 1.4; }
+.quote-change-branch { min-height: 46px; font-size: .9375rem; }
+.quote-header-brand strong { font-size: 1.0625rem; }
+.quote-header-brand small { font-size: .8125rem; }
+.quote-gate-option-copy strong { font-size: 1.0625rem; }
+.quote-gate-option-copy small, .quote-gate-message { font-size: .875rem; line-height: 1.45; }
+.quote-gate-intro { font-size: 1rem; }
+
+@media (min-width: 1041px) and (max-width: 1240px) {
+  .quote-editor-section { padding: 26px; }
+  .quote-form { gap: 22px; grid-template-columns: minmax(0, 1fr) 320px; }
+  .quote-item-description { grid-column: span 12; }
+  .quote-item-category { grid-column: span 8; }
+  .quote-item-quantity { grid-column: span 4; }
+  .quote-item-value, .quote-item-fabric, .quote-item-wood { grid-column: span 12; }
+  .quote-conditions { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .quote-editor-section { padding: 26px 20px; }
+  .quote-section-title h2 { font-size: 1.375rem; }
+  .quote-field-grid, .quote-item-grid { gap: 24px; }
+  .quote-item { padding: 22px 16px; }
+  .quote-item-head { gap: 12px; }
+  .quote-item-index { gap: 9px; }
+  .quote-item-index small { max-width: 15ch; line-height: 1.4; }
+  .quote-document-head { padding: 24px 20px; }
+  .quote-summary-card { padding: 24px 20px; }
+  .quote-gate-stage { max-height: 100%; overflow-y: auto; }
+  .quote-header-brand strong { font-size: 1rem; }
+}
+
+@media (max-width: 430px) {
+  .quote-items-title { flex-direction: column; align-items: stretch; gap: 16px; }
+  .quote-add-item { width: 100%; }
+}

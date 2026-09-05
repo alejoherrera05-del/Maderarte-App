@@ -5,27 +5,26 @@ import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
   {
-    key: 'comercial', label: 'Comercial', tone: 'orange', items: [
-      { key: 'clientes', label: 'Clientes', description: 'Datos, pedidos y saldos', icon: 'users-three', permission: 'clientes.read', available: false },
-      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Propuestas enviadas', icon: 'file-text', permission: 'cotizaciones.read', available: false },
-      { key: 'ordenes', label: 'Órdenes de pedido', description: 'Pedidos, estado y entregas', icon: 'clipboard-text', permission: 'ordenes.read', options: [
-        { label: 'Ver órdenes de pedido', description: 'Abrir el listado y sus expedientes', href: '/ordenes.html' },
-        { label: 'Nueva orden de pedido', description: 'Se habilitará en la etapa de escrituras', disabled: true }
+    key: 'gestion', label: 'Gestión', tone: 'orange', items: [
+      { key: 'clientes', label: 'Consultar cliente', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
+      { key: 'ventas', label: 'Historial de ventas', description: 'OP, pagos, saldos y filtros', icon: 'clipboard-text', permission: 'ordenes.read', href: '/ordenes.html' },
+      { key: 'cotizaciones', label: 'Cotización', description: 'Crear y hacer seguimiento', icon: 'file-text', permission: 'cotizaciones.read', options: [
+        { label: 'Formulario', description: 'Crear una propuesta con items y referencias', href: '/cotizacion.html' },
+        { label: 'Seguimiento', description: 'Radar comercial por antigüedad y valor', href: '/cotizaciones.html' }
       ] },
-      { key: 'abonos', label: 'Abonos', description: 'Pagos recibidos y saldos', icon: 'wallet', permission: 'abonos.read', available: false }
+      { key: 'pedido', label: 'Orden de pedido', description: 'Crear y consultar expedientes', icon: 'clipboard-text', permission: 'ordenes.read', options: [
+        { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' },
+        { label: 'Formulario', description: 'Registrar una nueva OP en la etapa de escrituras', disabled: true }
+      ] }
     ]
   },
   {
-    key: 'operacion', label: 'Operación', tone: 'graphite', items: [
+    key: 'operacion', label: 'Operación', tone: 'gold', items: [
+      { key: 'abonos', label: 'Registrar abono', description: 'Recibos, pagos y saldos', icon: 'wallet', permission: 'abonos.read', available: false },
       { key: 'produccion', label: 'Producción', description: 'Pedidos en fabricación', icon: 'stack', permission: 'produccion.read', available: false },
-      { key: 'remisiones', label: 'Remisiones', description: 'Entregas realizadas', icon: 'truck', permission: 'remisiones.read', available: false },
-      { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false }
-    ]
-  },
-  {
-    key: 'gestion', label: 'Gestión', tone: 'gold', items: [
-      { key: 'documentos', label: 'Documentos', description: 'PDF y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
-      { key: 'reportes', label: 'Reportes', description: 'Ventas y operación', icon: 'chart-bar', permission: 'reportes.read', available: false }
+      { key: 'documentos', label: 'Centro documental', description: 'PDF, recibos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
+      { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false },
+      { key: 'remisiones', label: 'Remisiones', description: 'Entregas realizadas y soportes', icon: 'truck', permission: 'remisiones.read', available: false }
     ]
   }
 ]);
@@ -54,6 +53,10 @@ function menuItem(item, tone) {
 
   if (item.available === false) {
     return `<div class="dashboard-menu-item is-disabled" aria-disabled="true"${permission}>${core}<span class="dashboard-menu-status">En preparación</span></div>`;
+  }
+
+  if (item.href) {
+    return `<a class="dashboard-menu-item" href="${escapeHtml(withPreview(item.href))}"${permission}>${core}<img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true"></a>`;
   }
 
   return `<button class="dashboard-menu-item" type="button" data-menu-key="${escapeHtml(item.key)}" data-tone="${escapeHtml(tone)}"${permission}>

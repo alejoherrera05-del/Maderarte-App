@@ -1,0 +1,306 @@
+/* Seguimiento module masthead.
+ * This replaces decorative badges/legends with a functional command surface.
+ */
+
+.tracking-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(420px, .85fr);
+  gap: 36px;
+  align-items: stretch;
+  margin-bottom: 18px;
+  padding: 32px 34px;
+  border: 1px solid rgba(45, 40, 36, .075);
+  border-radius: 30px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(42, 36, 32, .055);
+}
+
+.tracking-command-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tracking-module-path {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #88817b;
+  font-size: .69rem;
+  line-height: 1;
+  font-weight: 730;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.tracking-module-path b {
+  color: #c7c0ba;
+  font-weight: 500;
+}
+
+.tracking-module-path span:last-child {
+  color: var(--track-copper-deep);
+}
+
+.tracking-command h1 {
+  margin: 14px 0 0;
+  color: var(--track-ink);
+  font-size: clamp(2.75rem, 4.7vw, 4rem);
+  line-height: .94;
+  font-weight: 735;
+  letter-spacing: -.06em;
+}
+
+.tracking-command-copy > p {
+  max-width: 62ch;
+  margin: 15px 0 0;
+  color: var(--track-muted);
+  font-size: 1.01rem;
+  line-height: 1.55;
+  font-weight: 500;
+}
+
+.tracking-radar-panel {
+  min-width: 0;
+  padding-left: 34px;
+  border-left: 1px solid var(--track-line);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tracking-radar-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
+.tracking-radar-head > div {
+  display: grid;
+  gap: 4px;
+}
+
+.tracking-radar-head span {
+  color: #8b837d;
+  font-size: .64rem;
+  line-height: 1;
+  font-weight: 730;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.tracking-radar-head strong {
+  color: #423d39;
+  font-size: .92rem;
+  line-height: 1.2;
+  font-weight: 690;
+  letter-spacing: -.018em;
+}
+
+.tracking-radar-head small {
+  color: #9a938d;
+  font-size: .67rem;
+  line-height: 1;
+  font-weight: 560;
+  white-space: nowrap;
+}
+
+.tracking-radar-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--track-line-strong);
+  border-bottom: 1px solid var(--track-line);
+}
+
+.tracking-radar-segment {
+  position: relative;
+  min-width: 0;
+  min-height: 112px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 17px 15px 15px;
+}
+
+.tracking-radar-segment + .tracking-radar-segment {
+  border-left: 1px solid var(--track-line);
+}
+
+.tracking-radar-segment::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #c9c3bd;
+}
+
+.tracking-radar-segment.recent::before { background: var(--track-green); }
+.tracking-radar-segment.attention::before { background: var(--track-amber); }
+.tracking-radar-segment.priority::before { background: var(--track-red); }
+
+.tracking-radar-segment > span {
+  color: #7f7872;
+  font-size: .65rem;
+  line-height: 1;
+  font-weight: 710;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.tracking-radar-segment.recent > span { color: var(--track-green); }
+.tracking-radar-segment.attention > span { color: var(--track-amber); }
+.tracking-radar-segment.priority > span { color: var(--track-red); }
+
+.tracking-radar-segment > strong {
+  margin-top: 2px;
+  color: #342f2c;
+  font-size: 2rem;
+  line-height: .95;
+  font-weight: 735;
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracking-radar-segment > small {
+  color: #8a837d;
+  font-size: .72rem;
+  line-height: 1.15;
+  font-weight: 570;
+}
+
+/* Old decorative hero/legend is no longer part of the module. */
+.tracking-hero,
+.tracking-legend {
+  display: none !important;
+}
+
+/* Footer overrides old fine-print treatment. */
+.tracking-footer.module-footer {
+  display: grid !important;
+  flex-direction: initial;
+  justify-content: initial;
+  gap: 28px;
+  min-height: 104px;
+  padding: 24px 4px 6px;
+  text-align: left;
+}
+
+.tracking-footer.module-footer > img {
+  width: auto;
+}
+
+@media (max-width: 1050px) {
+  .tracking-command {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+
+  .tracking-radar-panel {
+    padding: 24px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--track-line);
+  }
+}
+
+@media (max-width: 720px) {
+  .tracking-shell {
+    padding-top: 20px;
+  }
+
+  .tracking-command {
+    gap: 22px;
+    padding: 24px 20px;
+    border-radius: 24px;
+  }
+
+  .tracking-command h1 {
+    font-size: clamp(2.45rem, 12vw, 3.15rem);
+  }
+
+  .tracking-command-copy > p {
+    font-size: .93rem;
+    line-height: 1.5;
+  }
+
+  .tracking-radar-head {
+    align-items: flex-start;
+  }
+
+  .tracking-radar-head small {
+    display: none;
+  }
+
+  .tracking-radar-segment {
+    min-height: 96px;
+    padding: 14px 10px 12px;
+  }
+
+  .tracking-radar-segment > span {
+    font-size: .57rem;
+    letter-spacing: .025em;
+  }
+
+  .tracking-radar-segment > strong {
+    font-size: 1.72rem;
+  }
+
+  .tracking-radar-segment > small {
+    font-size: .66rem;
+  }
+
+  .tracking-footer.module-footer {
+    min-height: 132px;
+    gap: 14px;
+    padding-top: 24px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 430px) {
+  .tracking-command {
+    padding: 22px 17px;
+    border-radius: 22px;
+  }
+
+  .tracking-module-path {
+    gap: 6px;
+    font-size: .61rem;
+    letter-spacing: .055em;
+  }
+
+  .tracking-command h1 {
+    margin-top: 12px;
+    font-size: 2.5rem;
+  }
+
+  .tracking-radar-panel {
+    padding-top: 20px;
+  }
+
+  .tracking-radar-head strong {
+    font-size: .86rem;
+  }
+
+  .tracking-radar-segment {
+    min-height: 91px;
+    padding-inline: 8px;
+  }
+
+  .tracking-radar-segment > span {
+    font-size: .52rem;
+  }
+
+  .tracking-radar-segment > strong {
+    font-size: 1.58rem;
+  }
+
+  .tracking-radar-segment > small {
+    font-size: .61rem;
+  }
+}

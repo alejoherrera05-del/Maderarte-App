@@ -1,5 +1,9 @@
 # Reglas comerciales
 
+## Perfil comercial oficial
+
+Los datos públicos de empresa usados por formularios y documentos viven en `public/js/core/company-profile.js`. Cotizaciones, pedidos, PDFs, recibos y demás documentos deben reutilizar esa fuente y no duplicar razón social, NIT, teléfonos, web, redes o direcciones de sedes en múltiples archivos.
+
 ## Base cero
 
 - Clientes, cotizaciones, órdenes, abonos, remisiones y documentos comienzan vacíos.
@@ -13,12 +17,18 @@
 - Debe contener al menos un producto.
 - `Valor_Total`, `Abonado_Total` y `Saldo_Pendiente` deben permanecer consistentes.
 - Una OP anulada conserva registros, documentos y auditoría.
+- Para solicitar e iniciar un pedido se exige un abono mínimo equivalente al **30% del valor total**.
+- El proceso de fabricación se comunica como un tiempo estimado de **25 a 30 días**, contado desde la confirmación del pedido y el cumplimiento del abono mínimo.
 
 ## Productos
 
 - Cada producto vive en `Orden_Items`.
 - Se guardan descripción, categoría, referencia, cantidad, unidad, valor, acabados, medidas y especificaciones.
 - Las cantidades entregadas nunca pueden superar las cantidades vendidas.
+- En la experiencia de captura de Maderarte, medidas y detalles técnicos se agrupan dentro de `Especificaciones` cuando no requieren un campo operativo independiente.
+- Las fotografías de referencia pertenecen al item concreto y, cuando existan, deben aparecer en un anexo fotográfico separado del documento comercial principal.
+- Si un campo opcional no fue diligenciado, no debe imprimirse como etiqueta vacía ni con guiones/placeholders en el PDF final.
+- Si ningún item tiene fotografías, el PDF final no debe generar una hoja de anexo fotográfico vacía.
 
 ## Abonos
 

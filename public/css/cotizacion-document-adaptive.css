@@ -1,0 +1,825 @@
+/* Adaptive client-facing quotation layout.
+ * The letterhead remains unchanged; the body uses the available A4 height
+ * instead of compressing every section toward the top.
+ */
+
+.quote-editorial-page {
+  --adaptive-accent: #b85a2b;
+  --adaptive-gold: #c2a468;
+  --adaptive-ink: #302d2a;
+  --adaptive-muted: #77716b;
+  --adaptive-soft: #99938d;
+  --adaptive-line: #e6e2de;
+  --adaptive-surface: #fafafa;
+}
+
+@media (min-width: 761px) {
+  .quote-editorial-page {
+    height: 1118px;
+    min-height: 1118px;
+    overflow: hidden;
+  }
+
+}
+
+.quote-pagination-measure {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 794px;
+  height: 1118px;
+  visibility: hidden;
+  pointer-events: none;
+  border: 0;
+}
+.quote-preview-preparing { padding: 32px; font-size: 1rem; line-height: 1.5; }
+.quote-editorial-page.quote-continuation-page .quote-editorial-signoff { margin-top: auto !important; }
+.quote-editorial-page .quote-editorial-notes-page { margin-top: 20px; }
+.quote-editorial-page .quote-editorial-notes p,
+.quote-editorial-page .quote-editorial-item-spec { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.quote-editorial-page .quote-editorial-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 36px 18px;
+}
+
+/* CLIENTE */
+.quote-editorial-page .quote-editorial-client {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+.quote-editorial-page .quote-editorial-client-heading {
+  padding: 0 0 7px;
+  border-bottom: 2px solid #f0eeec;
+}
+
+.quote-editorial-page .quote-editorial-client-heading span {
+  color: var(--adaptive-accent);
+  font-size: .70rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-client-grid {
+  display: grid;
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr);
+  gap: 12px 28px;
+  margin-top: 13px;
+}
+
+.quote-editorial-client-field {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dedbd8;
+}
+
+.quote-editorial-client-field-wide {
+  grid-column: 1 / -1;
+}
+
+.quote-editorial-client-field small {
+  color: var(--adaptive-soft);
+  font-size: .55rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-client-field strong {
+  min-width: 0;
+  color: #4d4844;
+  font-size: .74rem;
+  line-height: 1.35;
+  font-weight: 590;
+  overflow-wrap: anywhere;
+}
+
+.quote-editorial-client-field-name strong {
+  color: var(--adaptive-ink);
+  font-size: .82rem;
+  font-weight: 650;
+}
+
+/* PRODUCTOS */
+.quote-editorial-page .quote-editorial-items-section {
+  margin-top: 22px;
+}
+
+.quote-editorial-page .quote-editorial-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 0 7px;
+  border-bottom: 2px solid var(--adaptive-accent);
+}
+
+.quote-editorial-page .quote-editorial-section-head > div > span {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-section-head h2 {
+  margin: 0;
+  color: var(--adaptive-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .70rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-section-head > strong {
+  color: var(--adaptive-muted);
+  font-size: .62rem;
+  font-weight: 600;
+}
+
+.quote-editorial-table-head,
+.quote-editorial-item {
+  display: grid;
+  grid-template-columns: 31px minmax(0, 1fr) 62px 102px 112px;
+  gap: 12px;
+}
+
+.quote-editorial-table-head {
+  align-items: end;
+  padding: 8px 0 6px;
+  border-bottom: 1px solid #ddd9d5;
+  color: #77716b;
+  font-size: .54rem;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-table-head span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.quote-editorial-page .quote-editorial-item {
+  align-items: start;
+  padding: 14px 0 13px;
+  border-bottom: 1px solid #efedeb;
+}
+
+.quote-editorial-page .quote-editorial-item-number {
+  padding-top: 1px;
+  color: var(--adaptive-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .68rem;
+  line-height: 1.15;
+  font-weight: 760;
+}
+
+.quote-editorial-page .quote-editorial-item-main {
+  min-width: 0;
+}
+
+.quote-editorial-page .quote-editorial-item-title h3 {
+  margin: 0;
+  color: var(--adaptive-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .78rem;
+  line-height: 1.28;
+  font-weight: 650;
+}
+
+.quote-editorial-page .quote-editorial-item-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 5px;
+}
+
+.quote-editorial-page .quote-editorial-item-facts > span {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.quote-editorial-page .quote-editorial-item-facts > span + span::before {
+  content: '·';
+  margin: 0 6px;
+  color: #c5c0bb;
+}
+
+.quote-editorial-page .quote-editorial-item-facts small {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-item-facts strong {
+  color: #6e6862;
+  font-size: .62rem;
+  line-height: 1.38;
+  font-weight: 520;
+}
+
+.quote-editorial-page .quote-editorial-item-spec {
+  margin: 5px 0 0;
+  max-width: 90ch;
+  color: #817b75;
+  font-size: .60rem;
+  line-height: 1.42;
+}
+
+.quote-editorial-item-quantity,
+.quote-editorial-item-unit,
+.quote-editorial-item-total {
+  min-width: 0;
+  padding-top: 1px;
+  color: #5c5651;
+  font-size: .66rem;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.quote-editorial-item-unit,
+.quote-editorial-item-total {
+  white-space: nowrap;
+}
+
+.quote-editorial-item-total {
+  color: var(--adaptive-ink);
+  font-size: .74rem;
+  font-weight: 720;
+}
+
+.quote-density-balanced .quote-editorial-item {
+  padding-block: 11px 10px;
+}
+
+.quote-density-balanced .quote-editorial-client-grid {
+  gap-block: 9px;
+}
+
+.quote-density-compact .quote-editorial-body {
+  padding-top: 16px;
+}
+
+.quote-density-compact .quote-editorial-items-section {
+  margin-top: 15px;
+}
+
+.quote-density-compact .quote-editorial-item {
+  padding-block: 8px 7px;
+}
+
+.quote-density-compact .quote-editorial-item-spec {
+  margin-top: 3px;
+  font-size: .57rem;
+}
+
+/* CIERRE: se ancla a la parte baja cuando sobra altura y sube naturalmente cuando hay más contenido. */
+.quote-editorial-closing {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(270px, .78fr);
+  gap: 30px;
+  align-items: end;
+  margin-top: auto;
+  padding-top: 26px;
+}
+
+.quote-density-balanced .quote-editorial-closing {
+  padding-top: 20px;
+}
+
+.quote-density-compact .quote-editorial-closing {
+  gap: 22px;
+  padding-top: 15px;
+}
+
+.quote-editorial-page .quote-editorial-terms,
+.quote-editorial-page .quote-editorial-investment {
+  margin: 0;
+}
+
+.quote-editorial-page .quote-editorial-section-kicker {
+  margin: 0 0 8px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid #f0eeec;
+  color: var(--adaptive-accent);
+  font-size: .68rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-term-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  border: 0;
+}
+
+.quote-editorial-page .quote-editorial-term-card,
+.quote-editorial-page .quote-editorial-term-card + .quote-editorial-term-card {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 9px;
+  align-items: baseline;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.quote-editorial-page .quote-editorial-term-icon {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-term-value {
+  grid-column: 1;
+  color: var(--adaptive-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: .72rem;
+  line-height: 1.3;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.quote-editorial-page .quote-editorial-term-time .quote-editorial-term-value {
+  color: #625c57;
+}
+
+.quote-editorial-page .quote-editorial-term-value small {
+  display: inline;
+  margin-left: 3px;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.quote-editorial-page .quote-editorial-term-copy {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.quote-editorial-page .quote-editorial-term-copy strong {
+  display: block;
+  color: #514c47;
+  font-size: .66rem;
+  line-height: 1.3;
+  font-weight: 650;
+}
+
+.quote-editorial-page .quote-editorial-term-copy p {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-term-copy span {
+  display: inline;
+  margin: 0 0 0 5px;
+  color: var(--adaptive-muted);
+  font-size: .60rem;
+  font-weight: 550;
+}
+
+.quote-editorial-page .quote-editorial-notes {
+  margin: 12px 0 0;
+  padding: 9px 0 0;
+  border-top: 1px solid #ece9e6;
+}
+
+.quote-editorial-page .quote-editorial-notes strong {
+  display: block;
+  color: #7f7973;
+  font-size: .56rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-notes p {
+  margin: 5px 0 0;
+  color: #69635d;
+  font-size: .62rem;
+  line-height: 1.45;
+}
+
+.quote-editorial-page .quote-editorial-investment {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 15px 16px 16px;
+  border: 0;
+  border-left: 5px solid var(--adaptive-gold);
+  border-radius: 11px;
+  background: var(--adaptive-surface);
+}
+
+.quote-editorial-page .quote-editorial-investment-context > span,
+.quote-editorial-page .quote-editorial-investment-context > strong,
+.quote-editorial-page .quote-editorial-investment-context > small {
+  display: none;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  gap: 7px;
+  margin: 0;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  color: #88827c;
+  font-size: .67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-price-breakdown strong {
+  color: #55504b;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.quote-editorial-page .quote-editorial-total {
+  min-width: 0;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 2px solid #eae7e4;
+  text-align: right;
+}
+
+.quote-editorial-page .quote-editorial-total > span {
+  color: var(--adaptive-accent);
+  font-size: .70rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.quote-editorial-page .quote-editorial-total > strong {
+  margin-top: 6px;
+  color: var(--adaptive-accent);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 1.58rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+
+.quote-editorial-page .quote-editorial-total > small {
+  margin-top: 6px;
+  color: #69635e;
+  font-size: .61rem;
+  line-height: 1.35;
+  font-weight: 580;
+}
+
+/* PIE COMÚN */
+.quote-editorial-page .quote-editorial-signoff {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 22px;
+  align-items: end;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid #e7e3df;
+}
+
+.quote-editorial-page .quote-editorial-signature {
+  grid-column: 2;
+  grid-row: 1;
+  width: 180px;
+  margin: 0;
+  padding-top: 7px;
+  border-top: 1px solid #d3cec9;
+  color: #58524d;
+  text-align: center;
+}
+
+.quote-editorial-page .quote-editorial-signature span {
+  font-size: .76rem;
+}
+
+.quote-document-footer,
+.quote-editorial-page .quote-editorial-footer {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.quote-editorial-page .quote-editorial-footer {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.quote-document-footer > img,
+.quote-editorial-page .quote-editorial-footer > img {
+  width: 78px;
+  height: auto;
+  opacity: .48;
+}
+
+.quote-document-footer .quote-editorial-footer-copy,
+.quote-editorial-page .quote-editorial-footer-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.quote-document-footer .quote-editorial-footer-copy strong,
+.quote-editorial-page .quote-editorial-footer-copy strong {
+  color: #6b655f;
+  font-size: .51rem;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+.quote-document-footer .quote-editorial-footer-copy span,
+.quote-editorial-page .quote-editorial-footer-copy span {
+  color: #99938d;
+  font-size: .44rem;
+  line-height: 1.3;
+}
+
+.quote-document-page-number {
+  color: #817b75;
+  font-size: .52rem;
+  line-height: 1;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/* ANEXO FOTOGRÁFICO: páginas reales A4 con pie repetido y numeración. */
+.quote-preview-appendix-page {
+  min-height: 1118px;
+  height: 1118px;
+  display: flex;
+  flex-direction: column;
+  padding: 34px 36px 20px;
+  overflow: hidden;
+}
+
+.quote-annex-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-preview-appendix-page .quote-preview-annex-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--adaptive-accent, #b85a2b);
+}
+
+.quote-preview-appendix-page .quote-preview-annex-head span {
+  color: var(--adaptive-accent, #b85a2b);
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.quote-preview-appendix-page .quote-preview-annex-head h3 {
+  margin: 5px 0 0;
+  color: #302d2a;
+  font-size: 1.22rem;
+  font-weight: 650;
+  letter-spacing: -.025em;
+}
+
+.quote-preview-appendix-page .quote-preview-annex-head > strong {
+  color: #5f5954;
+  font-size: .72rem;
+  font-weight: 650;
+}
+
+.quote-appendix-groups {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 28px;
+  align-content: space-evenly;
+  padding: 22px 0 18px;
+}
+
+.quote-preview-appendix-page[data-group-count="1"] .quote-appendix-groups {
+  align-content: center;
+}
+
+.quote-appendix-group {
+  min-width: 0;
+}
+
+.quote-appendix-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 8px;
+}
+
+.quote-appendix-group-head > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.quote-appendix-group-head span {
+  color: var(--adaptive-accent, #b85a2b);
+  font-size: .58rem;
+  font-weight: 750;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.quote-appendix-group-head strong {
+  color: #373330;
+  font-size: .84rem;
+  line-height: 1.25;
+  font-weight: 650;
+}
+
+.quote-appendix-group-head small {
+  color: #938d87;
+  font-size: .56rem;
+  white-space: nowrap;
+}
+
+.quote-appendix-photos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.quote-appendix-photos[data-photo-count="1"] {
+  grid-template-columns: 1fr;
+}
+
+.quote-appendix-photos figure {
+  margin: 0;
+}
+
+.quote-appendix-photos img {
+  width: 100%;
+  max-height: 280px;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  border: 1px solid #e5e1dd;
+  border-radius: 9px;
+  background: #fafafa;
+}
+
+.quote-preview-appendix-page[data-group-count="1"] .quote-appendix-photos img {
+  max-height: 590px;
+}
+
+.quote-appendix-photos figcaption {
+  margin-top: 5px;
+  color: #8a847e;
+  font-size: .56rem;
+  text-align: center;
+}
+
+.quote-preview-appendix-page > .quote-document-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #e7e3df;
+}
+
+body.quote-print-export .quote-preview-page {
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 297mm !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  break-after: page;
+  page-break-after: always;
+}
+
+body.quote-print-export .quote-preview-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+@media (max-width: 760px) {
+  .quote-editorial-page {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .quote-editorial-page .quote-editorial-body {
+    display: block;
+    padding: 17px 20px 20px;
+  }
+
+  .quote-editorial-client-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .quote-editorial-client-field-wide {
+    grid-column: auto;
+  }
+
+  .quote-editorial-page .quote-editorial-items-section {
+    margin-top: 18px;
+  }
+
+  .quote-editorial-table-head {
+    display: none;
+  }
+
+  .quote-editorial-page .quote-editorial-item {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .quote-editorial-item-quantity,
+  .quote-editorial-item-unit,
+  .quote-editorial-item-total {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .quote-editorial-item-quantity::before { content: 'Cant.: '; color: #99938d; }
+  .quote-editorial-item-unit::before { content: 'V. unitario: '; color: #99938d; }
+  .quote-editorial-item-total::before { content: 'V. total: '; color: #99938d; }
+
+  .quote-editorial-closing {
+    display: block;
+    margin-top: 18px;
+    padding-top: 0;
+  }
+
+  .quote-editorial-page .quote-editorial-investment {
+    margin-top: 18px;
+  }
+
+  .quote-editorial-page .quote-editorial-signoff {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .quote-editorial-page .quote-editorial-footer,
+  .quote-editorial-page .quote-editorial-signature {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .quote-editorial-page .quote-editorial-signature {
+    justify-self: end;
+  }
+
+  .quote-preview-appendix-page {
+    height: auto;
+    min-height: auto;
+    padding: 24px 20px;
+  }
+
+  .quote-appendix-groups {
+    display: block;
+  }
+
+  .quote-appendix-group + .quote-appendix-group {
+    margin-top: 26px;
+  }
+
+  .quote-document-footer,
+  .quote-editorial-page .quote-editorial-footer {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+
+  .quote-document-page-number {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+}

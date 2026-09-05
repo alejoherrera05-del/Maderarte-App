@@ -1,0 +1,194 @@
+/* Reusable application chrome for Maderarte modules.
+ * Product identity belongs in the app bar; module identity belongs in the masthead;
+ * Maddy + version belong in the system footer.
+ */
+
+.module-appbar-inner {
+  width: min(1440px, calc(100% - 44px));
+  min-height: 90px;
+  margin: 0 auto;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 0 10px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 16px;
+}
+
+.module-brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 13px;
+}
+
+.module-brand-mark {
+  width: 42px !important;
+  height: 42px !important;
+  flex: 0 0 42px;
+  object-fit: contain;
+}
+
+.module-brand-lockup {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+}
+
+.module-brand-wordmark {
+  width: 136px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.module-brand-section {
+  color: #726c67;
+  font-size: .76rem;
+  line-height: 1;
+  font-weight: 610;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+}
+
+.module-footer {
+  width: 100%;
+  min-height: 104px;
+  margin-top: 42px;
+  padding: 24px 4px 6px;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+  border-top: 1px solid #dedad6;
+  color: #6f6964;
+}
+
+.module-footer-identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.module-footer-maddy {
+  width: 158px !important;
+  max-height: 64px !important;
+  flex: 0 0 158px;
+  object-fit: contain;
+}
+
+.module-footer-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.module-footer-copy strong {
+  color: #3e3935;
+  font-size: .9rem;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -.018em;
+}
+
+.module-footer-copy span {
+  color: #817a74;
+  font-size: .75rem;
+  line-height: 1.25;
+  font-weight: 530;
+}
+
+.module-footer-meta {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  color: #8b847e;
+  text-align: right;
+  font-size: .68rem;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.module-footer-meta strong {
+  color: #5e5752;
+  font-size: .76rem;
+  font-weight: 720;
+}
+
+@media (max-width: 720px) {
+  .module-appbar-inner {
+    width: min(100% - 28px, 1440px);
+    min-height: 78px;
+    gap: 10px;
+  }
+
+  .module-brand {
+    gap: 10px;
+  }
+
+  .module-brand-mark {
+    width: 35px !important;
+    height: 35px !important;
+    flex-basis: 35px;
+  }
+
+  .module-brand-wordmark {
+    width: 112px;
+  }
+
+  .module-brand-section {
+    font-size: .68rem;
+  }
+
+  .module-footer {
+    min-height: 132px;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 14px;
+    padding-top: 24px;
+    text-align: center;
+  }
+
+  .module-footer-identity {
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .module-footer-maddy {
+    width: 148px !important;
+    flex-basis: auto;
+  }
+
+  .module-footer-copy {
+    justify-items: center;
+  }
+
+  .module-footer-meta {
+    justify-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 430px) {
+  .module-appbar-inner {
+    width: min(100% - 22px, 1440px);
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+  }
+
+  .module-brand-wordmark {
+    width: 102px;
+  }
+
+  .module-brand-section {
+    font-size: .64rem;
+  }
+
+  .module-footer-maddy {
+    width: 156px !important;
+  }
+}

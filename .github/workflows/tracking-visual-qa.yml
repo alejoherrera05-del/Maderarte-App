@@ -1,0 +1,49 @@
+name: Visual QA Seguimiento
+
+on:
+  pull_request:
+    paths:
+      - 'public/cotizaciones.html'
+      - 'public/css/quote-tracking.css'
+      - 'public/js/pages/cotizaciones.js'
+      - 'public/js/core/auth.js'
+      - 'public/js/core/module-identity.js'
+      - 'public/js/core/quote-tracking.js'
+      - 'public/js/core/document-url.js'
+      - 'public/_headers'
+      - 'scripts/capture-tracking-preview.py'
+      - '.github/workflows/tracking-visual-qa.yml'
+
+jobs:
+  screenshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Selenium
+        run: pip install selenium==4.35.0
+      - name: Servir la rama actual
+        run: |
+          node scripts/serve.mjs > /tmp/maderarte-serve.log 2>&1 &
+          echo $! > /tmp/maderarte-serve.pid
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/cotizaciones.html?preview=1 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/maderarte-serve.log
+          exit 1
+      - name: Capturar seguimiento real en Chrome
+        env:
+          TRACKING_PREVIEW_URL: http://127.0.0.1:4173/cotizaciones.html?preview=1
+        run: python scripts/capture-tracking-preview.py
+      - name: Publicar capturas desktop y móvil
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seguimiento-visual-qa
+          path: |
+            artifacts/cotizaciones-seguimiento-desktop.png
+            artifacts/cotizaciones-seguimiento-mobile.png
+          if-no-files-found: error
