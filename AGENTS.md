@@ -46,9 +46,9 @@ Reglas obligatorias para cualquier tarea de código o diseño:
 4. Después del primer avance coherente, hacer commit y push y abrir el Pull Request hacia `main` temprano. El PR es el espacio vivo de revisión; no debe aparecer únicamente al final.
 5. Continuar trabajando sobre esa misma rama remota y hacer push después de cada avance coherente o checkpoint visual/funcional. No acumular cambios útiles únicamente en local mientras se reporta progreso.
 6. Antes de pedir revisión, mostrar una pantalla, afirmar que algo quedó listo o entregar una etapa, el estado correspondiente debe existir en GitHub y se deben informar como mínimo: rama, commit SHA y número del PR.
-7. Si Cloudflare genera Preview URL para la rama o el PR, usar esa URL para la revisión visual antes del merge.
-8. `main` debe permanecer estable. Los cambios visuales, funcionales o de arquitectura se revisan desde la rama remota/PR antes de fusionarse, salvo una corrección documental trivial autorizada explícitamente.
-9. No hacer merge de una etapa visual si todavía está en revisión del propietario. Mantener el PR abierto y seguir subiendo las correcciones a la misma rama.
+7. Por indicación explícita del propietario del 5 de septiembre de 2026, la revisión de los cambios solicitados se realiza directamente en `https://app.maderartepopayan.com`, también desde su celular. No exigir una revisión adicional en una URL de preview.
+8. Conservar rama remota, PR y pruebas antes de publicar. Después de comprobar los cambios solicitados, fusionar el PR hacia `main` para que Cloudflare actualice el dominio habitual; verificar el despliegue antes de informar que ya está disponible.
+9. La instrucción del propietario autoriza publicar las correcciones solicitadas de esta etapa de preparación antes de su revisión visual, sin pedir otra confirmación para cada merge. La revisión visual se hace después en el dominio habitual. Publicar no equivale a declarar terminada o estable la fase; los límites de escritura comercial y las verificaciones siguen vigentes.
 10. Si por cualquier motivo existen cambios locales aún no publicados, el siguiente paso obligatorio es commit + push antes de continuar con más desarrollo.
 
 Objetivo de este flujo:
@@ -64,13 +64,11 @@ PR abierto temprano
    ↓
 commits + push continuos
    ↓
-Preview Cloudflare / revisión
-   ↓
 pruebas
    ↓
-aprobación
+merge a main / publicación Cloudflare
    ↓
-merge a main
+revisión del propietario en app.maderartepopayan.com
 ```
 
 No usar ZIPs, copias locales antiguas ni ramas locales sin publicar como fuente del estado actual del proyecto.

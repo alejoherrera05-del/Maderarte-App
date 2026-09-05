@@ -48,4 +48,8 @@ La vista del commit publicada por Cloudflare es [9ce12db8](https://9ce12db8-made
 
 Las capturas y los PDFs quedaron en el artefacto `cotizacion-visual-qa` del run indicado. La descarga materializada devolvió HTTP 403 / código 1010 al intentar abrirla en el entorno, por lo que el agente no inspeccionó visualmente esos PNG; los resultados anteriores proceden de las mediciones y aserciones automatizadas. No se atribuye esa limitación a la app del usuario.
 
-Pendiente: revisión visual del propietario en la vista corregida, especialmente en su teléfono. La captura física previa corresponde al formulario anterior a esta simplificación. No se declara cerrada la estabilidad global ni se fusiona el PR sin esa revisión. Esta entrega modifica frontend y pruebas; no requiere volver a instalar el Cerebro.
+En el momento de esa entrega quedó pendiente la revisión visual del propietario en la vista corregida, especialmente en su teléfono. La captura física previa corresponde al formulario anterior a esta simplificación. Esta entrega modifica frontend y pruebas; no requiere volver a instalar el Cerebro.
+
+## Indicación posterior: publicar para revisar en el dominio habitual
+
+El propietario pidió que los cambios se publiquen directamente en `app.maderartepopayan.com` y que la revisión desde su celular ocurra allí, sin un paso duplicado en el enlace de rama. Esta instrucción autoriza fusionar y desplegar las correcciones comprobadas antes de esa revisión visual. Se actualizan `AGENTS.md` y `CLOUDFLARE_DEPLOYMENT.md` para conservar la decisión. La publicación no supone declarar cerrada la estabilidad global.

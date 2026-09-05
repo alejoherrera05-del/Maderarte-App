@@ -2,6 +2,14 @@
 
 Fecha de decisión: 1 de septiembre de 2026.
 
+## Revisión directa en el dominio — actualización del 5 de septiembre
+
+El propietario indicó expresamente que los cambios solicitados deben publicarse directamente en `https://app.maderartepopayan.com` para revisarlos desde su teléfono sin repetir el trabajo en otra URL.
+
+El flujo vigente conserva rama, PR y pruebas; después se fusionan los cambios comprobados a `main` y se verifica la publicación de Cloudflare en el dominio existente. La revisión visual del propietario ocurre allí después del despliegue. Las previews de rama pueden existir como apoyo técnico, pero no son una aprobación adicional que se deba pedir al propietario.
+
+Esta indicación sustituye la espera de revisión visual previa al merge descrita en checkpoints anteriores. La aplicación continúa en modo PREPARACION con escritura comercial deshabilitada. No se requiere volver a configurar DNS, secretos ni Apps Script para publicar las correcciones de HTML, CSS y JavaScript.
+
 ## Plataforma elegida
 
 Maderarte App se despliega como **Cloudflare Worker con Static Assets**.
