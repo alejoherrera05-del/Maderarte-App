@@ -2,7 +2,8 @@ import { apiRequest } from '../core/api.js';
 import { APP_CONFIG } from '../core/config.js';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
-import { escapeHtml, initials } from '../core/format.js';
+import { escapeHtml } from '../core/format.js';
+import { bindClientLookup } from '../core/client-lookup.js';
 import { COMMERCIAL_RULES, manufacturingWindowLabel, minimumOrderDeposit, remainingAfterMinimumDeposit } from '../core/commercial-rules.js';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
@@ -27,8 +28,7 @@ const state = {
   session: null,
   quoteMeta: null,
   nextItemId: 1,
-  photos: new Map(),
-  suggestionsTimer: 0
+  photos: new Map()
 };
 
 function money(value) {
@@ -170,7 +170,7 @@ async function selectBranch(branch) {
     window.setTimeout(() => {
       const idleFocus = document.activeElement === document.body || document.activeElement === selectionTrigger;
       if (idleFocus && !window.matchMedia?.('(pointer: coarse)').matches) {
-        document.getElementById('quote-client-search')?.focus({ preventScroll: true });
+        document.getElementById('quote-client-document')?.focus({ preventScroll: true });
       }
     }, 340);
   } catch (error) {
@@ -364,68 +364,6 @@ function calculate() {
   document.getElementById('quote-remaining').textContent = money(remainingAfterMinimumDeposit(total));
 }
 
-function clientOptionMarkup(item) {
-  const secondary = [item.document, item.phone, item.city].filter(Boolean).join(' · ') || 'Sin datos adicionales';
-  return `<button class="quote-client-option" type="button" role="option" data-client-document="${escapeHtml(item.document)}"><span class="quote-client-avatar">${escapeHtml(initials(item.name))}</span><span class="quote-client-option-copy"><strong>${escapeHtml(item.name || 'Sin nombre')}</strong><span>${escapeHtml(secondary)}</span></span><span aria-hidden="true">›</span></button>`;
-}
-
-function hideClientSuggestions() {
-  const root = document.getElementById('quote-client-suggestions');
-  if (!root) return;
-  root.hidden = true;
-  root.innerHTML = '';
-}
-
-function setClientMessage(value = '', error = false) {
-  const message = document.getElementById('quote-client-message');
-  if (!message) return;
-  message.textContent = value;
-  message.classList.toggle('is-error', Boolean(error));
-}
-
-function fillClient(client) {
-  document.getElementById('quote-client-document').value = client.document || '';
-  document.getElementById('quote-client-name').value = client.name || '';
-  document.getElementById('quote-client-phone').value = client.phone || '';
-  document.getElementById('quote-client-email').value = client.email || '';
-  document.getElementById('quote-client-address').value = client.address || '';
-  document.getElementById('quote-client-city').value = client.city || '';
-  document.getElementById('quote-client-search').value = client.name || client.document || '';
-  hideClientSuggestions();
-  setClientMessage('Cliente seleccionado. Puedes ajustar los datos de esta propuesta si es necesario.');
-}
-
-async function updateClientSuggestions() {
-  const query = document.getElementById('quote-client-search')?.value.trim() || '';
-  if (query.length < 2) {
-    hideClientSuggestions();
-    setClientMessage('');
-    return;
-  }
-  try {
-    const response = await requestClients({ query, limit: 8 });
-    const items = Array.isArray(response.data?.items) ? response.data.items : [];
-    const root = document.getElementById('quote-client-suggestions');
-    if (!items.length || !root) {
-      hideClientSuggestions();
-      setClientMessage('No encontramos un cliente existente. Puedes completar los datos manualmente.');
-      return;
-    }
-    root.innerHTML = items.map(clientOptionMarkup).join('');
-    root.hidden = false;
-    root.querySelectorAll('[data-client-document]').forEach(button => {
-      button.addEventListener('click', () => {
-        const client = items.find(item => String(item.document) === String(button.dataset.clientDocument));
-        if (client) fillClient(client);
-      });
-    });
-    setClientMessage(`${items.length} ${items.length === 1 ? 'coincidencia' : 'coincidencias'}.`);
-  } catch (error) {
-    hideClientSuggestions();
-    setClientMessage(error.message || 'No fue posible consultar clientes.', true);
-  }
-}
-
 function previewItemMarkup(item) {
   const details = [item.category, item.fabric, item.wood, item.specifications].filter(Boolean).join(' · ');
   return `<div class="quote-preview-item"><div class="quote-preview-item-copy"><strong>${escapeHtml(item.position + '. ' + (item.description || 'Mueble sin descripción'))}</strong><span>${escapeHtml(details || 'Sin especificaciones adicionales')}</span></div><div class="quote-preview-item-amount"><strong>${escapeHtml(money(item.subtotal))}</strong><span>${escapeHtml(`${item.quantity || 0} × ${money(item.unitValue)}`)}</span></div></div>`;
@@ -516,14 +454,19 @@ function bindGlobalInteractions() {
     discount.value = value ? String(value) : '';
   });
 
-  const search = document.getElementById('quote-client-search');
-  search?.addEventListener('input', () => {
-    window.clearTimeout(state.suggestionsTimer);
-    state.suggestionsTimer = window.setTimeout(updateClientSuggestions, 220);
-  });
-  document.addEventListener('click', event => {
-    const wrap = document.querySelector('.quote-client-search-wrap');
-    if (wrap && !wrap.contains(event.target)) hideClientSuggestions();
+  bindClientLookup({
+    input: document.getElementById('quote-client-document'),
+    list: document.getElementById('quote-client-suggestions'),
+    message: document.getElementById('quote-client-message'),
+    fields: Object.fromEntries(['name', 'phone', 'email', 'address', 'city'].map(key => [key, document.getElementById(`quote-client-${key}`)])),
+    async search(query) {
+      const response = await requestClients({ query, limit: 8 });
+      return response.data?.items || [];
+    },
+    async load(document) {
+      const response = previewApiData('CLIENTE_OBTENER') || await apiRequest('CLIENTE_OBTENER', { document });
+      return response.data?.client || null;
+    }
   });
   document.getElementById('quote-form')?.addEventListener('submit', event => event.preventDefault());
 }

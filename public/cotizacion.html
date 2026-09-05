@@ -84,21 +84,18 @@
             <section class="quote-editor-section">
               <div class="quote-section-title">
                 <div><span>Cliente</span><h2>Datos de la propuesta</h2></div>
-                <small>Busca uno existente o completa los datos manualmente.</small>
-              </div>
-
-              <div class="quote-client-search-wrap">
-                <label for="quote-client-search">Buscar cliente</label>
-                <div class="quote-search-control">
-                  <img src="/assets/icons/magnifying-glass.svg" alt="" aria-hidden="true">
-                  <input id="quote-client-search" type="search" placeholder="Identificación o nombre" autocomplete="off">
-                </div>
-                <div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" hidden></div>
-                <p id="quote-client-message" class="quote-helper" role="status"></p>
+                <small>Empieza por la cédula. Si el cliente es nuevo, continúa con sus datos.</small>
               </div>
 
               <div class="quote-field-grid quote-field-grid-client">
-                <div class="quote-field"><label for="quote-client-document">Cédula / NIT</label><input id="quote-client-document" autocomplete="off"></div>
+                <div class="quote-field quote-client-lookup">
+                  <label for="quote-client-document">Cédula / NIT</label>
+                  <div class="quote-client-control">
+                    <input id="quote-client-document" type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message">
+                    <div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" aria-label="Clientes coincidentes" hidden></div>
+                  </div>
+                  <p id="quote-client-message" class="quote-helper" role="status" aria-live="polite"></p>
+                </div>
                 <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
                 <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
                 <div class="quote-field"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
