@@ -117,6 +117,10 @@ Reglas visuales derivadas de esa referencia:
 - Los degradés de documentos deben ser muy sutiles y funcionar como profundidad/luz, no como decoración protagonista ni como fondos pastel.
 - El asesor **no aparece en el encabezado** de Cotización, Orden de pedido ni Recibo de caja. En esos tres documentos se firma al final con una firma tipográfica que muestra **únicamente el nombre del asesor**, sin cargo, etiqueta ni texto adicional.
 
+## Operación comercial confirmada
+
+La aclaración del propietario del 5 de septiembre de 2026 prevalece sobre checkpoints anteriores: separado, pedido para solicitar y entrega inmediata; abono de importe libre acordado, sin 30% obligatorio; varios medios de pago con notas internas excluidas del documento del cliente; segundo teléfono opcional. Consultar `docs/BUSINESS_RULES.md` antes de tocar estos flujos. No asociar automáticamente pagos con fabricación o entrega.
+
 ## Estado de escritura
 
 La fundación v0.2.0 es de lectura. No habilitar creación o edición comercial hasta que autenticación, permisos, consecutivos, Drive, idempotencia y auditoría tengan pruebas específicas.

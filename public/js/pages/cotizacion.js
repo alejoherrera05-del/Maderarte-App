@@ -1,13 +1,13 @@
 import { apiRequest } from '../core/api.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=order-1';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=payments-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=payments-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js';
-import { minimumOrderDeposit, remainingAfterMinimumDeposit } from '../core/commercial-rules.js';
+import { bindOrderEntry, readOrderEntry } from '../core/order-entry.js?v=payments-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -337,14 +337,36 @@ function calculate() {
   const total = Math.max(0, subtotal - discount);
   document.getElementById('quote-subtotal').textContent = money(subtotal);
   document.getElementById('quote-total').textContent = money(total);
-  document.getElementById('quote-minimum-deposit').textContent = money(minimumOrderDeposit(total));
-  document.getElementById('quote-remaining').textContent = money(remainingAfterMinimumDeposit(total));
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    const entry = readOrderEntry(total);
+    document.getElementById('order-paid').textContent = money(entry.paid);
+    document.getElementById('order-balance').textContent = entry.error ? '—' : money(entry.balance);
+    document.getElementById('order-payment-error').textContent = entry.error;
+  }
 }
 
 function openPreview() {
   if (!state.quoteMeta) {
     openBranchGate();
     return;
+  }
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    const total = parseMoney(document.getElementById('quote-total').textContent);
+    const entry = readOrderEntry(total);
+    if (!entry.saleMode) {
+      const message = document.getElementById('order-mode-help');
+      message.textContent = 'Elige la modalidad de esta venta antes de abrir el documento.';
+      message.classList.add('is-error');
+      document.querySelector('[name="order-sale-mode"]')?.focus();
+      return;
+    }
+    if (entry.error) {
+      document.getElementById('order-payment-error').textContent = entry.error;
+      const row = document.querySelectorAll('[data-payment-row]')[entry.errorIndex];
+      const method = row?.querySelector('[data-payment-method]');
+      (method?.value ? row.querySelector('[data-payment-amount]') : method)?.focus();
+      return;
+    }
   }
   openDocumentPreview();
 }
@@ -381,7 +403,7 @@ function bindGlobalInteractions() {
     input: document.getElementById('quote-client-document'),
     list: document.getElementById('quote-client-suggestions'),
     message: document.getElementById('quote-client-message'),
-    fields: Object.fromEntries(['name', 'phone', 'email', 'address', 'city'].map(key => [key, document.getElementById(`quote-client-${key}`)])),
+    fields: Object.fromEntries(['name', 'phone', 'alternatePhone', 'email', 'address', 'city'].map(key => [key, document.getElementById(`quote-client-${key}`)])),
     async search(query) {
       const response = await requestClients({ query, limit: 8 });
       return response.data?.items || [];
@@ -405,5 +427,6 @@ guardStandalonePage({
     renderBranchAvailability();
     bindGlobalInteractions();
     addItem();
+    if (COMMERCIAL_DOCUMENT.isOrder) bindOrderEntry(calculate);
   }
 });

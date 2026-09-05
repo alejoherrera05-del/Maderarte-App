@@ -23,3 +23,33 @@
     line-height: 1.2;
   }
 }
+
+.order-sale-modes { margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.order-sale-option { display: flex; align-items: flex-start; gap: 12px; padding: 20px 16px; border: 1px solid var(--quote-line); border-radius: 16px; cursor: pointer; background: #fafafa; }
+.order-sale-option:has(input:checked) { border-color: var(--quote-copper); background: #fbf4ee; }
+.order-sale-option:has(input:focus-visible) { outline: 3px solid #e7bc96; outline-offset: 3px; }
+.order-sale-option input { flex: 0 0 20px; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--quote-copper); }
+.order-sale-option strong { display: block; font-size: 17px; font-weight: 600; line-height: 1.4; }
+.order-sale-option small { display: block; font-size: 15px; line-height: 1.5; color: var(--quote-muted); margin-top: 7px; }
+.order-payments { display: grid; gap: 22px; margin-bottom: 22px; }
+.order-payment { min-width: 0; padding: 24px; border: 1px solid var(--quote-line); border-radius: 18px; }
+.order-payment-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.order-payment-head strong { font-size: 17px; font-weight: 600; }
+.order-payment-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.order-payment-note { grid-column: 1 / -1; }
+.order-payment-summary, #order-payment-error { grid-column: 1 / -1; }
+#order-payment-error { font-size: 15px; }
+.order-document-payments { display: grid; gap: 10px; margin-top: 16px; border-top: 1px solid #ded8d1; padding-top: 16px; font-size: .75rem; }
+.order-document-payments > div { display: flex; justify-content: space-between; gap: 16px; }
+.order-document-payments strong { white-space: nowrap; font-weight: 600; }
+.order-document-balance { padding-top: 10px; border-top: 1px solid #ded8d1; }
+.order-document-mode strong { display: block; font-size: .88rem; font-weight: 600; margin-top: 12px; }
+.order-document-mode p { font-size: .75rem; line-height: 1.6; margin-top: 8px; }
+@media (max-width: 1200px) {
+  .order-sale-modes { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .order-payment { padding: 20px 16px; }
+  .order-payment-fields { grid-template-columns: 1fr; }
+  .order-payment-note { grid-column: auto; }
+}

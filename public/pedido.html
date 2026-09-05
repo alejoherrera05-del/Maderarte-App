@@ -11,14 +11,14 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/cotizacion-form.css">
   <link rel="stylesheet" href="/css/cotizacion-brand-polish.css">
-  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=approval-1">
+  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=payments-1">
   <link rel="stylesheet" href="/css/cotizacion-document-premium.css?v=compact-2">
   <link rel="stylesheet" href="/css/cotizacion-document-header-refined.css?v=final-editorial-3">
   <link rel="stylesheet" href="/css/cotizacion-document-final-pass.css?v=hybrid-clean-1">
   <link rel="stylesheet" href="/css/cotizacion-document-hybrid-fixes.css?v=1">
   <link rel="stylesheet" href="/css/cotizacion-document-adaptive.css?v=adaptive-1">
   <link rel="stylesheet" href="/css/cotizacion-document-final-approval.css?v=approval-1">
-  <link rel="stylesheet" href="/css/pedido.css">
+  <link rel="stylesheet" href="/css/pedido.css?v=payments-1">
   <title>Nueva orden de pedido · Maderarte App</title>
 </head>
 <body class="quote-page" data-commercial-document="order">
@@ -99,10 +99,21 @@
                 </div>
                 <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
                 <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
-                <div class="quote-field"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
+                <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono (opcional)</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Otro número de contacto"></div>
+                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
                 <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección de entrega</label><input id="quote-client-address" autocomplete="street-address"></div>
                 <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" autocomplete="address-level2"></div>
               </div>
+            </section>
+
+            <section class="quote-editor-section">
+              <div class="quote-section-title"><div><span>Venta</span><h2>¿Cómo se hará esta venta?</h2></div><small>Elige lo acordado con el cliente.</small></div>
+              <fieldset class="order-sale-modes"><legend class="sr-only">Modalidad de venta</legend>
+                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="SEPARADO"><span><strong>Separado</strong><small>Separa ahora y continúa pagando.</small></span></label>
+                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="PARA_SOLICITAR"><span><strong>Pedido para solicitar</strong><small>Requiere solicitud o fabricación.</small></span></label>
+                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="ENTREGA_INMEDIATA"><span><strong>Entrega inmediata</strong><small>Se lleva un producto disponible.</small></span></label>
+              </fieldset>
+              <p class="quote-helper" id="order-mode-help" role="status">El abono lo defines tú según lo acordado; no hay un porcentaje obligatorio.</p>
             </section>
 
             <section class="quote-editor-section quote-items-section">
@@ -113,16 +124,21 @@
               <div id="quote-items" class="quote-items"></div>
             </section>
 
+            <section class="quote-editor-section" aria-labelledby="order-payments-title">
+              <div class="quote-section-title"><div><span>Pagos</span><h2 id="order-payments-title">Abono o pago inicial</h2></div><small>Indica el valor acordado. Puedes combinar varios medios de pago.</small></div>
+              <div id="order-payments" class="order-payments"></div>
+              <p class="quote-helper is-error" id="order-payment-error" role="status"></p>
+              <button class="quote-add-item" id="order-add-payment" type="button">＋ Añadir otro pago</button>
+              <p class="quote-helper" id="order-payment-privacy">Las notas de cada pago son internas y no aparecen en el documento del cliente.</p>
+            </section>
+
             <section class="quote-editor-section">
               <div class="quote-section-title">
-                <div><span>Cierre</span><h2>Fabricación y entrega</h2></div>
-                <small>Información que debe quedar clara antes de confirmar el pedido.</small>
+                <div><span>Acuerdos con el cliente</span><h2>Observaciones del pedido</h2></div>
+                <small>Obsequios, transporte, instalación y otros acuerdos de esta venta.</small>
               </div>
-              <div class="quote-field"><label for="quote-notes">Indicaciones de fabricación y entrega</label><textarea id="quote-notes" rows="4" placeholder="Accesos, instalación, acabados acordados y condiciones de entrega de este pedido."></textarea></div>
-              <div class="quote-conditions" aria-label="Condiciones comerciales">
-                <div class="quote-condition"><span class="quote-condition-mark">30%</span><div><strong>Abono mínimo para solicitar</strong><p>El pedido entra a proceso cuando se confirma y completa al menos el 30% del valor total.</p></div></div>
-                <div class="quote-condition"><span class="quote-condition-mark">25–30</span><div><strong>Días estimados de fabricación</strong><p>Contados desde la confirmación del pedido y el cumplimiento del abono mínimo.</p></div></div>
-              </div>
+              <div class="quote-field"><label for="quote-notes">Observaciones para el cliente</label><textarea id="quote-notes" rows="4" placeholder="Ej. Obsequio de cojines. Transporte incluido a Cali. Entrega coordinada con el cliente."></textarea></div>
+              <p class="quote-helper">Los acuerdos escritos aquí aparecerán en el documento del cliente.</p>
             </section>
           </div>
 
@@ -132,12 +148,8 @@
               <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
               <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
               <div class="quote-summary-total"><span>Total del pedido</span><strong id="quote-total">$ 0</strong></div>
-              <div class="quote-deposit-box">
-                <span>Abono mínimo para solicitar</span>
-                <strong id="quote-minimum-deposit">$ 0</strong>
-                <small>30% del total del pedido</small>
-              </div>
-              <div class="quote-summary-row quote-summary-muted"><span>Restante si se abona el mínimo</span><strong id="quote-remaining">$ 0</strong></div>
+              <div class="quote-summary-row order-payment-summary"><span>Abono indicado</span><strong id="order-paid">$ 0</strong></div>
+              <div class="quote-summary-row order-payment-summary"><span>Saldo por pagar</span><strong id="order-balance">$ 0</strong></div>
               <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
               <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Guardar orden de pedido</button>
               <p class="quote-write-note">Borrador para revisión: estos datos aún no se guardan. El número oficial y los abonos se registrarán al habilitar el guardado.</p>
@@ -158,6 +170,6 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=order-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=payments-1"></script>
 </body>
 </html>

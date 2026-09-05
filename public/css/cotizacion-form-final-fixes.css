@@ -196,3 +196,13 @@
   .quote-items-title { flex-direction: column; align-items: stretch; gap: 16px; }
   .quote-add-item { width: 100%; }
 }
+
+/* Client capture: primary/alternate phone remain together on wider screens. */
+@media (min-width: 761px) {
+  .quote-field-grid-client .quote-field:nth-child(n) { grid-column: span 6; }
+  .quote-field-grid-client .quote-field.quote-client-lookup { grid-column: span 4; }
+  .quote-field-grid-client .quote-field.quote-field-name { grid-column: span 8; }
+  .quote-field-grid-client .quote-field.quote-field-email { grid-column: span 12; }
+  .quote-field-grid-client .quote-field.quote-field-address { grid-column: span 8; }
+  .quote-field-grid-client .quote-field:last-child { grid-column: span 4; }
+}
