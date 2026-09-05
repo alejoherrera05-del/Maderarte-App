@@ -88,7 +88,97 @@ def check_editor_and_home():
     print('EDITOR_HOME_QA=' + json.dumps(results, ensure_ascii=False))
     driver.set_window_size(1680, 2200)
 
+def check_order():
+    order_url = URL.replace('/cotizacion.html', '/pedido.html')
+    home_url = URL.replace('/cotizacion.html', '/index.html')
+    results = []
+    for width in (1440, 390, 320):
+        driver.set_window_size(width, 1100)
+        driver.get(home_url)
+        menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="pedido"]')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
+        menu.click()
+        link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.dashboard-dialog-option[href*="pedido.html"]')))
+        link.click()
+        assert driver.current_url == order_url
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="TP"]'))).click()
+        wait.until(EC.visibility_of_element_located((By.ID, 'quote-workspace')))
+        assert driver.find_element(By.ID, 'quote-meta-number').text == 'Borrador'
+        assert driver.find_element(By.ID, 'quote-meta-branch').text == 'TP'
+        setv(driver.find_element(By.ID, 'quote-client-document'), '909090')
+        wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
+        setv(driver.find_element(By.ID, 'quote-client-name'), 'Cliente de revisión del pedido')
+        setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
+        fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Mueble de revisión del pedido', 'SALA', 2, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
+        setv(driver.find_element(By.ID, 'quote-discount'), '100000')
+        setv(driver.find_element(By.ID, 'quote-notes'), 'Entrega con acceso por escalera. Coordinar antes del envío.')
+        editor = driver.execute_script("""
+          const amount=id=>Number(document.getElementById(id).textContent.replace(/[^0-9]/g,''));
+          return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
+            sizes:[...document.querySelectorAll('.quote-editor input:not([type=file]),.quote-editor textarea')].map(n=>parseFloat(getComputedStyle(n).fontSize)),
+            total:amount('quote-total'), minimum:amount('quote-minimum-deposit'), remaining:amount('quote-remaining'),
+            writeDisabled:document.getElementById('quote-submit').disabled};
+        """)
+        assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled']
+        assert [editor['total'], editor['minimum'], editor['remaining']] == [1900000, 570000, 1330000]
+        driver.execute_script("window.scrollTo(0,0)")
+        driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
+        driver.find_element(By.ID, 'quote-preview-button').click()
+        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
+        document_metrics = driver.execute_script("""
+          const pages=[...document.querySelectorAll('.quote-preview-page')];
+          return {pages:pages.length, titles:pages.map(p=>p.querySelector('h1')?.textContent),
+            overflow:document.documentElement.scrollWidth>innerWidth+1,
+            pageOverflow:pages.some(p=>p.scrollHeight>p.clientHeight+2),
+            draft:pages.every(p=>p.querySelector('footer').textContent.includes('Borrador · sin validez comercial')),
+            address:document.querySelector('.quote-editorial-client').textContent,
+            signatureLabel:getComputedStyle(document.querySelector('.quote-editorial-signature'),'::before').content,
+            annex:document.querySelectorAll('.quote-preview-appendix-page').length,
+            totals:document.querySelectorAll('.quote-editorial-total > strong').length};
+        """)
+        assert all(title == 'ORDEN DE PEDIDO' for title in document_metrics['titles'])
+        assert not document_metrics['overflow'] and not document_metrics['pageOverflow']
+        assert document_metrics['draft'] and document_metrics['annex'] == 0 and document_metrics['totals'] == 1
+        assert 'Dirección de entrega de prueba' in document_metrics['address']
+        assert document_metrics['signatureLabel'] in ('none', 'normal')
+        driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
+        driver.find_element(By.ID, 'quote-preview-close').click()
+        assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
+        results.append({'editor': editor, 'document': document_metrics})
+
+    # A real file input exercises reference photos and their separate annex.
+    driver.find_element(By.CSS_SELECTOR, '[data-photo-input]').send_keys(str(Path('public/assets/brand/maderarte-logo-2026.webp').resolve()))
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '.quote-photo-thumb img')))
+    long_notes = 'Condición de fabricación y entrega para revisión. ' * 100
+    setv(driver.find_element(By.ID, 'quote-notes'), long_notes)
+    driver.set_window_size(1680, 2200)
+    driver.find_element(By.ID, 'quote-preview-button').click()
+    wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.quote-preview-appendix-page')))
+    pages = driver.find_elements(By.CSS_SELECTOR, '#quote-preview-content > .quote-preview-page')
+    assert len(pages) >= 3, 'Pedido extenso más anexo debe paginar sin comprimir'
+    assert len(driver.find_elements(By.CSS_SELECTOR, '.quote-preview-appendix-page')) == 1
+    assert not driver.execute_script("return [...document.querySelectorAll('.quote-preview-page')].some(p=>p.scrollHeight>p.clientHeight+2)")
+    text = ''.join(n.text for n in driver.find_elements(By.CSS_SELECTOR, '.quote-editorial-notes p'))
+    assert ''.join(text.split()) == ''.join(long_notes.split())
+    html = ''.join(p.get_attribute('outerHTML') for p in pages)
+    driver.execute_script("document.body.innerHTML=arguments[0];document.body.className='quote-print-export';", html)
+    pdf = driver.execute_cdp_cmd('Page.printToPDF', {'printBackground': True, 'paperWidth': 8.27, 'paperHeight': 11.69, 'marginTop': 0, 'marginBottom': 0, 'marginLeft': 0, 'marginRight': 0, 'displayHeaderFooter': False, 'scale': 1})
+    output = PDF.with_name('pedido-revision.pdf')
+    output.write_bytes(base64.b64decode(pdf['data']))
+    exported = PdfReader(output)
+    assert len(exported.pages) == len(pages), 'PDF del pedido coincide con la vista previa'
+    pdf_text = ' '.join(page.extract_text() for page in exported.pages)
+    assert 'ORDEN DE PEDIDO' in pdf_text and 'COTIZACIÓN' not in pdf_text
+    assert 'Cliente de revisión del pedido' in pdf_text and 'Dirección de entrega de prueba' in pdf_text
+    assert 'Asesor comercial' not in pdf_text
+    assert all('Borrador' in page.extract_text() for page in exported.pages)
+    errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
+    assert not errors, errors
+    print('ORDER_QA=' + json.dumps({'responsive': results, 'pdfPages': len(exported.pages), 'photos': True, 'consoleErrors': errors}, ensure_ascii=False))
+    driver.set_window_size(1680, 2200)
+
 try:
+    check_order()
     check_editor_and_home()
     driver.get(URL)
     wait.until(EC.visibility_of_element_located((By.ID,'quote-app')))

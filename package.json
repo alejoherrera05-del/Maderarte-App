@@ -16,7 +16,7 @@
     "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:quotes && npm run test:edge && npm run test:worker && npm run test:identity && npm run test:tracking && npm run test:documents",
     "test:identity": "node scripts/test-module-identity.mjs",
     "test:tracking": "node scripts/test-quote-pagination.mjs && node scripts/test-tracking-dom.mjs",
-    "test:documents": "node scripts/test-document-url.mjs && node scripts/test-quote-document-pagination.mjs && node scripts/test-quote-form-dom.mjs"
+    "test:documents": "node scripts/test-document-url.mjs && node scripts/test-quote-document-pagination.mjs && node scripts/test-quote-form-dom.mjs && node scripts/test-order-form-dom.mjs && node scripts/test-order-form-dom.mjs denied"
   },
   "engines": {
     "node": ">=20"
