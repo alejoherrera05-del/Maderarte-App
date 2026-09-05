@@ -2,6 +2,9 @@
  * Do not alter the approved client-facing PDF/document layout.
  */
 
+/* A desktop scrollbar must not force a 320px form beyond its viewport. */
+html:has(body.quote-page) { min-width: 0; }
+
 /* Conditions: replace the oversized solid tiles with compact, readable badges. */
 .quote-conditions {
   gap: 12px;

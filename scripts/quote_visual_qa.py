@@ -17,6 +17,18 @@ for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--window-
 opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
 driver = webdriver.Chrome(options=opts); wait = WebDriverWait(driver, 35)
 
+def close_preview():
+    # Native clicks must wait until the sheet has reached its final position.
+    wait.until(lambda d: d.execute_script('''
+      const overlay=document.getElementById('quote-preview-overlay');
+      const sheet=overlay.querySelector('.quote-preview-sheet');
+      return overlay.classList.contains('is-open') && !overlay.getAnimations().length
+        && !sheet.getAnimations().length
+        && document.getElementById('quote-preview-content').getAttribute('aria-busy')==='false';
+    '''))
+    driver.find_element(By.ID, 'quote-preview-close').click()
+    wait.until(EC.invisibility_of_element_located((By.ID, 'quote-preview-overlay')))
+
 def setv(node, text):
     node.clear(); node.send_keys(str(text)); node.send_keys(' '); node.send_keys('\ue003')
 
@@ -138,13 +150,13 @@ def check_order():
         setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-payment-note]'), 'INTERNO-QA-CUENTA-B')
         editor = driver.execute_script("""
           const amount=id=>Number(document.getElementById(id).textContent.replace(/[^0-9]/g,''));
-          return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
+          return {width:innerWidth, overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
             sizes:[...document.querySelectorAll('.quote-editor input:not([type=file]),.quote-editor textarea')].map(n=>parseFloat(getComputedStyle(n).fontSize)),
             total:amount('quote-total'), paid:amount('order-paid'), balance:amount('order-balance'),
             writeDisabled:document.getElementById('quote-submit').disabled};
         """)
         if editor['overflow']:
-            editor['overflowNodes'] = driver.execute_script("return [...document.querySelectorAll('#quote-app *')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+1||r.left < -1)}).slice(0,25).map(n=>({tag:n.tagName,id:n.id,class:n.className,width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));")
+            editor['overflowNodes'] = driver.execute_script("return [...document.querySelectorAll('#quote-app *')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&(r.right>document.documentElement.clientWidth+1||r.left < -1)}).slice(0,25).map(n=>({tag:n.tagName,id:n.id,class:n.className,width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));")
             driver.save_screenshot(str(PNG.with_name(f'pedido-overflow-{width}.png')))
         assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled'], editor
         assert editor['width'] == width, editor
@@ -172,7 +184,7 @@ def check_order():
         document_metrics = driver.execute_script("""
           const pages=[...document.querySelectorAll('.quote-preview-page')];
           return {pages:pages.length, titles:pages.map(p=>p.querySelector('h1')?.textContent),
-            overflow:document.documentElement.scrollWidth>innerWidth+1,
+            overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
             pageOverflow:pages.some(p=>p.scrollHeight>p.clientHeight+2),
             draft:pages.every(p=>p.querySelector('footer').textContent.includes('Borrador · sin validez comercial')),
             address:document.querySelector('.quote-editorial-client').textContent,
@@ -231,7 +243,7 @@ def check_order():
         del document_metrics['text'], document_metrics['html']
         assert document_metrics['signatureLabel'] in ('none', 'normal')
         driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
-        driver.find_element(By.ID, 'quote-preview-close').click()
+        close_preview()
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
@@ -243,7 +255,7 @@ def check_order():
     driver.find_element(By.ID, 'quote-preview-button').click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-finance')))
     assert '25 a 30 días' not in driver.find_element(By.CSS_SELECTOR, '.order-document-conditions').text
-    driver.find_element(By.ID, 'quote-preview-close').click()
+    close_preview()
     Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('PARA_SOLICITAR')
     # A full Addi payment is valid; an overpayment is not printed as a paid order.
     driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-remove-payment]').click()
@@ -395,7 +407,7 @@ try:
     long_html=''.join(p.get_attribute('outerHTML') for p in driver.find_elements(By.CSS_SELECTOR,'#quote-preview-content > .quote-preview-page'))
 
     driver.set_window_size(390,844)
-    driver.find_element(By.ID,'quote-preview-close').click()
+    close_preview()
     driver.find_element(By.ID,'quote-preview-button').click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR,'.quote-editorial-page')))
     mobile = driver.execute_script("""
