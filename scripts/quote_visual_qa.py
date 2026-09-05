@@ -369,7 +369,10 @@ try:
     driver.get(URL)
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-quote-branch="MP"]'))).click()
     wait.until(EC.visibility_of_element_located((By.ID,'quote-workspace')))
+    setv(driver.find_element(By.ID,'quote-client-document'), '909090')
+    wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
     setv(driver.find_element(By.ID,'quote-client-name'),'Cliente de prueba de paginación')
+    setv(driver.find_element(By.ID,'quote-client-phone'), '0000000011')
     expected_names = []
     for index in range(25):
         if index:
