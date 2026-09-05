@@ -163,8 +163,9 @@ def check_order():
         driver.find_element(By.ID, 'quote-preview-button').click()
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
         assert len(driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')) == 2
-        assert '850.000' in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')[0].text
-        assert '900.000' in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')[1].text
+        allocation_texts = [node.get_attribute('textContent') for node in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')]
+        driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
+        assert '850.000' in allocation_texts[0] and '900.000' in allocation_texts[1], allocation_texts
         document_metrics = driver.execute_script("""
           const pages=[...document.querySelectorAll('.quote-preview-page')];
           return {pages:pages.length, titles:pages.map(p=>p.querySelector('h1')?.textContent),
