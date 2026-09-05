@@ -1,5 +1,7 @@
 # Checkpoint de revisión de Maddy — 5 de septiembre de 2026
 
+Estado posterior: las correcciones implementadas y sus pruebas se registran en [CHECKPOINT_2026-09-05_CORRECCIONES.md](CHECKPOINT_2026-09-05_CORRECCIONES.md). Este documento conserva los hallazgos originales de la revisión.
+
 ## Dictamen
 
 **Checkpoint documentado con incidencias abiertas. La etapa visual y funcional no se declara estable ni lista para merge.** Las pruebas automatizadas existentes pasan, pero se reprodujeron dos defectos que no cubren esas pruebas. La revisión autenticada y en móvil no pudo completarse.
