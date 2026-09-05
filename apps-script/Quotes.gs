@@ -28,7 +28,7 @@ function quoteMeta_(payload, session) {
   };
   var fallback = branchFallbacks[branch] || { name: branch, address: '' };
   var nextNumber = Math.max(1, Math.floor(valueNumber_(row.Siguiente_Cotizacion) || 1));
-  var prefix = String(row.Prefijo_Cotizacion || 'COT').trim().toUpperCase();
+  var prefix = String(row.Prefijo_Cotizacion || '').trim().toUpperCase().replace(/-+$/, '') || 'COT';
   var previewNumber = prefix + '-' + String(nextNumber).padStart(4, '0');
 
   return {

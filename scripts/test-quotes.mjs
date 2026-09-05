@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { quoteContext, quoteReader } from './quote-test-context.mjs';
 
 const root = resolve(process.cwd());
 const read = path => readFileSync(resolve(root, path), 'utf8');
@@ -34,6 +35,31 @@ assert.match(router, /case 'COTIZACION_META': return quoteMeta_/);
 assert.match(quotes, /requirePermission_\(session, 'cotizaciones\.read'\)/);
 assert.match(quotes, /Siguiente_Cotizacion/);
 assert.match(quotes, /Prefijo_Cotizacion/);
+
+// A configured prefix may already end in a separator. Reading metadata must
+// produce the same number on every call without consuming the next sequence.
+for (const [prefix, next, expected] of [
+  ['MP-COT-', 1, 'MP-COT-0001'],
+  ['MP-COT', 1, 'MP-COT-0001'],
+  [' tp-cot- ', 27, 'TP-COT-0027'],
+  ['MP-COT--', 42, 'MP-COT-0042'],
+  ['MP-COT-', 10000, 'MP-COT-10000'],
+  ['', 1, 'COT-0001'],
+  ['   ', 1, 'COT-0001']
+]) {
+  const backend = quoteContext([]);
+  const row = Object.freeze({ Sede_ID: 'MP', Estado: 'ACTIVA', Prefijo_Cotizacion: prefix, Siguiente_Cotizacion: next });
+  backend.findRow_ = (sheet, header, branch) => {
+    assert.deepEqual([sheet, header, branch], ['Sedes', 'Sede_ID', 'MP']);
+    return row;
+  };
+  backend.getConfigValue_ = (_key, fallback) => fallback;
+  const meta = backend.quoteMeta_({ branch: 'MP' }, quoteReader);
+  assert.equal(meta.previewNumber, expected);
+  assert.equal(meta.numberStatus, 'PREVISTO');
+  assert.equal(backend.quoteMeta_({ branch: 'MP' }, quoteReader).previewNumber, expected);
+  assert.equal(row.Siguiente_Cotizacion, next);
+}
 
 for (const field of ['description', 'category', 'quantity', 'fabric', 'wood', 'specifications', 'unitValue']) {
   assert.match(js, new RegExp(`data-field="${field}"`));
@@ -145,4 +171,5 @@ console.log('OK · anexo fotográfico se pagina en hojas reales con numeración'
 console.log('OK · seguimiento usa cabecera de módulo reusable con radar funcional');
 console.log('OK · Maddy y versión de app quedan visibles en el pie de sistema');
 console.log('OK · API de seguimiento respeta permisos, sedes y base cero');
+console.log('OK · consecutivo previsto acepta prefijos con o sin guion final sin consumir números');
 console.log('OK · pie Maddy y número de página protegidos en todas las hojas');

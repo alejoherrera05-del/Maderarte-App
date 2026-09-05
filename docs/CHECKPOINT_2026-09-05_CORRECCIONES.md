@@ -15,13 +15,13 @@ La aplicación conserva la versión declarada `0.2.0`, el modo de preparación y
 | Repositorio | `alejoherrera05-del/Maderarte-App` |
 | Rama | `etapa-4-paridad-homeeasy` |
 | PR | [#7](https://github.com/alejoherrera05-del/Maderarte-App/pull/7) |
-| Commit final de código y pruebas de esta revisión | `b5c696e66af0ee47a4efea745a4e628cbb3d2a5b` |
+| Commit de código y pruebas de la revisión automatizada inicial | `b5c696e66af0ee47a4efea745a4e628cbb3d2a5b` |
 | Calidad | [Run 33983907852 — success](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/33983907852) |
 | QA Seguimiento | [Run 33983907837 — success](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/33983907837) |
 | QA Cotización | [Run 33983907834 — success](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/33983907834) |
 | Cloudflare | El bot del PR informó despliegue correcto del mismo commit, 5 de septiembre, 18:23 UTC. |
 
-El commit que agrega este documento solo registra la evidencia; no cambia el código validado anterior.
+El commit inicial de este documento solo registró la evidencia. El seguimiento manual y la corrección posterior del consecutivo se describen más abajo; los runs de esta tabla corresponden a la revisión automatizada inicial.
 
 ## Cambios y pruebas
 
@@ -106,12 +106,22 @@ La comprobación automática del enlace de la aplicación web no estuvo disponib
 | Ingreso | El propietario indicó que ingresó correctamente y mostró el inicio con su sesión. | Prueba manual satisfactoria del ingreso. |
 | Clientes | Captura de la búsqueda `prueba` con «No encontramos clientes con esa búsqueda». | Consulta con respuesta vacía y sin error visible. El frontend admite compatibilidad con base cero; esta captura no identifica por sí sola la versión exacta de la respuesta del backend. |
 | Cotizaciones | Captura de seguimiento con cero cotizaciones, valor de cero, las tres categorías del radar en cero y «No hay cotizaciones en este rango». | Carga manual del seguimiento vacío sin error visible. No prueba todavía paginación con registros ni el contrato `paginationVersion: 1`. |
+| Propiedades finales | El propietario confirmó que guardó `APP_BASE_URL` y `MODO_OPERACION=PREPARACION` siguiendo las instrucciones. | Configuración reportada por el propietario; no se ha probado la creación de invitaciones. |
+| Formulario de cotización | Captura de escritorio con sede MP, número previsto, buscador sin coincidencias, importes en cero y emisión desactivada. | El formulario y los metadatos de sede cargan. El texto se escribió en Buscar cliente, no en Nombre completo. No acredita todavía la revisión móvil con teclado abierto. |
 
 No se solicitaron ventas, clientes ni documentos comerciales de prueba. El registro de diagnóstico y las capturas permanecen en la conversación, fuera del repositorio público.
 
+### Corrección del número previsto encontrada en la captura
+
+La captura de escritorio mostró `MP-COT--0001`. Se reprodujo ejecutando `quoteMeta_` con un prefijo terminado en guion: el código añadía otro separador incondicionalmente. Se normalizan los guiones finales del prefijo antes de unirlo al consecutivo; con o sin guion configurado, el resultado previsto es `MP-COT-0001`.
+
+La regresión de `npm run test:quotes` falló primero con el mismo resultado de la captura. Cubre prefijos con/sin separador final, espacios y minúsculas, prefijo vacío, números mayores de cuatro dígitos y consultas repetidas que no consumen el consecutivo. La corrección no altera los datos de Sedes ni habilita escrituras comerciales. La instalación del Cerebro actualizado y la confirmación del número correcto en la app siguen pendientes.
+
+Después del cambio se completaron correctamente `npm ci --no-audit --no-fund` y toda la suite `npm test`, incluida la nueva regresión. No se modificaron archivos de interfaz en esta corrección.
+
 ### Pendientes concretos después de esta prueba
 
-- Completar y confirmar `APP_BASE_URL` en las propiedades del script: es necesaria para crear enlaces de invitación. Añadir también `MODO_OPERACION=PREPARACION` según la guía; el diagnóstico ya confirmó el modo en la pestaña Configuracion.
+- Actualizar el código del Cerebro en Apps Script, publicar una nueva versión de la implementación existente y comprobar que el número previsto no duplica el guion.
 - Comprobar el recorrido de cotización/documento y móvil en la versión corregida; no confundir la prueba automatizada anterior con una prueba física posterior a instalar Apps Script.
 - Confirmar el contrato actualizado de cotizaciones y el visor de un documento autorizado de Drive sin cargar datos comerciales de prueba.
 - Identificar la versión exacta que sirve el dominio de producción antes de dar por publicadas allí todas las correcciones. Al revisar GitHub después de estas capturas, `main` seguía en `d5ead3483841227cf38cf8f2c959c3cb0b0ce01c` y el PR #7 seguía abierto, sin fusionar. El bot de Cloudflare había publicado correctamente la rama en `e0d2705`; eso no acredita por sí solo qué versión sirve el dominio tras los cambios manuales de configuración.
