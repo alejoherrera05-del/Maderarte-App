@@ -93,6 +93,8 @@ def check_order():
     home_url = URL.replace('/cotizacion.html', '/index.html')
     results = []
     for width in (1440, 390, 320):
+        # Element screenshots can leave a device viewport override in Chrome.
+        driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
         driver.set_window_size(width, 1100)
         driver.get(home_url)
         menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="pedido"]')))
@@ -139,6 +141,7 @@ def check_order():
             writeDisabled:document.getElementById('quote-submit').disabled};
         """)
         assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled']
+        assert editor['width'] == width, editor
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
@@ -190,7 +193,7 @@ def check_order():
           const box=document.querySelector('.order-finance'), figures=box.querySelector('.order-finance-figures');
           const rect=box.getBoundingClientRect(), cells=[...figures.children];
           const r=cells.map(n=>n.getBoundingClientRect());
-          return {width:rect.width, leftInset:r[0].left-rect.left, rightInset:rect.right-r.at(-1).right,
+          return {viewport:innerWidth, width:rect.width, leftInset:r[0].left-rect.left, rightInset:rect.right-r.at(-1).right,
             values:cells.map(n=>Number(n.querySelector('dd').textContent.replace(/[^0-9]/g,''))),
             fonts:cells.map(n=>parseFloat(getComputedStyle(n.querySelector('dd')).fontSize)),
             noClip:[box,...box.querySelectorAll('*')].every(n=>n.scrollWidth<=n.clientWidth+1 || getComputedStyle(n).display==='inline'),
@@ -199,7 +202,7 @@ def check_order():
         assert finance['leftInset'] <= 24 and finance['rightInset'] <= 24, finance
         assert finance['noClip'] and min(finance['fonts']) >= 22, finance
         assert finance['values'] == [1900000, 150000, 1750000]
-        assert finance['sameRow'] == (width == 1440), finance
+        assert finance['viewport'] == width and finance['sameRow'] == (width == 1440), {'target': width, 'editor': editor, 'finance': finance}
         driver.find_element(By.CSS_SELECTOR, '.order-finance').screenshot(str(PNG.with_name(f'pedido-resumen-{width}.png')))
         document_metrics['finance'] = finance
         # Keep logs concise; assertions above inspect the complete HTML/text.
