@@ -312,7 +312,7 @@ function removeItem(card) {
   state.removedItems = state.removedItems.slice(-20);
   state.photos.delete(id); card.remove();
   renumberItems(); calculate(); renderRemovedItem();
-  document.querySelector('[data-undo-item]')?.focus({ preventScroll: true });
+  document.querySelector('[data-undo-item]')?.focus();
   state.draft?.changed();
 }
 
@@ -330,7 +330,7 @@ function undoRemoveItem() {
   const allocation = document.getElementById(`order-allocation-${saved.id}`);
   if (allocation) allocation.value = saved.allocation;
   renumberItems(); calculate(); renderRemovedItem(saved.fields.description || 'el mueble');
-  card.querySelector('[data-field="description"]').focus({ preventScroll: true });
+  card.querySelector('[data-field="description"]').focus();
   state.draft?.changed();
 }
 

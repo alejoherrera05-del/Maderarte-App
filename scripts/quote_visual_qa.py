@@ -181,7 +181,7 @@ def check_order():
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
         driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.quote-items-section'))
         driver.save_screenshot(str(PNG.with_name(f'pedido-muebles-{width}.png')))
-        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.order-agreements-section'))
+        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'section[aria-labelledby="order-agreements-title"]'))
         driver.save_screenshot(str(PNG.with_name(f'pedido-acuerdos-{width}.png')))
         remove = dining.find_element(By.CSS_SELECTOR, '[data-remove-item]')
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", remove)
