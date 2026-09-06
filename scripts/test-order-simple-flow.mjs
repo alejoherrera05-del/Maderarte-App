@@ -58,6 +58,7 @@ try {
 
   assert.equal(document.querySelectorAll('[data-item-id="1"] [data-order-item-plan]').length, 3);
   assert.equal($('[data-item-id="1"] [data-order-plan-chip]').textContent, 'Pendiente');
+  assert.match($('[data-item-id="1"] .order-item-plan-heading').textContent, /¿Qué se hará con este mueble\?/);
 
   clickPlan('1', 'ENTREGA_INMEDIATA');
   assert.equal($('#order-item-1-agreement').value, 'ENTREGA_HOY');
@@ -85,7 +86,7 @@ try {
   await new Promise(resolve => window.setTimeout(resolve, 220));
   assert.equal($('#quote-preview-overlay').classList.contains('is-open'), false);
   assert.equal(document.activeElement, $('[data-item-id="2"] [data-order-item-plan]'));
-  assert.match($('[data-item-id="2"] [data-order-plan-help]').textContent, /Selecciona qué pasará/);
+  assert.match($('[data-item-id="2"] [data-order-plan-help]').textContent, /Selecciona qué se hará/);
 
   clickPlan('2', 'SEPARADO');
   $('#quote-preview-button').click();
@@ -97,7 +98,7 @@ try {
   assert.deepEqual(values.items.map(item => item.agreement.code), ['ENTREGA_POSTERIOR', 'SEPARADO']);
   assert.deepEqual(values.items.map(item => item.fulfillment.code), ['PARA_SOLICITAR', 'DISPONIBLE']);
   assert.equal(apiCalls, 0, 'The simple flow does not create orders, payments, clients or remissions');
-  console.log('OK · acuerdo simple dentro de cada mueble, mapeo interno, validación y vista previa');
+  console.log('OK · acuerdo simple dentro de cada mueble, microcopy consistente, mapeo interno y validación');
 } finally {
   window.close();
   globalThis.fetch = originalFetch;
