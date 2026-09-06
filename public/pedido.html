@@ -11,14 +11,14 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/cotizacion-form.css">
   <link rel="stylesheet" href="/css/cotizacion-brand-polish.css">
-  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=payments-1">
+  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=item-flow-1">
   <link rel="stylesheet" href="/css/cotizacion-document-premium.css?v=compact-2">
   <link rel="stylesheet" href="/css/cotizacion-document-header-refined.css?v=final-editorial-3">
   <link rel="stylesheet" href="/css/cotizacion-document-final-pass.css?v=hybrid-clean-1">
   <link rel="stylesheet" href="/css/cotizacion-document-hybrid-fixes.css?v=1">
   <link rel="stylesheet" href="/css/cotizacion-document-adaptive.css?v=adaptive-1">
   <link rel="stylesheet" href="/css/cotizacion-document-final-approval.css?v=approval-1">
-  <link rel="stylesheet" href="/css/pedido.css?v=payments-1">
+  <link rel="stylesheet" href="/css/pedido.css?v=item-flow-1">
   <title>Nueva orden de pedido · Maderarte App</title>
 </head>
 <body class="quote-page" data-commercial-document="order">
@@ -44,7 +44,7 @@
         </div>
         <p class="quote-gate-eyebrow">Nueva orden de pedido</p>
         <h1 id="quote-gate-title">¿Desde qué sede se toma el pedido?</h1>
-        <p class="quote-gate-intro">Elige la sede del pedido. Después completa el cliente, los muebles y las condiciones de entrega.</p>
+        <p class="quote-gate-intro">Elige la sede del pedido. Después completa el cliente, los muebles y lo acordado para cada uno.</p>
         <div class="quote-gate-options" id="quote-gate-options">
           <button class="quote-gate-option" type="button" data-quote-branch="MP">
             <span class="quote-gate-code">MP</span>
@@ -81,6 +81,9 @@
         </section>
 
         <form id="quote-form" class="quote-form" novalidate>
+          <input type="radio" name="order-sale-mode" value="POR_MUEBLE" checked hidden aria-hidden="true" tabindex="-1">
+          <p id="order-mode-help" hidden>Los acuerdos se gestionan por mueble.</p>
+
           <div class="quote-editor">
             <section class="quote-editor-section">
               <div class="quote-section-title">
@@ -106,16 +109,6 @@
               </div>
             </section>
 
-            <section class="quote-editor-section">
-              <div class="quote-section-title"><div><span>Venta</span><h2>¿Cómo se hará esta venta?</h2></div><small>Elige lo acordado con el cliente.</small></div>
-              <fieldset class="order-sale-modes"><legend class="sr-only">Modalidad de venta</legend>
-                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="SEPARADO"><span><strong>Separado</strong><small>Separa ahora y continúa pagando.</small></span></label>
-                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="PARA_SOLICITAR"><span><strong>Pedido para solicitar</strong><small>Requiere solicitud o fabricación.</small></span></label>
-                <label class="order-sale-option"><input type="radio" name="order-sale-mode" value="ENTREGA_INMEDIATA"><span><strong>Entrega inmediata</strong><small>Se lleva un producto disponible.</small></span></label>
-              </fieldset>
-              <p class="quote-helper" id="order-mode-help" role="status">El abono lo defines tú según lo acordado; no hay un porcentaje obligatorio.</p>
-            </section>
-
             <section class="quote-editor-section quote-items-section">
               <div class="quote-section-title quote-items-title">
                 <div><span>Mobiliario</span><h2>Muebles del pedido</h2></div>
@@ -125,34 +118,36 @@
             </section>
 
             <section class="quote-editor-section" aria-labelledby="order-payments-title">
-              <div class="quote-section-title"><div><span>Pagos</span><h2 id="order-payments-title">Abono o pago inicial</h2></div><small>Indica el valor acordado. Puedes combinar varios medios de pago.</small></div>
+              <div class="quote-section-title">
+                <div><span>Pagos</span><h2 id="order-payments-title">Pago recibido hoy</h2></div>
+                <small>Registra solo lo que el cliente paga en este momento. Puedes combinar varios medios.</small>
+              </div>
               <div id="order-payments" class="order-payments"></div>
               <p class="quote-helper is-error" id="order-payment-error" role="status"></p>
               <button class="quote-add-item" id="order-add-payment" type="button">＋ Añadir otro pago</button>
-              <p class="quote-helper" id="order-payment-privacy">Las notas de cada pago son internas y no aparecen en el documento del cliente.</p>
+              <p class="quote-helper" id="order-payment-privacy">Si hoy no recibe ningún pago, deja la fila vacía. Las notas son internas y no aparecen en el documento del cliente.</p>
             </section>
 
             <section class="quote-editor-section">
               <div class="quote-section-title">
                 <div><span>Acuerdos con el cliente</span><h2>Observaciones del pedido</h2></div>
-                <small>Obsequios, transporte, instalación y otros acuerdos de esta venta.</small>
+                <small>Obsequios, transporte, instalación y otros acuerdos generales de esta venta.</small>
               </div>
               <div class="quote-field"><label for="quote-notes">Observaciones para el cliente</label><textarea id="quote-notes" rows="4" placeholder="Ej. Obsequio de cojines. Transporte incluido a Cali. Entrega coordinada con el cliente."></textarea></div>
               <p class="quote-helper">Los acuerdos escritos aquí aparecerán en el documento del cliente.</p>
             </section>
           </div>
 
-          <aside class="quote-summary-column" aria-label="Resumen financiero">
+          <aside class="quote-summary-column" aria-label="Resumen del pedido">
             <section class="quote-summary-card">
-              <div class="quote-summary-head"><span>Resumen comercial</span><small id="quote-item-count">1 item</small></div>
+              <div class="quote-summary-head"><span>Resumen del pedido</span><small id="quote-item-count">1 item</small></div>
               <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
               <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
               <div class="quote-summary-total"><span>Total del pedido</span><strong id="quote-total">$ 0</strong></div>
-              <div class="quote-summary-row order-payment-summary"><span>Abono indicado</span><strong id="order-paid">$ 0</strong></div>
-              <div class="quote-summary-row order-payment-summary"><span>Saldo por pagar</span><strong id="order-balance">$ 0</strong></div>
+              <div class="quote-summary-row order-payment-summary"><span>Pagado hoy</span><strong id="order-paid">$ 0</strong></div>
               <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
               <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Guardar orden de pedido</button>
-              <p class="quote-write-note">Borrador para revisión: estos datos aún no se guardan. El número oficial y los abonos se registrarán al habilitar el guardado.</p>
+              <p class="quote-write-note">Borrador para revisión: estos datos aún no se guardan. El número oficial se asignará cuando se habilite el guardado.</p>
             </section>
           </aside>
         </form>
@@ -170,6 +165,7 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=payments-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=item-flow-1"></script>
+  <script type="module" src="/js/pages/pedido-item-flow.js?v=item-flow-1"></script>
 </body>
 </html>
