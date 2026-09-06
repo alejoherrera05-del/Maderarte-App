@@ -54,6 +54,19 @@ try {
     set('#quote-client-name', 'Cliente sintético');
     blockedAt('#quote-client-phone');
     set('#quote-client-phone', '0000000001');
+    blockedAt('#quote-client-email');
+    set('#quote-client-email', '   '); blockedAt('#quote-client-email');
+    set('#quote-client-email', ' n/a ');
+    $('#quote-client-email').dispatchEvent(new window.Event('blur'));
+    assert.equal($('#quote-client-email').value, 'N/A');
+    blockedAt('#quote-client-address');
+    set('#quote-client-address', 'Dirección de prueba');
+    blockedAt('#quote-client-city');
+    set('#quote-client-city', 'Ciudad de prueba');
+    set('#quote-client-email', 'correo-invalido'); blockedAt('#quote-client-email');
+    set('#quote-client-email', 'N/A');
+    assert.equal($('#quote-client-alternatePhone').required, false);
+    for (const key of ['document','name','phone','email','address','city']) assert.equal($(`#quote-client-${key}`).required, true);
     blockedAt('[data-field="description"]');
     set('[data-field="description"]', 'Sala de revisión');
     blockedAt('[data-field="unitValue"]');
@@ -127,7 +140,7 @@ try {
     blockedAt('#quote-discount');
     set('#quote-discount', '350000');
     set('#quote-client-email', 'correo-invalido'); blockedAt('#quote-client-email');
-    set('#quote-client-email', '');
+    set('#quote-client-email', 'cliente@example.com');
     // Switching fulfillment cannot alter payments or imply an actual delivery.
     set('[data-item-id="2"] [data-item-fulfillment]', 'DISPONIBLE', 'change');
     assert.equal(amount('order-paid'), 2100000);
