@@ -49,10 +49,10 @@ function buildPlanSection(card) {
   const section = document.createElement('fieldset');
   section.className = 'order-item-plan';
   section.dataset.orderItemPlanSection = '';
-  section.innerHTML = `<div class="order-item-plan-heading">
-      <legend>¿Qué se acordó para este mueble?</legend>
+  section.innerHTML = `<legend class="order-item-plan-heading">
+      <span>¿Qué se acordó para este mueble?</span>
       <small>Solo para este producto.</small>
-    </div>
+    </legend>
     <div class="order-item-plan-options">${planOptionsMarkup(itemId)}</div>
     <input type="hidden" data-field="fulfillment" value="">
     <p class="order-item-plan-message" data-order-item-plan-message>La remisión confirmará después lo que realmente se entregó.</p>
@@ -157,52 +157,22 @@ function validateBeforePreview(event) {
   showMissingPlan(missing);
 }
 
-function addPlanToPreviewItem(previewItem, card) {
-  if (!previewItem || !card || previewItem.dataset.orderPlanReady === 'true') return;
-  const continuation = previewItem.dataset.continuation === 'true';
-  const plan = selectedPlan(card);
-  if (!plan || continuation) return;
-  const main = previewItem.querySelector('.quote-editorial-item-main');
-  const title = previewItem.querySelector('.quote-editorial-item-title');
-  if (!main || !title) return;
-  const badge = document.createElement('div');
-  badge.className = 'order-document-item-plan';
-  badge.innerHTML = `<strong>${plan.label}</strong><span>${plan.description}</span>`;
-  title.insertAdjacentElement('afterend', badge);
-  previewItem.dataset.orderPlanReady = 'true';
-}
-
-function syncPreviewPlans() {
-  const cards = Array.from(document.querySelectorAll('.quote-item'));
-  document.querySelectorAll('.quote-editorial-item[data-item-position]').forEach(previewItem => {
-    const position = Number(previewItem.dataset.itemPosition || 0);
-    addPlanToPreviewItem(previewItem, cards[position - 1]);
-  });
-}
-
-function installObservers() {
+function installItemsObserver() {
   const itemsRoot = document.getElementById('quote-items');
-  if (itemsRoot) {
-    const observer = new MutationObserver(records => {
-      records.forEach(record => record.addedNodes.forEach(node => {
-        if (!(node instanceof Element)) return;
-        if (node.matches('.quote-item')) enhanceCard(node);
-        else enhanceAllCards(node);
-      }));
-    });
-    observer.observe(itemsRoot, { childList: true, subtree: true });
-  }
-
-  const preview = document.getElementById('quote-preview-content');
-  if (preview) {
-    const previewObserver = new MutationObserver(syncPreviewPlans);
-    previewObserver.observe(preview, { childList: true, subtree: true });
-  }
+  if (!itemsRoot) return;
+  const observer = new MutationObserver(records => {
+    records.forEach(record => record.addedNodes.forEach(node => {
+      if (!(node instanceof Element)) return;
+      if (node.matches('.quote-item')) enhanceCard(node);
+      else enhanceAllCards(node);
+    }));
+  });
+  observer.observe(itemsRoot, { childList: true, subtree: true });
 }
 
 function boot() {
   enhanceAllCards();
-  installObservers();
+  installItemsObserver();
   document.addEventListener('click', validateBeforePreview, true);
 }
 
