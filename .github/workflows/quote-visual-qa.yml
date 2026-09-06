@@ -9,6 +9,8 @@ on:
       - 'public/js/core/commercial-document.js'
       - 'public/js/core/commercial-rules.js'
       - 'public/js/core/order-entry.js'
+      - 'public/js/core/order-agreements.js'
+      - 'public/js/core/order-lifecycle.js'
       - 'public/js/core/commercial-form-values.js'
       - 'public/js/core/form-draft.js'
       - 'public/index.html'

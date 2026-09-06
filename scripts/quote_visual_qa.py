@@ -137,14 +137,20 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
         setv(driver.find_element(By.ID, 'quote-client-city'), 'Ciudad de prueba')
         fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Sala de revisión', 'SALA', 1, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
-        Select(driver.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('ENTREGA_HOY')
         add_item = driver.find_element(By.ID, 'quote-add-item')
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", add_item)
         add_item.click()
         dining = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
         fill(dining, 'Comedor de revisión', 'COMEDOR', 1, '', 'Roble', '', 1000000)
-        Select(dining.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('SEPARADO')
-        Select(dining.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('PARA_SOLICITAR')
+        Select(driver.find_element(By.ID, 'order-common-agreement')).select_by_value('SEPARADO')
+        Select(driver.find_element(By.ID, 'order-common-fulfillment')).select_by_value('PARA_SOLICITAR')
+        change_sala = driver.find_element(By.CSS_SELECTOR, '[data-agreement-row="1"] [data-change-agreement]')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", change_sala)
+        change_sala.click()
+        Select(driver.find_element(By.ID, 'order-item-1-agreement')).select_by_value('ENTREGA_HOY')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", change_sala)
+        change_sala.click()
+        assert [row.get_attribute('data-agreement-mode') for row in driver.find_elements(By.CSS_SELECTOR, '[data-agreement-row]')] == ['custom', 'inherit']
         setv(driver.find_element(By.ID, 'quote-discount'), '100000')
         setv(driver.find_element(By.ID, 'quote-notes'), 'Obsequio de cojines. Transporte incluido a Cali.')
         Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('TRANSFERENCIA')
@@ -175,6 +181,19 @@ def check_order():
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
         driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.quote-items-section'))
         driver.save_screenshot(str(PNG.with_name(f'pedido-muebles-{width}.png')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.order-agreements-section'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-acuerdos-{width}.png')))
+        remove = dining.find_element(By.CSS_SELECTOR, '[data-remove-item]')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", remove)
+        remove.click()
+        assert len(driver.find_elements(By.CSS_SELECTOR, '.quote-item')) == 1
+        assert '150.000' in driver.find_element(By.ID, 'order-paid').get_attribute('textContent')
+        notice = driver.find_element(By.ID, 'quote-removed-item')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", notice)
+        driver.save_screenshot(str(PNG.with_name(f'pedido-deshacer-{width}.png')))
+        notice.find_element(By.CSS_SELECTOR, '[data-undo-item]').click()
+        assert driver.find_element(By.ID, 'quote-item-2-description').get_attribute('value') == 'Comedor de revisión'
+        assert driver.find_element(By.ID, 'order-item-2-agreement').get_attribute('value') == 'SEPARADO'
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-payments-title'))
         driver.save_screenshot(str(PNG.with_name(f'pedido-pagos-{width}.png')))
         allocation = driver.find_element(By.ID, 'order-allocate-payments')
@@ -261,12 +280,12 @@ def check_order():
     driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation_toggle)
     allocation_toggle.click()
     # An entirely available order has no factory deadline; changing it keeps payments.
-    Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('DISPONIBLE')
+    Select(driver.find_element(By.ID, 'order-common-fulfillment')).select_by_value('DISPONIBLE')
     driver.find_element(By.ID, 'quote-preview-button').click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-finance')))
     assert '25 a 30 días' not in driver.find_element(By.CSS_SELECTOR, '.order-document-conditions').text
     close_preview()
-    Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('PARA_SOLICITAR')
+    Select(driver.find_element(By.ID, 'order-common-fulfillment')).select_by_value('PARA_SOLICITAR')
     # A full Addi payment is valid; an overpayment is not printed as a paid order.
     driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-remove-payment]').click()
     Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('ADDI')

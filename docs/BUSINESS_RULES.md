@@ -20,7 +20,7 @@ Los datos públicos de empresa usados por formularios y documentos viven en `pub
 - Por aclaración del propietario del 5 de septiembre de 2026, **no existe un porcentaje obligatorio de abono**. El asesor indica el valor acordado; se admiten separados con $50.000, $100.000 u otro importe positivo.
 - **Un pedido puede ser mixto**: sala disponible para entrega inmediata y comedor por solicitar a fábrica, dentro de una misma OP.
 - La disponibilidad pertenece a cada línea de `Orden_Items`: `DISPONIBLE`, `PARA_SOLICITAR` o `POR_DEFINIR`. No se deduce de los pagos y no se preselecciona en el formulario. Si unidades del mismo mueble tienen disponibilidades distintas, se capturan en líneas separadas.
-- **El acuerdo pertenece a cada mueble**, por aclaración posterior del propietario: `ENTREGA_HOY`, `SEPARADO` o `ENTREGA_POSTERIOR`. Una misma OP puede tener sala que sale hoy y comedor separado. No existe un separado global. El separado permite pagos sucesivos sin autorizar automáticamente fabricación.
+- **El acuerdo pertenece a cada mueble**, por aclaración posterior del propietario: `ENTREGA_HOY`, `SEPARADO` o `ENTREGA_POSTERIOR`. Una misma OP puede tener sala que sale hoy y comedor separado. No existe un estado separado global de la OP. Se permite elegir un acuerdo común una vez para los muebles que lo heredan; las excepciones explícitas se conservan al cambiarlo. El acuerdo efectivo sigue perteneciendo a cada `Item_ID`. El separado permite pagos sucesivos sin autorizar automáticamente fabricación.
 - El acuerdo de entrega hoy presupone disponibilidad física, pero no crea una remisión. En separado o entrega posterior, la disponibilidad se indica aparte, incluyendo la opción por definir.
 - Recogida, envío, fechas y transporte se escriben en **Observaciones**, por indicación expresa del propietario; no añadir preguntas obligatorias de logística.
 - La referencia de **25 a 30 días** aplica solo a los muebles por solicitar, desde la confirmación de su solicitud. No se impone un plazo de fabricación a los disponibles ni un umbral automático de pago.
@@ -89,3 +89,12 @@ Antes de activar escrituras: persistir acuerdo y disponibilidad en cada `Orden_I
 - Copia temporal de la captura en `sessionStorage`, por usuario y tipo de documento, en la misma pestaña. Caduca a las ocho horas; se descarta al cerrar sesión o desde el propio formulario.
 - Recupera cliente, líneas, acuerdos, pagos, notas y fotografías compatibles. No constituye escritura comercial, respaldo oficial ni sincronización entre dispositivos.
 - Si el almacenamiento falla, se informa y se advierte al salir. No mostrar un borrador antiguo como si fuera el actual después de un fallo.
+
+
+## Remisiones y desistimientos: contrato para la siguiente etapa
+
+Consultar `ORDER_LIFECYCLE.md` antes de implementar escrituras. Los movimientos de entrega, cantidad desistida y dinero deben conservar identidad, versión e historial. Un acuerdo de entrega hoy nunca confirma una entrega. Las remisiones nuevas seleccionan cantidades pendientes por mueble y OP; no vuelven a ofrecer cantidades ya entregadas o desistidas.
+
+En borradores, Eliminar permite Deshacer las últimas 20 eliminaciones, incluso tras recargar la misma pestaña dentro de la vigencia del borrador. Se recuperan los datos del mueble, su identidad, acuerdo individual, fotos y asignación de abono. Los pagos y las ediciones posteriores se conservan. Si el nuevo total es menor que el abono indicado, mostrar el exceso y exigir revisión; no mostrar saldo cero ni inventar una devolución.
+
+En una OP emitida no se borrará la línea: se registrará un desistimiento con su motivo y efectos. Cantidades ya entregadas requieren devolución; una solicitud a fábrica exige revisión. Precios netos emitidos no se redistribuyen entre los muebles que quedan. Un eventual saldo a favor se muestra separado y su aplicación/devolución requiere un movimiento explícito. Estas transacciones aún no están implementadas ni habilitadas.
