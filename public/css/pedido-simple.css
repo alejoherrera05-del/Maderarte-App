@@ -102,6 +102,18 @@
   box-shadow: 0 0 0 1px rgba(200, 101, 42, .07);
 }
 
+[data-commercial-document="order"] .order-plan-option:has(input[value="ENTREGA_INMEDIATA"]:checked) {
+  border-color: rgba(66, 101, 75, .3);
+  background: #f5faf6;
+  box-shadow: 0 0 0 1px rgba(66, 101, 75, .05);
+}
+
+[data-commercial-document="order"] .order-plan-option:has(input[value="SEPARADO"]:checked) {
+  border-color: rgba(117, 95, 56, .26);
+  background: #fcf9f3;
+  box-shadow: 0 0 0 1px rgba(117, 95, 56, .04);
+}
+
 [data-commercial-document="order"] .order-plan-option:has(input:focus-visible) {
   outline: 3px solid rgba(200, 101, 42, .18);
   outline-offset: 2px;
@@ -128,6 +140,16 @@
 [data-commercial-document="order"] .order-plan-option:has(input:checked) .order-plan-radio {
   border-color: var(--quote-copper);
   background: var(--quote-copper);
+}
+
+[data-commercial-document="order"] .order-plan-option:has(input[value="ENTREGA_INMEDIATA"]:checked) .order-plan-radio {
+  border-color: #56785e;
+  background: #56785e;
+}
+
+[data-commercial-document="order"] .order-plan-option:has(input[value="SEPARADO"]:checked) .order-plan-radio {
+  border-color: #876f43;
+  background: #876f43;
 }
 
 [data-commercial-document="order"] .order-plan-copy {
@@ -194,6 +216,41 @@
 
 [data-commercial-document="order"] .order-finance-figures {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Customer-facing state labels use the same language as the furniture card. */
+[data-commercial-document="order"] .order-document-page .order-document-agreement {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  margin: 6px 0 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f5f1ec;
+  color: #6c5748;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+[data-commercial-document="order"] .order-document-page .order-document-agreement .order-document-fulfillment {
+  display: none !important;
+}
+
+[data-commercial-document="order"] .order-document-page .order-document-agreement[data-plan="ENTREGA_INMEDIATA"] {
+  background: #edf5ef;
+  color: #42654b;
+}
+
+[data-commercial-document="order"] .order-document-page .order-document-agreement[data-plan="SEPARADO"] {
+  background: #f6f1e7;
+  color: #755f38;
+}
+
+[data-commercial-document="order"] .order-document-page .order-document-agreement[data-plan="SOLICITAR_FABRICA"] {
+  background: #fbefe8;
+  color: #9f4c1f;
 }
 
 @media (max-width: 980px) {
