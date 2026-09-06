@@ -80,8 +80,8 @@ try {
       set('[data-field="quantity"]', quantity); blockedAt('[data-field="quantity"]');
     }
     set('[data-field="quantity"]', '1');
-    blockedAt('[data-item-agreement]');
-    set('[data-item-agreement]', 'ENTREGA_HOY', 'change');
+    blockedAt('#order-common-agreement');
+    set('#order-common-agreement', 'ENTREGA_HOY', 'change');
     assert.equal($('[data-availability-field]').hidden, true);
     blockedAt('[data-payment-method]');
     $('#order-no-payment').click();
@@ -98,11 +98,14 @@ try {
     const second = $('.quote-item[data-item-id="2"]');
     set('[data-item-id="2"] [data-field="description"]', 'Comedor de revisión');
     set('[data-item-id="2"] [data-field="unitValue"]', '1500000');
-    blockedAt('[data-item-id="2"] [data-item-agreement]');
-    set('[data-item-id="2"] [data-item-agreement]', 'SEPARADO', 'change');
-    blockedAt('[data-item-id="2"] [data-item-fulfillment]');
-    set('[data-item-id="2"] [data-item-fulfillment]', 'PARA_SOLICITAR', 'change');
-    assert.match(second.querySelector('[data-fulfillment-help]').textContent, /25 a 30 días/);
+    assert.equal($('#order-item-2-agreement').value, 'ENTREGA_HOY', 'Los nuevos muebles heredan el acuerdo');
+    set('#order-item-1-agreement', 'ENTREGA_HOY', 'change'); // Explicit exception.
+    set('#order-common-agreement', 'SEPARADO', 'change');
+    assert.equal($('#order-item-1-agreement').value, 'ENTREGA_HOY', 'El acuerdo común conserva las excepciones');
+    blockedAt('#order-common-fulfillment');
+    set('#order-common-fulfillment', 'PARA_SOLICITAR', 'change');
+    assert.match($('#order-item-2-help').textContent, /25 a 30 días/);
+    assert.equal($('#order-item-2-agreement').value, 'SEPARADO');
     assert.equal(amount('quote-total'), 3500000);
     assert.equal(amount('order-paid'), 2100000);
     assert.equal(amount('order-balance'), 1400000);
@@ -142,9 +145,13 @@ try {
     set('#quote-client-email', 'correo-invalido'); blockedAt('#quote-client-email');
     set('#quote-client-email', 'cliente@example.com');
     // Switching fulfillment cannot alter payments or imply an actual delivery.
-    set('[data-item-id="2"] [data-item-fulfillment]', 'DISPONIBLE', 'change');
+    set('#order-item-2-fulfillment', 'DISPONIBLE', 'change');
     assert.equal(amount('order-paid'), 2100000);
     assert.equal(readCommercialValues().items[1].agreement.code, 'SEPARADO');
+    assert.equal($('[data-agreement-row="2"]').dataset.agreementMode, 'custom');
+    $('[data-agreement-row="2"] [data-use-common]').click();
+    assert.equal($('[data-agreement-row="2"]').dataset.agreementMode, 'inherit');
+    assert.equal($('#order-item-2-fulfillment').value, 'PARA_SOLICITAR');
     $('#order-allocate-payments').click();
     $('#order-add-payment').click();
     set('[data-payment-row="1"] [data-payment-amount]', '50000');
@@ -162,6 +169,24 @@ try {
     assert.equal($('[data-item-allocation="2"]'), null);
     assert.equal($('[data-item-allocation="1"]').value, '1800000', 'Eliminar un mueble no redistribuye abonos');
     assert.ok(readOrderEntry(1650000).allocationError);
+    // Undo recovers this product only; newer financial edits remain intact.
+    set('#quote-discount', '100000');
+    set('[data-payment-row="1"] [data-payment-amount]', '1600000');
+    $('[data-undo-item]').click();
+    assert.deepEqual([...document.querySelectorAll('.quote-item')].map(card => card.dataset.itemId), ['1','2']);
+    assert.equal($('#order-allocation-2').value, '300000');
+    assert.equal($('#order-item-2-agreement').value, 'SEPARADO');
+    assert.equal($('#quote-item-2-description').value, 'Comedor de revisión');
+    assert.equal($('#quote-discount').value, '100000');
+    assert.equal($('[data-payment-amount]').value, '1600000');
+    // Removing the sala leaves less total than the indicated payment: no fake zero balance.
+    $('[data-item-id="1"] [data-remove-item]').click();
+    assert.equal($('#order-balance').textContent, '—');
+    assert.match($('#order-payment-error').textContent, /200.000/);
+    blockedAt('[data-payment-amount]');
+    $('[data-undo-item]').click();
+    assert.deepEqual([...document.querySelectorAll('[data-allocation-row]')].map(row => row.dataset.allocationRow), ['1','2']);
+    $('[data-item-id="2"] [data-remove-item]').click();
     $('#order-allocate-payments').click();
     set('#quote-client-alternatePhone', '0000000002');
     $('#quote-change-branch').click(); $('[data-quote-branch="TP"]').click(); await tick();
@@ -171,6 +196,8 @@ try {
     const stored = Object.keys(window.sessionStorage).find(key => key.startsWith('maderarte.form-draft.'));
     const draft = JSON.parse(window.sessionStorage.getItem(stored));
     assert.equal(draft.uid, 'qa-order');
+    assert.deepEqual(draft.data.agreementModes, {'1':'custom'});
+    assert.equal(draft.data.removedItems[0].id, 2);
     assert.deepEqual(draft.data.itemIds, [1]);
     assert.equal(draft.data.fields.find(field => field.id === 'quote-client-alternatePhone').value, '0000000002');
     assert.match($('#quote-draft-status').textContent, /pestaña/);

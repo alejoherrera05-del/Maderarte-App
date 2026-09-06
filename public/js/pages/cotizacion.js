@@ -198,7 +198,7 @@ function openBranchGate() {
 function itemMarkup(id) {
   return `<article class="quote-item" data-item-id="${id}">
     <div class="quote-item-head">
-      <div class="quote-item-index"><span data-item-position>01</span><div><strong>Mueble</strong><small data-item-caption>Descripción, valor y acuerdos</small></div></div>
+      <div class="quote-item-index"><span data-item-position>01</span><div><strong>Mueble</strong><small data-item-caption>Descripción y precio</small></div></div>
       <button class="quote-remove-item" type="button" data-remove-item>Eliminar</button>
     </div>
     <div class="quote-item-grid quote-item-essential">
@@ -267,9 +267,70 @@ async function addPhotos(itemId, files) {
   const images = Array.from(files || []).filter(file => String(file.type || '').startsWith('image/'));
   if (!images.length) return;
   const loaded = await Promise.all(images.map(readFile));
-  const current = state.photos.get(itemId) || [];
-  state.photos.set(itemId, current.concat(loaded));
-  renderPhotos(itemId);
+  const removed = state.removedItems.find(item => item.id === itemId);
+  if (document.querySelector(`.quote-item[data-item-id="${itemId}"]`)) {
+    state.photos.set(itemId, (state.photos.get(itemId) || []).concat(loaded));
+    renderPhotos(itemId);
+  } else if (removed) removed.photos.push(...loaded);
+  state.draft?.changed();
+}
+
+function renderRemovedItem(restoredName = '') {
+  const root = document.getElementById('quote-removed-item');
+  if (!root) return;
+  const item = state.removedItems.at(-1);
+  root.hidden = !item && !restoredName;
+  root.replaceChildren();
+  if (root.hidden) return;
+  const message = document.createElement('span');
+  const name = item?.fields.description || 'Mueble';
+  message.textContent = restoredName ? `Se recuperó ${restoredName}.` : `Se quitó ${name} del borrador.`;
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    const help = document.createElement('small');
+    help.textContent = 'Los pagos conservan sus valores. Revisa el total y la distribución del abono.';
+    message.append(help);
+  }
+  root.append(message);
+  if (item) {
+    const undo = document.createElement('button');
+    undo.type = 'button'; undo.textContent = restoredName ? 'Deshacer otra eliminación' : 'Deshacer';
+    undo.dataset.undoItem = ''; undo.addEventListener('click', undoRemoveItem);
+    root.append(undo);
+  }
+}
+
+function removeItem(card) {
+  const id = Number(card.dataset.itemId);
+  state.removedItems.push({
+    id, index: [...card.parentElement.children].indexOf(card),
+    fields: Object.fromEntries([...card.querySelectorAll('[data-field]')].map(input => [input.dataset.field, input.value])),
+    detailsOpen: card.querySelector('details').open,
+    photos: state.photos.get(id) || [],
+    agreement: state.agreements?.captureItem(id),
+    allocation: document.getElementById(`order-allocation-${id}`)?.value || ''
+  });
+  state.removedItems = state.removedItems.slice(-20);
+  state.photos.delete(id); card.remove();
+  renumberItems(); calculate(); renderRemovedItem();
+  document.querySelector('[data-undo-item]')?.focus({ preventScroll: true });
+  state.draft?.changed();
+}
+
+function undoRemoveItem() {
+  const saved = state.removedItems.pop();
+  if (!saved) return;
+  addItem(saved.id);
+  const card = document.querySelector(`.quote-item[data-item-id="${saved.id}"]`);
+  for (const input of card.querySelectorAll('[data-field]')) input.value = saved.fields[input.dataset.field] || '';
+  const root = card.parentElement;
+  root.insertBefore(card, root.children[saved.index] || null);
+  card.querySelector('details').open = Boolean(saved.detailsOpen);
+  state.photos.set(saved.id, saved.photos); renderPhotos(saved.id);
+  state.agreements?.restoreItem(saved.id, saved.agreement);
+  const allocation = document.getElementById(`order-allocation-${saved.id}`);
+  if (allocation) allocation.value = saved.allocation;
+  renumberItems(); calculate(); renderRemovedItem(saved.fields.description || 'el mueble');
+  card.querySelector('[data-field="description"]').focus({ preventScroll: true });
   state.draft?.changed();
 }
 
@@ -277,11 +338,7 @@ function bindItem(card) {
   const itemId = Number(card.dataset.itemId);
   card.querySelector('[data-remove-item]')?.addEventListener('click', () => {
     if (document.querySelectorAll('.quote-item').length <= 1) return;
-    state.photos.delete(itemId);
-    card.remove();
-    renumberItems();
-    calculate();
-    state.draft?.changed();
+    removeItem(card);
   });
 
   card.querySelectorAll('[data-field="quantity"], [data-field="unitValue"]').forEach(input => {
@@ -328,7 +385,7 @@ function calculate() {
   [...document.querySelectorAll('.quote-item')].forEach((card, index) => {
     const item = values.items[index];
     card.querySelector('[data-line-total]').textContent = money(item.subtotal);
-    card.querySelector('[data-item-caption]').textContent = item.description || 'Descripción, valor y acuerdos';
+    card.querySelector('[data-item-caption]').textContent = item.description || 'Descripción y precio';
     const splitHelp = card.querySelector('[data-quantity-help]');
     if (splitHelp) splitHelp.hidden = !(item.quantity > 1);
   });
@@ -338,10 +395,12 @@ function calculate() {
     document.getElementById('order-discount-summary').textContent = money(values.discount);
     syncOrderAllocation(values, calculate);
     const entry = readOrderEntry(values.total);
+    const position = Number.isSafeInteger(values.total) && values.total >= 0 && Number.isSafeInteger(entry.paid) && entry.paid >= 0 ? financialPosition(values.total, entry.paid) : null;
+    const balance = position && !position.credit ? position.due : NaN;
     document.getElementById('order-paid').textContent = money(entry.paid);
-    document.getElementById('order-balance').textContent = Number.isFinite(values.total) ? money(Math.max(0, values.total - entry.paid)) : '—';
+    document.getElementById('order-balance').textContent = money(balance);
     const hasPaymentContent = [...document.querySelectorAll('[data-payment-row] input, [data-payment-row] select')].some(input => input.value);
-    document.getElementById('order-payment-error').textContent = hasPaymentContent || state.validating ? entry.error : '';
+    document.getElementById('order-payment-error').textContent = position?.credit ? `Los abonos indicados superan el total por ${money(position.credit)}. Revisa los valores antes de continuar.` : hasPaymentContent || state.validating ? entry.error : '';
     const noPayment = document.getElementById('order-no-payment').checked;
     document.getElementById('order-payment-editor').hidden = noPayment && !hasPaymentContent;
     document.getElementById('order-allocation-error').textContent = entry.allocate ? entry.allocationError : '';
@@ -356,7 +415,7 @@ function calculate() {
       row.append(title, detail);
       return row;
     }));
-    for (const [id, value] of [['order-live-total', values.total], ['order-live-paid', entry.paid], ['order-live-balance', Number.isFinite(values.total) ? Math.max(0, values.total - entry.paid) : NaN]]) {
+    for (const [id, value] of [['order-live-total', values.total], ['order-live-paid', entry.paid], ['order-live-balance', balance]]) {
       document.getElementById(id).textContent = money(value);
     }
   }
@@ -526,6 +585,18 @@ async function restoreDraft(data) {
     || !Array.isArray(data.fields) || data.fields.length > 2000
     || !Array.isArray(data.paymentIds) || data.paymentIds.length > 100
     || !data.paymentIds.every(id => Number.isSafeInteger(id) && id > 0)) throw new Error('Borrador incompatible');
+  const removed = Array.isArray(data.removedItems) ? data.removedItems.slice(-20) : [];
+  const removedIds = new Set(data.itemIds);
+  state.removedItems = removed.filter(item => {
+    if (!item || !Number.isSafeInteger(item.id) || item.id <= 0 || item.id >= Number.MAX_SAFE_INTEGER || removedIds.has(item.id)
+      || !Number.isSafeInteger(item.index) || item.index < 0 || item.index > 100 || !item.fields || typeof item.fields !== 'object') return false;
+    removedIds.add(item.id); return true;
+  }).map(item => ({ ...item,
+    fields: Object.fromEntries(Object.entries(item.fields).filter(([key,value]) => ['description','quantity','unitValue','category','fabric','wood','specifications'].includes(key) && typeof value === 'string')),
+    photos: (Array.isArray(item.photos) ? item.photos : []).filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo?.dataUrl || '')),
+    allocation: typeof item.allocation === 'string' ? item.allocation : ''
+  }));
+  state.nextItemId = Math.max(state.nextItemId, ...state.removedItems.map(item => item.id + 1));
   document.getElementById('quote-items').replaceChildren();
   state.photos.clear();
   data.itemIds.forEach(addItem);
@@ -544,7 +615,6 @@ async function restoreDraft(data) {
     if (input) input.value = String(saved.value || '');
   }
   for (const card of document.querySelectorAll('.quote-item')) {
-    state.agreements?.sync();
     if ([...card.querySelectorAll('details [data-field]')].some(input => input.value)) card.querySelector('details').open = true;
   }
   for (const [id, photos] of Array.isArray(data.photos) ? data.photos : []) {
@@ -552,6 +622,7 @@ async function restoreDraft(data) {
     state.photos.set(id, photos.filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo.dataUrl || '')));
     renderPhotos(id);
   }
+  renderRemovedItem();
   if (data.branch && allowedBranches().includes(data.branch)) await selectBranch(data.branch, { focusClient: false });
   calculate();
 }

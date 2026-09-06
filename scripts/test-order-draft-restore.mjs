@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
+const commonMode = process.argv.includes('common');
 const dom = new JSDOM(readFileSync('public/pedido.html','utf8'), {url:'https://app.example.com/pedido.html'});
 const { window } = dom;
 Object.assign(globalThis,{window,document:window.document});
@@ -20,8 +21,10 @@ try {
     'order-payment-4-method':'TRANSFERENCIA','order-payment-4-amount':'2100000','order-payment-4-note':'NOTA-INTERNA-DE-PRUEBA',
     'order-allocation-1':'2000000','order-allocation-3':'100000'
   };
+  if (commonMode) Object.assign(fields, {'order-common-agreement':'SEPARADO','order-common-fulfillment':'DISPONIBLE','order-item-1-agreement':'SEPARADO','order-item-1-fulfillment':'DISPONIBLE'});
+  const extra = commonMode ? {agreementModes:{'1':'inherit','3':'custom'},removedItems:[{id:9,index:1,fields:{description:'Silla recuperada',quantity:'2',unitValue:'50000',fabric:'Tela de prueba'},detailsOpen:true,photos:[{dataUrl:'data:image/png;base64,iVBORw0KGgo='}],agreement:{mode:'custom',agreement:'ENTREGA_HOY',fulfillment:'DISPONIBLE'},allocation:'50000'}]} : {};
   window.sessionStorage.setItem(key,JSON.stringify({version:1,uid:'qa-draft',type:'order',savedAt:Date.now(),data:{
-    branch:'MP',itemIds:[1,3],paymentIds:[4],photos:[],fields:[...Object.entries(fields).map(([id,value])=>({id,value})),{id:'order-allocate-payments',checked:true,value:'on'}]
+    ...extra,branch:'MP',itemIds:[1,3],paymentIds:[4],photos:[],fields:[...Object.entries(fields).map(([id,value])=>({id,value})),{id:'order-allocate-payments',checked:true,value:'on'}]
   }}));
   window.sessionStorage.setItem('maderarte.form-draft.v1.other.order', JSON.stringify({version:1,uid:'other',savedAt:Date.now()}));
   await import('../public/js/pages/cotizacion.js');
@@ -36,9 +39,23 @@ try {
   assert.deepEqual(readOrderEntry(3500000).allocation.map(part=>part.balance),[0,1400000]);
   assert.doesNotMatch(JSON.stringify(readOrderEntry(3500000)),/INTERNA/);
   assert.equal(window.sessionStorage.getItem('maderarte.form-draft.v1.other.order'),null);
+  const change = (id,value) => {const el=document.getElementById(id);el.value=value;el.dispatchEvent(new window.Event('change',{bubbles:true}));};
+  change('order-common-agreement','ENTREGA_POSTERIOR');
+  assert.equal(document.getElementById('order-item-1-agreement').value, commonMode ? 'ENTREGA_POSTERIOR' : 'ENTREGA_HOY', 'Borradores anteriores conservan acuerdos individuales');
+  assert.equal(document.getElementById('order-item-3-agreement').value,'SEPARADO');
   document.getElementById('quote-add-item').click();
-  assert.equal(document.querySelectorAll('.quote-item')[2].dataset.itemId,'4');
-  assert.equal(JSON.parse(window.sessionStorage.getItem(key)).data.itemIds.length,3);
+  assert.equal(document.querySelectorAll('.quote-item')[2].dataset.itemId,commonMode ? '10' : '4', 'No reutiliza IDs de muebles eliminados');
+  if (commonMode) {
+    document.querySelector('[data-undo-item]').click();
+    assert.deepEqual([...document.querySelectorAll('.quote-item')].map(card=>card.dataset.itemId),['1','9','3','10']);
+    assert.equal(document.getElementById('quote-item-9-fabric').value,'Tela de prueba');
+    assert.equal(document.querySelector('[data-item-id="9"] details').open,true);
+    assert.equal(document.querySelectorAll('[data-item-id="9"] [data-photo-list] img').length,1);
+    assert.equal(document.getElementById('order-allocation-9').value,'50000');
+    assert.equal(document.getElementById('order-item-9-agreement').value,'ENTREGA_HOY');
+    assert.equal(document.getElementById('order-payment-4-amount').value,'2100000');
+  }
+  assert.equal(JSON.parse(window.sessionStorage.getItem(key)).data.itemIds.length,commonMode ? 4 : 3);
   document.getElementById('order-add-payment').click();
   assert.equal(document.querySelectorAll('[data-payment-row]')[1].dataset.paymentRow,'5');
   assert.equal(JSON.parse(window.sessionStorage.getItem(key)).data.paymentIds.length,2);

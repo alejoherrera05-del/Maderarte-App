@@ -99,7 +99,7 @@ export function syncOrderAllocation(values, onChange) {
   const netItems = distributeDiscount(values.items, values.discount);
   const ids = new Set(values.items.map(item => item.itemId));
   [...root.children].forEach(row => { if (!ids.has(row.dataset.allocationRow)) row.remove(); });
-  for (const item of values.items) {
+  for (const [index, item] of values.items.entries()) {
     let row = [...root.children].find(node => node.dataset.allocationRow === item.itemId);
     if (!row) {
       row = document.createElement('div');
@@ -109,6 +109,7 @@ export function syncOrderAllocation(values, onChange) {
       row.querySelector('input').addEventListener('input', onChange);
       root.append(row);
     }
+    if (root.children[index] !== row) root.insertBefore(row, root.children[index] || null);
     row.querySelector('label').textContent = `Abono · ${item.description || `Mueble ${item.position}`}`;
     const net = netItems.find(entry => entry.itemId === item.itemId)?.net;
     const money = amount => Number.isSafeInteger(amount) ? new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 }).format(amount) : '—';
