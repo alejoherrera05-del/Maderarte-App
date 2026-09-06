@@ -4,6 +4,7 @@ export const COMMERCIAL_RULES = Object.freeze({
 });
 
 export const SALE_MODES = Object.freeze([
+  { code: 'POR_MUEBLE', label: 'Acuerdos por mueble', description: 'Cada mueble conserva su propio acuerdo de entrega o fabricación.', terms: 'La condición se define en cada mueble. La entrega real se confirma después mediante una remisión.' },
   { code: 'SEPARADO', label: 'Separado', description: 'El cliente separa y continúa pagando.', terms: 'Entrega por acordar. La separación no inicia fabricación por sí sola.' },
   { code: 'PARA_SOLICITAR', label: 'Pedido para solicitar', description: 'El mueble requiere solicitud o fabricación.', terms: 'Fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.' },
   { code: 'ENTREGA_INMEDIATA', label: 'Entrega inmediata', description: 'El cliente se lleva un producto disponible.', terms: 'Producto disponible para entrega inmediata.' }
