@@ -29,7 +29,7 @@ Todavía faltan persistencia de acuerdos/disponibilidad por mueble, desglose net
 
 `pendiente = cantidad original - cantidad desistida - cantidad entregada confirmada`.
 
-Una selección empieza vacía. No preseleccionar todo lo pendiente. Mostrar por mueble lo vendido, entregado y disponible para seleccionar en la próxima remisión. Rechazar cantidades cero, negativas, fraccionarias, superiores a lo pendiente, IDs repetidos o ajenos a la OP. No deducir entrega a partir de pago, saldo, acuerdo o fecha.
+Una selección empieza vacía. No preseleccionar todo lo pendiente. Mostrar por mueble lo vendido, entregado y disponible para seleccionar en la próxima remisión. Rechazar cantidades cero, negativas, fraccionarias, superiores a lo pendiente, IDs repetidos o ajenos a la OP. No deducir entrega a partir de pago, saldo, acuerdo o fecha. La selección de pendientes solo calcula cantidades: antes de confirmar, el servidor debe comprobar disponibilidad física actual, producción y revisiones operativas. La disponibilidad indicada al vender puede haber cambiado; no sirve como autorización de despacho.
 
 Ejemplo: cuatro sillas, primera remisión de dos, segunda de una; queda una. Un comedor entregado deja de ofrecerse para una nueva entrega, aunque otros muebles sigan pendientes.
 
