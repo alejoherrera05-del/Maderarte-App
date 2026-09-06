@@ -1,4 +1,4 @@
-import { PAYMENT_METHODS, SALE_MODES, summarizePayments } from './commercial-rules.js?v=payments-1';
+import { PAYMENT_METHODS, SALE_MODES, summarizePayments } from './commercial-rules.js?v=item-flow-1';
 import { escapeHtml } from './format.js';
 
 export function readOrderEntry(total, root = document) {
@@ -57,8 +57,10 @@ export function bindOrderEntry(onChange) {
   document.querySelectorAll('[name="order-sale-mode"]').forEach(input => input.addEventListener('change', () => {
     const mode = SALE_MODES.find(item => item.code === input.value);
     const help = document.getElementById('order-mode-help');
-    help.textContent = mode?.terms || '';
-    help.classList.remove('is-error');
+    if (help) {
+      help.textContent = mode?.terms || '';
+      help.classList.remove('is-error');
+    }
     onChange();
   }));
   addPayment();
