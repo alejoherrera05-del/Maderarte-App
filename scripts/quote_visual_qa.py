@@ -142,15 +142,11 @@ def check_order():
         add_item.click()
         dining = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
         fill(dining, 'Comedor de revisión', 'COMEDOR', 1, '', 'Roble', '', 1000000)
-        Select(driver.find_element(By.ID, 'order-common-agreement')).select_by_value('SEPARADO')
-        Select(driver.find_element(By.ID, 'order-common-fulfillment')).select_by_value('PARA_SOLICITAR')
-        change_sala = driver.find_element(By.CSS_SELECTOR, '[data-agreement-row="1"] [data-change-agreement]')
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", change_sala)
-        change_sala.click()
-        Select(driver.find_element(By.ID, 'order-item-1-agreement')).select_by_value('ENTREGA_HOY')
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", change_sala)
-        change_sala.click()
-        assert [row.get_attribute('data-agreement-mode') for row in driver.find_elements(By.CSS_SELECTOR, '[data-agreement-row]')] == ['custom', 'inherit']
+        Select(driver.find_element(By.ID, 'order-item-1-purpose')).select_by_value('ENTREGA_INMEDIATA')
+        Select(driver.find_element(By.ID, 'order-item-2-purpose')).select_by_value('PARA_SOLICITAR')
+        assert not driver.find_elements(By.ID, 'order-common-agreement')
+        assert not driver.find_elements(By.ID, 'order-allocate-payments')
+        assert all(len(card.find_elements(By.CSS_SELECTOR, '[data-item-purpose]')) == 1 for card in driver.find_elements(By.CSS_SELECTOR, '.quote-item'))
         setv(driver.find_element(By.ID, 'quote-discount'), '100000')
         setv(driver.find_element(By.ID, 'quote-notes'), 'Obsequio de cojines. Transporte incluido a Cali.')
         Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('TRANSFERENCIA')
@@ -167,7 +163,7 @@ def check_order():
           context.font=style.font;
           return {width:innerWidth, overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
             priceFits:context.measureText(price.value).width<=price.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),
-            agreementLabelsReadable:[...document.querySelectorAll('[data-agreement-title]')].every(n=>n.parentElement.clientWidth>=140&&n.getBoundingClientRect().height<=parseFloat(getComputedStyle(n).lineHeight)*3),
+            purposeLabelsReadable:[...document.querySelectorAll('[data-item-purpose]')].every(n=>{const st=getComputedStyle(n);context.font=st.font;return context.measureText(n.selectedOptions[0].textContent).width<=n.clientWidth-parseFloat(st.paddingLeft)-parseFloat(st.paddingRight)-22;}),
             sizes:[...document.querySelectorAll('.quote-editor input:not([type=file]),.quote-editor textarea')].map(n=>parseFloat(getComputedStyle(n).fontSize)),
             total:amount('quote-total'), paid:amount('order-paid'), balance:amount('order-balance'),
             writeDisabled:document.getElementById('quote-submit').disabled};
@@ -175,15 +171,15 @@ def check_order():
         if editor['overflow']:
             editor['overflowNodes'] = driver.execute_script("return [...document.querySelectorAll('#quote-app *')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&(r.right>document.documentElement.clientWidth+1||r.left < -1)}).slice(0,25).map(n=>({tag:n.tagName,id:n.id,class:n.className,width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));")
             driver.save_screenshot(str(PNG.with_name(f'pedido-overflow-{width}.png')))
-        assert not editor['overflow'] and editor['priceFits'] and editor['agreementLabelsReadable'] and min(editor['sizes']) >= 16 and editor['writeDisabled'], editor
+        assert not editor['overflow'] and editor['priceFits'] and editor['purposeLabelsReadable'] and min(editor['sizes']) >= 16 and editor['writeDisabled'], editor
         assert editor['width'] == width, editor
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
         driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.quote-items-section'))
         driver.save_screenshot(str(PNG.with_name(f'pedido-muebles-{width}.png')))
-        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'section[aria-labelledby="order-agreements-title"]'))
-        driver.save_screenshot(str(PNG.with_name(f'pedido-acuerdos-{width}.png')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.ID,'order-item-1-purpose'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-indicacion-{width}.png')))
         remove = dining.find_element(By.CSS_SELECTOR, '[data-remove-item]')
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", remove)
         remove.click()
@@ -194,23 +190,13 @@ def check_order():
         driver.save_screenshot(str(PNG.with_name(f'pedido-deshacer-{width}.png')))
         notice.find_element(By.CSS_SELECTOR, '[data-undo-item]').click()
         assert driver.find_element(By.ID, 'quote-item-2-description').get_attribute('value') == 'Comedor de revisión'
-        assert driver.find_element(By.ID, 'order-item-2-agreement').get_attribute('value') == 'SEPARADO'
+        assert driver.find_element(By.ID, 'order-item-2-purpose').get_attribute('value') == 'PARA_SOLICITAR'
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-payments-title'))
         driver.save_screenshot(str(PNG.with_name(f'pedido-pagos-{width}.png')))
-        allocation = driver.find_element(By.ID, 'order-allocate-payments')
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation)
-        allocation.click()
-        setv(driver.find_element(By.CSS_SELECTOR, '[data-item-allocation="1"]'), '100000')
-        setv(driver.find_element(By.CSS_SELECTOR, '[data-item-allocation="2"]'), '50000')
-        assert driver.find_element(By.ID, 'order-allocation-error').text == ''
-        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-allocations'))
-        driver.save_screenshot(str(PNG.with_name(f'pedido-distribucion-{width}.png')))
         driver.find_element(By.ID, 'quote-preview-button').click()
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
-        assert len(driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')) == 2
-        allocation_texts = [node.get_attribute('textContent') for node in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')]
+        assert len(driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')) == 0
         driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
-        assert '850.000' in allocation_texts[0] and '900.000' in allocation_texts[1], allocation_texts
         document_metrics = driver.execute_script("""
           const pages=[...document.querySelectorAll('.quote-preview-page')];
           return {pages:pages.length, titles:pages.map(p=>p.querySelector('h1')?.textContent),
@@ -224,7 +210,7 @@ def check_order():
             text:document.getElementById('quote-preview-content').textContent,
             html:document.getElementById('quote-preview-content').innerHTML,
             conditions:document.querySelector('.order-document-conditions').textContent,
-            availability:[...document.querySelectorAll('.order-document-fulfillment')].map(n=>n.dataset.fulfillment)};
+            purposes:[...document.querySelectorAll('.order-document-purpose')].map(n=>n.dataset.purpose)};
         """)
         assert all(title == 'ORDEN DE PEDIDO' for title in document_metrics['titles'])
         if width == 1440 and document_metrics['pages'] != 1:
@@ -250,8 +236,8 @@ def check_order():
         assert 'INTERNO-QA' not in document_metrics['html'], 'Las notas internas no llegan al HTML del documento'
         assert 'Abono indicado' in document_metrics['text'] and 'Saldo por pagar' in document_metrics['text']
         assert '30%' not in document_metrics['text']
-        assert document_metrics['availability'] == ['PARA_SOLICITAR']
-        assert 'Se entrega hoy' in document_metrics['text'] and 'Queda separado' in document_metrics['text']
+        assert document_metrics['purposes'] == ['ENTREGA_INMEDIATA', 'PARA_SOLICITAR']
+        assert 'Entrega inmediata' in document_metrics['text'] and 'Solicitar a fábrica' in document_metrics['text']
         assert '25 a 30 días' in document_metrics['conditions']
         finance = driver.execute_script("""
           const box=document.querySelector('.order-finance'), figures=box.querySelector('.order-finance-figures');
@@ -277,16 +263,14 @@ def check_order():
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
-    allocation_toggle = driver.find_element(By.ID, 'order-allocate-payments')
-    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation_toggle)
-    allocation_toggle.click()
-    # An entirely available order has no factory deadline; changing it keeps payments.
-    Select(driver.find_element(By.ID, 'order-common-fulfillment')).select_by_value('DISPONIBLE')
+    # Separated furniture creates neither a manufacturing promise nor a payment allocation.
+    Select(driver.find_element(By.ID, 'order-item-2-purpose')).select_by_value('SEPARADO')
     driver.find_element(By.ID, 'quote-preview-button').click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-finance')))
     assert '25 a 30 días' not in driver.find_element(By.CSS_SELECTOR, '.order-document-conditions').text
+    assert [n.text for n in driver.find_elements(By.CSS_SELECTOR, '.order-document-purpose')] == ['Entrega inmediata','Separado']
     close_preview()
-    Select(driver.find_element(By.ID, 'order-common-fulfillment')).select_by_value('PARA_SOLICITAR')
+    Select(driver.find_element(By.ID, 'order-item-2-purpose')).select_by_value('PARA_SOLICITAR')
     # A full Addi payment is valid; an overpayment is not printed as a paid order.
     driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-remove-payment]').click()
     Select(driver.find_element(By.CSS_SELECTOR, '[data-payment-method]')).select_by_value('ADDI')

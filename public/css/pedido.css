@@ -115,7 +115,6 @@
 .order-operational-summary li { padding: 0 0 18px; min-width: 0; }
 .order-operational-summary strong { display: block; font-size: 16px; line-height: 1.45; font-weight: 550; overflow-wrap: anywhere; }
 .order-operational-summary span { display: block; color: #807264; font-size: 15px; line-height: 1.5; margin-top: 5px; }
-.order-document-allocation { font-size: 12px; line-height: 1.5; margin: 6px 0 0; color: #60584f; }
 .order-discount-entry { max-width: 330px; margin-bottom: 24px; }
 @media (max-width: 1040px) {
   [data-commercial-document="order"] .quote-summary-card { max-width: none; }
@@ -133,17 +132,12 @@
   .order-discount-entry { max-width: none; }
 }
 
-/* Item balances span the product width, without repeating the agreement below. */
-.order-document-page .order-document-allocation { grid-column: 2 / -1; margin: 0; line-height: 1.45; padding: 6px 0 0; border-top: 1px dotted #e5ddd4; font-variant-numeric: tabular-nums; }
 .order-document-page .quote-editorial-items-section { margin-top: 16px; }
 .order-document-page .quote-editorial-section-head > div > span { display: none; }
 .order-document-page .quote-editorial-item { row-gap: 4px; padding-block: 12px; }
 .order-document-page .quote-editorial-client-grid { gap: 10px 24px; }
 .order-document-page .quote-editorial-client-field { padding-bottom: 6px; }
 .order-document-page .quote-editorial-signoff { margin-top: 14px !important; }
-@media screen and (max-width: 760px) {
-  .order-document-page .order-document-allocation { grid-column: 1 / -1; }
-}
 @media (max-width: 720px) {
   [data-commercial-document="order"] .quote-shell { padding-inline: 0; }
 }
