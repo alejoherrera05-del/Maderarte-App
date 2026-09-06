@@ -106,6 +106,7 @@ try:
         chips = [card.find_element(By.CSS_SELECTOR, '[data-order-plan-chip]').get_attribute('textContent').strip() for card in cards]
         assert plan_counts == [3, 3]
         assert chips == ['Entrega inmediata', 'Solicitar a fábrica']
+        assert '¿Qué se hará con este mueble?' in first.get_attribute('textContent')
         assert not visible('.order-legacy-agreements')
         assert not visible('.order-live-finance')
         assert not visible('.order-allocation')
@@ -118,20 +119,29 @@ try:
 
         click_visible(driver.find_element(By.ID, 'quote-preview-button'))
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
+        wait.until(lambda d: 'Detalle de compra' in d.find_element(By.ID, 'quote-preview-content').get_attribute('textContent'))
         assert not visible('.order-finance-balance')
         assert not visible('.order-document-allocation')
         text = driver.find_element(By.ID, 'quote-preview-content').get_attribute('textContent')
         assert 'Sala de revisión' in text and 'Comedor de revisión' in text
-        assert 'Se entrega hoy' in text and 'Solicitar a fábrica' in text
+        assert 'Entrega inmediata' in text and 'Solicitar a fábrica' in text
+        assert 'Pagado hoy' in text and 'Detalle de compra' in text and 'Muebles del pedido' in text
+        assert 'Propuesta comercial' not in text
+        assert 'Se entrega hoy' not in text
+        assert 'Entrega después · Solicitar a fábrica' not in text
+        labels = [node.get_attribute('textContent').strip() for node in driver.find_elements(By.CSS_SELECTOR, '.order-document-agreement')]
+        assert labels[:2] == ['Entrega inmediata', 'Solicitar a fábrica'], labels
         driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(ARTIFACTS / f'pedido-simple-documento-{width}.png'))
 
-        results.append({'width': width, 'plans': chips, 'legacyHidden': True, 'balanceHidden': True})
+        results.append({'width': width, 'plans': chips, 'documentLabels': labels[:2], 'legacyHidden': True, 'balanceHidden': True})
         if width == 1440:
             print_preview_pdf()
 
     pdf_text = ' '.join(page.extract_text() for page in PdfReader(PDF).pages)
     assert 'Sala de revisión' in pdf_text and 'Comedor de revisión' in pdf_text
-    assert 'Solicitar a fábrica' in pdf_text
+    assert 'Entrega inmediata' in pdf_text and 'Solicitar a fábrica' in pdf_text
+    assert 'Detalle de compra' in pdf_text and 'Pagado hoy' in pdf_text
+    assert 'Propuesta comercial' not in pdf_text and 'Se entrega hoy' not in pdf_text
     assert 'Saldo por pagar' not in pdf_text
     assert 'INTERNO' not in pdf_text
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
