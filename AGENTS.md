@@ -123,6 +123,8 @@ La aclaración del propietario del 5 de septiembre de 2026 prevalece sobre check
 
 ## Estado de escritura
 
+Los datos del cliente son obligatorios en Cotización y Pedido, excepto el segundo teléfono. El correo acepta `N/A` cuando el cliente no tiene correo; dirección y ciudad no son opcionales. Esta aclaración del propietario prevalece sobre los checkpoints anteriores.
+
 La fundación v0.2.0 es de lectura. No habilitar creación o edición comercial hasta que autenticación, permisos, consecutivos, Drive, idempotencia y auditoría tengan pruebas específicas.
 
 ## Validación

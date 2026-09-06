@@ -29,6 +29,7 @@ Los datos públicos de empresa usados por formularios y documentos viven en `pub
 
 ## Contacto y observaciones
 
+- Aclaración del propietario posterior al checkpoint del formulario: cédula/NIT, nombre, teléfono principal, correo, dirección y ciudad son obligatorios en Cotización y Pedido. Solo el segundo teléfono es opcional. Cuando el cliente no tiene correo, se escribe `N/A`; no aceptar el campo vacío ni inventar una dirección de correo.
 - El cliente puede tener teléfono principal y segundo teléfono opcional; ambos se conservan como texto y se muestran en el documento si se diligencian.
 - `Clientes.Telefono_Alterno` y `CLIENTE_OBTENER.alternatePhone` ya existen. Cotización y Pedido deben reutilizarlos.
 - **Observaciones del pedido** contiene acuerdos que ve el cliente: recogida o envío, fechas, obsequios de cojines, transporte incluido a una ciudad, instalación u otras condiciones.
@@ -80,7 +81,7 @@ Antes de activar escrituras: persistir acuerdo y disponibilidad en cada `Orden_I
 - Al usar esta opción, el descuento general se reparte proporcionalmente entre los valores de los muebles. Se informa junto al control. Se usan pesos enteros y mayores restos para conservar el total exacto.
 - La distribución es un desglose del abono existente, no un cobro adicional. El futuro contrato de escritura debe relacionarla de forma auditable con la OP, sus líneas y pagos antes de habilitarla.
 - Se admite explícitamente una orden sin abono inicial. No se imponen mínimos ni pago completo para acordar entrega. El saldo no controla automáticamente la entrega.
-- Vista previa requiere identificación, nombre, teléfono, descripción, cantidad entera positiva, precio positivo, acuerdo por línea y disponibilidad cuando aplica. Correo y segundo teléfono son opcionales.
+- Vista previa requiere identificación, nombre, teléfono, correo (o `N/A`), dirección, ciudad, descripción, cantidad entera positiva, precio positivo, acuerdo por línea y disponibilidad cuando aplica. Únicamente el segundo teléfono es opcional entre los datos del cliente.
 - Los valores inválidos permanecen escritos y se señalan para corregirlos. El formulario y el documento comparten lectura y cálculo; no cambiar negativos a positivos ni recortar descuentos excesivos.
 
 ## Recuperación temporal
