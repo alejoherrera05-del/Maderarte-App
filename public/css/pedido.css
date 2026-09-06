@@ -147,3 +147,4 @@
 
 .quote-item-essential > .quote-item-purpose { grid-column: 1 / -1; }
 .order-document-purpose { font-size: 12px; font-weight: 600; color: #8f4829; margin: 6px 0 0; }
+.quote-item-purpose select { padding-inline: 10px; }

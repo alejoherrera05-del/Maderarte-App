@@ -119,7 +119,7 @@ Reglas visuales derivadas de esa referencia:
 
 ## Operación comercial confirmada
 
-La aclaración del propietario del 5 de septiembre de 2026 prevalece sobre checkpoints anteriores: pedidos mixtos con disponibilidad por mueble (disponible, solicitar a fábrica o por definir), acuerdo por mueble (entrega hoy, separado o entrega posterior), sin un estado separado global de la OP; se permite elegir un acuerdo común como atajo de captura, materializado por mueble y conservando excepciones explícitas; recogida, envío y fechas en observaciones; distribución opcional de abonos; abono de importe libre acordado, sin 30% obligatorio; varios medios de pago con notas internas excluidas del documento del cliente; segundo teléfono opcional. Consultar `docs/BUSINESS_RULES.md` antes de tocar estos flujos. No asociar automáticamente pagos con fabricación o entrega.
+La aclaración más reciente del propietario del 6 de septiembre de 2026 sustituye el acuerdo común y la distribución de abonos: cada mueble tiene una sola elección visible dentro de su ficha — Entrega inmediata, Solicitar a fábrica o Separado. No añadir un bloque de acuerdos aparte ni controles de saldo/abono por mueble. Abonos y saldo corresponden a la OP completa. Recogida, envío y fechas van en observaciones; importe de abono libre, varios medios y notas internas excluidas del documento. No asociar automáticamente pagos con fabricación o entrega. Consultar `docs/BUSINESS_RULES.md`.
 
 ## Estado de escritura
 

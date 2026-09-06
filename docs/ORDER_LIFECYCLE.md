@@ -10,18 +10,18 @@ La OP es el expediente. Sus muebles conservan `Item_ID`; la posición visible y 
 
 `Orden_Items` ya incluye `Item_ID`, cantidades vendidas/entregadas/pendientes y estado. `Remision_Items` enlaza cada entrega con `Numero_OP`, `Item_ID` y cantidad. `Remisiones` tiene número propio, estado y `Request_ID`. Hay hojas de auditoría, anulaciones, versiones e idempotencia.
 
-Todavía faltan persistencia de acuerdos/disponibilidad por mueble, desglose neto de descuentos, asignaciones de abonos, cantidad desistida y movimientos de devolución. `Orders.gs` devuelve cabeceras de remisión y totales almacenados; no es aún un servicio transaccional para emitirlas. El formulario no debe asumir que esos servicios ya funcionan.
+Todavía faltan persistencia de la elección de venta por mueble y de su evolución operativa, desglose neto de descuentos, cantidad desistida y movimientos de devolución. El propietario retiró las asignaciones de abonos de la captura; el abono corresponde a la OP completa. `Orders.gs` devuelve cabeceras de remisión y totales almacenados; no es aún un servicio transaccional para emitirlas. El formulario no debe asumir que esos servicios ya funcionan.
 
 ## Recorrido y fuentes de verdad
 
 | Operación | Efecto correcto |
 |---|---|
-| Elegir acuerdo común | Atajo de captura; materializar cada acuerdo por `Item_ID`, conservando excepciones. |
+| Elegir dentro del mueble | Entrega inmediata, Solicitar a fábrica o Separado; conservar el `Item_ID`. |
 | Marcar entrega hoy | Intención de venta, no una entrega registrada. |
 | Indicar abono | Borrador; al habilitar escritura habrá un movimiento confirmado y un recibo. |
 | Nueva remisión | Seleccionar exclusivamente muebles y cantidades pendientes de esa OP. |
 | Confirmar remisión | Registrar cabecera y detalle una vez; actualizar proyecciones de cantidad desde el movimiento confirmado. |
-| Quitar mueble de un borrador | Reversible mediante Deshacer; conservar los pagos escritos y revisar sus asignaciones. |
+| Quitar mueble de un borrador | Reversible mediante Deshacer; conservar los pagos escritos y revisar el nuevo total. |
 | Desistir de un mueble de una OP emitida | Registrar ajuste con motivo, responsable, versión y efectos; conservar línea original e historial. |
 | Cambiar un mueble | Desistimiento/ajuste de la línea anterior y nueva línea con otro ID; no reutilizar IDs. |
 
@@ -49,13 +49,13 @@ Los precios netos por línea se fijan al emitir la OP. No volver a repartir el d
 
 Ejemplo: sala de $2.000.000 y comedor de $1.500.000; $2.100.000 abonados. Si desiste de la sala sin haberla recibido, quedan $1.500.000 de venta y $600.000 a favor. No borrar el abono, mostrar simplemente saldo cero, devolver dinero ni aplicarlo a otra OP automáticamente. Registrar la decisión autorizada y su movimiento. Comisiones, penalizaciones o retenciones no se inventan; requieren política del propietario.
 
-Una asignación a un mueble desistido exige revisión explícita. Distribuir abonos es un desglose del cobro, no otro ingreso. El historial del cobro y de cualquier reasignación debe permanecer trazable.
+Los abonos pertenecen a la OP completa. No pedir al vendedor repartirlos entre muebles. La función de proyección conserva una revisión defensiva si recibe una asignación histórica; no es un requisito de la captura ni autoriza trasladar dinero.
 
 ## Puerta de entrada a escrituras futuras
 
 Antes de activar crear OP, remisión, desistimiento o devolución:
 
-1. Versionar el esquema sin reutilizar columnas con otra semántica. Persistir acuerdos/disponibilidad/netos por línea, movimientos de cantidades y dinero, y asignaciones auditables.
+1. Versionar el esquema sin reutilizar columnas con otra semántica. Persistir elección/netos por línea y movimientos auditables de cantidades y dinero.
 2. Revalidar usuario, permisos, sede de la OP y versión esperada dentro del servidor. Una versión desactualizada obliga a recargar.
 3. Usar `Request_ID` ligado al contenido: repetir lo mismo devuelve el resultado original; el mismo ID con otro contenido se rechaza.
 4. Dentro de `LockService`, volver a calcular pendientes y saldos desde movimientos confirmados. No confiar en totales o permisos del navegador.
@@ -65,6 +65,6 @@ Antes de activar crear OP, remisión, desistimiento o devolución:
 
 ## Supervisión y aceptación
 
-`test-order-lifecycle.mjs` prueba selección parcial, sobreentrega, desistimiento de pendientes, saldo a favor, importes enteros, identidad y versión sin mutar entradas. Las pruebas del formulario deben añadir acuerdo común, excepciones conservadas, recuperación de borradores anteriores, alta/eliminación/Deshacer y revisión del abono tras quitar un mueble.
+`test-order-lifecycle.mjs` prueba selección parcial, sobreentrega, desistimiento de pendientes, saldo a favor, importes enteros, identidad y versión sin mutar entradas. Las pruebas del formulario verifican elección por mueble, pagos generales, recuperación de borradores anteriores, alta/eliminación/Deshacer y revisión del abono tras quitar un mueble.
 
 Las pruebas transaccionales anteriores son una condición para habilitar operación real. La presente entrega solo puede publicar las mejoras del formulario y los cálculos de preparación que pasen sus comprobaciones.

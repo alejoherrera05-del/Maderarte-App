@@ -171,6 +171,10 @@ def check_order():
         if editor['overflow']:
             editor['overflowNodes'] = driver.execute_script("return [...document.querySelectorAll('#quote-app *')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&(r.right>document.documentElement.clientWidth+1||r.left < -1)}).slice(0,25).map(n=>({tag:n.tagName,id:n.id,class:n.className,width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));")
             driver.save_screenshot(str(PNG.with_name(f'pedido-overflow-{width}.png')))
+        if not editor['purposeLabelsReadable']:
+            editor['purposeMetrics'] = driver.execute_script("return [...document.querySelectorAll('[data-item-purpose]')].map(n=>({id:n.id,width:n.clientWidth,font:getComputedStyle(n).font,padding:getComputedStyle(n).padding,text:n.selectedOptions[0].textContent}));")
+            driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-item-1-purpose'))
+            driver.save_screenshot(str(PNG.with_name(f'pedido-indicacion-error-{width}.png')))
         assert not editor['overflow'] and editor['priceFits'] and editor['purposeLabelsReadable'] and min(editor['sizes']) >= 16 and editor['writeDisabled'], editor
         assert editor['width'] == width, editor
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
