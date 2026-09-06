@@ -80,11 +80,20 @@ function syncCard(card) {
   const chip = host.querySelector('[data-order-plan-chip]');
   const help = host.querySelector('[data-order-plan-help]');
   if (chip) {
-    chip.textContent = plan?.short || 'Pendiente';
+    const next = plan?.short || 'Pendiente';
+    if (chip.textContent !== next) chip.textContent = next;
     chip.dataset.plan = plan?.code || 'PENDIENTE';
   }
-  if (help) help.textContent = plan?.help || 'Selecciona una opción para este mueble.';
+  if (help && !host.classList.contains('is-plan-missing')) {
+    const next = plan?.help || 'Selecciona una opción para este mueble.';
+    if (help.textContent !== next) help.textContent = next;
+  }
   host.classList.toggle('has-plan', Boolean(plan));
+}
+
+function dispatchChange(control) {
+  const EventCtor = control.ownerDocument.defaultView.Event;
+  control.dispatchEvent(new EventCtor('change', { bubbles: true }));
 }
 
 function applyPlan(card, code) {
@@ -94,9 +103,9 @@ function applyPlan(card, code) {
   if (!controls.agreement || !controls.fulfillment) return;
   controls.agreement.value = plan.agreement;
   controls.fulfillment.value = plan.fulfillment;
-  controls.agreement.dispatchEvent(new Event('change', { bubbles: true }));
+  dispatchChange(controls.agreement);
   controls.fulfillment.value = plan.fulfillment;
-  controls.fulfillment.dispatchEvent(new Event('change', { bubbles: true }));
+  dispatchChange(controls.fulfillment);
   syncCard(card);
 }
 
@@ -110,9 +119,11 @@ function enhanceCard(card) {
   host.querySelectorAll('[data-order-item-plan]').forEach(input => {
     input.addEventListener('change', () => {
       if (input.checked) applyPlan(card, input.value);
+      host.classList.remove('is-plan-missing');
       host.querySelectorAll('[aria-invalid="true"]').forEach(node => node.removeAttribute('aria-invalid'));
       const error = host.querySelector('[data-field-error]');
       if (error) error.textContent = '';
+      syncCard(card);
     });
   });
   syncCard(card);
@@ -141,18 +152,19 @@ function blockMissingPlan(event) {
   event.stopImmediatePropagation();
   enhanceCard(card);
   const host = card.querySelector(`[data-order-plan-for="${card.dataset.itemId}"]`);
+  if (!host) return;
   host.classList.add('is-plan-missing');
   const help = host.querySelector('[data-order-plan-help]');
   if (help) help.textContent = 'Selecciona qué pasará con este mueble antes de revisar el pedido.';
   const first = host.querySelector('[data-order-item-plan]');
   first?.setAttribute('aria-invalid', 'true');
-  host.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  host.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
   window.setTimeout(() => first?.focus({ preventScroll: true }), 180);
 }
 
 function observe() {
   const items = document.getElementById('quote-items');
-  if (items) new MutationObserver(syncAll).observe(items, { childList: true, subtree: true });
+  if (items) new MutationObserver(syncAll).observe(items, { childList: true });
   const agreements = document.getElementById('order-agreement-items');
   if (agreements) new MutationObserver(syncAll).observe(agreements, { childList: true, subtree: true, characterData: true });
 }
