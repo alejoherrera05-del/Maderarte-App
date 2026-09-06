@@ -148,3 +148,7 @@ La aclaración posterior del propietario permite sala disponible y comedor por s
 ## Simplificación del formulario — aclaración posterior del 5 de septiembre
 
 HomeEasy vigente inspeccionado: `aa21decbe809a91362a2cddfd272c7c5744dfddd`, `pedido.html`: cliente directo, líneas, observaciones, importes y saldo. Se mantiene ese recorrido. Las desviaciones aprobadas ahora son acuerdo por cada mueble, distribución opcional del abono y personalización desplegable. Recogida, envío y fechas permanecen en observaciones. Esta decisión sustituye el separado global descrito en los apartados históricos. Formulario y documento comparten cálculos. La recuperación temporal en la pestaña no guarda una OP ni habilita escrituras.
+
+## Simplificación solicitada el 6 de septiembre de 2026
+
+El propietario rechazó el bloque común y los saldos por mueble tras revisarlos en el dominio. La versión vigente vuelve a la captura directa dentro de cada ficha: una elección con tres opciones, sin desplegar otro editor. Pagos y saldo corresponden al pedido completo. Se conserva el resumen financiero aprobado y la identidad de Maderarte. La referencia HomeEasy `pedido.html` sigue en `aa21decbe809a91362a2cddfd272c7c5744dfddd`; su captura directa de líneas e importes se inspeccionó nuevamente. Esta aclaración sustituye los apartados históricos sobre acuerdo común y reparto de abonos.
