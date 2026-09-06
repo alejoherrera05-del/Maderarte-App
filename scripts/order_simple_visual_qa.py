@@ -138,12 +138,13 @@ try:
             print_preview_pdf()
 
     pdf_text = ' '.join(page.extract_text() for page in PdfReader(PDF).pages)
-    assert 'Sala de revisión' in pdf_text and 'Comedor de revisión' in pdf_text
-    assert 'Entrega inmediata' in pdf_text and 'Solicitar a fábrica' in pdf_text
-    assert 'Pagado hoy' in pdf_text and 'Muebles del pedido' in pdf_text
-    assert 'Propuesta comercial' not in pdf_text and 'Se entrega hoy' not in pdf_text
-    assert 'Saldo por pagar' not in pdf_text
-    assert 'INTERNO' not in pdf_text
+    pdf_casefold = pdf_text.casefold()
+    assert 'sala de revisión' in pdf_casefold and 'comedor de revisión' in pdf_casefold
+    assert 'entrega inmediata' in pdf_casefold and 'solicitar a fábrica' in pdf_casefold
+    assert 'pagado hoy' in pdf_casefold and 'muebles del pedido' in pdf_casefold
+    assert 'propuesta comercial' not in pdf_casefold and 'se entrega hoy' not in pdf_casefold
+    assert 'saldo por pagar' not in pdf_casefold
+    assert 'interno' not in pdf_casefold
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
     assert not errors, errors
     print('ORDER_SIMPLE_QA=' + json.dumps({'responsive': results, 'pdfPages': len(PdfReader(PDF).pages), 'consoleErrors': errors}, ensure_ascii=False))
