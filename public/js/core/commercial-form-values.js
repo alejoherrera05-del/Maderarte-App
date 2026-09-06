@@ -6,8 +6,8 @@ export function readFurniture(card, index = 0) {
   const quantity = Number.isSafeInteger(rawQuantity) && rawQuantity > 0 ? rawQuantity : NaN;
   const unitValue = paymentAmount(field('unitValue'));
   const product = quantity * unitValue;
-  const agreement = ITEM_AGREEMENTS.find(option => option.code === card.querySelector('[data-item-agreement]')?.value) || null;
-  const fulfillmentCode = agreement?.code === 'ENTREGA_HOY' ? 'DISPONIBLE' : card.querySelector('[data-item-fulfillment]')?.value;
+  const agreement = ITEM_AGREEMENTS.find(option => option.code === card.ownerDocument.getElementById(`order-item-${card.dataset.itemId}-agreement`)?.value) || null;
+  const fulfillmentCode = agreement?.code === 'ENTREGA_HOY' ? 'DISPONIBLE' : card.ownerDocument.getElementById(`order-item-${card.dataset.itemId}-fulfillment`)?.value;
   return {
     itemId: card.dataset.itemId, position: index + 1,
     description: field('description'), category: field('category'), quantity, unitValue,

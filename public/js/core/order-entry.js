@@ -1,5 +1,5 @@
 import { PAYMENT_METHODS, summarizePayments, paymentAmount, distributeDiscount } from './commercial-rules.js?v=agreements-1';
-import { readCommercialValues } from './commercial-form-values.js?v=agreements-1';
+import { readCommercialValues } from './commercial-form-values.js?v=lifecycle-1';
 import { escapeHtml } from './format.js';
 
 export function readOrderEntry(total, root = document) {

@@ -3,8 +3,8 @@ import { paginateQuoteDocument } from '../core/quote-pagination.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=agreements-1';
-import { readOrderEntry } from '../core/order-entry.js?v=agreements-1';
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
+import { readOrderEntry } from '../core/order-entry.js?v=lifecycle-1';
 
 function ensureEditorialStyles() {
   if (document.querySelector('link[data-quote-editorial]')) return;

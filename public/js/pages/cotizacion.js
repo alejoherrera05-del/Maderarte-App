@@ -2,16 +2,18 @@ import { apiRequest } from '../core/api.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=agreements-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=lifecycle-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js?v=agreements-1';
-import { ITEM_FULFILLMENTS, ITEM_AGREEMENTS, paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
-import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=agreements-1';
+import { paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
+import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=lifecycle-1';
 
+import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
+import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
 import { bindFormDraft } from '../core/form-draft.js?v=agreements-1';
-import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=agreements-1';
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -35,6 +37,7 @@ const state = {
   session: null,
   quoteMeta: null,
   nextItemId: 1,
+  removedItems: [],
   photos: new Map()
 };
 
@@ -204,16 +207,6 @@ function itemMarkup(id) {
       <div class="quote-field quote-item-value"><label for="quote-item-${id}-unitValue">Precio por unidad</label><input id="quote-item-${id}-unitValue" data-field="unitValue" inputmode="numeric" placeholder="$ 0" required></div>
       <div class="quote-item-line-total"><span>Total de este mueble</span><strong data-line-total>$ 0</strong></div>
     </div>
-    ${COMMERCIAL_DOCUMENT.isOrder ? `<div class="order-item-agreements">
-      <div class="quote-field"><label for="order-item-${id}-agreement">¿Qué acordamos con este mueble?</label>
-        <select id="order-item-${id}-agreement" data-item-agreement required aria-describedby="order-item-${id}-agreement-help"><option value="">Seleccionar acuerdo</option>${ITEM_AGREEMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.label)}</option>`).join('')}</select>
-        <p class="quote-helper" id="order-item-${id}-agreement-help" data-agreement-help role="status"></p>
-      </div>
-      <div class="quote-field" data-availability-field hidden><label for="order-item-${id}-fulfillment">¿Está disponible o necesita fábrica?</label>
-        <select id="order-item-${id}-fulfillment" data-item-fulfillment aria-describedby="order-item-${id}-help"><option value="">Seleccionar disponibilidad</option>${ITEM_FULFILLMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.code === 'DISPONIBLE' ? 'Está disponible' : option.code === 'PARA_SOLICITAR' ? 'Necesita fábrica' : 'Aún por definir')}</option>`).join('')}</select>
-        <p class="quote-helper" id="order-item-${id}-help" data-fulfillment-help role="status"></p>
-      </div>
-    </div>` : ''}
     <p class="quote-helper" data-quantity-help hidden>Si las unidades tienen acuerdos distintos, añádelas en líneas separadas.</p>
     <details class="quote-item-details"><summary>Personalización y referencias <span>Opcional</span></summary>
       <div class="quote-item-grid quote-item-customization">
@@ -305,24 +298,7 @@ function bindItem(card) {
     if (Number.isFinite(value)) unitValue.value = value ? String(value) : '';
   });
 
-  const agreement = card.querySelector('[data-item-agreement]');
-  agreement?.addEventListener('change', () => {
-    const choice = ITEM_AGREEMENTS.find(option => option.code === agreement.value);
-    card.querySelector('[data-agreement-help]').textContent = choice?.help || '';
-    const availability = card.querySelector('[data-availability-field]');
-    availability.hidden = !choice || choice.code === 'ENTREGA_HOY';
-    calculate();
-  });
   card.querySelector('[data-field="description"]').addEventListener('input', calculate);
-  const fulfillment = card.querySelector('[data-item-fulfillment]');
-  fulfillment?.addEventListener('change', () => {
-    const choice = ITEM_FULFILLMENTS.find(option => option.code === fulfillment.value);
-    const help = card.querySelector('[data-fulfillment-help]');
-    help.textContent = choice?.help || 'Selecciona la disponibilidad de este mueble.';
-    help.classList.remove('is-error');
-    fulfillment.removeAttribute('aria-invalid');
-    calculate();
-  });
 
   const photoInput = card.querySelector('[data-photo-input]');
   card.querySelector('[data-add-photos]')?.addEventListener('click', () => photoInput?.click());
@@ -347,6 +323,7 @@ function addItem(restoredId) {
 }
 
 function calculate() {
+  state.agreements?.sync();
   const values = readCommercialValues();
   [...document.querySelectorAll('.quote-item')].forEach((card, index) => {
     const item = values.items[index];
@@ -387,6 +364,7 @@ function calculate() {
 
 function showFieldError(input, message) {
   if (!input) return;
+  state.agreements?.reveal(input);
   input.setAttribute('aria-invalid', 'true');
   const details = input.closest('details');
   if (details) details.open = true;
@@ -434,8 +412,8 @@ function validateForm() {
     if (missing(`${prefix} [data-field="quantity"]`, 'La cantidad debe ser un número entero mayor que cero.', () => !Number.isSafeInteger(item.quantity))) return false;
     if (missing(`${prefix} [data-field="unitValue"]`, 'Escribe un precio mayor que cero, en pesos completos y sin negativos.', () => !Number.isSafeInteger(item.unitValue) || item.unitValue <= 0 || !Number.isSafeInteger(item.subtotal))) return false;
     if (COMMERCIAL_DOCUMENT.isOrder) {
-      if (missing(`${prefix} [data-item-agreement]`, 'Selecciona qué acordaron para este mueble.', () => !item.agreement)) return false;
-      if (missing(`${prefix} [data-item-fulfillment]`, 'Selecciona la disponibilidad de este mueble.', () => !item.fulfillment)) return false;
+      if (!item.agreement) { showFieldError(state.agreements.validationTarget(item.itemId, 'agreement'), 'Selecciona el acuerdo de la compra o el de este mueble.'); return false; }
+      if (!item.fulfillment) { showFieldError(state.agreements.validationTarget(item.itemId, 'fulfillment'), 'Indica la disponibilidad de la compra o la de este mueble.'); return false; }
     }
   }
   const values = readCommercialValues();
@@ -532,6 +510,8 @@ function bindGlobalInteractions() {
 function captureDraft() {
   return {
     branch: state.quoteMeta?.branch || '',
+    agreementModes: state.agreements?.modes(),
+    removedItems: state.removedItems,
     itemIds: [...document.querySelectorAll('.quote-item')].map(card => Number(card.dataset.itemId)),
     paymentIds: [...document.querySelectorAll('[data-payment-row]')].map(row => Number(row.dataset.paymentRow)),
     fields: [...document.querySelectorAll('#quote-form input[id]:not([type=file]), #quote-form select[id], #quote-form textarea[id]')]
@@ -556,6 +536,7 @@ async function restoreDraft(data) {
     input.value = typeof saved.value === 'string' ? saved.value : '';
     if (input.type === 'checkbox') input.checked = Boolean(saved.checked);
   }
+  state.agreements?.restoreModes(data.agreementModes);
   // Allocation inputs are created from the restored furniture IDs, then populated.
   calculate();
   for (const saved of data.fields.filter(field => field.id.startsWith('order-allocation-'))) {
@@ -563,7 +544,7 @@ async function restoreDraft(data) {
     if (input) input.value = String(saved.value || '');
   }
   for (const card of document.querySelectorAll('.quote-item')) {
-    for (const input of card.querySelectorAll('[data-item-agreement], [data-item-fulfillment]')) input.dispatchEvent(new window.Event('change'));
+    state.agreements?.sync();
     if ([...card.querySelectorAll('details [data-field]')].some(input => input.value)) card.querySelector('details').open = true;
   }
   for (const [id, photos] of Array.isArray(data.photos) ? data.photos : []) {
@@ -585,6 +566,7 @@ guardStandalonePage({
     if (back) back.href = withPreview('/index.html');
     renderBranchAvailability();
     bindGlobalInteractions();
+    if (COMMERCIAL_DOCUMENT.isOrder) state.agreements = bindOrderAgreements(() => { calculate(); state.draft?.changed(); });
     addItem();
     if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
     // QA preview stays ephemeral; real sessions recover only their own tab draft.
