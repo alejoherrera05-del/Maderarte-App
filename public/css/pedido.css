@@ -24,32 +24,424 @@
   }
 }
 
-.order-sale-modes { margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.order-sale-option { display: flex; align-items: flex-start; gap: 12px; padding: 20px 16px; border: 1px solid var(--quote-line); border-radius: 16px; cursor: pointer; background: #fafafa; }
-.order-sale-option:has(input:checked) { border-color: var(--quote-copper); background: #fbf4ee; }
-.order-sale-option:has(input:focus-visible) { outline: 3px solid #e7bc96; outline-offset: 3px; }
-.order-sale-option input { flex: 0 0 20px; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--quote-copper); }
-.order-sale-option strong { display: block; font-size: 17px; font-weight: 600; line-height: 1.4; }
-.order-sale-option small { display: block; font-size: 15px; line-height: 1.5; color: var(--quote-muted); margin-top: 7px; }
-.order-payments { display: grid; gap: 22px; margin-bottom: 22px; }
-.order-payment { min-width: 0; padding: 24px; border: 1px solid var(--quote-line); border-radius: 18px; }
-.order-payment-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
-.order-payment-head strong { font-size: 17px; font-weight: 600; }
-.order-payment-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
-.order-payment-note { grid-column: 1 / -1; }
-.order-payment-summary, #order-payment-error { grid-column: 1 / -1; }
-#order-payment-error { font-size: 15px; }
-.order-document-payments { display: grid; gap: 10px; margin-top: 16px; border-top: 1px solid #ded8d1; padding-top: 16px; font-size: .75rem; }
-.order-document-payments > div { display: flex; justify-content: space-between; gap: 16px; }
-.order-document-payments strong { white-space: nowrap; font-weight: 600; }
-.order-document-balance { padding-top: 10px; border-top: 1px solid #ded8d1; }
-.order-document-mode strong { display: block; font-size: .88rem; font-weight: 600; margin-top: 12px; }
-.order-document-mode p { font-size: .75rem; line-height: 1.6; margin-top: 8px; }
-@media (max-width: 1200px) {
-  .order-sale-modes { grid-template-columns: 1fr; }
+/* The order is managed per furniture line. The old global sale-mode block is gone. */
+[data-commercial-document="order"] .order-item-card .quote-item-value {
+  grid-column: span 6;
 }
+
+[data-commercial-document="order"] .order-item-card .quote-item-line-total {
+  grid-column: span 6;
+}
+
+.order-item-plan-chip {
+  width: fit-content;
+  min-height: 21px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #f0efed;
+  color: #76716d;
+  font-size: .61rem;
+  font-weight: 620;
+  line-height: 1;
+}
+
+.order-item-plan-chip[data-plan="ENTREGA_AHORA"] {
+  background: #edf5ef;
+  color: #42654b;
+}
+
+.order-item-plan-chip[data-plan="SEPARADO"] {
+  background: #f7f1e5;
+  color: #7b6338;
+}
+
+.order-item-plan-chip[data-plan="SOLICITAR_FABRICA"] {
+  background: var(--quote-copper-soft);
+  color: var(--quote-copper-deep);
+}
+
+.order-item-plan {
+  min-width: 0;
+  margin: 17px 0 0;
+  padding: 17px 0 0;
+  border: 0;
+  border-top: 1px solid rgba(60, 60, 67, .07);
+}
+
+.order-item-plan-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.order-item-plan-heading legend {
+  padding: 0;
+  color: var(--quote-ink);
+  font-size: .82rem;
+  font-weight: 620;
+  letter-spacing: -.01em;
+}
+
+.order-item-plan-heading small {
+  color: var(--quote-muted);
+  font-size: .67rem;
+}
+
+.order-item-plan-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.order-item-plan-option {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid var(--quote-line);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.order-item-plan-option:hover {
+  border-color: rgba(200, 101, 42, .28);
+  background: #fffdfb;
+}
+
+.order-item-plan-option:active {
+  transform: scale(.992);
+}
+
+.order-item-plan-option:has(input:checked) {
+  border-color: rgba(200, 101, 42, .42);
+  background: var(--quote-copper-soft);
+  box-shadow: 0 0 0 1px rgba(200, 101, 42, .08);
+}
+
+.order-item-plan-option:has(input:focus-visible) {
+  outline: 3px solid rgba(200, 101, 42, .18);
+  outline-offset: 2px;
+}
+
+.order-item-plan-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.order-item-plan-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border: 1.5px solid #aaa49f;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 3px #fff;
+}
+
+.order-item-plan-option:has(input:checked) .order-item-plan-dot {
+  border-color: var(--quote-copper);
+  background: var(--quote-copper);
+}
+
+.order-item-plan-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.order-item-plan-copy strong {
+  color: var(--quote-ink);
+  font-size: .75rem;
+  font-weight: 620;
+  line-height: 1.25;
+}
+
+.order-item-plan-copy small {
+  color: var(--quote-muted);
+  font-size: .64rem;
+  line-height: 1.4;
+}
+
+.order-item-plan-message,
+.order-item-quantity-note {
+  margin: 8px 2px 0;
+  color: var(--quote-muted);
+  font-size: .66rem;
+  line-height: 1.4;
+}
+
+.order-item-quantity-note {
+  color: #7d653b;
+}
+
+.order-item-card.is-plan-missing .order-item-plan {
+  margin-inline: -7px;
+  padding: 16px 7px 7px;
+  border: 1px solid rgba(163, 65, 66, .28);
+  border-radius: 14px;
+  background: #fff8f8;
+}
+
+.order-item-card.is-plan-missing .order-item-plan-message {
+  color: var(--quote-danger);
+  font-weight: 590;
+}
+
+/* Secondary technical information is available without making every card excessively long. */
+.order-item-details {
+  margin-top: 12px;
+  border: 1px solid var(--quote-line);
+  border-radius: 15px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.order-item-details summary {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 13px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.order-item-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.order-item-details-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.order-item-details-copy strong {
+  color: var(--quote-ink);
+  font-size: .76rem;
+  font-weight: 610;
+}
+
+.order-item-details-copy small {
+  color: var(--quote-muted);
+  font-size: .64rem;
+}
+
+.order-item-details-chevron {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: #f4f3f1;
+  color: #77716d;
+  font-size: 1rem;
+  transition: transform .18s ease;
+}
+
+.order-item-details[open] .order-item-details-chevron {
+  transform: rotate(180deg);
+}
+
+.order-item-details[open] summary {
+  border-bottom: 1px solid rgba(60, 60, 67, .07);
+  background: #fdfdfc;
+}
+
+.order-item-details-body {
+  padding: 13px;
+}
+
+.order-item-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.order-item-details-grid .quote-item-fabric,
+.order-item-details-grid .quote-item-wood {
+  grid-column: auto;
+}
+
+.order-item-details-grid .quote-item-specifications {
+  grid-column: 1 / -1;
+}
+
+.order-item-details .quote-photo-area {
+  margin-top: 13px;
+  padding-top: 13px;
+}
+
+/* Payments remain simple: what was actually received today, without exposing a per-order balance block. */
+.order-payments {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.order-payment {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--quote-line);
+  border-radius: 16px;
+  background: #fafafa;
+}
+
+.order-payment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.order-payment-head strong {
+  font-size: .86rem;
+  font-weight: 610;
+}
+
+.order-payment-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.order-payment-note {
+  grid-column: 1 / -1;
+}
+
+.order-payment-summary,
+#order-payment-error {
+  grid-column: 1 / -1;
+}
+
+#order-payment-error {
+  font-size: .72rem;
+}
+
+/* Document preview: show the agreement beside each item; hide the old balance row. */
+.order-document-item-plan {
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 5px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: #f5f1ec;
+  color: #6e5848;
+  font-size: .58rem;
+  line-height: 1.3;
+}
+
+.order-document-item-plan strong {
+  flex: 0 0 auto;
+  color: #5c4536;
+  font-size: .59rem;
+  font-weight: 650;
+}
+
+.order-document-item-plan span {
+  min-width: 0;
+  color: #7c6b60;
+}
+
+.order-document-payments {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  border-top: 1px solid #ded8d1;
+  padding-top: 16px;
+  font-size: .75rem;
+}
+
+.order-document-payments > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.order-document-payments strong {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.order-document-balance {
+  display: none !important;
+}
+
+.order-document-mode strong {
+  display: block;
+  font-size: .78rem;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+.order-document-mode p {
+  max-width: 62ch;
+  font-size: .68rem;
+  line-height: 1.5;
+  margin-top: 5px;
+  color: #756f69;
+}
+
+@media (max-width: 1040px) {
+  .order-item-plan-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  [data-commercial-document="order"] .order-item-card .quote-item-value,
+  [data-commercial-document="order"] .order-item-card .quote-item-line-total {
+    grid-column: auto;
+  }
+
+  .order-item-plan-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .order-item-details-grid,
+  .order-payment-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .order-item-details-grid .quote-item-specifications,
+  .order-payment-note {
+    grid-column: auto;
+  }
+}
+
 @media (max-width: 600px) {
-  .order-payment { padding: 20px 16px; }
-  .order-payment-fields { grid-template-columns: 1fr; }
-  .order-payment-note { grid-column: auto; }
+  .order-payment {
+    padding: 15px 13px;
+  }
+
+  .order-item-plan-option {
+    padding: 11px;
+  }
+
+  .order-item-details-body {
+    padding: 11px;
+  }
 }
