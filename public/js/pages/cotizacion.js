@@ -2,18 +2,18 @@ import { apiRequest } from '../core/api.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=lifecycle-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=item-purpose-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js?v=agreements-1';
 import { paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
-import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=lifecycle-1';
+import { bindOrderEntry, readOrderEntry } from '../core/order-entry.js?v=item-purpose-1';
 
-import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
-import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
+import { itemPurposeMarkup, legacyItemPurpose } from '../core/order-agreements.js?v=item-purpose-1';
+import { financialPosition } from '../core/order-lifecycle.js?v=item-purpose-1';
 import { bindFormDraft } from '../core/form-draft.js?v=agreements-1';
-import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=item-purpose-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -206,6 +206,7 @@ function itemMarkup(id) {
       <div class="quote-field quote-item-quantity"><label for="quote-item-${id}-quantity">Cantidad</label><input id="quote-item-${id}-quantity" data-field="quantity" type="number" min="1" step="1" value="1" inputmode="numeric" required></div>
       <div class="quote-field quote-item-value"><label for="quote-item-${id}-unitValue">Precio por unidad</label><input id="quote-item-${id}-unitValue" data-field="unitValue" inputmode="numeric" placeholder="$ 0" required></div>
       <div class="quote-item-line-total"><span>Total de este mueble</span><strong data-line-total>$ 0</strong></div>
+      ${COMMERCIAL_DOCUMENT.isOrder ? itemPurposeMarkup(id) : ''}
     </div>
     <p class="quote-helper" data-quantity-help hidden>Si las unidades tienen acuerdos distintos, añádelas en líneas separadas.</p>
     <details class="quote-item-details"><summary>Personalización y referencias <span>Opcional</span></summary>
@@ -287,7 +288,7 @@ function renderRemovedItem(restoredName = '') {
   message.textContent = restoredName ? `Se recuperó ${restoredName}.` : `Se quitó ${name} del borrador.`;
   if (COMMERCIAL_DOCUMENT.isOrder) {
     const help = document.createElement('small');
-    help.textContent = 'Los pagos conservan sus valores. Revisa el total y la distribución del abono.';
+    help.textContent = 'Los pagos conservan sus valores. Revisa el nuevo total del pedido.';
     message.append(help);
   }
   root.append(message);
@@ -305,9 +306,7 @@ function removeItem(card) {
     id, index: [...card.parentElement.children].indexOf(card),
     fields: Object.fromEntries([...card.querySelectorAll('[data-field]')].map(input => [input.dataset.field, input.value])),
     detailsOpen: card.querySelector('details').open,
-    photos: state.photos.get(id) || [],
-    agreement: state.agreements?.captureItem(id),
-    allocation: document.getElementById(`order-allocation-${id}`)?.value || ''
+    photos: state.photos.get(id) || []
   });
   state.removedItems = state.removedItems.slice(-20);
   state.photos.delete(id); card.remove();
@@ -326,9 +325,7 @@ function undoRemoveItem() {
   root.insertBefore(card, root.children[saved.index] || null);
   card.querySelector('details').open = Boolean(saved.detailsOpen);
   state.photos.set(saved.id, saved.photos); renderPhotos(saved.id);
-  state.agreements?.restoreItem(saved.id, saved.agreement);
-  const allocation = document.getElementById(`order-allocation-${saved.id}`);
-  if (allocation) allocation.value = saved.allocation;
+  if (saved.legacyNote) appendRecoveredNotes([saved.legacyNote]);
   renumberItems(); calculate(); renderRemovedItem(saved.fields.description || 'el mueble');
   card.querySelector('[data-field="description"]').focus();
   state.draft?.changed();
@@ -356,6 +353,7 @@ function bindItem(card) {
   });
 
   card.querySelector('[data-field="description"]').addEventListener('input', calculate);
+  card.querySelector('[data-item-purpose]')?.addEventListener('change', calculate);
 
   const photoInput = card.querySelector('[data-photo-input]');
   card.querySelector('[data-add-photos]')?.addEventListener('click', () => photoInput?.click());
@@ -380,7 +378,6 @@ function addItem(restoredId) {
 }
 
 function calculate() {
-  state.agreements?.sync();
   const values = readCommercialValues();
   [...document.querySelectorAll('.quote-item')].forEach((card, index) => {
     const item = values.items[index];
@@ -393,7 +390,6 @@ function calculate() {
   document.getElementById('quote-total').textContent = money(values.total);
   if (COMMERCIAL_DOCUMENT.isOrder) {
     document.getElementById('order-discount-summary').textContent = money(values.discount);
-    syncOrderAllocation(values, calculate);
     const entry = readOrderEntry(values.total);
     const position = Number.isSafeInteger(values.total) && values.total >= 0 && Number.isSafeInteger(entry.paid) && entry.paid >= 0 ? financialPosition(values.total, entry.paid) : null;
     const balance = position && !position.credit ? position.due : NaN;
@@ -403,15 +399,12 @@ function calculate() {
     document.getElementById('order-payment-error').textContent = position?.credit ? `Los abonos indicados superan el total por ${money(position.credit)}. Revisa los valores antes de continuar.` : hasPaymentContent || state.validating ? entry.error : '';
     const noPayment = document.getElementById('order-no-payment').checked;
     document.getElementById('order-payment-editor').hidden = noPayment && !hasPaymentContent;
-    document.getElementById('order-allocation-error').textContent = entry.allocate ? entry.allocationError : '';
-    const assigned = entry.allocation.reduce((sum, item) => sum + (Number.isFinite(item.amount) ? item.amount : 0), 0);
-    document.getElementById('order-allocation-total').textContent = entry.allocate ? `Abono: ${money(entry.paid)} · Asignado: ${money(assigned)} · ${assigned > entry.paid ? 'Exceso' : 'Falta'}: ${money(Math.abs(entry.paid - assigned))}` : '';
     document.getElementById('order-operational-summary').replaceChildren(...values.items.map(item => {
       const row = document.createElement('li');
       const title = document.createElement('strong');
       title.textContent = item.description || `Mueble ${item.position}`;
       const detail = document.createElement('span');
-      detail.textContent = item.agreement ? `${item.quantity || '—'} · ${item.agreement.label}${item.fulfillment?.code === 'PARA_SOLICITAR' ? ' · necesita fábrica' : ''}` : 'Acuerdo pendiente';
+      detail.textContent = item.purpose ? `${item.quantity || '—'} · ${item.purpose.label}` : 'Selecciona qué se hará con este mueble';
       row.append(title, detail);
       return row;
     }));
@@ -423,7 +416,6 @@ function calculate() {
 
 function showFieldError(input, message) {
   if (!input) return;
-  state.agreements?.reveal(input);
   input.setAttribute('aria-invalid', 'true');
   const details = input.closest('details');
   if (details) details.open = true;
@@ -470,9 +462,9 @@ function validateForm() {
     if (missing(`${prefix} [data-field="description"]`, 'Describe el mueble que estás incluyendo.')) return false;
     if (missing(`${prefix} [data-field="quantity"]`, 'La cantidad debe ser un número entero mayor que cero.', () => !Number.isSafeInteger(item.quantity))) return false;
     if (missing(`${prefix} [data-field="unitValue"]`, 'Escribe un precio mayor que cero, en pesos completos y sin negativos.', () => !Number.isSafeInteger(item.unitValue) || item.unitValue <= 0 || !Number.isSafeInteger(item.subtotal))) return false;
-    if (COMMERCIAL_DOCUMENT.isOrder) {
-      if (!item.agreement) { showFieldError(state.agreements.validationTarget(item.itemId, 'agreement'), 'Selecciona el acuerdo de la compra o el de este mueble.'); return false; }
-      if (!item.fulfillment) { showFieldError(state.agreements.validationTarget(item.itemId, 'fulfillment'), 'Indica la disponibilidad de la compra o la de este mueble.'); return false; }
+    if (COMMERCIAL_DOCUMENT.isOrder && !item.purpose) {
+      showFieldError(card.querySelector('[data-item-purpose]'), 'Selecciona entrega inmediata, solicitar a fábrica o separado para este mueble.');
+      return false;
     }
   }
   const values = readCommercialValues();
@@ -485,11 +477,7 @@ function validateForm() {
       showFieldError(method?.value ? row.querySelector('[data-payment-amount]') : method, entry.error);
       return false;
     }
-    if (entry.allocationError) {
-      const input = [...document.querySelectorAll('[data-item-allocation]')].find(node => node.dataset.itemAllocation === entry.allocationErrorId) || document.querySelector('[data-item-allocation]');
-      showFieldError(input, entry.allocationError);
-      return false;
-    }
+
   }
   return true;
 }
@@ -569,7 +557,6 @@ function bindGlobalInteractions() {
 function captureDraft() {
   return {
     branch: state.quoteMeta?.branch || '',
-    agreementModes: state.agreements?.modes(),
     removedItems: state.removedItems,
     itemIds: [...document.querySelectorAll('.quote-item')].map(card => Number(card.dataset.itemId)),
     paymentIds: [...document.querySelectorAll('[data-payment-row]')].map(row => Number(row.dataset.paymentRow)),
@@ -577,6 +564,13 @@ function captureDraft() {
       .map(input => ({ id: input.id, value: input.value, checked: input.checked })),
     photos: [...state.photos].filter(([, photos]) => photos.length)
   };
+}
+
+function appendRecoveredNotes(notes) {
+  const input = document.getElementById('quote-notes');
+  const existing = new Set(input.value.split('\n').map(line => line.trim()));
+  const extra = notes.filter(note => note && !existing.has(note));
+  if (extra.length) input.value += `${input.value ? '\n\n' : ''}${[...new Set(extra)].join('\n')}`;
 }
 
 async function restoreDraft(data) {
@@ -592,10 +586,17 @@ async function restoreDraft(data) {
       || !Number.isSafeInteger(item.index) || item.index < 0 || item.index > 100 || !item.fields || typeof item.fields !== 'object') return false;
     removedIds.add(item.id); return true;
   }).map(item => ({ ...item,
-    fields: Object.fromEntries(Object.entries(item.fields).filter(([key,value]) => ['description','quantity','unitValue','category','fabric','wood','specifications'].includes(key) && typeof value === 'string')),
+    fields: Object.fromEntries(Object.entries(item.fields).filter(([key,value]) => ['description','quantity','unitValue','category','fabric','wood','specifications','purpose'].includes(key) && typeof value === 'string')),
     photos: (Array.isArray(item.photos) ? item.photos : []).filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo?.dataUrl || '')),
-    allocation: typeof item.allocation === 'string' ? item.allocation : ''
+    legacyNote: typeof item.legacyNote === 'string' ? item.legacyNote : ''
   }));
+  for (const item of state.removedItems) {
+    if (COMMERCIAL_DOCUMENT.isOrder && !Object.hasOwn(item.fields, 'purpose')) {
+      const old = legacyItemPurpose(item.agreement?.agreement, item.agreement?.fulfillment, item.fields.description);
+      item.fields.purpose = old.purpose; item.legacyNote = old.note;
+    }
+    delete item.agreement; delete item.allocation;
+  }
   state.nextItemId = Math.max(state.nextItemId, ...state.removedItems.map(item => item.id + 1));
   document.getElementById('quote-items').replaceChildren();
   state.photos.clear();
@@ -607,12 +608,20 @@ async function restoreDraft(data) {
     input.value = typeof saved.value === 'string' ? saved.value : '';
     if (input.type === 'checkbox') input.checked = Boolean(saved.checked);
   }
-  state.agreements?.restoreModes(data.agreementModes);
-  // Allocation inputs are created from the restored furniture IDs, then populated.
-  calculate();
-  for (const saved of data.fields.filter(field => field.id.startsWith('order-allocation-'))) {
-    const input = document.getElementById(saved.id);
-    if (input) input.value = String(saved.value || '');
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    const fields = new Map(data.fields.map(field => [field.id, field.value]));
+    const notes = [];
+    for (const id of data.itemIds) {
+      if (fields.has(`order-item-${id}-purpose`)) continue;
+      const inherited = data.agreementModes?.[id] === 'inherit';
+      const old = legacyItemPurpose(
+        fields.get(inherited ? 'order-common-agreement' : `order-item-${id}-agreement`),
+        fields.get(inherited ? 'order-common-fulfillment' : `order-item-${id}-fulfillment`),
+        fields.get(`quote-item-${id}-description`));
+      document.getElementById(`order-item-${id}-purpose`).value = old.purpose;
+      if (old.note) notes.push(old.note);
+    }
+    appendRecoveredNotes(notes);
   }
   for (const card of document.querySelectorAll('.quote-item')) {
     if ([...card.querySelectorAll('details [data-field]')].some(input => input.value)) card.querySelector('details').open = true;
@@ -637,7 +646,6 @@ guardStandalonePage({
     if (back) back.href = withPreview('/index.html');
     renderBranchAvailability();
     bindGlobalInteractions();
-    if (COMMERCIAL_DOCUMENT.isOrder) state.agreements = bindOrderAgreements(() => { calculate(); state.draft?.changed(); });
     addItem();
     if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
     // QA preview stays ephemeral; real sessions recover only their own tab draft.

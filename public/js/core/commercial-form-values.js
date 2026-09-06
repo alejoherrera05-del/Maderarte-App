@@ -1,4 +1,5 @@
-import { paymentAmount, ITEM_AGREEMENTS, ITEM_FULFILLMENTS } from './commercial-rules.js?v=agreements-1';
+import { ITEM_PURPOSES } from './order-agreements.js?v=item-purpose-1';
+import { paymentAmount } from './commercial-rules.js?v=agreements-1';
 
 export function readFurniture(card, index = 0) {
   const field = name => card.querySelector(`[data-field="${name}"]`)?.value?.trim() || '';
@@ -6,14 +7,13 @@ export function readFurniture(card, index = 0) {
   const quantity = Number.isSafeInteger(rawQuantity) && rawQuantity > 0 ? rawQuantity : NaN;
   const unitValue = paymentAmount(field('unitValue'));
   const product = quantity * unitValue;
-  const agreement = ITEM_AGREEMENTS.find(option => option.code === card.ownerDocument.getElementById(`order-item-${card.dataset.itemId}-agreement`)?.value) || null;
-  const fulfillmentCode = agreement?.code === 'ENTREGA_HOY' ? 'DISPONIBLE' : card.ownerDocument.getElementById(`order-item-${card.dataset.itemId}-fulfillment`)?.value;
+  const purpose = ITEM_PURPOSES.find(item => item.code === field('purpose')) || null;
   return {
     itemId: card.dataset.itemId, position: index + 1,
     description: field('description'), category: field('category'), quantity, unitValue,
     fabric: field('fabric'), wood: field('wood'), specifications: field('specifications'),
     subtotal: Number.isSafeInteger(product) && product >= 0 ? product : NaN,
-    agreement, fulfillment: ITEM_FULFILLMENTS.find(option => option.code === fulfillmentCode) || null
+    purpose
   };
 }
 

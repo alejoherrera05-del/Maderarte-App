@@ -3,8 +3,8 @@ import { paginateQuoteDocument } from '../core/quote-pagination.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
-import { readOrderEntry } from '../core/order-entry.js?v=lifecycle-1';
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=item-purpose-1';
+import { readOrderEntry } from '../core/order-entry.js?v=item-purpose-1';
 
 function ensureEditorialStyles() {
   if (document.querySelector('link[data-quote-editorial]')) return;
@@ -75,7 +75,7 @@ function collectDocumentData() {
       city: value('quote-client-city')
     },
     notes: value('quote-notes'),
-    items: items.map(item => ({ ...item, allocation: order?.allocation.find(part => part.itemId === item.itemId) || null })),
+    items,
     subtotal,
     discount,
     total,
@@ -180,13 +180,12 @@ function itemMarkup(item) {
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
-      ${item.agreement && !item.continuation ? `<p class="order-document-agreement">${escapeHtml(item.agreement.label)}${item.fulfillment && item.agreement.code !== 'ENTREGA_HOY' ? ` · <span class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</span>` : ''}</p>` : ''}
+      ${item.purpose && !item.continuation ? `<p class="order-document-purpose" data-purpose="${item.purpose.code}">${escapeHtml(item.purpose.label)}</p>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
     <div class="quote-editorial-item-quantity">${item.continuation ? '—' : escapeHtml(String(item.quantity))}</div>
     <div class="quote-editorial-item-unit">${!item.continuation && item.unitValue > 0 ? escapeHtml(money(item.unitValue)) : '—'}</div>
     <div class="quote-editorial-item-total">${!item.continuation && item.subtotal > 0 ? escapeHtml(money(item.subtotal)) : '—'}</div>
-    ${item.allocation && !item.continuation ? `<p class="order-document-allocation">${item.allocation.discount > 0 ? `Valor con descuento: ${escapeHtml(money(item.allocation.net))} · ` : ''}Abono indicado: ${escapeHtml(money(item.allocation.amount))} · Saldo: ${escapeHtml(money(item.allocation.balance))}</p>` : ''}
   </article>`;
 }
 
@@ -226,12 +225,10 @@ function investmentMarkup(data) {
 }
 
 function commercialTermsMarkup(data) {
-  const hasFactory = data.items.some(item => item.fulfillment?.code === 'PARA_SOLICITAR');
-  const hasPending = data.items.some(item => item.fulfillment?.code === 'POR_DEFINIR');
+  const hasFactory = data.items.some(item => item.purpose?.code === 'PARA_SOLICITAR');
   const terms = data.order
     ? `<div class="order-document-conditions">
         ${hasFactory ? '<p>Muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
-        ${hasPending ? '<p>Los muebles por definir quedan pendientes de acordar disponibilidad y entrega.</p>' : ''}
       </div>`
     : `<div class="quote-editorial-term-cards"><article class="quote-editorial-term-card quote-editorial-term-time">
         <div class="quote-editorial-term-icon"><img src="/assets/icons/calendar-dots.svg" alt=""></div>
