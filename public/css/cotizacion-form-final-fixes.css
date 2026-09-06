@@ -251,3 +251,10 @@ html:has(body.quote-page) { min-width: 0; }
   .quote-item-essential { grid-template-columns: minmax(0, 1fr); }
   .quote-item-essential > .quote-item-quantity { max-width: 120px; }
 }
+
+.quote-removed-item:not([hidden]) { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 0 0 24px; padding: 20px; background: #fbf4ed; border-left: 3px solid var(--quote-copper); border-radius: 8px; color: #594d43; font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
+.quote-removed-item small { display: block; margin-top: 8px; font-size: 15px; }
+.quote-removed-item button { min-height: 46px; padding: 10px 16px; border: 1px solid #dfc9b9; border-radius: 12px; background: #fff; color: var(--quote-copper-deep); font: inherit; cursor: pointer; flex-shrink: 0; }
+@media (max-width: 720px) {
+  .quote-removed-item:not([hidden]) { flex-direction: column; align-items: flex-start; }
+}

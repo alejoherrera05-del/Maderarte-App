@@ -2,16 +2,18 @@ import { apiRequest } from '../core/api.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=agreements-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=lifecycle-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { bindClientLookup } from '../core/client-lookup.js?v=agreements-1';
-import { ITEM_FULFILLMENTS, ITEM_AGREEMENTS, paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
-import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=agreements-1';
+import { paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
+import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/order-entry.js?v=lifecycle-1';
 
+import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
+import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
 import { bindFormDraft } from '../core/form-draft.js?v=agreements-1';
-import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=agreements-1';
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -35,6 +37,7 @@ const state = {
   session: null,
   quoteMeta: null,
   nextItemId: 1,
+  removedItems: [],
   photos: new Map()
 };
 
@@ -195,7 +198,7 @@ function openBranchGate() {
 function itemMarkup(id) {
   return `<article class="quote-item" data-item-id="${id}">
     <div class="quote-item-head">
-      <div class="quote-item-index"><span data-item-position>01</span><div><strong>Mueble</strong><small data-item-caption>Descripción, valor y acuerdos</small></div></div>
+      <div class="quote-item-index"><span data-item-position>01</span><div><strong>Mueble</strong><small data-item-caption>Descripción y precio</small></div></div>
       <button class="quote-remove-item" type="button" data-remove-item>Eliminar</button>
     </div>
     <div class="quote-item-grid quote-item-essential">
@@ -204,16 +207,6 @@ function itemMarkup(id) {
       <div class="quote-field quote-item-value"><label for="quote-item-${id}-unitValue">Precio por unidad</label><input id="quote-item-${id}-unitValue" data-field="unitValue" inputmode="numeric" placeholder="$ 0" required></div>
       <div class="quote-item-line-total"><span>Total de este mueble</span><strong data-line-total>$ 0</strong></div>
     </div>
-    ${COMMERCIAL_DOCUMENT.isOrder ? `<div class="order-item-agreements">
-      <div class="quote-field"><label for="order-item-${id}-agreement">¿Qué acordamos con este mueble?</label>
-        <select id="order-item-${id}-agreement" data-item-agreement required aria-describedby="order-item-${id}-agreement-help"><option value="">Seleccionar acuerdo</option>${ITEM_AGREEMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.label)}</option>`).join('')}</select>
-        <p class="quote-helper" id="order-item-${id}-agreement-help" data-agreement-help role="status"></p>
-      </div>
-      <div class="quote-field" data-availability-field hidden><label for="order-item-${id}-fulfillment">¿Está disponible o necesita fábrica?</label>
-        <select id="order-item-${id}-fulfillment" data-item-fulfillment aria-describedby="order-item-${id}-help"><option value="">Seleccionar disponibilidad</option>${ITEM_FULFILLMENTS.map(option => `<option value="${option.code}">${escapeHtml(option.code === 'DISPONIBLE' ? 'Está disponible' : option.code === 'PARA_SOLICITAR' ? 'Necesita fábrica' : 'Aún por definir')}</option>`).join('')}</select>
-        <p class="quote-helper" id="order-item-${id}-help" data-fulfillment-help role="status"></p>
-      </div>
-    </div>` : ''}
     <p class="quote-helper" data-quantity-help hidden>Si las unidades tienen acuerdos distintos, añádelas en líneas separadas.</p>
     <details class="quote-item-details"><summary>Personalización y referencias <span>Opcional</span></summary>
       <div class="quote-item-grid quote-item-customization">
@@ -274,9 +267,70 @@ async function addPhotos(itemId, files) {
   const images = Array.from(files || []).filter(file => String(file.type || '').startsWith('image/'));
   if (!images.length) return;
   const loaded = await Promise.all(images.map(readFile));
-  const current = state.photos.get(itemId) || [];
-  state.photos.set(itemId, current.concat(loaded));
-  renderPhotos(itemId);
+  const removed = state.removedItems.find(item => item.id === itemId);
+  if (document.querySelector(`.quote-item[data-item-id="${itemId}"]`)) {
+    state.photos.set(itemId, (state.photos.get(itemId) || []).concat(loaded));
+    renderPhotos(itemId);
+  } else if (removed) removed.photos.push(...loaded);
+  state.draft?.changed();
+}
+
+function renderRemovedItem(restoredName = '') {
+  const root = document.getElementById('quote-removed-item');
+  if (!root) return;
+  const item = state.removedItems.at(-1);
+  root.hidden = !item && !restoredName;
+  root.replaceChildren();
+  if (root.hidden) return;
+  const message = document.createElement('span');
+  const name = item?.fields.description || 'Mueble';
+  message.textContent = restoredName ? `Se recuperó ${restoredName}.` : `Se quitó ${name} del borrador.`;
+  if (COMMERCIAL_DOCUMENT.isOrder) {
+    const help = document.createElement('small');
+    help.textContent = 'Los pagos conservan sus valores. Revisa el total y la distribución del abono.';
+    message.append(help);
+  }
+  root.append(message);
+  if (item) {
+    const undo = document.createElement('button');
+    undo.type = 'button'; undo.textContent = restoredName ? 'Deshacer otra eliminación' : 'Deshacer';
+    undo.dataset.undoItem = ''; undo.addEventListener('click', undoRemoveItem);
+    root.append(undo);
+  }
+}
+
+function removeItem(card) {
+  const id = Number(card.dataset.itemId);
+  state.removedItems.push({
+    id, index: [...card.parentElement.children].indexOf(card),
+    fields: Object.fromEntries([...card.querySelectorAll('[data-field]')].map(input => [input.dataset.field, input.value])),
+    detailsOpen: card.querySelector('details').open,
+    photos: state.photos.get(id) || [],
+    agreement: state.agreements?.captureItem(id),
+    allocation: document.getElementById(`order-allocation-${id}`)?.value || ''
+  });
+  state.removedItems = state.removedItems.slice(-20);
+  state.photos.delete(id); card.remove();
+  renumberItems(); calculate(); renderRemovedItem();
+  document.querySelector('[data-undo-item]')?.focus();
+  state.draft?.changed();
+}
+
+function undoRemoveItem() {
+  const saved = state.removedItems.pop();
+  if (!saved) return;
+  addItem(saved.id);
+  const card = document.querySelector(`.quote-item[data-item-id="${saved.id}"]`);
+  for (const input of card.querySelectorAll('[data-field]')) input.value = saved.fields[input.dataset.field] || '';
+  const root = card.parentElement;
+  root.insertBefore(card, root.children[saved.index] || null);
+  card.querySelector('details').open = Boolean(saved.detailsOpen);
+  state.photos.set(saved.id, saved.photos); renderPhotos(saved.id);
+  state.agreements?.restoreItem(saved.id, saved.agreement);
+  const allocation = document.getElementById(`order-allocation-${saved.id}`);
+  if (allocation) allocation.value = saved.allocation;
+  renumberItems(); calculate(); renderRemovedItem(saved.fields.description || 'el mueble');
+  card.querySelector('[data-field="description"]').focus();
   state.draft?.changed();
 }
 
@@ -284,11 +338,7 @@ function bindItem(card) {
   const itemId = Number(card.dataset.itemId);
   card.querySelector('[data-remove-item]')?.addEventListener('click', () => {
     if (document.querySelectorAll('.quote-item').length <= 1) return;
-    state.photos.delete(itemId);
-    card.remove();
-    renumberItems();
-    calculate();
-    state.draft?.changed();
+    removeItem(card);
   });
 
   card.querySelectorAll('[data-field="quantity"], [data-field="unitValue"]').forEach(input => {
@@ -305,24 +355,7 @@ function bindItem(card) {
     if (Number.isFinite(value)) unitValue.value = value ? String(value) : '';
   });
 
-  const agreement = card.querySelector('[data-item-agreement]');
-  agreement?.addEventListener('change', () => {
-    const choice = ITEM_AGREEMENTS.find(option => option.code === agreement.value);
-    card.querySelector('[data-agreement-help]').textContent = choice?.help || '';
-    const availability = card.querySelector('[data-availability-field]');
-    availability.hidden = !choice || choice.code === 'ENTREGA_HOY';
-    calculate();
-  });
   card.querySelector('[data-field="description"]').addEventListener('input', calculate);
-  const fulfillment = card.querySelector('[data-item-fulfillment]');
-  fulfillment?.addEventListener('change', () => {
-    const choice = ITEM_FULFILLMENTS.find(option => option.code === fulfillment.value);
-    const help = card.querySelector('[data-fulfillment-help]');
-    help.textContent = choice?.help || 'Selecciona la disponibilidad de este mueble.';
-    help.classList.remove('is-error');
-    fulfillment.removeAttribute('aria-invalid');
-    calculate();
-  });
 
   const photoInput = card.querySelector('[data-photo-input]');
   card.querySelector('[data-add-photos]')?.addEventListener('click', () => photoInput?.click());
@@ -347,11 +380,12 @@ function addItem(restoredId) {
 }
 
 function calculate() {
+  state.agreements?.sync();
   const values = readCommercialValues();
   [...document.querySelectorAll('.quote-item')].forEach((card, index) => {
     const item = values.items[index];
     card.querySelector('[data-line-total]').textContent = money(item.subtotal);
-    card.querySelector('[data-item-caption]').textContent = item.description || 'Descripción, valor y acuerdos';
+    card.querySelector('[data-item-caption]').textContent = item.description || 'Descripción y precio';
     const splitHelp = card.querySelector('[data-quantity-help]');
     if (splitHelp) splitHelp.hidden = !(item.quantity > 1);
   });
@@ -361,10 +395,12 @@ function calculate() {
     document.getElementById('order-discount-summary').textContent = money(values.discount);
     syncOrderAllocation(values, calculate);
     const entry = readOrderEntry(values.total);
+    const position = Number.isSafeInteger(values.total) && values.total >= 0 && Number.isSafeInteger(entry.paid) && entry.paid >= 0 ? financialPosition(values.total, entry.paid) : null;
+    const balance = position && !position.credit ? position.due : NaN;
     document.getElementById('order-paid').textContent = money(entry.paid);
-    document.getElementById('order-balance').textContent = Number.isFinite(values.total) ? money(Math.max(0, values.total - entry.paid)) : '—';
+    document.getElementById('order-balance').textContent = money(balance);
     const hasPaymentContent = [...document.querySelectorAll('[data-payment-row] input, [data-payment-row] select')].some(input => input.value);
-    document.getElementById('order-payment-error').textContent = hasPaymentContent || state.validating ? entry.error : '';
+    document.getElementById('order-payment-error').textContent = position?.credit ? `Los abonos indicados superan el total por ${money(position.credit)}. Revisa los valores antes de continuar.` : hasPaymentContent || state.validating ? entry.error : '';
     const noPayment = document.getElementById('order-no-payment').checked;
     document.getElementById('order-payment-editor').hidden = noPayment && !hasPaymentContent;
     document.getElementById('order-allocation-error').textContent = entry.allocate ? entry.allocationError : '';
@@ -379,7 +415,7 @@ function calculate() {
       row.append(title, detail);
       return row;
     }));
-    for (const [id, value] of [['order-live-total', values.total], ['order-live-paid', entry.paid], ['order-live-balance', Number.isFinite(values.total) ? Math.max(0, values.total - entry.paid) : NaN]]) {
+    for (const [id, value] of [['order-live-total', values.total], ['order-live-paid', entry.paid], ['order-live-balance', balance]]) {
       document.getElementById(id).textContent = money(value);
     }
   }
@@ -387,6 +423,7 @@ function calculate() {
 
 function showFieldError(input, message) {
   if (!input) return;
+  state.agreements?.reveal(input);
   input.setAttribute('aria-invalid', 'true');
   const details = input.closest('details');
   if (details) details.open = true;
@@ -434,8 +471,8 @@ function validateForm() {
     if (missing(`${prefix} [data-field="quantity"]`, 'La cantidad debe ser un número entero mayor que cero.', () => !Number.isSafeInteger(item.quantity))) return false;
     if (missing(`${prefix} [data-field="unitValue"]`, 'Escribe un precio mayor que cero, en pesos completos y sin negativos.', () => !Number.isSafeInteger(item.unitValue) || item.unitValue <= 0 || !Number.isSafeInteger(item.subtotal))) return false;
     if (COMMERCIAL_DOCUMENT.isOrder) {
-      if (missing(`${prefix} [data-item-agreement]`, 'Selecciona qué acordaron para este mueble.', () => !item.agreement)) return false;
-      if (missing(`${prefix} [data-item-fulfillment]`, 'Selecciona la disponibilidad de este mueble.', () => !item.fulfillment)) return false;
+      if (!item.agreement) { showFieldError(state.agreements.validationTarget(item.itemId, 'agreement'), 'Selecciona el acuerdo de la compra o el de este mueble.'); return false; }
+      if (!item.fulfillment) { showFieldError(state.agreements.validationTarget(item.itemId, 'fulfillment'), 'Indica la disponibilidad de la compra o la de este mueble.'); return false; }
     }
   }
   const values = readCommercialValues();
@@ -532,6 +569,8 @@ function bindGlobalInteractions() {
 function captureDraft() {
   return {
     branch: state.quoteMeta?.branch || '',
+    agreementModes: state.agreements?.modes(),
+    removedItems: state.removedItems,
     itemIds: [...document.querySelectorAll('.quote-item')].map(card => Number(card.dataset.itemId)),
     paymentIds: [...document.querySelectorAll('[data-payment-row]')].map(row => Number(row.dataset.paymentRow)),
     fields: [...document.querySelectorAll('#quote-form input[id]:not([type=file]), #quote-form select[id], #quote-form textarea[id]')]
@@ -546,6 +585,18 @@ async function restoreDraft(data) {
     || !Array.isArray(data.fields) || data.fields.length > 2000
     || !Array.isArray(data.paymentIds) || data.paymentIds.length > 100
     || !data.paymentIds.every(id => Number.isSafeInteger(id) && id > 0)) throw new Error('Borrador incompatible');
+  const removed = Array.isArray(data.removedItems) ? data.removedItems.slice(-20) : [];
+  const removedIds = new Set(data.itemIds);
+  state.removedItems = removed.filter(item => {
+    if (!item || !Number.isSafeInteger(item.id) || item.id <= 0 || item.id >= Number.MAX_SAFE_INTEGER || removedIds.has(item.id)
+      || !Number.isSafeInteger(item.index) || item.index < 0 || item.index > 100 || !item.fields || typeof item.fields !== 'object') return false;
+    removedIds.add(item.id); return true;
+  }).map(item => ({ ...item,
+    fields: Object.fromEntries(Object.entries(item.fields).filter(([key,value]) => ['description','quantity','unitValue','category','fabric','wood','specifications'].includes(key) && typeof value === 'string')),
+    photos: (Array.isArray(item.photos) ? item.photos : []).filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo?.dataUrl || '')),
+    allocation: typeof item.allocation === 'string' ? item.allocation : ''
+  }));
+  state.nextItemId = Math.max(state.nextItemId, ...state.removedItems.map(item => item.id + 1));
   document.getElementById('quote-items').replaceChildren();
   state.photos.clear();
   data.itemIds.forEach(addItem);
@@ -556,6 +607,7 @@ async function restoreDraft(data) {
     input.value = typeof saved.value === 'string' ? saved.value : '';
     if (input.type === 'checkbox') input.checked = Boolean(saved.checked);
   }
+  state.agreements?.restoreModes(data.agreementModes);
   // Allocation inputs are created from the restored furniture IDs, then populated.
   calculate();
   for (const saved of data.fields.filter(field => field.id.startsWith('order-allocation-'))) {
@@ -563,7 +615,6 @@ async function restoreDraft(data) {
     if (input) input.value = String(saved.value || '');
   }
   for (const card of document.querySelectorAll('.quote-item')) {
-    for (const input of card.querySelectorAll('[data-item-agreement], [data-item-fulfillment]')) input.dispatchEvent(new window.Event('change'));
     if ([...card.querySelectorAll('details [data-field]')].some(input => input.value)) card.querySelector('details').open = true;
   }
   for (const [id, photos] of Array.isArray(data.photos) ? data.photos : []) {
@@ -571,6 +622,7 @@ async function restoreDraft(data) {
     state.photos.set(id, photos.filter(photo => /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(photo.dataUrl || '')));
     renderPhotos(id);
   }
+  renderRemovedItem();
   if (data.branch && allowedBranches().includes(data.branch)) await selectBranch(data.branch, { focusClient: false });
   calculate();
 }
@@ -585,6 +637,7 @@ guardStandalonePage({
     if (back) back.href = withPreview('/index.html');
     renderBranchAvailability();
     bindGlobalInteractions();
+    if (COMMERCIAL_DOCUMENT.isOrder) state.agreements = bindOrderAgreements(() => { calculate(); state.draft?.changed(); });
     addItem();
     if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
     // QA preview stays ephemeral; real sessions recover only their own tab draft.
