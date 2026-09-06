@@ -27,6 +27,12 @@ def setv(node, value):
     driver.execute_script("arguments[0].dispatchEvent(new Event('input',{bubbles:true}));", node)
 
 
+def click_visible(node):
+    driver.execute_script("arguments[0].scrollIntoView({block:'center',inline:'nearest'});", node)
+    wait.until(lambda d: node.is_displayed() and node.is_enabled())
+    node.click()
+
+
 def fill_client():
     for id_, value in [
         ('quote-client-document', '909090'),
@@ -78,7 +84,7 @@ try:
         driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
         driver.set_window_size(width, height)
         driver.get(URL)
-        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="TP"]'))).click()
+        click_visible(wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="TP"]'))))
         wait.until(EC.visibility_of_element_located((By.ID, 'quote-workspace')))
         fill_client()
 
@@ -86,7 +92,7 @@ try:
         fill_item(first, 'Sala de revisión', 2000000)
         choose_plan(first, 'ENTREGA_INMEDIATA')
 
-        driver.find_element(By.ID, 'quote-add-item').click()
+        click_visible(driver.find_element(By.ID, 'quote-add-item'))
         wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, '.quote-item')) == 2)
         second = driver.find_element(By.CSS_SELECTOR, '.quote-item[data-item-id="2"]')
         fill_item(second, 'Comedor de revisión', 1500000)
@@ -110,7 +116,7 @@ try:
         driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR, '.quote-items-section'))
         driver.save_screenshot(str(ARTIFACTS / f'pedido-simple-formulario-{width}.png'))
 
-        driver.find_element(By.ID, 'quote-preview-button').click()
+        click_visible(driver.find_element(By.ID, 'quote-preview-button'))
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
         assert not visible('.order-finance-balance')
         assert not visible('.order-document-allocation')
