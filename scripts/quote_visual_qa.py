@@ -135,6 +135,7 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-alternatePhone'), '0000000022')
         setv(driver.find_element(By.ID, 'quote-client-email'), 'cliente@example.com')
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
+        setv(driver.find_element(By.ID, 'quote-client-city'), 'Ciudad de prueba')
         fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Sala de revisión', 'SALA', 1, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
         Select(driver.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('ENTREGA_HOY')
         add_item = driver.find_element(By.ID, 'quote-add-item')
@@ -377,6 +378,9 @@ try:
     wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
     setv(driver.find_element(By.ID,'quote-client-name'),'Cliente de prueba de paginación')
     setv(driver.find_element(By.ID,'quote-client-phone'), '0000000011')
+    setv(driver.find_element(By.ID,'quote-client-email'), 'N/A')
+    setv(driver.find_element(By.ID,'quote-client-address'), 'Dirección de prueba')
+    setv(driver.find_element(By.ID,'quote-client-city'), 'Ciudad de prueba')
     expected_names = []
     for index in range(25):
         if index:

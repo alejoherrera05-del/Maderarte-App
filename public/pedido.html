@@ -90,6 +90,7 @@
                 <small>Empieza por la cédula. Si el cliente es nuevo, continúa con sus datos.</small>
               </div>
 
+              <p class="quote-helper">Todos los datos del cliente son obligatorios, excepto el segundo teléfono.</p>
               <div class="quote-field-grid quote-field-grid-client">
                 <div class="quote-field quote-client-lookup">
                   <label for="quote-client-document">Cédula / NIT</label>
@@ -102,9 +103,9 @@
                 <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" required autocomplete="name"></div>
                 <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" required type="tel" inputmode="tel" autocomplete="tel"></div>
                 <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono (opcional)</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Otro número de contacto"></div>
-                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo (opcional)</label><input id="quote-client-email" type="email" autocomplete="email"></div>
-                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección (opcional)</label><input id="quote-client-address" autocomplete="street-address"></div>
-                <div class="quote-field"><label for="quote-client-city">Ciudad (opcional)</label><input id="quote-client-city" autocomplete="address-level2"></div>
+                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" required type="text" inputmode="email" autocomplete="email" spellcheck="false" aria-describedby="quote-email-help"><p id="quote-email-help" class="quote-helper">Si no tiene correo, escribe N/A.</p></div>
+                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección</label><input id="quote-client-address" required autocomplete="street-address"></div>
+                <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" required autocomplete="address-level2"></div>
               </div>
             </section>
 
@@ -176,6 +177,6 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=agreements-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=client-required-1"></script>
 </body>
 </html>

@@ -414,9 +414,19 @@ function validateForm() {
   for (const [selector, message] of [
     ['#quote-client-document', 'Escribe la cédula o NIT del cliente.'],
     ['#quote-client-name', 'Escribe el nombre del cliente.'],
-    ['#quote-client-phone', 'Escribe un teléfono de contacto.']
+    ['#quote-client-phone', 'Escribe un teléfono de contacto.'],
+    ['#quote-client-email', 'Escribe el correo del cliente o N/A si no tiene.'],
+    ['#quote-client-address', 'Escribe la dirección del cliente.'],
+    ['#quote-client-city', 'Escribe la ciudad del cliente.']
   ]) if (missing(selector, message)) return false;
-  if (missing('#quote-client-email', 'Revisa el formato del correo o déjalo vacío.', input => Boolean(input.value && !input.validity.valid))) return false;
+  if (missing('#quote-client-email', 'Escribe un correo válido o N/A si el cliente no tiene correo.', input => {
+    const value = input.value.trim();
+    if (value.toUpperCase() === 'N/A') return false;
+    const email = document.createElement('input');
+    email.type = 'email';
+    email.value = value;
+    return !email.validity.valid;
+  })) return false;
   for (const card of document.querySelectorAll('.quote-item')) {
     const prefix = `.quote-item[data-item-id="${card.dataset.itemId}"]`;
     const item = readFurniture(card);
@@ -457,6 +467,11 @@ function openPreview() {
 }
 
 function bindGlobalInteractions() {
+  document.getElementById('quote-client-email')?.addEventListener('blur', event => {
+    const value = event.target.value.trim();
+    event.target.value = value.toUpperCase() === 'N/A' ? 'N/A' : value;
+    state.draft?.changed();
+  });
   document.querySelectorAll('[data-quote-branch]').forEach(button => {
     button.addEventListener('click', () => selectBranch(button.dataset.quoteBranch));
   });
