@@ -119,7 +119,7 @@ Reglas visuales derivadas de esa referencia:
 
 ## Operación comercial confirmada
 
-La aclaración del propietario del 5 de septiembre de 2026 prevalece sobre checkpoints anteriores: pedidos mixtos con disponibilidad por mueble (disponible, solicitar a fábrica o por definir), separado independiente del pedido; abono de importe libre acordado, sin 30% obligatorio; varios medios de pago con notas internas excluidas del documento del cliente; segundo teléfono opcional. Consultar `docs/BUSINESS_RULES.md` antes de tocar estos flujos. No asociar automáticamente pagos con fabricación o entrega.
+La aclaración del propietario del 5 de septiembre de 2026 prevalece sobre checkpoints anteriores: pedidos mixtos con disponibilidad por mueble (disponible, solicitar a fábrica o por definir), acuerdo por mueble (entrega hoy, separado o entrega posterior), sin separado global; recogida, envío y fechas en observaciones; distribución opcional de abonos; abono de importe libre acordado, sin 30% obligatorio; varios medios de pago con notas internas excluidas del documento del cliente; segundo teléfono opcional. Consultar `docs/BUSINESS_RULES.md` antes de tocar estos flujos. No asociar automáticamente pagos con fabricación o entrega.
 
 ## Estado de escritura
 

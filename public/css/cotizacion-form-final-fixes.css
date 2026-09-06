@@ -2,6 +2,9 @@
  * Do not alter the approved client-facing PDF/document layout.
  */
 
+/* A desktop scrollbar must not force a 320px form beyond its viewport. */
+html:has(body.quote-page) { min-width: 0; }
+
 /* Conditions: replace the oversized solid tiles with compact, readable badges. */
 .quote-conditions {
   gap: 12px;
@@ -205,4 +208,46 @@
   .quote-field-grid-client .quote-field.quote-field-email { grid-column: span 12; }
   .quote-field-grid-client .quote-field.quote-field-address { grid-column: span 8; }
   .quote-field-grid-client .quote-field:last-child { grid-column: span 4; }
+}
+
+/* A short commercial entry; customization expands only when needed. */
+.quote-editor { overflow: visible; }
+.quote-item { background: #fff; padding: 26px; }
+.quote-item-essential > .quote-item-description { grid-column: 1 / -1; }
+.quote-item-essential > .quote-item-quantity { grid-column: span 3; }
+.quote-item-essential > .quote-item-value { grid-column: span 5; }
+.quote-item-essential > .quote-item-line-total { grid-column: span 4; align-content: center; min-height: 88px; }
+.quote-item-details { margin-top: 26px; border-top: 1px solid var(--quote-line); }
+.quote-item-details > summary { padding: 20px 0 4px; cursor: pointer; color: #5f5a56; font-size: 16px; font-weight: 550; line-height: 1.5; }
+.quote-item-details > summary > span { margin-left: 8px; color: #777; font-size: 14px; font-weight: 400; }
+.quote-item-details[open] > summary { margin-bottom: 24px; }
+.quote-item-customization .quote-item-category { grid-column: 1 / -1; }
+.quote-item-customization .quote-item-fabric, .quote-item-customization .quote-item-wood { grid-column: span 6; }
+.quote-item-customization .quote-item-specifications { grid-column: 1 / -1; }
+.quote-item-index { min-width: 0; }
+.quote-item-index > span { flex-shrink: 0; }
+.quote-item-index small { max-width: 35ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quote-form-error { margin: 0 0 18px; padding: 16px 20px; border-left: 3px solid var(--quote-danger); background: #fff6f4; color: #9c3029; font-size: 16px; line-height: 1.5; }
+.quote-form-error:empty, .quote-draft-status:empty { display: none; }
+.quote-field [aria-invalid="true"], .quote-discount-field [aria-invalid="true"] { border-color: #b33f33; box-shadow: 0 0 0 2px #b33f3315; }
+.quote-draft-status { margin-bottom: 20px; padding: 14px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #686661; font-size: 14px; line-height: 1.5; }
+.quote-draft-status button { border: 0; background: transparent; color: #9c4b26; font: inherit; text-decoration: underline; cursor: pointer; min-height: 44px; flex-shrink: 0; }
+.quote-helper.is-error { color: #a33329; }
+@media (max-width: 720px) {
+  .quote-item { padding: 22px 18px; }
+  .quote-item-essential { grid-template-columns: minmax(72px, 1fr) minmax(0, 2fr); gap: 22px 16px; }
+  .quote-item-essential > .quote-item-quantity, .quote-item-essential > .quote-item-value { grid-column: auto; }
+  .quote-item-essential > .quote-item-line-total { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 0; padding: 0; }
+  .quote-item-customization > div { grid-column: 1 / -1 !important; }
+  .quote-item-details > summary > span { display: block; margin-left: 0; }
+  .quote-item-index small { max-width: 17ch; }
+  .quote-draft-status { flex-direction: column; align-items: flex-start; gap: 0; }
+}
+
+.quote-editor, .quote-summary-column, .quote-editor-section, .quote-field, .quote-items, .quote-item, .quote-item-index > div { min-width: 0; }
+.quote-editor-section { scroll-margin-top: 92px; }
+.quote-field > label { font-weight: 500; }
+@media (max-width: 360px) {
+  .quote-item-essential { grid-template-columns: minmax(0, 1fr); }
+  .quote-item-essential > .quote-item-quantity { max-width: 120px; }
 }

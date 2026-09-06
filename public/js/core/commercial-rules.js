@@ -10,6 +10,32 @@ export const ITEM_FULFILLMENTS = Object.freeze([
   { code: 'POR_DEFINIR', label: 'Por definir con el cliente', help: 'La disponibilidad y la entrega de este mueble quedan por acordar.' }
 ].map(Object.freeze));
 
+// Agreements describe this sale, never an executed delivery or factory request.
+export const ITEM_AGREEMENTS = Object.freeze([
+  { code: 'ENTREGA_HOY', label: 'Se entrega hoy', help: 'Mueble disponible. La entrega realizada se registrará en su remisión.' },
+  { code: 'SEPARADO', label: 'Queda separado', help: 'El cliente continúa pagando lo acordado. No se solicita a fábrica automáticamente.' },
+  { code: 'ENTREGA_POSTERIOR', label: 'Entrega después', help: 'Anota la fecha u otros acuerdos en observaciones, si ya los conocen.' }
+].map(Object.freeze));
+
+// Largest remainder in whole COP: exact totals, including a one-peso discount.
+// This is an explicit price distribution, never an automatic payment allocation.
+export function distributeDiscount(items, discount) {
+  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+  if (!items.every(item => Number.isSafeInteger(item.subtotal) && item.subtotal >= 0)
+    || !Number.isSafeInteger(subtotal) || !Number.isSafeInteger(discount)
+    || discount < 0 || discount > subtotal) return [];
+  if (!subtotal) return items.map(item => ({ ...item, discount: 0, net: 0 }));
+  const denominator = BigInt(subtotal);
+  const parts = items.map((item, index) => {
+    const numerator = BigInt(item.subtotal) * BigInt(discount);
+    return { ...item, index, discount: Number(numerator / denominator), remainder: numerator % denominator };
+  });
+  let left = discount - parts.reduce((sum, part) => sum + part.discount, 0);
+  const ranked = [...parts].sort((a, b) => a.remainder === b.remainder ? a.index - b.index : a.remainder > b.remainder ? -1 : 1);
+  for (const part of ranked) if (left-- > 0) part.discount++;
+  return parts.map(({ index, remainder, ...part }) => ({ ...part, net: part.subtotal - part.discount }));
+}
+
 export const PAYMENT_METHODS = Object.freeze([
   { code: 'EFECTIVO', label: 'Efectivo' },
   { code: 'TRANSFERENCIA', label: 'Transferencia' },

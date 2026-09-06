@@ -17,7 +17,24 @@ for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--window-
 opts.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
 driver = webdriver.Chrome(options=opts); wait = WebDriverWait(driver, 35)
 
+def close_preview():
+    # Native clicks must wait until the sheet has reached its final position.
+    wait.until(lambda d: d.execute_script('''
+      const overlay=document.getElementById('quote-preview-overlay');
+      const sheet=overlay.querySelector('.quote-preview-sheet');
+      return overlay.classList.contains('is-open') && !overlay.getAnimations().length
+        && !sheet.getAnimations().length
+        && document.getElementById('quote-preview-content').getAttribute('aria-busy')==='false';
+    '''))
+    driver.find_element(By.ID, 'quote-preview-close').click()
+    wait.until(EC.invisibility_of_element_located((By.ID, 'quote-preview-overlay')))
+
 def setv(node, text):
+    details = node.find_elements(By.XPATH, 'ancestor::details[1]')
+    if details and not details[0].get_attribute('open'):
+        summary = details[0].find_element(By.TAG_NAME, 'summary')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", summary)
+        summary.click()
     node.clear(); node.send_keys(str(text)); node.send_keys(' '); node.send_keys('\ue003')
 
 def set_quantity(node, text):
@@ -25,6 +42,9 @@ def set_quantity(node, text):
     driver.execute_script("arguments[0].dispatchEvent(new Event('input',{bubbles:true}));", node)
 
 def fill(card, desc, cat, qty, fabric, wood, spec, price):
+    details = card.find_element(By.CSS_SELECTOR, '.quote-item-details')
+    if not details.get_attribute('open'):
+        details.find_element(By.TAG_NAME, 'summary').click()
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="description"]'), desc)
     Select(card.find_element(By.CSS_SELECTOR,'[data-field="category"]')).select_by_value(cat)
     set_quantity(card.find_element(By.CSS_SELECTOR,'[data-field="quantity"]'), qty)
@@ -32,6 +52,7 @@ def fill(card, desc, cat, qty, fabric, wood, spec, price):
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="wood"]'), wood)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="specifications"]'), spec)
     setv(card.find_element(By.CSS_SELECTOR,'[data-field="unitValue"]'), price)
+    details.find_element(By.TAG_NAME, 'summary').click()
 
 def metric(selector):
     return driver.execute_script('''
@@ -113,16 +134,15 @@ def check_order():
         setv(driver.find_element(By.ID, 'quote-client-phone'), '0000000011')
         setv(driver.find_element(By.ID, 'quote-client-alternatePhone'), '0000000022')
         setv(driver.find_element(By.ID, 'quote-client-email'), 'cliente@example.com')
-        if width == 1440:
-            driver.find_element(By.ID, 'order-separated').click()
         setv(driver.find_element(By.ID, 'quote-client-address'), 'Dirección de entrega de prueba')
         fill(driver.find_element(By.CSS_SELECTOR, '.quote-item'), 'Sala de revisión', 'SALA', 1, 'Lino', 'Roble', 'Medidas y acabados de revisión.', 1000000)
-        Select(driver.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('DISPONIBLE')
+        Select(driver.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('ENTREGA_HOY')
         add_item = driver.find_element(By.ID, 'quote-add-item')
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", add_item)
         add_item.click()
         dining = driver.find_elements(By.CSS_SELECTOR, '.quote-item')[1]
         fill(dining, 'Comedor de revisión', 'COMEDOR', 1, '', 'Roble', '', 1000000)
+        Select(dining.find_element(By.CSS_SELECTOR, '[data-item-agreement]')).select_by_value('SEPARADO')
         Select(dining.find_element(By.CSS_SELECTOR, '[data-item-fulfillment]')).select_by_value('PARA_SOLICITAR')
         setv(driver.find_element(By.ID, 'quote-discount'), '100000')
         setv(driver.find_element(By.ID, 'quote-notes'), 'Obsequio de cojines. Transporte incluido a Cali.')
@@ -135,22 +155,45 @@ def check_order():
         setv(driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-payment-note]'), 'INTERNO-QA-CUENTA-B')
         editor = driver.execute_script("""
           const amount=id=>Number(document.getElementById(id).textContent.replace(/[^0-9]/g,''));
-          return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
+          const price=document.querySelector('[data-field="unitValue"]'), style=getComputedStyle(price);
+          const canvas=document.createElement('canvas'), context=canvas.getContext('2d');
+          context.font=style.font;
+          return {width:innerWidth, overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
+            priceFits:context.measureText(price.value).width<=price.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight),
             sizes:[...document.querySelectorAll('.quote-editor input:not([type=file]),.quote-editor textarea')].map(n=>parseFloat(getComputedStyle(n).fontSize)),
             total:amount('quote-total'), paid:amount('order-paid'), balance:amount('order-balance'),
             writeDisabled:document.getElementById('quote-submit').disabled};
         """)
-        assert not editor['overflow'] and min(editor['sizes']) >= 16 and editor['writeDisabled']
+        if editor['overflow']:
+            editor['overflowNodes'] = driver.execute_script("return [...document.querySelectorAll('#quote-app *')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&(r.right>document.documentElement.clientWidth+1||r.left < -1)}).slice(0,25).map(n=>({tag:n.tagName,id:n.id,class:n.className,width:n.getBoundingClientRect().width,right:n.getBoundingClientRect().right}));")
+            driver.save_screenshot(str(PNG.with_name(f'pedido-overflow-{width}.png')))
+        assert not editor['overflow'] and editor['priceFits'] and min(editor['sizes']) >= 16 and editor['writeDisabled'], editor
         assert editor['width'] == width, editor
         assert [editor['total'], editor['paid'], editor['balance']] == [1900000, 150000, 1750000]
         driver.execute_script("window.scrollTo(0,0)")
         driver.save_screenshot(str(PNG.with_name(f'pedido-formulario-{width}.png')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'start'});", driver.find_element(By.CSS_SELECTOR,'.quote-items-section'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-muebles-{width}.png')))
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-payments-title'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-pagos-{width}.png')))
+        allocation = driver.find_element(By.ID, 'order-allocate-payments')
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation)
+        allocation.click()
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-item-allocation="1"]'), '100000')
+        setv(driver.find_element(By.CSS_SELECTOR, '[data-item-allocation="2"]'), '50000')
+        assert driver.find_element(By.ID, 'order-allocation-error').text == ''
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});", driver.find_element(By.ID,'order-allocations'))
+        driver.save_screenshot(str(PNG.with_name(f'pedido-distribucion-{width}.png')))
         driver.find_element(By.ID, 'quote-preview-button').click()
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
+        assert len(driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')) == 2
+        allocation_texts = [node.get_attribute('textContent') for node in driver.find_elements(By.CSS_SELECTOR, '.order-document-allocation')]
+        driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
+        assert '850.000' in allocation_texts[0] and '900.000' in allocation_texts[1], allocation_texts
         document_metrics = driver.execute_script("""
           const pages=[...document.querySelectorAll('.quote-preview-page')];
           return {pages:pages.length, titles:pages.map(p=>p.querySelector('h1')?.textContent),
-            overflow:document.documentElement.scrollWidth>innerWidth+1,
+            overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth+1,
             pageOverflow:pages.some(p=>p.scrollHeight>p.clientHeight+2),
             draft:pages.every(p=>p.querySelector('footer').textContent.includes('Borrador · sin validez comercial')),
             address:document.querySelector('.quote-editorial-client').textContent,
@@ -186,9 +229,9 @@ def check_order():
         assert 'INTERNO-QA' not in document_metrics['html'], 'Las notas internas no llegan al HTML del documento'
         assert 'Abono indicado' in document_metrics['text'] and 'Saldo por pagar' in document_metrics['text']
         assert '30%' not in document_metrics['text']
-        assert document_metrics['availability'] == ['DISPONIBLE', 'PARA_SOLICITAR']
+        assert document_metrics['availability'] == ['PARA_SOLICITAR']
+        assert 'Se entrega hoy' in document_metrics['text'] and 'Queda separado' in document_metrics['text']
         assert '25 a 30 días' in document_metrics['conditions']
-        assert ('Separado.' in document_metrics['conditions']) == (width == 1440)
         finance = driver.execute_script("""
           const box=document.querySelector('.order-finance'), figures=box.querySelector('.order-finance-figures');
           const rect=box.getBoundingClientRect(), cells=[...figures.children];
@@ -209,16 +252,19 @@ def check_order():
         del document_metrics['text'], document_metrics['html']
         assert document_metrics['signatureLabel'] in ('none', 'normal')
         driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(PNG.with_name(f'pedido-documento-{width}.png')))
-        driver.find_element(By.ID, 'quote-preview-close').click()
+        close_preview()
         assert driver.execute_script("return document.activeElement.id") == 'quote-preview-button'
         results.append({'editor': editor, 'document': document_metrics})
 
+    allocation_toggle = driver.find_element(By.ID, 'order-allocate-payments')
+    driver.execute_script("arguments[0].scrollIntoView({block:'center'});", allocation_toggle)
+    allocation_toggle.click()
     # An entirely available order has no factory deadline; changing it keeps payments.
     Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('DISPONIBLE')
     driver.find_element(By.ID, 'quote-preview-button').click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-finance')))
     assert '25 a 30 días' not in driver.find_element(By.CSS_SELECTOR, '.order-document-conditions').text
-    driver.find_element(By.ID, 'quote-preview-close').click()
+    close_preview()
     Select(driver.find_elements(By.CSS_SELECTOR, '[data-item-fulfillment]')[1]).select_by_value('PARA_SOLICITAR')
     # A full Addi payment is valid; an overpayment is not printed as a paid order.
     driver.find_element(By.CSS_SELECTOR, '[data-payment-row="2"] [data-remove-payment]').click()
@@ -258,7 +304,7 @@ def check_order():
     assert 'INTERNO-QA' not in pdf_text, 'La nota interna tampoco aparece en el PDF real'
     assert '30%' not in pdf_text and 'fabricación estimada de 25 a 30 días' in pdf_text
     assert 'Sala de revisión' in pdf_text and 'Comedor de revisión' in pdf_text
-    assert 'Disponible para entrega inmediata' in pdf_text and 'Solicitar a fábrica' in pdf_text
+    assert 'Se entrega hoy' in pdf_text and 'Queda separado' in pdf_text and 'Solicitar a fábrica' in pdf_text
     assert pdf_text.count('Saldo por pagar') == 1 and pdf_text.count('Abono indicado') == 1
     assert all('Borrador' in page.extract_text() for page in exported.pages)
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
@@ -327,7 +373,10 @@ try:
     driver.get(URL)
     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR,'[data-quote-branch="MP"]'))).click()
     wait.until(EC.visibility_of_element_located((By.ID,'quote-workspace')))
+    setv(driver.find_element(By.ID,'quote-client-document'), '909090')
+    wait.until(lambda d: 'Sin coincidencias' in d.find_element(By.ID, 'quote-client-message').text)
     setv(driver.find_element(By.ID,'quote-client-name'),'Cliente de prueba de paginación')
+    setv(driver.find_element(By.ID,'quote-client-phone'), '0000000011')
     expected_names = []
     for index in range(25):
         if index:
@@ -370,7 +419,7 @@ try:
     long_html=''.join(p.get_attribute('outerHTML') for p in driver.find_elements(By.CSS_SELECTOR,'#quote-preview-content > .quote-preview-page'))
 
     driver.set_window_size(390,844)
-    driver.find_element(By.ID,'quote-preview-close').click()
+    close_preview()
     driver.find_element(By.ID,'quote-preview-button').click()
     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR,'.quote-editorial-page')))
     mobile = driver.execute_script("""

@@ -1,3 +1,4 @@
+import { clearFormDrafts } from './form-draft.js?v=agreements-1';
 import { APP_CONFIG, withPreview } from './config.js';
 import { apiRequest, ApiError } from './api.js';
 import { clearSessionSnapshot, getDeviceMetadata, readSessionSnapshot, writeSessionSnapshot } from './session.js';
@@ -105,6 +106,7 @@ export async function logout() {
   } catch {
     // La limpieza local debe ejecutarse incluso si la red falla.
   } finally {
+    try { clearFormDrafts(); } catch { /* Storage may be unavailable. */ }
     clearSessionSnapshot();
   }
 }

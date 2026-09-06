@@ -1,10 +1,10 @@
 import { escapeHtml } from '../core/format.js';
 import { paginateQuoteDocument } from '../core/quote-pagination.js';
-import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=mixed-1';
+import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
 import { APP_CONFIG } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
-import { ITEM_FULFILLMENTS } from '../core/commercial-rules.js?v=mixed-1';
-import { readOrderEntry } from '../core/order-entry.js?v=mixed-1';
+import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=agreements-1';
+import { readOrderEntry } from '../core/order-entry.js?v=agreements-1';
 
 function ensureEditorialStyles() {
   if (document.querySelector('link[data-quote-editorial]')) return;
@@ -28,9 +28,6 @@ function money(value) {
   return moneyFormatter.format(Number.isFinite(number) ? number : 0);
 }
 
-function parseMoney(value) {
-  return Number(String(value || '').replace(/[^0-9]/g, '') || 0);
-}
 
 function value(id) {
   return document.getElementById(id)?.value?.trim() || '';
@@ -50,33 +47,15 @@ function compactDate(rawValue) {
 }
 
 function itemFromCard(card, index) {
-  const field = name => card.querySelector(`[data-field="${name}"]`)?.value?.trim() || '';
-  const quantity = Math.max(1, Number(field('quantity') || 1));
-  const unitValue = parseMoney(field('unitValue'));
-  const photos = Array.from(card.querySelectorAll('.quote-photo-thumb img'))
-    .map(image => String(image.getAttribute('src') || '').trim())
-    .filter(Boolean);
-
-  return {
-    position: index + 1,
-    description: field('description'),
-    category: field('category'),
-    quantity,
-    fabric: field('fabric'),
-    wood: field('wood'),
-    specifications: field('specifications'),
-    fulfillment: COMMERCIAL_DOCUMENT.isOrder ? ITEM_FULFILLMENTS.find(option => option.code === card.querySelector('[data-item-fulfillment]')?.value) || null : null,
-    unitValue,
-    subtotal: quantity * unitValue,
-    photos
-  };
+  const item = readFurniture(card, index);
+  const photos = [...card.querySelectorAll('.quote-photo-thumb img')].map(image => String(image.getAttribute('src') || '').trim()).filter(Boolean);
+  return { ...item, photos };
 }
 
 function collectDocumentData() {
   const items = Array.from(document.querySelectorAll('.quote-item')).map(itemFromCard);
-  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const discount = Math.min(subtotal, parseMoney(value('quote-discount')));
-  const total = Math.max(0, subtotal - discount);
+  const { subtotal, discount, total } = readCommercialValues();
+  const order = COMMERCIAL_DOCUMENT.isOrder ? readOrderEntry(total) : null;
   const branchCode = text('quote-meta-branch').toUpperCase();
   const branch = companyBranch(branchCode);
 
@@ -96,11 +75,11 @@ function collectDocumentData() {
       city: value('quote-client-city')
     },
     notes: value('quote-notes'),
-    items,
+    items: items.map(item => ({ ...item, allocation: order?.allocation.find(part => part.itemId === item.itemId) || null })),
     subtotal,
     discount,
     total,
-    order: COMMERCIAL_DOCUMENT.isOrder ? readOrderEntry(total) : null
+    order
   };
 }
 
@@ -201,12 +180,13 @@ function itemMarkup(item) {
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
-      ${item.fulfillment && !item.continuation ? `<p class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</p>` : ''}
+      ${item.agreement && !item.continuation ? `<p class="order-document-agreement">${escapeHtml(item.agreement.label)}${item.fulfillment && item.agreement.code !== 'ENTREGA_HOY' ? ` · <span class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</span>` : ''}</p>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
     <div class="quote-editorial-item-quantity">${item.continuation ? '—' : escapeHtml(String(item.quantity))}</div>
     <div class="quote-editorial-item-unit">${!item.continuation && item.unitValue > 0 ? escapeHtml(money(item.unitValue)) : '—'}</div>
     <div class="quote-editorial-item-total">${!item.continuation && item.subtotal > 0 ? escapeHtml(money(item.subtotal)) : '—'}</div>
+    ${item.allocation && !item.continuation ? `<p class="order-document-allocation">${item.allocation.discount > 0 ? `Valor con descuento: ${escapeHtml(money(item.allocation.net))} · ` : ''}Abono indicado: ${escapeHtml(money(item.allocation.amount))} · Saldo: ${escapeHtml(money(item.allocation.balance))}</p>` : ''}
   </article>`;
 }
 
@@ -249,8 +229,7 @@ function commercialTermsMarkup(data) {
   const hasFactory = data.items.some(item => item.fulfillment?.code === 'PARA_SOLICITAR');
   const hasPending = data.items.some(item => item.fulfillment?.code === 'POR_DEFINIR');
   const terms = data.order
-    ? `<div class="order-document-conditions">${data.order.separated ? '<p><strong>Separado.</strong> Abonos según lo acordado con el cliente.</p>' : ''}
-        ${!hasFactory && !hasPending ? '<p>Entrega de productos disponibles, coordinada con el cliente.</p>' : ''}
+    ? `<div class="order-document-conditions">
         ${hasFactory ? '<p>Muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
         ${hasPending ? '<p>Los muebles por definir quedan pendientes de acordar disponibilidad y entrega.</p>' : ''}
       </div>`

@@ -1,6 +1,6 @@
 // The identification field is both the search entry and the client's document.
 // All data stays in the current form; persistence belongs to the commercial API.
-export function bindClientLookup({ input, list, message, fields, search, load, delay = 220 }) {
+export function bindClientLookup({ input, list, message, fields, search, load, onSelect = () => {}, delay = 220 }) {
   const doc = input.ownerDocument;
   const view = doc.defaultView;
   const wrap = input.closest('.quote-client-lookup');
@@ -68,6 +68,7 @@ export function bindClientLookup({ input, list, message, fields, search, load, d
         filled.set(key, field.value);
       }
       say('Cliente encontrado. Sus datos están completos en el formulario.');
+      onSelect();
     } catch (error) {
       if (token === revision) say(error.message || 'No fue posible cargar el cliente.', true);
     } finally {

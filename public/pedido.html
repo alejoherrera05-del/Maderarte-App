@@ -11,14 +11,14 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/cotizacion-form.css">
   <link rel="stylesheet" href="/css/cotizacion-brand-polish.css">
-  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=mixed-1">
+  <link rel="stylesheet" href="/css/cotizacion-form-final-fixes.css?v=agreements-1">
   <link rel="stylesheet" href="/css/cotizacion-document-premium.css?v=compact-2">
   <link rel="stylesheet" href="/css/cotizacion-document-header-refined.css?v=final-editorial-3">
   <link rel="stylesheet" href="/css/cotizacion-document-final-pass.css?v=hybrid-clean-1">
   <link rel="stylesheet" href="/css/cotizacion-document-hybrid-fixes.css?v=1">
   <link rel="stylesheet" href="/css/cotizacion-document-adaptive.css?v=adaptive-1">
   <link rel="stylesheet" href="/css/cotizacion-document-final-approval.css?v=approval-1">
-  <link rel="stylesheet" href="/css/pedido.css?v=mixed-1">
+  <link rel="stylesheet" href="/css/pedido.css?v=agreements-1">
   <title>Nueva orden de pedido · Maderarte App</title>
 </head>
 <body class="quote-page" data-commercial-document="order">
@@ -44,7 +44,7 @@
         </div>
         <p class="quote-gate-eyebrow">Nueva orden de pedido</p>
         <h1 id="quote-gate-title">¿Desde qué sede se toma el pedido?</h1>
-        <p class="quote-gate-intro">Elige la sede del pedido. Después completa el cliente, los muebles y las condiciones de entrega.</p>
+        <p class="quote-gate-intro">Elige la sede del pedido. Después completa el cliente, los muebles y el pago acordado.</p>
         <div class="quote-gate-options" id="quote-gate-options">
           <button class="quote-gate-option" type="button" data-quote-branch="MP">
             <span class="quote-gate-code">MP</span>
@@ -80,11 +80,13 @@
           </div>
         </section>
 
+        <p id="quote-form-error" class="quote-form-error" role="alert"></p>
+        <div id="quote-draft-status" class="quote-draft-status" role="status"></div>
         <form id="quote-form" class="quote-form" novalidate>
           <div class="quote-editor">
             <section class="quote-editor-section">
               <div class="quote-section-title">
-                <div><span>Cliente</span><h2>Datos del pedido</h2></div>
+                <div><span>01 · Cliente</span><h2>¿Para quién es el pedido?</h2></div>
                 <small>Empieza por la cédula. Si el cliente es nuevo, continúa con sus datos.</small>
               </div>
 
@@ -92,59 +94,71 @@
                 <div class="quote-field quote-client-lookup">
                   <label for="quote-client-document">Cédula / NIT</label>
                   <div class="quote-client-control">
-                    <input id="quote-client-document" type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message">
+                    <input id="quote-client-document" required type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message">
                     <div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" aria-label="Clientes coincidentes" hidden></div>
                   </div>
                   <p id="quote-client-message" class="quote-helper" role="status" aria-live="polite"></p>
                 </div>
-                <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" autocomplete="name"></div>
-                <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
+                <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" required autocomplete="name"></div>
+                <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" required type="tel" inputmode="tel" autocomplete="tel"></div>
                 <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono (opcional)</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Otro número de contacto"></div>
-                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" type="email" autocomplete="email"></div>
-                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección de entrega</label><input id="quote-client-address" autocomplete="street-address"></div>
-                <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" autocomplete="address-level2"></div>
+                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo (opcional)</label><input id="quote-client-email" type="email" autocomplete="email"></div>
+                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección (opcional)</label><input id="quote-client-address" autocomplete="street-address"></div>
+                <div class="quote-field"><label for="quote-client-city">Ciudad (opcional)</label><input id="quote-client-city" autocomplete="address-level2"></div>
               </div>
             </section>
 
             <section class="quote-editor-section quote-items-section">
               <div class="quote-section-title quote-items-title">
-                <div><span>Mobiliario</span><h2>Muebles del pedido</h2></div>
-                <button class="quote-add-item" id="quote-add-item" type="button">＋ Añadir mueble</button>
+                <div><span>02 · Muebles</span><h2>¿Qué lleva el cliente?</h2></div>
+                <button class="quote-add-item" id="quote-add-item" type="button">+ Añadir mueble</button>
               </div>
-              <p class="quote-helper order-items-help">Indica la disponibilidad de cada mueble. Puedes combinar entrega inmediata y solicitud a fábrica en este mismo pedido.</p>
+              <p class="quote-helper order-items-help">Cada mueble puede tener un acuerdo distinto: entregarse hoy, quedar separado o entregarse después.</p>
               <div id="quote-items" class="quote-items"></div>
             </section>
 
             <section class="quote-editor-section" aria-labelledby="order-payments-title">
-              <div class="quote-section-title"><div><span>Pagos</span><h2 id="order-payments-title">Abono o pago inicial</h2></div><small>Indica el valor acordado. Puedes combinar varios medios de pago.</small></div>
-              <label class="order-separated-option"><input id="order-separated" type="checkbox"><span><strong>Este pedido es un separado</strong><small>El cliente separa con el importe acordado y continúa pagando. La disponibilidad se indica en cada mueble.</small></span></label>
-              <div id="order-payments" class="order-payments"></div>
+              <div class="quote-section-title"><div><span>03 · Pago</span><h2 id="order-payments-title">¿Cuánto abona hoy?</h2></div><small>El importe lo acuerdas con el cliente. Puede ser un abono o el pago completo.</small></div>
+<div class="quote-discount-field order-discount-entry"><label for="quote-discount">Descuento del pedido (opcional)</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
+              <div class="order-live-finance" aria-label="Valores del pedido"><div><span>Total</span><strong id="order-live-total">$ 0</strong></div><div><span>Abono indicado</span><strong id="order-live-paid">$ 0</strong></div><div><span>Saldo</span><strong id="order-live-balance">$ 0</strong></div></div>
+              <label class="order-check-option"><input id="order-no-payment" type="checkbox"><span>Sin abono inicial</span></label>
+              <div id="order-payment-editor">
+                <div id="order-payments" class="order-payments"></div>
+                <button class="quote-add-item" id="order-add-payment" type="button">+ Añadir otro medio de pago</button>
+                <p class="quote-helper" id="order-payment-privacy">Las notas de cada pago son internas y no aparecen en el documento del cliente.</p>
+              </div>
               <p class="quote-helper is-error" id="order-payment-error" role="status"></p>
-              <button class="quote-add-item" id="order-add-payment" type="button">＋ Añadir otro pago</button>
-              <p class="quote-helper" id="order-payment-privacy">Las notas de cada pago son internas y no aparecen en el documento del cliente.</p>
+              <div class="order-allocation">
+                <label class="order-check-option"><input id="order-allocate-payments" type="checkbox"><span>Distribuir el abono entre los muebles <small>Opcional · para llevar un saldo por mueble.</small></span></label>
+                <p id="order-allocation-help" class="quote-helper" hidden>Indica cuánto de este abono corresponde a cada mueble. Si hay descuento general, se reparte proporcionalmente al valor de los muebles, en pesos completos. No se agregan pagos nuevos.</p>
+                <div id="order-allocations" class="order-allocations" hidden></div>
+                <p id="order-allocation-total" class="quote-helper"></p>
+                <p id="order-allocation-error" class="quote-helper is-error" role="status"></p>
+              </div>
             </section>
 
             <section class="quote-editor-section">
               <div class="quote-section-title">
-                <div><span>Acuerdos con el cliente</span><h2>Observaciones del pedido</h2></div>
-                <small>Obsequios, transporte, instalación y otros acuerdos de esta venta.</small>
+                <div><span>04 · Observaciones</span><h2>Acuerdos con el cliente</h2></div>
+                <small>Recogida, envío, fechas, obsequios y otros acuerdos de esta venta.</small>
               </div>
-              <div class="quote-field"><label for="quote-notes">Observaciones para el cliente</label><textarea id="quote-notes" rows="4" placeholder="Ej. Obsequio de cojines. Transporte incluido a Cali. Entrega coordinada con el cliente."></textarea></div>
+              <div class="quote-field"><label for="quote-notes">Observaciones para el cliente</label><textarea id="quote-notes" rows="4" placeholder="Ej. El cliente recoge la sala hoy. El comedor queda separado. Obsequio de cojines; transporte incluido a Cali."></textarea></div>
               <p class="quote-helper">Los acuerdos escritos aquí aparecerán en el documento del cliente.</p>
             </section>
           </div>
 
           <aside class="quote-summary-column" aria-label="Resumen financiero">
             <section class="quote-summary-card">
-              <div class="quote-summary-head"><span>Resumen comercial</span><small id="quote-item-count">1 item</small></div>
+              <div class="quote-summary-head"><span>Revisa tu pedido</span><small id="quote-item-count">1 item</small></div>
+              <ul id="order-operational-summary" class="order-operational-summary" aria-label="Acuerdos por mueble"></ul>
               <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
-              <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
+              <div class="quote-summary-row"><span>Descuento</span><strong id="order-discount-summary">$ 0</strong></div>
               <div class="quote-summary-total"><span>Total del pedido</span><strong id="quote-total">$ 0</strong></div>
               <div class="quote-summary-row order-payment-summary"><span>Abono indicado</span><strong id="order-paid">$ 0</strong></div>
               <div class="quote-summary-row order-payment-summary"><span>Saldo por pagar</span><strong id="order-balance">$ 0</strong></div>
               <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
               <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Guardar orden de pedido</button>
-              <p class="quote-write-note">Borrador para revisión: estos datos aún no se guardan. El número oficial y los abonos se registrarán al habilitar el guardado.</p>
+              <p class="quote-write-note">Documento en preparación. La vista previa no registra una venta, un cobro ni una entrega.</p>
             </section>
           </aside>
         </form>
@@ -162,6 +176,6 @@
       </section>
     </div>
   </main>
-  <script type="module" src="/js/pages/cotizacion.js?v=mixed-1"></script>
+  <script type="module" src="/js/pages/cotizacion.js?v=agreements-1"></script>
 </body>
 </html>

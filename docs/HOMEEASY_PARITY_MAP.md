@@ -144,3 +144,7 @@ Las cifras de mínimos en checkpoints anteriores son evidencia histórica de una
 ## Pedidos mixtos y valores del documento
 
 La aclaración posterior del propietario permite sala disponible y comedor por solicitar en la misma OP. Se conserva el recorrido de productos → pagos → observaciones, con disponibilidad dentro de cada mueble y separado independiente. El cierre económico ocupa el ancho del documento con total, abono y saldo alineados; los medios van debajo. La referencia vigente sigue siendo `pedido.html` en `aa21decbe809a91362a2cddfd272c7c5744dfddd`; la adaptación por mueble y el cambio de proporciones fueron solicitados expresamente. No se cambia la identidad ni el encabezado aprobado de Maderarte.
+
+## Simplificación del formulario — aclaración posterior del 5 de septiembre
+
+HomeEasy vigente inspeccionado: `aa21decbe809a91362a2cddfd272c7c5744dfddd`, `pedido.html`: cliente directo, líneas, observaciones, importes y saldo. Se mantiene ese recorrido. Las desviaciones aprobadas ahora son acuerdo por cada mueble, distribución opcional del abono y personalización desplegable. Recogida, envío y fechas permanecen en observaciones. Esta decisión sustituye el separado global descrito en los apartados históricos. Formulario y documento comparten cálculos. La recuperación temporal en la pestaña no guarda una OP ni habilita escrituras.
