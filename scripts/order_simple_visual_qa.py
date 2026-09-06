@@ -140,7 +140,7 @@ try:
     pdf_text = ' '.join(page.extract_text() for page in PdfReader(PDF).pages)
     assert 'Sala de revisión' in pdf_text and 'Comedor de revisión' in pdf_text
     assert 'Entrega inmediata' in pdf_text and 'Solicitar a fábrica' in pdf_text
-    assert 'Detalle de compra' in pdf_text and 'Pagado hoy' in pdf_text
+    assert 'Pagado hoy' in pdf_text and 'Muebles del pedido' in pdf_text
     assert 'Propuesta comercial' not in pdf_text and 'Se entrega hoy' not in pdf_text
     assert 'Saldo por pagar' not in pdf_text
     assert 'INTERNO' not in pdf_text
