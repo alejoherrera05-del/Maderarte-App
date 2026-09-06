@@ -46,7 +46,8 @@ try {
   assert.equal($('#quote-workspace').hidden, false);
   assert.equal($('.order-legacy-agreements') !== null, true, 'Legacy agreement data remains available for draft compatibility');
 
-  set('#quote-client-document', '0000000001');
+  // Assign the document directly so this test never schedules a remote client lookup.
+  $('#quote-client-document').value = '0000000001';
   set('#quote-client-name', 'Cliente simple');
   set('#quote-client-phone', '0000000002');
   set('#quote-client-email', 'N/A');
