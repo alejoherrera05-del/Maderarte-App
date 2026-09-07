@@ -27,7 +27,7 @@ var COMMERCIAL_ZERO_SHEETS_ = Object.freeze(['Clientes', 'Cotizaciones', 'Ordene
 var INITIAL_ROLES_ = Object.freeze(['PROPIETARIO', 'ADMINISTRADOR', 'VENDEDOR', 'BODEGA_LOGISTICA', 'CONSULTA']);
 var INITIAL_BRANCHES_ = Object.freeze({ MP: 'Maderarte Principal', TP: 'Maderarte Terraplaza' });
 function verifySchema_() {
-  if (optionalProperty_('ORDER_SCHEMA_VERSION', '1') === '3') {
+  if (typeof optionalProperty_ === 'function' && optionalProperty_('ORDER_SCHEMA_VERSION', '1') === '3') {
     var archiveHeaders = getHeaders_(getSheet_(ORDER_ARCHIVE_SHEET_));
     if (JSON.stringify(archiveHeaders) !== JSON.stringify(ORDER_ARCHIVE_HEADERS_)) throw appError_('SHEET_SCHEMA_MISMATCH', 'El archivo documental no coincide con el contrato.', 503);
   }

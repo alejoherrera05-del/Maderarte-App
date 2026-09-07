@@ -29,9 +29,12 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: pip install playwright==1.55.0 pypdf==5.9.0
+        if: always()
       - name: Formulario y Cerebro reales con transporte Google sintético
+        if: always()
         run: python scripts/order_documents_browser_qa.py
       - run: node scripts/export-cerebro.mjs
+        if: always()
       - uses: actions/upload-artifact@v4
         if: always()
         with:
