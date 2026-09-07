@@ -28,7 +28,7 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: npm test
-      - run: pip install playwright==1.55.0 pypdf==5.9.0
+      - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
         if: always()
       - name: Formulario y Cerebro reales con transporte Google sintético
         if: always()

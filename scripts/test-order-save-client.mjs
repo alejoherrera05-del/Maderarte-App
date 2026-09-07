@@ -53,8 +53,9 @@ function harness() {
     setCaps: value => { caps = value; }, setMode: value => { createMode = value; }, setStatus: value => { statusMode = value; },
     setUid: value => { uid = value; }, setDelay: value => { delay = value; } };
 }
-for (const caps of [null, {}, { ...ready, enabled: 'true' }, { ...ready, contractVersion: 2 }, { ...ready, photosReady: false }, { ...ready, documentsReady: false }]) equal(saveCapabilitiesReady(caps), false);
+for (const caps of [null, {}, { ...ready, enabled: 'true' }, { ...ready, contractVersion: 99 }, { ...ready, photosReady: false }, { ...ready, documentsReady: false }]) equal(saveCapabilitiesReady(caps), false);
 equal(saveCapabilitiesReady(ready), true);
+equal(saveCapabilitiesReady({ ...ready, contractVersion: 2 }), true, 'Documentary contract explicitly supported');
 {
   const h = harness(), m = h.make(); h.setCaps({ ...ready, enabled: false });
   equal((await m.refresh()).phase, 'disabled'); equal((await m.save(body())).phase, 'disabled');
