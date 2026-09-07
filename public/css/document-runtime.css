@@ -1,0 +1,6 @@
+.maddy-document-frame { position: fixed; left: -10000px; top: 0; width: 794px; height: 1123px; border: 0; visibility: hidden; pointer-events: none; }
+.order-document-progress { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.order-document-progress button { min-height: 44px; margin: 8px 8px 0 0; }
+.order-trial-banner { padding: 12px 18px; border: 1px solid #ba702b; background: #fff8ea; color: #663807; font-size: 15px; line-height: 1.45; }
+.order-file-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.order-file-list button { min-height: 44px; }
