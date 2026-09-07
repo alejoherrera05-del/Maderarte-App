@@ -5,13 +5,13 @@ import { createHash } from 'node:crypto';
 
 // In-memory Sheets adapter: apply the actual generated REST requests to an
 // isolated copy, then commit together. This is NOT a live Google integration test.
-const sources = ['Config', 'SheetHelpers', 'Schema', 'Orders', 'OrderCreation', 'Router'];
+const sources = ['Config', 'SheetHelpers', 'Schema', 'Orders', 'OrderCreation', 'OrderCreationRecovery', 'Router'];
 const clone = value => JSON.parse(JSON.stringify(value));
 let checks = 0;
 function equal(actual, expected, why) { assert.deepEqual(clone(actual), clone(expected), why); checks++; }
 function throws(fn, code) { assert.throws(fn, error => error.appCode === code, code); checks++; }
 function fixture() {
-  const state = { tables: {}, calls: 0, gets: 0, failAt: -1, loseResponse: false, locked: false, busy: false, releases: 0, authReads: 0,
+  const state = { tables: {}, calls: 0, gets: 0, failAt: -1, loseResponse: false, delayedCommit: false, pendingTables: null, locked: false, busy: false, releases: 0, authReads: 0,
     props: { ORDER_SCHEMA_VERSION: '2', ORDER_SAVE_ENABLED: 'SI', SPREADSHEET_ID: 'synthetic-sheet' } };
   const session = { profile: { uid: 'qa-owner', name: 'Operador QA', role: 'PROPIETARIO', branches: ['MP'] }, permissions: ['*'], sessionRow: { Dispositivo_ID: 'test-device' } };
   function getSheet(name) {
@@ -26,7 +26,7 @@ function fixture() {
     };
   }
   const context = vm.createContext({ console, __state: state,
-    PropertiesService: { getScriptProperties: () => ({ getProperty: key => state.props[key] || '', setProperty: (key, value) => { state.props[key] = value; } }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: key => state.props[key] || '', setProperty: (key, value) => { state.props[key] = value; }, deleteProperty: key => { delete state.props[key]; } }) },
     SpreadsheetApp: { openById: () => { state.gets++; return { getName: () => 'Base de Datos Maderarte App', getSheetByName: getSheet }; }, flush() {} },
     LockService: { getScriptLock: () => ({ tryLock: () => { if(state.busy || state.locked) return false; state.locked = true; return true; }, releaseLock: () => { state.locked = false; state.releases++; } }) },
     ScriptApp: { getOAuthToken: () => 'synthetic-oauth' },
@@ -60,6 +60,7 @@ function fixture() {
           requestBody.rows[0].values.forEach((cell, i) => { table.rows[rowIndex][table.headers[col + i]] = read(cell); });
         }
       });
+      if (state.delayedCommit) { state.pendingTables=tables; throw new Error('Google still processing after transport timeout'); }
       state.tables = tables;
       if(state.loseResponse) { state.loseResponse = false; throw new Error('response lost AFTER commit'); }
       return { getResponseCode: () => 200 };
@@ -127,7 +128,11 @@ function fixture() {
     const f=fixture(); const before=clone(f.state.tables); f.state.failAt=index;
     throws(f.create,'ORDER_SAVE_UNCERTAIN'); equal(f.state.tables,before,`batch failure ${index}`);
     equal(f.context.orderCreationStatus_({requestId:f.request.requestId},f.request).saved,false);
-    f.state.failAt=-1; equal(f.create().order.number,'MP-OP-0001'); equal(f.rows('Ordenes_Pedido').length,1);
+    f.state.failAt=-1; throws(f.create,'ORDER_RECOVERY_REQUIRED'); equal(f.state.calls,1,'No repeat while an uncertain attempt is unresolved');
+    // Only the test adapter KNOWS this batch was rejected. A real operator must
+    // reconcile Google before manually releasing the private fence.
+    delete f.state.props.ORDER_CREATION_PENDING;
+    equal(f.create().order.number,'MP-OP-0001'); equal(f.rows('Ordenes_Pedido').length,1);
   }
 }
 {
@@ -213,4 +218,25 @@ for (const permissions of [[],['ordenes.create'],['ordenes.create','abonos.creat
   equal(f.state.props.ORDER_SCHEMA_VERSION,'1');
   f.context.prepararEsquemaGuardadoOrdenes(); equal(f.context.verifySchema_(),true); equal(f.state.calls,1);
 }
+
+// Google may finish after the Apps Script execution times out and releases its
+// lock. Block all new submissions until the durable marker confirms the result.
+{
+  const f=fixture(); f.state.delayedCommit=true;
+  throws(f.create,'ORDER_SAVE_UNCERTAIN'); equal(f.rows('Ordenes_Pedido').length,0);
+  equal(f.context.orderCreationStatus_({requestId:f.request.requestId},f.request).retrySameRequest,false);
+  throws(f.create,'ORDER_RECOVERY_REQUIRED'); equal(f.state.calls,1);
+  const other={...f.request,requestId:'QA-ORDER-CREATION-0002'};
+  throws(()=>f.context.createOrder_(f.payload,other),'ORDER_RECOVERY_REQUIRED'); equal(f.state.calls,1);
+  f.state.tables=f.state.pendingTables; f.state.delayedCommit=false;
+  equal(f.context.orderCreationStatus_({requestId:f.request.requestId},f.request).saved,true);
+  equal(f.state.props.ORDER_CREATION_PENDING ?? '', '');
+  equal(f.create().replayed,true); equal(f.rows('Abonos').length,2); equal(f.state.calls,1);
+  equal(f.context.createOrder_(f.payload,other).order.number,'MP-OP-0002'); equal(f.state.calls,2);
+}
+{
+  const f=fixture(); f.state.props.ORDER_CREATION_PENDING='corrupt';
+  throws(f.create,'ORDER_RECOVERY_REQUIRED'); equal(f.state.calls,0);
+}
+
 console.log(`OK · ${checks} comprobaciones de creación, lectura, importes, permisos, privacidad y recuperación con adaptador simulado. No se escribió en Google.`);
