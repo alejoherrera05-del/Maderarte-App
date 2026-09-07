@@ -14,6 +14,8 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   const note = document.querySelector('.quote-write-note');
   if (!form || !button || !note) return null;
   const defaultNote = note.textContent;
+  const heading = document.querySelector('.quote-summary-head > span');
+  const defaultHeading = heading?.textContent || '';
   const error = document.getElementById('quote-form-error');
   const status = document.createElement('div');
   status.className = 'quote-draft-status';
@@ -49,13 +51,21 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   const orderPath = number => `/orden.html?op=${encodeURIComponent(number)}`;
   function render(state) {
     freeze(state.locked);
-    // A closed/expired tab draft must not hide recovery behind the branch gate.
+    const gate = document.getElementById('quote-branch-gate');
+    // A closed/expired tab draft must not hide recovery behind the branch gate,
+    // or present empty/unrelated draft values as the confirmed order's figures.
+    const recoveryOnly = state.locked && (!branch() || state.phase === 'other-tab'
+      || (state.phase === 'confirmed' && !state.ownsDraft));
+    gate.hidden = recoveryOnly;
+    document.querySelectorAll('.quote-editor, .quote-document-head, .quote-summary-row, .quote-summary-total, #quote-summary-preview, #quote-item-count, #quote-draft-status, #quote-form-error')
+      .forEach(node => { node.hidden = recoveryOnly; });
+    if (heading) heading.textContent = recoveryOnly ? 'Recuperación del pedido' : defaultHeading;
     if (state.locked) {
       document.getElementById('quote-workspace').hidden = false;
-      document.getElementById('quote-branch-gate').classList.add('is-closed');
+      gate.classList.add('is-closed');
     } else if (!branch()) {
       document.getElementById('quote-workspace').hidden = true;
-      document.getElementById('quote-branch-gate').classList.remove('is-closed');
+      gate.classList.remove('is-closed');
     }
     button.disabled = !state.canSave;
     button.textContent = state.phase === 'saving' ? 'Guardando pedido…' : state.phase === 'confirmed' ? 'Pedido guardado' : 'Guardar orden de pedido';
@@ -76,7 +86,6 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
         if (state.phase === 'retry') action('Reenviar el mismo intento', () => manager.retry());
       }
     }
-    // Move focus away from frozen controls after an interrupted attempt.
     if (state.phase !== lastPhase && status.firstElementChild && state.phase !== 'confirmed') status.firstElementChild.focus({ preventScroll: true });
     lastPhase = state.phase;
   }
@@ -89,7 +98,6 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     note.textContent = 'No se pudo comprobar la recuperación. Puedes conservar y revisar el borrador, sin guardarlo todavía.';
     return null;
   }
-  // Reject scripted submissions too; the disabled button alone is not a gate.
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (locked || !manager.getState().canSave) return;
@@ -107,7 +115,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     const result = await manager.save(payload);
     if (result.phase === 'confirmed') navigate(orderPath(result.number));
   });
-  // Storage events never resend. Other tabs must explicitly reconcile the journal.
+  // Storage events never resend. Other tabs explicitly reconcile the journal.
   window.addEventListener('storage', event => {
     if (event.key === manager.key) {
       freeze(true);
