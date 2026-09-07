@@ -7,6 +7,7 @@ on:
       - 'public/js/core/order-*.js'
       - 'public/js/pages/cotizacion.js'
       - 'scripts/test-order*.mjs'
+      - 'scripts/export-cerebro.mjs'
       - 'docs/CHECKPOINT_2026-09-07_ORDER_SAVE.md'
       - '.github/workflows/order-save-qa.yml'
 
@@ -28,11 +29,15 @@ jobs:
       - run: npm ci
       - name: Verify all foundation and order tests
         run: npm test
+      - name: Verify the complete Apps Script bundle
+        run: node scripts/export-cerebro.mjs
       - name: Package reproducible code-only checkpoint
         run: |
-          mkdir -p /tmp/order-save-qa
+          mkdir -p /tmp/order-save-qa/cerebro
           git rev-parse HEAD > /tmp/order-save-qa/COMMIT.txt
           git archive --format=zip --output=/tmp/order-save-qa/source.zip HEAD
+          cp dist/cerebro-manual/* /tmp/order-save-qa/cerebro/
+          cp docs/CHECKPOINT_2026-09-07_ORDER_SAVE.md /tmp/order-save-qa/cerebro/Estado_del_guardado.md
       - uses: actions/upload-artifact@v4
         with:
           name: order-save-code-checkpoint
