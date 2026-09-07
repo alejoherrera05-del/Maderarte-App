@@ -1,3 +1,4 @@
+import { browserReady, finalizeOrderDocuments, probePdfEngine } from './order-documents.js';
 const COOKIE_NAME = '__Host-maderarte_session';
 const MAX_BODY_BYTES = 1_048_576;
 const UPSTREAM_TIMEOUT_MS = 20_000;
@@ -96,7 +97,7 @@ async function parseRequestBody(request) {
   }
 }
 
-async function forwardToAppsScript(request, env, body, requestId) {
+async function forwardToAppsScript(request, env, body, requestId, internal = false) {
   const upstreamUrl = String(env.MADERARTE_APPS_SCRIPT_URL || '').trim();
   const proxyToken = String(env.MADERARTE_PROXY_TOKEN || '').trim();
   if (!upstreamUrl || !proxyToken) {
@@ -123,12 +124,13 @@ async function forwardToAppsScript(request, env, body, requestId) {
     proxyMeta: {
       ipHash,
       country: String(request.cf?.country || ''),
-      colo: String(request.cf?.colo || '')
+      colo: String(request.cf?.colo || ''),
+      ...(internal ? { documentPipeline: true } : {})
     }
   };
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), internal || action === 'ORDEN_FOTO_GUARDAR' ? 60000 : UPSTREAM_TIMEOUT_MS);
   let response;
   try {
     response = await fetch(upstreamUrl, {
@@ -168,6 +170,9 @@ async function forwardToAppsScript(request, env, body, requestId) {
   if (action === 'AUTH_LOGOUT' || ['NO_SESSION', 'SESSION_EXPIRED', 'SESSION_REVOKED'].includes(String(upstream?.code || ''))) {
     headers['Set-Cookie'] = clearCookie();
   }
+  if (action === 'ORDEN_CAPACIDADES' && upstream.data && !browserReady(env)) {
+    upstream.data = { ...upstream.data, enabled: false, documentsReady: false, reason: 'PDF_ENGINE_NOT_READY' };
+  }
   delete upstream.httpStatus;
   return jsonResponse({ ...upstream, requestId: upstream?.requestId || requestId }, status, headers);
 }
@@ -185,6 +190,25 @@ export async function handleRequest(request, env = {}) {
 
   try {
     const body = await parseRequestBody(request);
+    const action = String(body?.action || '').trim().toUpperCase();
+    if (action.startsWith('INTERNO_')) return jsonResponse(errorBody('ACTION_FORBIDDEN', 'La acción es interna del generador documental.', requestId), 403);
+    if (action === 'SISTEMA_DOCUMENTOS_DIAGNOSTICO') {
+      const response = await forwardToAppsScript(request, env, body, requestId);
+      if (!response.ok) return response; // Server permission check precedes browser usage.
+      const reply = await response.json();
+      if (reply.status !== 'success') return jsonResponse(reply, 403);
+      const engine = await probePdfEngine(env);
+      return jsonResponse({ ...reply, data: { ...reply.data, pdfEngine: engine, productionReady: false } });
+    }
+    if (action === 'ORDEN_DOCUMENTOS_FINALIZAR') {
+      const result = await finalizeOrderDocuments(body?.payload?.number, env, async (internalAction, payload) => {
+        const response = await forwardToAppsScript(request, env, { action: internalAction, payload }, requestId, true);
+        const reply = await response.json();
+        if (!response.ok || reply.status !== 'success') throw Object.assign(new Error(reply.msg || 'Falta confirmar los documentos.'), { code: reply.code, status: response.status });
+        return reply.data;
+      });
+      return jsonResponse({ status: 'success', code: 'OK', data: result, requestId });
+    }
     return forwardToAppsScript(request, env, body, requestId);
   } catch (error) {
     return jsonResponse(errorBody(error.code || 'BAD_REQUEST', error.message || 'Solicitud no válida.', requestId), error.status || 400);

@@ -1,78 +1,64 @@
-# Instalar el Cerebro de Maddy copiando y pegando
+# Actualizar el Cerebro de Maddy — documentos de órdenes
 
-Este paquete reúne todo el backend vigente de la etapa de lectura (v0.2.0). Incluye autenticación, permisos, sesiones, invitaciones y lectura de clientes, cotizaciones, órdenes y estado del sistema. No habilita guardar ventas, abonos ni remisiones.
+Paquete del PR #21, sobre Maddy original. El archivo `Maddy_Cerebro_Completo.txt` identifica el commit exacto y reúne los módulos vigentes. No mezclar con los ZIP de etapas anteriores.
 
-El código procede de la rama `etapa-4-paridad-homeeasy`, PR #7, de `alejoherrera05-del/Maderarte-App`. El archivo completo identifica el commit exacto de origen. Pegar el código es el primer paso; la conexión y la estabilidad integrada todavía deben verificarse.
+## Qué cambia y qué no
 
-## 1. Pegar el código
+Implementa fotografías por mueble, identidades reservadas en Drive, carpetas automáticas, registro documental y finalización recuperable. El PDF lo genera el Worker con la plantilla aprobada y datos confirmados del Cerebro.
 
-1. Abre el proyecto de Apps Script de Maderarte cuyo enlace compartiste. Usa la cuenta propietaria.
-2. En **Editor**, abre el archivo inicial `Código.gs` o `Code.gs`. Si no aparece ningún archivo, pulsa **+ → Secuencia de comandos** y llámalo `Codigo`.
-3. Abre `Maddy_Cerebro_Completo.txt`, selecciona todo y cópialo. Sustituye el ejemplo inicial `myFunction()` por ese contenido completo.
-4. Guarda el proyecto. La última línea debe decir `// FIN DEL CEREBRO COMPLETO`.
+La aplicación continúa en PREPARACION. Instalar este código y preparar el esquema NO activa ventas, no emite pedidos de prueba ni cambia consecutivos. La aceptación real del recorrido completo sigue pendiente de la comprobación en Google y Cloudflare.
 
-Todo el código va en ese único archivo. Los separadores con nombres como `Auth.gs` o `Quotes.gs` son comentarios: no debes crear esos archivos además del completo, porque duplicarías las funciones. Si encuentras código propio ya existente, conserva una copia antes de sustituirlo.
+## 1. Respaldar y reemplazar el código existente
 
-## 2. Pegar el manifiesto
+Abre el mismo proyecto de Apps Script que ya utiliza Maddy. No crees otro ni modifiques HomeEasy. Guarda en tu computador una copia del código y del manifiesto actuales; no dejes un segundo archivo .gs de respaldo dentro del proyecto, porque duplicaría funciones.
 
-1. Abre **Configuración del proyecto** (engranaje).
-2. Activa **Mostrar el archivo de manifiesto appsscript.json en el editor**.
-3. Regresa a **Editor**, abre `appsscript.json` y sustituye su contenido por el del archivo `appsscript.json` entregado con este paquete.
-4. Guarda. El manifiesto establece el motor V8, la zona horaria de Bogotá y los permisos para Sheets, Drive y conexiones externas.
+Si lo tienes reunido en un único `Código.gs` / `Code.gs`, reemplaza TODO su contenido con `Maddy_Cerebro_Completo.txt` y guarda. No agregues el código nuevo debajo del anterior. La última línea debe ser `// FIN DEL CEREBRO COMPLETO`.
 
-No pegues el JSON dentro de `Código.gs` ni crees un archivo de secuencia de comandos llamado `appsscript.json`.
+Si existen módulos separados u otro código propio, revisar su organización antes de reemplazar o eliminar archivos; no pegar el paquete completo junto a los módulos.
 
-## 3. Conectar los recursos privados
+## 2. Conservar configuración y permisos
 
-En **Configuración del proyecto → Propiedades del script**, conserva los valores correctos si ya existen. Agrega los que falten:
+No cambies tokens, IDs de Sheets/Drive, URL de Apps Script, configuración de Firebase ni secretos de Cloudflare. No actives `ORDER_SAVE_ENABLED`, `ORDER_DOCUMENTS_ENABLED`, `ORDER_DOCUMENTS_ACCEPTED` ni `COMMERCIAL_WRITES`. El modo debe seguir en PREPARACION.
 
-| Propiedad | Valor que corresponde |
-| --- | --- |
-| `SPREADSHEET_ID` | ID de la hoja oficial **Base de Datos Maderarte App**. Es la parte entre `/d/` y `/edit` de su enlace. |
-| `DRIVE_DOCUMENTS_ROOT_ID` | ID de **02_DOCUMENTOS_CLIENTES**, dentro de **MADERARTE APP**. Es la parte después de `/folders/` de su enlace. No es el ID de la carpeta superior. |
-| `FIREBASE_WEB_API_KEY` | API key web del proyecto Firebase que ya identifica a los usuarios de esta app. |
-| `MADERARTE_PROXY_TOKEN` | El mismo secreto que usa el Worker de Maderarte en Cloudflare. Debe coincidir exactamente en ambos servicios. |
-| `MODO_OPERACION` | `PREPARACION` |
-| `APP_BASE_URL` | `https://app.maderartepopayan.com`, sin barra al final. |
+Conserva el manifiesto existente. El JSON incluido es una referencia: esta versión requiere runtime V8 y los alcances `spreadsheets`, `drive` y `script.external_request` indicados allí. Si ya están, no hay que modificarlo. No borres otras propiedades del manifiesto o dependencias del proyecto para copiar la referencia.
 
-El modo `PREPARACION` también debe estar en la fila `MODO_OPERACION` de la pestaña **Configuracion** del Sheet: el diagnóstico comprueba esa fila. Las propiedades del script y las filas de la hoja son lugares distintos.
+## 3. Comprobar y preparar la estructura
 
-Estos valores no se incluyen en el archivo de código. No pegues contraseñas, tokens ni capturas de sus valores en el chat o en GitHub. Si falta un secreto, hay que configurarlo de forma coordinada; escribir un valor cualquiera en un solo servicio no conectará la app.
+Ejecuta primero `verificarBaseCero`. Debe conservar `ok:true`, 23 contratos originales, base comercial vacía y escrituras deshabilitadas. Si falla, detente; no borres registros para forzar el resultado.
 
-## 4. Comprobar la base
+Después ejecuta UNA VEZ `prepararDocumentosOrdenes`. Esta es la preparación explícita del nuevo hito; sustituye la indicación anterior de no ejecutar preparadores durante la etapa inicial.
 
-1. En el selector de funciones del editor, elige **verificarBaseCero** y pulsa **Ejecutar**.
-2. Completa la autorización de Google para este proyecto con la cuenta que tiene acceso a la hoja y a Drive.
-3. Revisa el registro de ejecución. Debe terminar sin error y mostrar `ok: true`, `sheetsVerified: 23`, `commercialWrites: false`, `mode: PREPARACION`, sedes `MP` y `TP`, y todos los recuentos comerciales en cero.
+La función amplía los encabezados previstos de Ordenes_Pedido, Orden_Items y Abonos, y añade las pestañas técnicas `Carpetas_Documentales` y `Archivos_Orden`. Conserva las 23 pestañas originales: el total físico esperado pasa a 25. No crea clientes, ventas, abonos, fotografías ni PDFs. Rechaza una base con registros comerciales o una estructura inesperada. Si Google informa un error de API o permisos, copia el mensaje sin compartir secretos y no continúes con la implementación.
 
-La función solo comprueba la base: no crea pestañas, roles, usuarios o ventas, ni borra registros. La hoja debe tener ya las 23 pestañas y el usuario propietario autorizado. Si sale un error, conserva el texto; no elimines datos para forzar el resultado.
+No ejecutes además `prepararEsquemaGuardadoOrdenes`: ya lo llama el preparador nuevo cuando corresponde.
 
-Esta comprobación no valida por sí sola la contraseña del usuario, Firebase, el secreto de Cloudflare ni toda la conexión de la app.
+Luego ejecuta `diagnosticarDocumentosMaddy`. Este sí escribe un resumen legible en el registro. Lo esperado es `schema:true`, `drive:true`, `commercialWrites:false`, `mode:PREPARACION`, `ok:true` y `productionReady:false`. Este último false es intencional: un diagnóstico no certifica una venta completa.
 
-## 5. Implementar y enlazar la app
+## 4. Actualizar la implementación existente
 
-Si el proyecto ya tiene una aplicación web activa: **Implementar → Gestionar implementaciones → seleccionar la aplicación web → Editar → Versión: Nueva versión → Implementar**. Así se conserva su URL.
+Implementar → Administrar implementaciones → seleccionar la aplicación web activa de Maddy → lápiz/Editar → Versión: Nueva versión → Implementar.
 
-Si realmente no existe ninguna: **Implementar → Nueva implementación → Aplicación web**. Configura **Ejecutar como: tú / propietario** y **Quién tiene acceso: Cualquier usuario**. Las llamadas operativas siguen protegidas por el secreto del proxy y, según la acción, por sesión y permisos. Conserva la URL que termina en `/exec`.
+Conserva la misma implementación, URL y opciones actuales de ejecución/acceso. No uses Nueva implementación ni configures nuevamente Cloudflare. Descripción sugerida: `Maddy — documentos de órdenes — 07-09-2026`.
 
-En Cloudflare, el Worker **maderarte-app** debe tener el secreto `MADERARTE_APPS_SCRIPT_URL` con esa URL y `MADERARTE_PROXY_TOKEN` con el mismo valor que Apps Script. Comprueba también el entorno de revisión que se esté usando. Si actualizaste la implementación existente, su URL no debería cambiar.
+## 5. Comprobar la conexión real desde Maddy
 
-Abrir `/exec` puede mostrar `APP_SCRIPT_OK`: solo demuestra que el código responde. Para cerrar la etapa falta ingresar a Maddy con una cuenta autorizada, comprobar la lectura y el seguimiento con la nueva paginación y abrir un documento permitido de Drive, manteniendo la base comercial en cero.
+Entra con la cuenta propietaria y abre `https://app.maderartepopayan.com/diagnostico-documentos.html`. Pulsa **Verificar instalación**.
 
-## Errores que orientan el siguiente paso
+La comprobación requiere `config.read`. Consulta el Cerebro e intenta generar un PDF técnico sin datos del cliente y sin escribir registros comerciales. Debe mostrar esquema preparado, acceso a Drive API, PDF técnico generado correctamente y escritura comercial deshabilitada.
 
-| Mensaje o código | Qué comprobar |
-| --- | --- |
-| `CONFIG_MISSING` | Falta la propiedad indicada en Configuración del proyecto. |
-| `SPREADSHEET_NAME_MISMATCH` | El ID debe apuntar a la hoja oficial nueva. |
-| `DRIVE_ROOT_MISMATCH` | Debe apuntar a `02_DOCUMENTOS_CLIENTES`. |
-| `SHEET_MISSING` / `SHEET_SCHEMA_MISMATCH` | Falta una pestaña o sus encabezados no coinciden. |
-| `OWNER_NOT_READY` | El propietario debe existir y estar activo, con identidad Firebase. |
-| `COMMERCIAL_BASE_NOT_ZERO` | El diagnóstico encontró datos comerciales; revisar, no borrar. |
-| `PROXY_REJECTED` | El secreto enviado desde Cloudflare no coincide con el del proyecto. |
+Comparte una captura del resultado o el registro de `diagnosticarDocumentosMaddy`, sin mostrar Propiedades del script, tokens ni cookies. Si el motor PDF informa falta de binding o servicio, no cambies a un plan pagado: revisar primero el despliegue de Workers Builds y el binding BROWSER incluido en wrangler.toml.
 
-## Fuente y reproducción
+## Qué queda después de instalar
 
-El paquete se genera desde el repositorio con `node scripts/export-cerebro.mjs` y queda en `dist/cerebro-manual/`. Los nueve módulos originales siguen siendo la fuente editable. La exportación valida la sintaxis conjunta, la presencia de todas sus funciones y la ausencia de funciones duplicadas; no sustituye la prueba en Google.
+Instalación y diagnóstico no equivalen a una orden guardada de extremo a extremo. La siguiente aceptación debe usar una sesión real y el mismo código sobre datos aislados para comprobar fotografías, carpetas, PDF, enlaces, reapertura y reintentos. No se habilita producción cambiando banderas a ciegas.
 
-Referencias oficiales: [manifiesto](https://developers.google.com/apps-script/concepts/manifests), [propiedades](https://developers.google.com/apps-script/guides/properties), [aplicaciones web](https://developers.google.com/apps-script/guides/web), [implementaciones](https://developers.google.com/apps-script/concepts/deployments).
+Este hito finaliza el documento OP y sus referencias. Los recibos individuales de caja, las remisiones y solicitudes de producción no se generan por marcar acuerdos ni por registrar el pedido; conservan sus fases y reglas propias.
+
+## Fuentes técnicas
+
+- https://developers.google.com/apps-script/concepts/deployments
+- https://developers.google.com/apps-script/concepts/manifests
+- https://developers.google.com/workspace/drive/api/guides/create-file
+- https://developers.cloudflare.com/browser-run/quick-actions/
+
+No se requieren claves de un generador PDF externo. Los archivos de Drive no se publican mediante permisos para cualquier persona.

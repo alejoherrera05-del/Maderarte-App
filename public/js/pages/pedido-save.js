@@ -1,9 +1,10 @@
+import { prepareOrderMedia } from '../core/order-media.js?v=documents-1';
 import { APP_CONFIG } from '../core/config.js';
 import { apiRequest } from '../core/api.js';
 import { hasPermission } from '../core/permissions.js';
 import { readSessionSnapshot } from '../core/session.js';
-import { createOrderSave } from '../core/order-save.js?v=save-1';
-import { collectOrderPayload } from '../core/order-payload.js?v=save-1';
+import { createOrderSave } from '../core/order-save.js?v=documents-1';
+import { collectOrderPayload } from '../core/order-payload.js?v=documents-1';
 
 // No independent form or accounting UI. Reuse the approved button and helper.
 export function bindOrderSave({ session, validate, branch, photos, draft, mediaBusy = () => false,
@@ -55,7 +56,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     // A closed/expired tab draft must not hide recovery behind the branch gate,
     // or present empty/unrelated draft values as the confirmed order's figures.
     const recoveryOnly = state.locked && (!branch() || state.phase === 'other-tab'
-      || (state.phase === 'confirmed' && !state.ownsDraft));
+      || (['confirmed', 'documents'].includes(state.phase) && !state.ownsDraft));
     gate.hidden = recoveryOnly;
     document.querySelectorAll('.quote-editor, .quote-document-head, .quote-summary-row, .quote-summary-total, #quote-summary-preview, #quote-item-count, #quote-draft-status, #quote-form-error')
       .forEach(node => { node.hidden = recoveryOnly; });
@@ -68,11 +69,11 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
       gate.classList.remove('is-closed');
     }
     button.disabled = !state.canSave;
-    button.textContent = state.phase === 'saving' ? 'Guardando pedido…' : state.phase === 'confirmed' ? 'Pedido guardado' : 'Guardar orden de pedido';
+    button.textContent = state.phase === 'saving' ? 'Guardando pedido…' : state.phase === 'documents' ? 'Documentos pendientes' : state.phase === 'confirmed' ? 'Pedido guardado' : 'Guardar orden de pedido';
     button.setAttribute('aria-busy', String(['saving', 'checking'].includes(state.phase)));
     note.textContent = state.phase === 'disabled' || state.phase === 'ready' ? defaultNote : state.message;
     status.replaceChildren();
-    status.hidden = !['uncertain', 'retry', 'confirmed', 'other-tab', 'blocked', 'rejected'].includes(state.phase);
+    status.hidden = !['uncertain', 'retry', 'confirmed', 'documents', 'other-tab', 'blocked', 'rejected'].includes(state.phase);
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
         action('Abrir pedido', () => navigate(orderPath(state.number)));
@@ -81,6 +82,9 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
           if (result.phase === 'new') window.location.reload();
         });
         if (state.ownsDraft && confirmedRequest !== state.requestId) { confirmedRequest = state.requestId; draft()?.complete(); }
+      } else if (state.phase === 'documents') {
+        action('Completar documentos', () => manager.refresh());
+        action('Abrir pedido registrado', () => navigate(orderPath(state.number)));
       } else {
         action(state.locked ? 'Consultar resultado' : 'Comprobar disponibilidad', () => manager.refresh());
         if (state.phase === 'retry') action('Reenviar el mismo intento', () => manager.retry());
@@ -107,8 +111,14 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
       return;
     }
     let payload;
-    try { payload = collectOrderPayload({ branch: branch(), photos: photos() }); }
-    catch (failure) { error.textContent = failure.message; return; }
+    const selectedPhotos = new Map([...photos()].map(([id, values]) => [id, values.map(value => ({ ...value }))]));
+    try {
+      payload = collectOrderPayload({ branch: branch(), photos: selectedPhotos, mediaEnabled: manager.getState().mediaEnabled === true });
+      freeze(true);
+      payload = await prepareOrderMedia(payload, selectedPhotos);
+    } catch (failure) {
+      freeze(false); error.textContent = failure.message; return;
+    }
     draft()?.save();
     error.textContent = '';
     render({ phase: 'saving', locked: true, canSave: false, message: 'Preparando el guardado del pedido…' });

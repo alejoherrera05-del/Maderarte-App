@@ -240,3 +240,5 @@ for (const permissions of [[],['ordenes.create'],['ordenes.create','abonos.creat
 }
 
 console.log(`OK · ${checks} comprobaciones de creación, lectura, importes, permisos, privacidad y recuperación con adaptador simulado. No se escribió en Google.`);
+
+export { fixture };

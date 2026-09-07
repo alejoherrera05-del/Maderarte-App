@@ -27,6 +27,13 @@ function routeAction_(action, payload, context) {
     case 'ORDEN_CREAR': return createOrder_(payload, context);
     case 'ORDEN_CREACION_ESTADO': return orderCreationStatus_(payload, context);
     case 'ORDEN_CAPACIDADES': return orderCreationCapabilities_(context.session);
+    case 'SISTEMA_DOCUMENTOS_DIAGNOSTICO': requirePermission_(context.session, 'config.read'); return diagnosticarDocumentosMaddy();
+    case 'ORDEN_DOCUMENTOS_ESTADO': return mdPhotoStatus_(payload.number, context);
+    case 'ORDEN_FOTO_GUARDAR': return mdUploadPhoto_(payload, context);
+    case 'ORDEN_PDF_LEER': return mdReadPdf_(payload, context);
+    case 'ORDEN_FOTO_LEER': return mdReadPhoto_(payload, context);
+    case 'INTERNO_DOCUMENTO_PREPARAR': return mdPreparePdf_(payload, context);
+    case 'INTERNO_DOCUMENTO_CONFIRMAR': return mdConfirmPdf_(payload, context);
     case 'SISTEMA_ESTADO': return systemState_(context.session);
     case 'USUARIOS_LISTAR': return listUsers_(context.session);
     case 'INVITACION_CREAR': return createInvitation_(payload, context.session);

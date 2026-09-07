@@ -101,7 +101,7 @@ function documentHeaderMarkup(data) {
       </div>
 
       <div class="quote-editorial-document">
-        <span class="quote-editorial-eyebrow">Propuesta comercial</span>
+        <span class="quote-editorial-eyebrow">${data.issued ? 'Detalle de compra' : 'Propuesta comercial'}</span>
         <h1>${escapeHtml(COMMERCIAL_DOCUMENT.title)}</h1>
         <div class="quote-editorial-document-identity">
           <div class="quote-editorial-number">
@@ -180,7 +180,7 @@ function itemMarkup(item) {
     <div class="quote-editorial-item-main">
       <div class="quote-editorial-item-title"><h3>${escapeHtml(title)}</h3></div>
       ${facts ? `<div class="quote-editorial-item-facts">${facts}</div>` : ''}
-      ${item.agreement && !item.continuation ? `<p class="order-document-agreement">${escapeHtml(item.agreement.label)}${item.fulfillment && item.agreement.code !== 'ENTREGA_HOY' ? ` · <span class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</span>` : ''}</p>` : ''}
+      ${item.documentPlan && !item.continuation ? `<p class="order-document-agreement" data-plan="${escapeHtml(item.documentPlan.code)}">${escapeHtml(item.documentPlan.label)}</p>` : item.agreement && !item.continuation ? `<p class="order-document-agreement">${escapeHtml(item.agreement.label)}${item.fulfillment && item.agreement.code !== 'ENTREGA_HOY' ? ` · <span class="order-document-fulfillment" data-fulfillment="${item.fulfillment.code}">${escapeHtml(item.fulfillment.label)}</span>` : ''}</p>` : ''}
       ${item.specifications ? `<p class="quote-editorial-item-spec">${escapeHtml(item.specifications)}</p>` : ''}
     </div>
     <div class="quote-editorial-item-quantity">${item.continuation ? '—' : escapeHtml(String(item.quantity))}</div>
@@ -201,7 +201,7 @@ function orderInvestmentMarkup(data) {
     </div>
     <dl class="order-finance-figures">
       <div class="order-finance-total"><dt>Total del pedido</dt><dd>${escapeHtml(money(data.total))}</dd></div>
-      <div class="order-finance-paid"><dt>Abono indicado</dt><dd>${escapeHtml(money(data.order.paid))}</dd></div>
+      <div class="order-finance-paid"><dt>${data.issued ? 'Pagado hoy' : 'Abono indicado'}</dt><dd>${escapeHtml(money(data.order.paid))}</dd></div>
       <div class="order-finance-balance"><dt>Saldo por pagar</dt><dd>${escapeHtml(money(data.order.balance))}</dd></div>
     </dl>
     ${payments.length ? `<div class="order-finance-payments"><span>Medios de pago</span><dl>${payments.map(([method, amount]) => `<div><dt>${escapeHtml(method)}</dt><dd>${escapeHtml(money(amount))}</dd></div>`).join('')}</dl></div>` : ''}
@@ -230,7 +230,7 @@ function commercialTermsMarkup(data) {
   const hasPending = data.items.some(item => item.fulfillment?.code === 'POR_DEFINIR');
   const terms = data.order
     ? `<div class="order-document-conditions">
-        ${hasFactory ? '<p>Muebles por solicitar: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>' : ''}
+        ${hasFactory ? `<p>${data.issued ? 'Solicitar a fábrica' : 'Muebles por solicitar'}: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.</p>` : ''}
         ${hasPending ? '<p>Los muebles por definir quedan pendientes de acordar disponibilidad y entrega.</p>' : ''}
       </div>`
     : `<div class="quote-editorial-term-cards"><article class="quote-editorial-term-card quote-editorial-term-time">
@@ -251,12 +251,12 @@ function signatureMarkup(name) {
   return `<div class="quote-editorial-signature"><span>${escapeHtml(clean)}</span></div>`;
 }
 
-function footerMarkup(pageNumber, totalPages) {
+function footerMarkup(pageNumber, totalPages, issued = false) {
   return `<footer class="quote-editorial-footer quote-document-footer">
     <img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
     <div class="quote-editorial-footer-copy">
       <strong>Maderarte · Sistema Maddy</strong>
-      <span>${COMMERCIAL_DOCUMENT.isOrder ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente'} · v${escapeHtml(APP_CONFIG.version)}</span>
+      <span>${COMMERCIAL_DOCUMENT.isOrder && !issued ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente'} · v${escapeHtml(APP_CONFIG.version)}</span>
       <span>${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
     </div>
     <span class="quote-document-page-number">Página ${pageNumber} de ${totalPages}</span>
@@ -323,7 +323,7 @@ function appendixGroupMarkup(group) {
   </article>`;
 }
 
-function appendixPageMarkup(groups, number, pageNumber, totalPages) {
+function appendixPageMarkup(groups, number, pageNumber, totalPages, issued = false) {
   return `<section class="quote-preview-page quote-preview-appendix-page" data-page-number="${pageNumber}" data-page-count="${totalPages}" data-group-count="${groups.length}">
     <div class="quote-annex-content">
       <div class="quote-preview-annex-head">
@@ -332,7 +332,7 @@ function appendixPageMarkup(groups, number, pageNumber, totalPages) {
       </div>
       <div class="quote-appendix-groups">${groups.map(appendixGroupMarkup).join('')}</div>
     </div>
-    ${footerMarkup(pageNumber, totalPages)}
+    ${footerMarkup(pageNumber, totalPages, issued)}
   </section>`;
 }
 
@@ -346,11 +346,11 @@ function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
       ${client}
       ${page.items.length ? `<section class="quote-editorial-items-section">
         <div class="quote-editorial-section-head">
-          <div><span>${escapeHtml(COMMERCIAL_DOCUMENT.itemsLabel)}</span><h2>Detalle de productos</h2></div>
+          <div><span>${escapeHtml(COMMERCIAL_DOCUMENT.itemsLabel)}</span><h2>${data.issued ? 'Muebles del pedido' : 'Detalle de productos'}</h2></div>
           <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
         </div>
         <div class="quote-editorial-table-head" aria-hidden="true">
-          <span>#</span><span>Descripción del artículo</span><span>Cant.</span><span>V. unitario</span><span>V. total</span>
+          <span>#</span><span>${data.issued ? 'Mueble / descripción' : 'Descripción del artículo'}</span><span>Cant.</span><span>V. unitario</span><span>V. total</span>
         </div>
         <div class="quote-editorial-items">${items}</div>
       </section>` : ''}
@@ -360,7 +360,7 @@ function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
         ${investmentMarkup(data)}
       </div>` : ''}
       <div class="quote-editorial-signoff">
-        ${footerMarkup(pageNumber, totalPages)}
+        ${footerMarkup(pageNumber, totalPages, data.issued)}
         ${page.closing ? signatureMarkup(data.advisor) : ''}
       </div>
     </div>
@@ -462,3 +462,50 @@ document.addEventListener('keydown', event => {
   event.preventDefault();
   document.getElementById('quote-preview-close')?.focus();
 });
+
+
+// The exact same layout/paginator serves both the approved preview and issued PDF.
+// This entry point accepts only a confirmed server projection, never form DOM values.
+export async function renderConfirmedOrder(snapshot, target) {
+  if (!COMMERCIAL_DOCUMENT.isOrder || !target || snapshot?.issued !== true
+    || !/^(?:MP|TP)-[A-Z0-9-]+-[0-9]+$/.test(snapshot.number || '')
+    || !Array.isArray(snapshot.items) || !snapshot.items.length || snapshot.items.length > 100
+    || !['MP', 'TP'].includes(snapshot.branchCode) || !Number.isSafeInteger(snapshot.total)) {
+    throw new Error('La versión confirmada del pedido es inválida.');
+  }
+  const labels = { EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', ADDI: 'Addi' };
+  const items = snapshot.items.map((item, index) => {
+    if (!Array.isArray(item.photos)) throw new Error('Faltan las referencias del mueble.');
+    const photos = item.photos.map(src => {
+      if (!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(src)) throw new Error('Una referencia no está confirmada.');
+      return src;
+    });
+    const plan = item.agreement === 'ENTREGA_HOY' ? { code: 'ENTREGA_INMEDIATA', label: 'Entrega inmediata' }
+      : item.fulfillment === 'PARA_SOLICITAR' ? { code: 'SOLICITAR_FABRICA', label: 'Solicitar a fábrica' }
+      : { code: 'SEPARADO', label: 'Separado / entregar después' };
+    return { ...item, position: index + 1, itemId: item.id, photos, documentPlan: plan,
+      agreement: { code: item.agreement, label: plan.label }, fulfillment: { code: item.fulfillment, label: plan.label } };
+  });
+  const data = { ...snapshot, items, branch: companyBranch(snapshot.branchCode),
+    date: new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' }).format(new Date(snapshot.date)),
+    order: { ...snapshot.order, payments: snapshot.order.payments.map(payment => {
+      if (!labels[payment.method] || !Number.isSafeInteger(payment.amount)) throw new Error('El pago confirmado es inválido.');
+      return { label: labels[payment.method], amount: payment.amount };
+    }) }
+  };
+  const pages = await measuredPages(data);
+  const annex = photoPages(items);
+  const total = pages.length + annex.length;
+  if (total > 60) throw new Error('El documento excede el límite de páginas.');
+  target.innerHTML = pages.map((page, index) => mainPageMarkup(data, page, index + 1, total)).join('')
+    + annex.map((groups, index) => appendixPageMarkup(groups, data.number, pages.length + index + 1, total, true)).join('');
+  await document.fonts?.ready;
+  await Promise.all([...target.querySelectorAll('img')].map(async image => {
+    await image.decode();
+    if (!image.naturalWidth || !image.naturalHeight) throw new Error('No se cargó una imagen del documento.');
+  }));
+  for (const page of target.children) {
+    if (!page.clientHeight || page.scrollHeight > page.clientHeight + 2) throw new Error('Una página no cabe en el formato aprobado.');
+  }
+  return { pages: total, photos: items.reduce((n, item) => n + item.photos.length, 0) };
+}
