@@ -33,6 +33,10 @@ function verifySchema_() {
     var sheet = getSheet_(sheetName);
     var actual = getHeaders_(sheet);
     var expected = REQUIRED_HEADERS[sheetName];
+    if (typeof optionalProperty_ === 'function' && optionalProperty_('ORDER_SCHEMA_VERSION', '1') === '2'
+      && typeof ORDER_CREATION_EXTRA_HEADERS_ !== 'undefined') {
+      expected = expected.concat(ORDER_CREATION_EXTRA_HEADERS_[sheetName] || []);
+    }
     var exact = actual.length === expected.length && actual.every(function(header, index) { return header === expected[index]; });
     if (!exact) {
       throw appError_('SHEET_SCHEMA_MISMATCH', 'La pestaña ' + sheetName + ' no coincide exactamente con el contrato.', 503, {
