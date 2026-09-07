@@ -28,7 +28,9 @@ jobs:
         run: |
           python - <<'PY'
           import base64, hashlib, json, pathlib, subprocess, zlib
-          raw=zlib.decompress(base64.b64decode(pathlib.Path('scripts/order-documents-patch.b64').read_text()))
+          parts=sorted(pathlib.Path('scripts/order-documents-codepack').glob('*.txt'))
+          assert len(parts)==6
+          raw=zlib.decompress(base64.b64decode(''.join(p.read_text().strip() for p in parts)))
           assert hashlib.sha256(raw).hexdigest() == '76d1ac272511043173a185a257683e10fd79749a6ab21a881eecc847938b42d5'
           data=json.loads(raw)
           assert data['version']==1
