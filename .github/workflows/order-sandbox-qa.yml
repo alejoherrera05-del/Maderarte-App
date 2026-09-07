@@ -1,0 +1,38 @@
+name: Owner order sandbox QA
+on:
+  push:
+    branches: [feat/owner-order-sandbox]
+  pull_request:
+    paths:
+      - 'apps-script/**'
+      - 'public/js/**'
+      - 'public/prueba-pedido.html'
+      - 'scripts/*sandbox*'
+      - '.github/workflows/order-sandbox-qa.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Publicar fuente exacta y resultados no comerciales
+        if: always()
+        run: |
+          mkdir -p artifacts/owner-sandbox
+          git rev-parse HEAD > artifacts/owner-sandbox/COMMIT.txt
+          git archive --format=zip HEAD > artifacts/owner-sandbox/source.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner-sandbox-qa
+          path: artifacts/owner-sandbox/
+          retention-days: 7
