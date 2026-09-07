@@ -1,10 +1,11 @@
+import { createOrderProgress } from '../core/order-progress.js?v=progress-1';
 import { currentSandboxId, sandboxLink } from '../core/order-sandbox-context.js';
-import { prepareOrderMedia } from '../core/order-media.js?v=documents-1';
+import { prepareOrderMedia } from '../core/order-media.js?v=progress-1';
 import { APP_CONFIG } from '../core/config.js';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { hasPermission } from '../core/permissions.js';
 import { readSessionSnapshot } from '../core/session.js';
-import { createOrderSave } from '../core/order-save.js?v=sandbox-1';
+import { createOrderSave } from '../core/order-save.js?v=progress-1';
 import { collectOrderPayload } from '../core/order-payload.js?v=documents-1';
 
 // No independent form or accounting UI. Reuse the approved button and helper.
@@ -15,6 +16,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   const button = document.getElementById('quote-submit');
   const note = document.querySelector('.quote-write-note');
   if (!form || !button || !note) return null;
+  const progress = createOrderProgress();
   const defaultNote = note.textContent;
   const heading = document.querySelector('.quote-summary-head > span');
   const defaultHeading = heading?.textContent || '';
@@ -53,6 +55,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   const orderPath = number => sandboxLink(`/orden.html?op=${encodeURIComponent(number)}`);
   function render(state) {
     freeze(state.locked);
+    progress.sync(state);
     const gate = document.getElementById('quote-branch-gate');
     // A closed/expired tab draft must not hide recovery behind the branch gate,
     // or present empty/unrelated draft values as the confirmed order's figures.
@@ -74,7 +77,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     button.setAttribute('aria-busy', String(['saving', 'checking'].includes(state.phase)));
     note.textContent = state.phase === 'disabled' || state.phase === 'ready' ? defaultNote : state.message;
     status.replaceChildren();
-    status.hidden = !['uncertain', 'retry', 'confirmed', 'documents', 'other-tab', 'blocked', 'rejected'].includes(state.phase);
+    status.hidden = state.working === true || !['uncertain', 'retry', 'confirmed', 'documents', 'other-tab', 'blocked', 'rejected'].includes(state.phase);
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
         action('Abrir pedido', () => navigate(orderPath(state.number)));
@@ -97,7 +100,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   try {
     manager = createOrderSave({ uid: session.profile.uid, scope: currentSandboxId(), request, durable: window.localStorage,
       temporary: window.sessionStorage, locks: window.navigator.locks, crypto: window.crypto,
-      activeUid: () => readSessionSnapshot()?.profile.uid || '', onState: render });
+      activeUid: () => readSessionSnapshot()?.profile.uid || '', onState: render, onProgress: progress.update });
   } catch {
     button.disabled = true;
     note.textContent = 'No se pudo comprobar la recuperación. Puedes conservar y revisar el borrador, sin guardarlo todavía.';
@@ -115,10 +118,14 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     const selectedPhotos = new Map([...photos()].map(([id, values]) => [id, values.map(value => ({ ...value }))]));
     try {
       payload = collectOrderPayload({ branch: branch(), photos: selectedPhotos, mediaEnabled: manager.getState().mediaEnabled === true });
-      freeze(true);
-      payload = await prepareOrderMedia(payload, selectedPhotos);
+      freeze(true); button.disabled = true; button.setAttribute('aria-busy', 'true');
+      progress.begin();
+      progress.update({ step: 'prepare', status: 'running', message: 'Validando los datos y preparando las referencias…' });
+      payload = await prepareOrderMedia(payload, selectedPhotos, progress.update);
+      progress.update({ step: 'prepare', status: 'complete', message: 'Datos y referencias preparados para enviar.' });
     } catch (failure) {
-      freeze(false); error.textContent = failure.message; return;
+      freeze(false); button.disabled = !manager.getState().canSave; button.setAttribute('aria-busy', 'false');
+      progress.pause(failure.message); error.textContent = failure.message; return;
     }
     draft()?.save();
     error.textContent = '';

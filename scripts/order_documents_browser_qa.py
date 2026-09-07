@@ -43,7 +43,7 @@ try:
                             state['files'].append({'id':number+'-I-'+item['clientLineId']+'-F-'+photo['id'],'type':'FOTO','itemId':number+'-I-'+item['clientLineId'],'clientLineId':item['clientLineId'],'photoId':photo['id'],'position':position,'name':photo['name'],'mime':photo['mime'],'size':photo['size'],'sha256':photo['sha256'],'ready':False})
                     data={'saved':True,'order':state['order']}
                 elif action=='ORDEN_CREACION_ESTADO': data={'saved':True,'order':state['order']}
-                elif action=='ORDEN_DOCUMENTOS_ESTADO': data={'number':number,'complete':state['complete'],'files':[{k:v for k,v in f.items() if k!='bytes'} for f in state['files']]}
+                elif action=='ORDEN_DOCUMENTOS_ESTADO': data={'number':number,'complete':state['complete'],'files':[dict({k:v for k,v in f.items() if k!='bytes'},url='https://drive.google.com/file/d/qa-photo/view' if f['ready'] else '') for f in state['files']]+[{'id':'pdf-slot','type':'OP','ready':state['complete'],'url':'https://drive.google.com/file/d/qa-pdf/view' if state['complete'] else ''}]}
                 elif action=='ORDEN_FOTO_GUARDAR':
                     f=next(f for f in state['files'] if f['id']==payload['id']);b=base64.b64decode(payload['base64'])
                     assert hashlib.sha256(b).hexdigest()==f['sha256'];assert len(b)==f['size'];assert not f['ready']

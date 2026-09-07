@@ -208,14 +208,13 @@
   margin-top: 10px;
 }
 
-/* The client document keeps total + paid today; per-item balances and remaining balance are not exposed. */
-[data-commercial-document="order"] .order-finance-balance,
+/* Per-item balances remain internal; overall balance is shown in the PDF. */
 [data-commercial-document="order"] .order-document-allocation {
   display: none !important;
 }
 
 [data-commercial-document="order"] .order-finance-figures {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 /* Customer-facing state labels use the same language as the furniture card. */
