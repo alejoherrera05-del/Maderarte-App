@@ -1,4 +1,0 @@
-version=1
-sha256=76d1ac272511043173a185a257683e10fd79749a6ab21a881eecc847938b42d5
-base=b5845f3b2066e9e8b8173175089961335285a3e9
-fragments=scripts/order-documents-codepack/01.txt..06.txt
