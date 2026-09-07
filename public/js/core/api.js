@@ -37,7 +37,7 @@ export async function apiRequest(action, payload = {}, options = {}) {
         'Accept': 'application/json',
         'X-Maderarte-Request': requestId
       },
-      body: JSON.stringify({ action, payload, requestId, appVersion: APP_CONFIG.version }),
+      body: JSON.stringify({ action, payload, requestId, appVersion: APP_CONFIG.version, ...(APP_CONFIG.trial && /^(ORDEN_|ORDENES_|CLIENTES_|CLIENTE_)/.test(action) ? { environment: 'QA' } : {}) }),
       signal: controller.signal
     });
 

@@ -1,9 +1,11 @@
-import { APP_CONFIG } from '../core/config.js';
+import { createMediaVault, preparePhotoManifests } from '../core/order-media.js';
+import { mountOrderDocuments } from './order-documents-panel.js';
+import { APP_CONFIG, withPreview } from '../core/config.js';
 import { apiRequest } from '../core/api.js';
 import { hasPermission } from '../core/permissions.js';
 import { readSessionSnapshot } from '../core/session.js';
-import { createOrderSave } from '../core/order-save.js?v=save-1';
-import { collectOrderPayload } from '../core/order-payload.js?v=save-1';
+import { createOrderSave } from '../core/order-save.js?v=docs-1';
+import { collectOrderPayload } from '../core/order-payload.js?v=docs-1';
 
 // No independent form or accounting UI. Reuse the approved button and helper.
 export function bindOrderSave({ session, validate, branch, photos, draft, mediaBusy = () => false,
@@ -29,6 +31,9 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   let lastPhase = '';
   let confirmedRequest = '';
   let manager;
+  let documentsNumber = '';
+  const vault = createMediaVault(session.profile.uid, APP_CONFIG.trial ? 'QA' : '');
+  if (APP_CONFIG.trial) { const banner = document.createElement('p'); banner.className = 'order-trial-banner'; banner.textContent = 'ENSAYO AISLADO · Mismo formulario, sin ventas ni consecutivos de producción. Solo cuenta propietaria.'; form.insertAdjacentElement('beforebegin', banner); }
   const disable = (node, value) => {
     if (value) { if (!disabled.has(node)) disabled.set(node, node.disabled); node.disabled = true; }
     else if (disabled.has(node)) { node.disabled = disabled.get(node); disabled.delete(node); }
@@ -48,7 +53,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     node.addEventListener('click', () => { void handler(); });
     status.append(node);
   }
-  const orderPath = number => `/orden.html?op=${encodeURIComponent(number)}`;
+  const orderPath = number => withPreview(`/orden.html?op=${encodeURIComponent(number)}`);
   function render(state) {
     freeze(state.locked);
     const gate = document.getElementById('quote-branch-gate');
@@ -71,10 +76,17 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     button.textContent = state.phase === 'saving' ? 'Guardando pedido…' : state.phase === 'confirmed' ? 'Pedido guardado' : 'Guardar orden de pedido';
     button.setAttribute('aria-busy', String(['saving', 'checking'].includes(state.phase)));
     note.textContent = state.phase === 'disabled' || state.phase === 'ready' ? defaultNote : state.message;
+    if (state.phase === 'confirmed' && state.contractVersion === 2 && documentsNumber === state.number) return;
     status.replaceChildren();
     status.hidden = !['uncertain', 'retry', 'confirmed', 'other-tab', 'blocked', 'rejected'].includes(state.phase);
     if (!status.hidden) {
-      if (state.phase === 'confirmed') {
+      if (state.phase === 'confirmed' && state.contractVersion === 2) {
+        documentsNumber = state.number;
+        mountOrderDocuments({ number: state.number, uid: session.profile.uid, host: status, vault, request, auto: true, onComplete: () => {
+          draft()?.complete();
+          action('Nuevo pedido', async () => { const result = await manager.startNew(); if (result.phase === 'new') window.location.reload(); });
+        } });
+      } else if (state.phase === 'confirmed') {
         action('Abrir pedido', () => navigate(orderPath(state.number)));
         action('Nuevo pedido', async () => {
           const result = await manager.startNew(() => draft()?.complete());
@@ -92,6 +104,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   try {
     manager = createOrderSave({ uid: session.profile.uid, request, durable: window.localStorage,
       temporary: window.sessionStorage, locks: window.navigator.locks, crypto: window.crypto,
+      environment: APP_CONFIG.trial ? 'QA' : '',
       activeUid: () => readSessionSnapshot()?.profile.uid || '', onState: render });
   } catch {
     button.disabled = true;
@@ -107,13 +120,16 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
       return;
     }
     let payload;
-    try { payload = collectOrderPayload({ branch: branch(), photos: photos() }); }
-    catch (failure) { error.textContent = failure.message; return; }
+    try {
+      freeze(true);
+      const manifests = manager.getState().contractVersion === 2 ? await preparePhotoManifests(photos(), vault) : null;
+      payload = collectOrderPayload({ branch: branch(), photos: photos(), photoManifests: manifests });
+    } catch (failure) { freeze(false); render(manager.getState()); error.textContent = failure.message; return; }
     draft()?.save();
     error.textContent = '';
     render({ phase: 'saving', locked: true, canSave: false, message: 'Preparando el guardado del pedido…' });
     const result = await manager.save(payload);
-    if (result.phase === 'confirmed') navigate(orderPath(result.number));
+    if (result.phase === 'confirmed' && result.contractVersion !== 2) navigate(orderPath(result.number));
   });
   // Storage events never resend. Other tabs explicitly reconcile the journal.
   window.addEventListener('storage', event => {

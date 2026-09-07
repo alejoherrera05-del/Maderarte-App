@@ -12,7 +12,7 @@ export function clearFormDrafts(storage = window.sessionStorage) {
 export function bindFormDraft({ session, type, capture, restore, root = document, storage = window.sessionStorage }) {
   const uid = session?.profile?.uid;
   if (!uid) return null;
-  const key = `${PREFIX}${uid}.${type}`;
+  const key = `${PREFIX}${uid}.${type}${new URL(window.location.href).searchParams.get('ensayo') === '1' ? '.QA' : ''}`;
   const status = root.getElementById('quote-draft-status');
   let recovering = true;
   let dirty = false;

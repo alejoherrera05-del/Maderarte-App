@@ -8,7 +8,7 @@ directory = "./public"
 binding = "ASSETS"
 html_handling = "none"
 not_found_handling = "404-page"
-run_worker_first = [ "/api/maderarte", "/api/maderarte/*" ]
+run_worker_first = [ "/api/maderarte", "/api/maderarte/*", "/documento.html" ]
 
 [vars]
 MADERARTE_APP_ENV = "preparacion"

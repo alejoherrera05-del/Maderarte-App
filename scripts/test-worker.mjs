@@ -43,3 +43,10 @@ assert.equal(noAssetsResponse.status, 503);
 assert.equal((await readJson(noAssetsResponse)).code, 'ASSETS_NOT_CONFIGURED');
 
 console.log('OK · Cloudflare Worker y Static Assets verificados');
+
+const documentResponse = await handleWorkerRequest(new Request('https://app.example.com/documento.html'), envWithAssets);
+assert.equal(documentResponse.headers.get('X-Frame-Options'), 'SAMEORIGIN');
+assert.match(documentResponse.headers.get('Content-Security-Policy'), /frame-ancestors 'self'/);
+assert.equal(documentResponse.headers.get('Cache-Control'), 'no-store');
+assert.equal(await documentResponse.text(), 'asset:/documento.html');
+console.log('OK · visor documental restringido al mismo origen');
