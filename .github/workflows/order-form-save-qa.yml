@@ -1,0 +1,43 @@
+name: Order form save QA
+
+on:
+  pull_request:
+    paths:
+      - 'public/js/core/order-*.js'
+      - 'public/js/core/form-draft.js'
+      - 'public/js/pages/pedido-save.js'
+      - 'public/js/pages/cotizacion.js'
+      - 'public/pedido.html'
+      - 'scripts/test-order-save-client.mjs'
+      - 'scripts/order_save_browser_qa.py'
+      - '.github/workflows/order-form-save-qa.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm test
+      - run: pip install playwright==1.55.0
+      - name: Formulario real con API sintética (sin Google)
+        run: python scripts/order_save_browser_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: order-form-save-browser
+          path: artifacts/order-save-browser/
+          if-no-files-found: warn

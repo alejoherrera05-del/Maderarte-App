@@ -1,7 +1,10 @@
+import { clearOrderSaveSnapshots } from './order-save.js?v=save-1';
+
 const PREFIX = 'maderarte.form-draft.v1.';
 const MAX_AGE = 8 * 60 * 60 * 1000;
 
 export function clearFormDrafts(storage = window.sessionStorage) {
+  clearOrderSaveSnapshots(storage);
   for (const key of Object.keys(storage)) if (key.startsWith(PREFIX)) storage.removeItem(key);
 }
 
@@ -14,6 +17,8 @@ export function bindFormDraft({ session, type, capture, restore, root = document
   let recovering = true;
   let dirty = false;
   let safe = true;
+  let locked = false;
+  let completed = false;
   const tell = message => {
     if (!status) return;
     const copy = root.createElement('span');
@@ -22,6 +27,7 @@ export function bindFormDraft({ session, type, capture, restore, root = document
     discard.type = 'button';
     discard.textContent = 'Descartar borrador';
     discard.addEventListener('click', () => {
+      if (locked || completed) return;
       if (!window.confirm('¿Descartar este borrador y empezar uno nuevo? Se borrarán los datos escritos en este formulario.')) return;
       try { storage.removeItem(key); } catch { /* A failed draft remains only in memory. */ }
       dirty = false;
@@ -30,7 +36,7 @@ export function bindFormDraft({ session, type, capture, restore, root = document
     status.replaceChildren(copy, discard);
   };
   function save() {
-    if (recovering || !dirty) return;
+    if (recovering || !dirty || locked || completed) return;
     try {
       const data = capture();
       storage.setItem(key, JSON.stringify({ version: 1, uid, type, savedAt: Date.now(), data }));
@@ -62,7 +68,7 @@ export function bindFormDraft({ session, type, capture, restore, root = document
       tell('No fue posible recuperar el borrador anterior. Revisa los datos del formulario.');
     } finally { recovering = false; }
   })();
-  function changed() { if (!recovering) { dirty = true; save(); } }
+  function changed() { if (!recovering && !locked && !completed) { dirty = true; save(); } }
   root.getElementById('quote-form')?.addEventListener('input', changed);
   root.getElementById('quote-form')?.addEventListener('change', changed);
   window.addEventListener('pagehide', save);
@@ -70,5 +76,13 @@ export function bindFormDraft({ session, type, capture, restore, root = document
     save();
     if (dirty && !safe) { event.preventDefault(); event.returnValue = ''; }
   });
-  return { ready, changed, save };
+  return { ready, changed, save,
+    setLocked(value) { locked = Boolean(value); },
+    complete() {
+      // Prevent pagehide from resurrecting an already confirmed order as a draft.
+      completed = true; locked = true; dirty = false;
+      try { storage.removeItem(key); } catch { /* The save journal still prevents another submission. */ }
+      status?.replaceChildren();
+    }
+  };
 }
