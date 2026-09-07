@@ -2,7 +2,7 @@ name: Integrate reviewed document family
 on:
   push:
     branches: [fix/order-progress-refined-pdf]
-    paths: ['tools/apply-document-family.py']
+    paths: ['tools/apply-document-family.py', 'scripts/document_family_visual_qa.py']
 permissions:
   contents: write
 jobs:
