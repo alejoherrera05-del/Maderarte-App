@@ -1,0 +1,44 @@
+name: Integrate reviewed order refinements
+on:
+  push:
+    branches: [fix/order-progress-refined-pdf]
+    paths: ['tools/apply-order-refinements.py', '.github/workflows/integrate-order-refinements.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    if: github.repository == 'alejoherrera05-del/Maderarte-App' && github.ref == 'refs/heads/fix/order-progress-refined-pdf'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python tools/apply-order-refinements.py
+      - run: npm ci
+      - run: npm test
+      - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
+      - run: python scripts/order_progress_browser_qa.py
+      - run: python scripts/order_document_render_qa.py
+      - name: Commit only verified application and tests
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json public scripts
+          git commit -m 'Connect confirmed save progress and refine order PDF with overall balance'
+          git push origin HEAD:fix/order-progress-refined-pdf
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: order-refinements-integration
+          path: |
+            artifacts/order-progress/
+            artifacts/order-documents/
+          retention-days: 7
