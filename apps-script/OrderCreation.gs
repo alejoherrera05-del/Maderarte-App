@@ -287,7 +287,11 @@ function createOrder_(payload, context) {
     orderCreationSchemaReady_();
     var fingerprint = sha256_(JSON.stringify(draft));
     var replay = orderCreationReplay_(requestId, session, fingerprint);
-    if (replay) return { saved: true, replayed: true, order: replay };
+    if (replay) {
+      clearConfirmedOrderFence_();
+      return { saved: true, replayed: true, order: replay };
+    }
+    assertNoUnresolvedOrderFence_();
     var branches = listRows_('Sedes').filter(function(row) { return row.Sede_ID === draft.branch; });
     if (branches.length !== 1 || branches[0].Estado !== 'ACTIVA') throw appError_('BRANCH_NOT_AVAILABLE', 'La sede no está disponible para guardar.', 403);
     var clients = listRows_('Clientes').filter(function(row) { return String(row.Cedula_NIT).trim() === draft.client.document; });
@@ -297,12 +301,17 @@ function createOrder_(payload, context) {
     var batch = buildOrderCreationBatch_(draft, requestId, session, branches[0], clients[0], fingerprint);
     // Make SpreadsheetApp's prior auth touches visible before the REST batch.
     SpreadsheetApp.flush();
+    // Persist the admission fence BEFORE sending. A timeout may leave Google
+    // processing the request after this Apps Script execution releases its lock.
+    // A missing result is therefore NOT permission to submit another batch.
+    reserveOrderFence_(requestId, session.profile.uid, fingerprint);
     try { orderAtomicBatch_(batch.requests); }
     catch (error) {
       // The response can be lost AFTER Google committed. Do not reserve a new
       // number, repeat a payment, roll back blindly, or tell the user it failed.
       throw appError_('ORDER_SAVE_UNCERTAIN', 'No se confirmó la respuesta del guardado. Consulta el resultado con el mismo identificador antes de iniciar otro pedido.', 503, { requestId: requestId });
     }
+    clearConfirmedOrderFence_();
     return { saved: true, replayed: false, order: batch.result };
   } finally { lock.releaseLock(); }
 }
@@ -316,7 +325,9 @@ function orderCreationStatus_(payload, context) {
     var session = validateSessionToken_(context.sessionToken, false);
     requirePermission_(session, 'ordenes.create');
     var result = orderCreationReplay_(requestId, session, '');
-    return result ? { saved: true, order: result } : { saved: false, state: 'NO_CONFIRMADO', requestId: requestId, retrySameRequest: true };
+    if (result) { clearConfirmedOrderFence_(); return { saved: true, order: result }; }
+    var fence = readOrderFence_();
+    return { saved: false, state: fence ? 'REVISION_REQUERIDA' : 'NO_CONFIRMADO', requestId: requestId, retrySameRequest: !fence };
   } finally { lock.releaseLock(); }
 }
 
