@@ -1,5 +1,5 @@
 /* One document family for quotes and orders. Loaded only by document forms/renderers.
- * Keep the approved sizes, layout, branding and content. Regular body, medium headings.
+ * Keep the approved layout, branding and content. Regular body, medium headings.
  * Explicit specificity also covers the shared editorial stylesheet loaded asynchronously.
  */
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page strong,
@@ -59,7 +59,7 @@
 [data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > span { font-weight:500 !important; }
 [data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > strong {
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif !important;
-  font-size:22px !important;
+  font-size:24px !important;
   line-height:1.25 !important;
   font-weight:500 !important;
   letter-spacing:-.025em;
