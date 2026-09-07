@@ -8,6 +8,13 @@ ORIGIN='http://127.0.0.1:4177'
 def api(path,data=None):
     req=urllib.request.Request(ORIGIN+path,data=None if data is None else json.dumps(data).encode(),headers={'Content-Type':'application/json'})
     return json.load(urllib.request.urlopen(req,timeout=90))
+def wait_evidence(predicate):
+    deadline=time.monotonic()+60
+    while time.monotonic()<deadline:
+        data=api('/__qa/evidence')
+        if predicate(data):return data
+        time.sleep(.2)
+    raise AssertionError('El estado esperado del transporte simulado no se confirmó')
 photos=[]
 for i in (1,2):
     file=OUT/f'referencia-{i}.png';im=Image.new('RGB',(400,240),(220-i*15,222,225));ImageDraw.Draw(im).text((24,100),f'REFERENCIA TECNICA {i} - NO PRODUCTO',fill=(30,30,30));im.save(file);photos.append(file)
@@ -51,9 +58,14 @@ try:
             if width==1440:api('/__qa/faults',{'ORDEN_FOTO_GUARDAR':True,'INTERNO_DOCUMENTO_CONFIRMAR':True})
             page.locator('#quote-submit').click()
             if width==1440:
-                page.get_by_role('button',name='Completar documentos',exact=True).wait_for(timeout=20000)
-                page.reload();page.get_by_role('button',name='Completar documentos',exact=True).wait_for(timeout=60000)
-                page.get_by_role('button',name='Completar documentos',exact=True).click()
+                # A button exists during progress too. Wait for the failure state
+                # rather than clicking while the recovery routine still owns its lock.
+                wait_evidence(lambda d:any(x.get('mimeType')=='image/png' for x in d['files']))
+                expect(page.locator('.quote-write-note')).to_contain_text('Faltan sus documentos',timeout=20000)
+                page.reload()
+                wait_evidence(lambda d:bool(d.get('orders')) and d['orders'][0]['Estado_Documentos']=='COMPLETO')
+                expect(page.locator('.quote-write-note')).to_contain_text('Faltan sus documentos',timeout=20000)
+                page.reload()
                 page.get_by_role('button',name='Abrir pedido',exact=True).wait_for(timeout=60000)
                 page.get_by_role('button',name='Abrir pedido',exact=True).click()
             page.wait_for_url('**/orden.html?**',timeout=60000)
