@@ -12,7 +12,8 @@ import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/ord
 
 import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
 import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
-import { bindFormDraft } from '../core/form-draft.js?v=agreements-1';
+import { bindFormDraft } from '../core/form-draft.js?v=save-1';
+import { bindOrderSave } from './pedido-save.js?v=save-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
@@ -38,6 +39,7 @@ const state = {
   quoteMeta: null,
   nextItemId: 1,
   removedItems: [],
+  mediaReads: 0,
   photos: new Map()
 };
 
@@ -266,7 +268,10 @@ function readFile(file) {
 async function addPhotos(itemId, files) {
   const images = Array.from(files || []).filter(file => String(file.type || '').startsWith('image/'));
   if (!images.length) return;
-  const loaded = await Promise.all(images.map(readFile));
+  let loaded;
+  state.mediaReads++;
+  try { loaded = await Promise.all(images.map(readFile)); }
+  finally { state.mediaReads--; }
   const removed = state.removedItems.find(item => item.id === itemId);
   if (document.querySelector(`.quote-item[data-item-id="${itemId}"]`)) {
     state.photos.set(itemId, (state.photos.get(itemId) || []).concat(loaded));
@@ -645,5 +650,10 @@ guardStandalonePage({
       state.draft = bindFormDraft({ session, type: COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote', capture: captureDraft, restore: restoreDraft });
       await state.draft?.ready;
     }
+    if (COMMERCIAL_DOCUMENT.isOrder) state.save = bindOrderSave({
+      session, validate: () => { state.validating = true; calculate(); return validateForm(); },
+      branch: () => state.quoteMeta?.branch || '', photos: () => state.photos,
+      draft: () => state.draft, mediaBusy: () => state.mediaReads > 0
+    });
   }
 });
