@@ -251,12 +251,12 @@ function signatureMarkup(name) {
   return `<div class="quote-editorial-signature"><span>${escapeHtml(clean)}</span></div>`;
 }
 
-function footerMarkup(pageNumber, totalPages, issued = false) {
+function footerMarkup(pageNumber, totalPages, issued = false, sandbox = false) {
   return `<footer class="quote-editorial-footer quote-document-footer">
     <img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
     <div class="quote-editorial-footer-copy">
       <strong>Maderarte · Sistema Maddy</strong>
-      <span>${COMMERCIAL_DOCUMENT.isOrder && !issued ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente'} · v${escapeHtml(APP_CONFIG.version)}</span>
+      <span>${sandbox ? 'PRUEBA · SIN VALIDEZ COMERCIAL' : COMMERCIAL_DOCUMENT.isOrder && !issued ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente'} · v${escapeHtml(APP_CONFIG.version)}</span>
       <span>${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
     </div>
     <span class="quote-document-page-number">Página ${pageNumber} de ${totalPages}</span>
@@ -323,7 +323,7 @@ function appendixGroupMarkup(group) {
   </article>`;
 }
 
-function appendixPageMarkup(groups, number, pageNumber, totalPages, issued = false) {
+function appendixPageMarkup(groups, number, pageNumber, totalPages, issued = false, sandbox = false) {
   return `<section class="quote-preview-page quote-preview-appendix-page" data-page-number="${pageNumber}" data-page-count="${totalPages}" data-group-count="${groups.length}">
     <div class="quote-annex-content">
       <div class="quote-preview-annex-head">
@@ -332,7 +332,7 @@ function appendixPageMarkup(groups, number, pageNumber, totalPages, issued = fal
       </div>
       <div class="quote-appendix-groups">${groups.map(appendixGroupMarkup).join('')}</div>
     </div>
-    ${footerMarkup(pageNumber, totalPages, issued)}
+    ${footerMarkup(pageNumber, totalPages, issued, sandbox)}
   </section>`;
 }
 
@@ -360,7 +360,7 @@ function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
         ${investmentMarkup(data)}
       </div>` : ''}
       <div class="quote-editorial-signoff">
-        ${footerMarkup(pageNumber, totalPages, data.issued)}
+        ${footerMarkup(pageNumber, totalPages, data.issued, data.sandbox)}
         ${page.closing ? signatureMarkup(data.advisor) : ''}
       </div>
     </div>
@@ -498,7 +498,7 @@ export async function renderConfirmedOrder(snapshot, target) {
   const total = pages.length + annex.length;
   if (total > 60) throw new Error('El documento excede el límite de páginas.');
   target.innerHTML = pages.map((page, index) => mainPageMarkup(data, page, index + 1, total)).join('')
-    + annex.map((groups, index) => appendixPageMarkup(groups, data.number, pages.length + index + 1, total, true)).join('');
+    + annex.map((groups, index) => appendixPageMarkup(groups, data.number, pages.length + index + 1, total, true, snapshot.sandbox)).join('');
   await document.fonts?.ready;
   await Promise.all([...target.querySelectorAll('img')].map(async image => {
     await image.decode();

@@ -1,4 +1,4 @@
-import { apiRequest } from '../core/api.js';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { photoReference, finishOrderDocuments } from '../core/order-media.js?v=documents-1';
 // Photos and PDFs are read through the authenticated app. Drive files stay private.
 export async function bindOrderDocuments(root, number, request = apiRequest) {

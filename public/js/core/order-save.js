@@ -19,9 +19,10 @@ export function clearOrderSaveSnapshots(storage) {
 }
 
 export function createOrderSave({ uid, request, durable, temporary, locks, crypto,
-  activeUid = () => uid, onState = () => {} }) {
+  activeUid = () => uid, onState = () => {}, scope = '' }) {
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
-  const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}`;
+  if (scope && !/^QA-[a-f0-9]{32}$/.test(scope)) throw fail('SANDBOX_INVALID', 'Ensayo no válido.');
+  const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
   let busy = false;
   let supportsMedia = false;
   let state = { phase: 'disabled', canSave: false, locked: false, message: '' };

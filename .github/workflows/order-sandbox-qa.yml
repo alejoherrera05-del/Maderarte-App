@@ -5,9 +5,10 @@ on:
   pull_request:
     paths:
       - 'apps-script/**'
-      - 'public/js/**'
-      - 'public/prueba-pedido.html'
-      - 'scripts/*sandbox*'
+      - 'functions/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'package.json'
       - '.github/workflows/order-sandbox-qa.yml'
 permissions:
   contents: read
@@ -22,9 +23,16 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - run: npm ci
       - run: npm test
-      - name: Publicar fuente exacta y resultados no comerciales
+      - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
+      - name: Formulario, Worker y Cerebro originales con Google simulado
+        run: python scripts/owner_sandbox_browser_qa.py
+      - run: node scripts/export-cerebro.mjs
+      - name: Fuente exacta de la revisión
         if: always()
         run: |
           mkdir -p artifacts/owner-sandbox
@@ -34,5 +42,7 @@ jobs:
         if: always()
         with:
           name: owner-sandbox-qa
-          path: artifacts/owner-sandbox/
+          path: |
+            artifacts/owner-sandbox/
+            dist/cerebro-manual/
           retention-days: 7

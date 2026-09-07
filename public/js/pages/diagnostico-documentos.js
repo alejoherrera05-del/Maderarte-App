@@ -1,5 +1,5 @@
 import { guardStandalonePage } from '../core/page-guard.js';
-import { apiRequest } from '../core/api.js';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 guardStandalonePage({ permission: 'config.read', async render() {
   const root = document.getElementById('document-diagnostic'); root.hidden = false;
   const button = document.getElementById('run-document-diagnostic');

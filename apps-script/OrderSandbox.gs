@@ -59,7 +59,9 @@ function osScopedProperty_(name) {
 }
 function osAuthSheet_(name) {
   if (!OWNER_SANDBOX_CONTEXT_ || !['Usuarios', 'Roles', 'Sesiones', 'Invitaciones'].includes(name)) return null;
-  return SpreadsheetApp.openById(osProperty_('SPREADSHEET_ID')).getSheetByName(name);
+  var sheet = SpreadsheetApp.openById(osProperty_('SPREADSHEET_ID')).getSheetByName(name);
+  if (!sheet) osFail_('SANDBOX_AUTH_SOURCE_MISSING', 'Falta una tabla de identidad en la base original. No se usará la del ensayo.');
+  return sheet;
 }
 function osDatabaseName_() { return OWNER_SANDBOX_CONTEXT_ ? OWNER_SANDBOX_CONTEXT_.sheetName : MADERARTE_APP.SPREADSHEET_NAME; }
 function osFenceKey_() { return 'ORDER_CREATION_PENDING' + (OWNER_SANDBOX_CONTEXT_ ? ':' + OWNER_SANDBOX_CONTEXT_.id : ''); }
@@ -108,9 +110,11 @@ function osEnsureSheet_(s) {
     else if (s.sheetCreationSent) osFail_('SANDBOX_PROVISION_UNCERTAIN', 'Google aún no confirma la hoja de prueba. Vuelve a consultar; no se creará otra.');
     else {
       s.sheetCreationSent = true; osStore_(s);
-      var result = JSON.parse(mdDrive_('drive/v3/files?fields=id', { method: 'post', contentType: 'application/json', payload: JSON.stringify({
+      var result;
+      try { result = JSON.parse(mdDrive_('drive/v3/files?fields=id', { method: 'post', contentType: 'application/json', payload: JSON.stringify({
         name: s.sheetName, mimeType: 'application/vnd.google-apps.spreadsheet', parents: [s.containerId], appProperties: osMarker_(s, 'sheet')
-      }) }).getContentText());
+      }) }).getContentText()); }
+      catch (error) { osFail_('SANDBOX_PROVISION_UNCERTAIN', 'Falta confirmar la hoja de prueba. Consulta el mismo ensayo; no se creará otra.'); }
       if (!result.id) osFail_('SANDBOX_PROVISION_UNCERTAIN', 'Falta confirmar la hoja de prueba.');
       s.sheetId = result.id;
     }
@@ -269,7 +273,8 @@ function osCleanupPlan_(s) {
       osFail_('SANDBOX_DOCUMENTS_PENDING', 'Primero confirma el pedido y completa sus archivos. No se limpiará un guardado incierto.');
     }
     listRows_('Carpetas_Documentales').forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
-    listRows_('Archivos_Orden').forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
+    var slots = listRows_('Archivos_Orden');
+    slots.forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
     var candidates = [];
     function visit(id, depth) {
       if (depth > 8) osFail_('SANDBOX_LIMIT', 'La estructura del ensayo no es la esperada.');
@@ -283,6 +288,9 @@ function osCleanupPlan_(s) {
       candidates.push({ id: id, parent: spec.parent, role: spec.role, folder: meta.mimeType === 'application/vnd.google-apps.folder' });
     }
     visit(s.containerId, 0);
+    // Uploaded resources moved out of the tree must not be silently orphaned.
+    var visitedIds = candidates.map(function(entry) { return entry.id; });
+    if (slots.some(function(slot) { return slot.Estado !== 'LISTO' || !visitedIds.includes(slot.File_ID); })) osFail_('SANDBOX_IDENTITY_MISMATCH', 'Falta un archivo confirmado dentro del ensayo. No se limpiará parcialmente.');
     if (!candidates.some(function(x) { return x.id === s.sheetId; }) || !candidates.some(function(x) { return x.id === s.rootId; })) osFail_('SANDBOX_IDENTITY_MISMATCH', 'No se encontró el espacio completo.');
     return candidates;
   } finally { OWNER_SANDBOX_CONTEXT_ = null; }
