@@ -14,7 +14,7 @@ Un error conserva los pasos confirmados y muestra la etapa sin confirmar; permit
 
 Se muestra solo el saldo general del pedido: total menos pago inicial confirmado. El reparto de abonos y los saldos por mueble permanecen ocultos. Los datos confirmados con saldo incoherente se rechazan antes de emitir el PDF.
 
-`pedido-document-refined.css` ajusta la jerarquía exclusivamente en documentos de orden: pesos regulares en cliente, productos y valores; peso medio en encabezados y saldo. Se conservan membrete, logotipo, firma, anexo y paginador. No modifica el documento de cotización.
+`commercial-document-refined.css` comparte el acabado entre cotización y pedido. `pedido-document-refined.css` conserva solo el resumen y el saldo propios de la OP. Véase DOCUMENT_FAMILY_REFINEMENT.md para la extensión solicitada por el propietario.
 
 ## Comprobación y alcance
 

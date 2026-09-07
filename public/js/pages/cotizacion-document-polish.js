@@ -218,7 +218,7 @@ function investmentMarkup(data) {
   return `<section class="quote-editorial-investment">
     <div class="quote-editorial-investment-context">${breakdown}</div>
     <div class="quote-editorial-total">
-      <span>Total</span>
+      <span>Total cotizado</span>
       <strong>${escapeHtml(money(data.total))}</strong>
 
     </div>
@@ -379,6 +379,8 @@ async function measuredPages(data) {
     const measured = frame.contentDocument;
     measured.documentElement.lang = 'es';
     measured.body.className = 'quote-page';
+    // Measurement must use the same scoped document styles as the visible/printed page.
+    measured.body.dataset.commercialDocument = COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote';
     const ready = [];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(source => {
       const link = measured.createElement('link');

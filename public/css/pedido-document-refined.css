@@ -1,34 +1,4 @@
-/* Quiet order-only finish. The approved letterhead, sizes and pagination remain.
- * Weights are explicit because earlier shared layers used 650–800 throughout.
- */
-[data-commercial-document="order"] .quote-preview-page strong,
-[data-commercial-document="order"] .quote-preview-page b { font-weight:500; }
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-client-field strong,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-company-copy strong,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-company-copy b,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-secondary-meta strong,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-item-title h3,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-item-total,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-item-quantity,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-item-number,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-item-facts strong { font-weight:400 !important; }
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-number strong { font-weight:500 !important; }
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-client-heading span,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-client-field small,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-table-head,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-table-head span,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-section-head h2,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-section-kicker,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-section-head > strong,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-number small,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-meta-label { font-weight:500 !important; }
-[data-commercial-document="order"] .quote-preview-page .order-document-agreement { font-weight:400 !important; }
-[data-commercial-document="order"] .quote-preview-page .order-document-closing .quote-editorial-notes strong,
-[data-commercial-document="order"] .quote-preview-page .order-document-conditions strong { font-weight:500; }
-[data-commercial-document="order"] .quote-preview-page .quote-appendix-group h3,
-[data-commercial-document="order"] .quote-preview-page .quote-appendix-header h2,
-[data-commercial-document="order"] .quote-preview-page .quote-editorial-footer-copy strong,
-[data-commercial-document="order"] .quote-preview-page .quote-document-page-number { font-weight:400 !important; }
+/* Shared typography: commercial-document-refined.css. Only OP finances belong here. */
 
 /* Only the overall remaining balance returns. Per-item allocation stays hidden. */
 [data-commercial-document="order"] .quote-preview-page .order-finance-balance { display:block !important; }

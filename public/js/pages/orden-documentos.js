@@ -73,8 +73,9 @@ export async function bindOrderDocuments(root, number, request = apiRequest) {
         } catch (error) { popup?.close(); throw error; }
       }));
     } else {
+      let progress;
       container.append(button('Completar documentos de esta orden', async () => {
-        const progress = createOrderProgress();
+        progress ||= createOrderProgress();
         progress.begin();
         progress.update({ step: 'prepare', status: 'complete', message: 'Datos de la orden recuperados.' });
         progress.update({ step: 'record', status: 'complete', number, message: 'El pedido ya está registrado. No se duplicarán los pagos.' });

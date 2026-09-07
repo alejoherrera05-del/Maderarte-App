@@ -1,5 +1,5 @@
 import { bindSandboxBanner } from '../core/order-sandbox-context.js';
-import { bindOrderDocuments } from './orden-documentos.js?v=progress-1';
+import { bindOrderDocuments } from './orden-documentos.js?v=family-1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { date, dateTime, escapeHtml, humanizeCode, money, safeExternalUrl, text } from '../core/format.js';
