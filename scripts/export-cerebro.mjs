@@ -24,7 +24,7 @@ const header = `/*
  * Commit: ${commit}
  * Copiar TODO este archivo en un unico archivo Codigo.gs del proyecto existente.
  * No pegar tambien los modulos separados: duplicaria las funciones.
- * appsscript.json se pega aparte, en el manifiesto de Apps Script.
+ * Conservar el manifiesto actual; el JSON del paquete es solo referencia.
  * Configurar los valores privados en Propiedades del script, no aqui.
  * Etapa de lectura: las escrituras comerciales permanecen deshabilitadas.
  * Funcion de comprobacion: verificarBaseCero (no crea ni borra registros).

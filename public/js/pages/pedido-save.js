@@ -1,9 +1,10 @@
+import { currentSandboxId, sandboxLink } from '../core/order-sandbox-context.js';
 import { prepareOrderMedia } from '../core/order-media.js?v=documents-1';
 import { APP_CONFIG } from '../core/config.js';
-import { apiRequest } from '../core/api.js';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { hasPermission } from '../core/permissions.js';
 import { readSessionSnapshot } from '../core/session.js';
-import { createOrderSave } from '../core/order-save.js?v=documents-1';
+import { createOrderSave } from '../core/order-save.js?v=sandbox-1';
 import { collectOrderPayload } from '../core/order-payload.js?v=documents-1';
 
 // No independent form or accounting UI. Reuse the approved button and helper.
@@ -49,7 +50,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     node.addEventListener('click', () => { void handler(); });
     status.append(node);
   }
-  const orderPath = number => `/orden.html?op=${encodeURIComponent(number)}`;
+  const orderPath = number => sandboxLink(`/orden.html?op=${encodeURIComponent(number)}`);
   function render(state) {
     freeze(state.locked);
     const gate = document.getElementById('quote-branch-gate');
@@ -77,7 +78,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
         action('Abrir pedido', () => navigate(orderPath(state.number)));
-        action('Nuevo pedido', async () => {
+        if (!currentSandboxId()) action('Nuevo pedido', async () => {
           const result = await manager.startNew(() => draft()?.complete());
           if (result.phase === 'new') window.location.reload();
         });
@@ -94,7 +95,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     lastPhase = state.phase;
   }
   try {
-    manager = createOrderSave({ uid: session.profile.uid, request, durable: window.localStorage,
+    manager = createOrderSave({ uid: session.profile.uid, scope: currentSandboxId(), request, durable: window.localStorage,
       temporary: window.sessionStorage, locks: window.navigator.locks, crypto: window.crypto,
       activeUid: () => readSessionSnapshot()?.profile.uid || '', onState: render });
   } catch {

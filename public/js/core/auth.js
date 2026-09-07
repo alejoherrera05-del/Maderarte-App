@@ -1,6 +1,6 @@
 import { clearFormDrafts } from './form-draft.js?v=agreements-1';
 import { APP_CONFIG, withPreview } from './config.js';
-import { apiRequest, ApiError } from './api.js';
+import { apiRequest, ApiError } from './api.js?v=sandbox-1';
 import { clearSessionSnapshot, getDeviceMetadata, readSessionSnapshot, writeSessionSnapshot } from './session.js';
 
 const FIREBASE_BASE = 'https://identitytoolkit.googleapis.com/v1';

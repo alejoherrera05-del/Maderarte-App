@@ -34,6 +34,9 @@ function routeAction_(action, payload, context) {
     case 'ORDEN_FOTO_LEER': return mdReadPhoto_(payload, context);
     case 'INTERNO_DOCUMENTO_PREPARAR': return mdPreparePdf_(payload, context);
     case 'INTERNO_DOCUMENTO_CONFIRMAR': return mdConfirmPdf_(payload, context);
+    case 'PRUEBA_ESTADO': return osStatus_(context);
+    case 'PRUEBA_INICIAR': return osStart_(payload, context);
+    case 'PRUEBA_LIMPIAR': return osClean_(payload, context);
     case 'SISTEMA_ESTADO': return systemState_(context.session);
     case 'USUARIOS_LISTAR': return listUsers_(context.session);
     case 'INVITACION_CREAR': return createInvitation_(payload, context.session);
@@ -59,7 +62,8 @@ function doPost(event) {
       session: null
     };
     if (PUBLIC_ACTIONS_.indexOf(action) === -1) context.session = validateSessionToken_(context.sessionToken, true);
-    var data = routeAction_(action, body.payload && typeof body.payload === 'object' ? body.payload : {}, context);
+    var run = function() { return routeAction_(action, body.payload && typeof body.payload === 'object' ? body.payload : {}, context); };
+    var data = Object.prototype.hasOwnProperty.call(body, 'sandboxId') ? osAdmit_(body.sandboxId, action, context, run) : run();
     return jsonOutput_(success_('OK', 'Operación completada.', data, requestId, 200));
   } catch (error) {
     return jsonOutput_(failure_(error, requestId));

@@ -2,9 +2,10 @@
 // cannot fence a Google request still executing after an Apps Script timeout.
 // No customer data, values, tokens or notes are stored in Script Properties.
 var ORDER_CREATION_FENCE_KEY_ = 'ORDER_CREATION_PENDING';
+function orderFenceKey_() { return typeof osFenceKey_ === 'function' ? osFenceKey_() : ORDER_CREATION_FENCE_KEY_; }
 
 function readOrderFence_() {
-  var raw = getScriptProperties_().getProperty(ORDER_CREATION_FENCE_KEY_);
+  var raw = getScriptProperties_().getProperty(orderFenceKey_());
   if (!raw) return null;
   var fence = parseJson_(raw, null);
   if (!fence || !fence.requestId || !fence.uid || !fence.fingerprint) {
@@ -23,7 +24,7 @@ function clearConfirmedOrderFence_() {
   if (row.Estado !== 'CONFIRMADA' || row.Usuario !== fence.uid || row.Tipo_Operacion !== 'ORDEN_CREAR'
     || !saved || saved.fingerprint !== fence.fingerprint || !saved.result
     || saved.result.requestId !== fence.requestId) return false;
-  getScriptProperties_().deleteProperty(ORDER_CREATION_FENCE_KEY_);
+  getScriptProperties_().deleteProperty(orderFenceKey_());
   return true;
 }
 
@@ -38,8 +39,8 @@ function assertNoUnresolvedOrderFence_() {
 function reserveOrderFence_(requestId, uid, fingerprint) {
   assertNoUnresolvedOrderFence_();
   var serialized = JSON.stringify({ requestId: requestId, uid: uid, fingerprint: fingerprint, createdAt: now_().toISOString() });
-  getScriptProperties_().setProperty(ORDER_CREATION_FENCE_KEY_, serialized);
-  if (getScriptProperties_().getProperty(ORDER_CREATION_FENCE_KEY_) !== serialized) {
+  getScriptProperties_().setProperty(orderFenceKey_(), serialized);
+  if (getScriptProperties_().getProperty(orderFenceKey_()) !== serialized) {
     throw appError_('ORDER_RECOVERY_REQUIRED', 'No se pudo asegurar el guardado. Conserva el borrador.', 503);
   }
 }

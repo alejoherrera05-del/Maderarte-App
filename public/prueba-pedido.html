@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f1f1f0"><title>Prueba de pedido · Maddy</title>
+  <link rel="stylesheet" href="/css/tokens.css"><link rel="stylesheet" href="/css/base.css"><link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/owner-sandbox.css?v=sandbox-1">
+</head>
+<body class="od-page">
+  <main class="os-shell" id="owner-sandbox" hidden>
+    <a class="os-back" href="/index.html">← Volver a Maddy</a>
+    <header class="os-intro"><p class="os-eyebrow">Solo propietario · entorno separado</p><h1>Prueba de pedido</h1><p>Usa el formulario aprobado con fotos y pagos ficticios. Los datos se guardan en Google, pero separados de la operación comercial.</p></header>
+    <section class="os-card"><h2>Estado del ensayo</h2><p id="sandbox-message" role="status" aria-live="polite">Consultando tu prueba…</p><div id="sandbox-facts" class="os-facts"></div><div id="sandbox-actions" class="os-actions"></div></section>
+    <section class="os-card"><h2>Cómo se revisa</h2><p>Prepara el espacio y abre el formulario. Añade hasta tres muebles con sus fotografías y hasta cuatro pagos ficticios. Guarda, revisa los enlaces y vuelve a abrir la misma orden.</p><p><strong>Nada se borra por tiempo ni por cerrar la página.</strong> Primero comprueba el PDF, las fotos y los registros. La limpieza requiere tu confirmación y solo envía los recursos del ensayo a la papelera.</p></section>
+    <section class="os-card os-cleanup" id="sandbox-cleanup" hidden><h2>Finalizar y limpiar prueba</h2><p>Se enviarán a la papelera la hoja aislada y los archivos de este ensayo. No se borran definitivamente ni se toca la base original. Esta acción cierra el modo de prueba.</p>
+      <label for="sandbox-confirmation">Escribe exactamente: <strong id="sandbox-confirmation-text"></strong></label>
+      <input id="sandbox-confirmation" type="text" autocomplete="off" spellcheck="false">
+      <div class="os-actions"><button id="sandbox-clean" type="button" disabled>Confirmar limpieza de esta prueba</button><button id="sandbox-cancel" type="button">Cancelar</button></div>
+    </section>
+    <p class="os-foot">Maddy · v0.2.0 · La operación comercial permanece deshabilitada.</p>
+  </main>
+  <script type="module" src="/js/pages/owner-sandbox.js?v=sandbox-1"></script>
+</body></html>

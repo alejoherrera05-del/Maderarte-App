@@ -1,4 +1,4 @@
-import { renderConfirmedOrder } from './cotizacion-document-polish.js?v=documents-1';
+import { renderConfirmedOrder } from './cotizacion-document-polish.js?v=sandbox-1';
 let started = false;
 async function consume() {
   const node = document.getElementById('maddy-document-data');

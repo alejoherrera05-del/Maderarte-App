@@ -1,4 +1,4 @@
-import { apiRequest } from '../core/api.js';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { date, escapeHtml, humanizeCode, money, statusTone } from '../core/format.js';
 import { withPreview } from '../core/config.js';

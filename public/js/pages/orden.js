@@ -1,5 +1,6 @@
-import { bindOrderDocuments } from './orden-documentos.js?v=documents-1';
-import { apiRequest } from '../core/api.js';
+import { bindSandboxBanner } from '../core/order-sandbox-context.js';
+import { bindOrderDocuments } from './orden-documentos.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { date, dateTime, escapeHtml, humanizeCode, money, safeExternalUrl, text } from '../core/format.js';
 import { withPreview } from '../core/config.js';
@@ -77,6 +78,7 @@ guardStandalonePage({
         return;
       }
       root.innerHTML = renderOrder(response.data);
+      bindSandboxBanner(root);
       if (response.data.mediaWorkflow === 1) void bindOrderDocuments(root, number);
     } catch (error) {
       root.innerHTML = empty(error.message || 'No fue posible abrir el expediente.');

@@ -1,5 +1,6 @@
 function getSheet_(name) {
-  var sheet = getSpreadsheet_().getSheetByName(name);
+  var authSheet = typeof osAuthSheet_ === 'function' ? osAuthSheet_(name) : null;
+  var sheet = authSheet || getSpreadsheet_().getSheetByName(name);
   if (!sheet) throw appError_('SHEET_MISSING', 'No existe la pestaña ' + name + '.', 503);
   return sheet;
 }

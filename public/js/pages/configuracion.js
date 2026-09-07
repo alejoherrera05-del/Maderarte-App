@@ -1,4 +1,4 @@
-import { apiRequest } from '../core/api.js';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { previewApiData } from '../core/auth.js';
 import { dateTime, escapeHtml, humanizeCode } from '../core/format.js';

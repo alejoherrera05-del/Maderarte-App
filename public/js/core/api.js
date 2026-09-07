@@ -1,3 +1,4 @@
+import { sandboxRequestContext } from './order-sandbox-context.js';
 import { APP_CONFIG } from './config.js';
 
 export class ApiError extends Error {
@@ -22,9 +23,10 @@ function isTransientStatus(status) {
 }
 
 export async function apiRequest(action, payload = {}, options = {}) {
+  const sandbox = sandboxRequestContext(action);
   const requestId = options.requestId || createRequestId(action.replace(/[^A-Z0-9]/gi, '').slice(0, 10).toUpperCase() || 'WEB');
   const controller = new AbortController();
-  const timeoutMs = Math.max(1_000, Number(options.timeoutMs || APP_CONFIG.requestTimeoutMs));
+  const timeoutMs = Math.max(1_000, Number(options.timeoutMs || (sandbox.sandboxId ? 120000 : APP_CONFIG.requestTimeoutMs)));
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -37,7 +39,7 @@ export async function apiRequest(action, payload = {}, options = {}) {
         'Accept': 'application/json',
         'X-Maderarte-Request': requestId
       },
-      body: JSON.stringify({ action, payload, requestId, appVersion: APP_CONFIG.version }),
+      body: JSON.stringify({ action, payload, requestId, appVersion: APP_CONFIG.version, ...sandbox }),
       signal: controller.signal
     });
 

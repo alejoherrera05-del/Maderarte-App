@@ -119,6 +119,7 @@ async function forwardToAppsScript(request, env, body, requestId, internal = fal
     payload: body?.payload && typeof body.payload === 'object' ? body.payload : {},
     requestId,
     appVersion: String(body?.appVersion || ''),
+    ...(Object.hasOwn(body || {}, 'sandboxId') ? { sandboxId: body.sandboxId } : {}),
     proxyToken,
     sessionToken,
     proxyMeta: {
@@ -130,7 +131,7 @@ async function forwardToAppsScript(request, env, body, requestId, internal = fal
   };
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), internal || action === 'ORDEN_FOTO_GUARDAR' ? 60000 : UPSTREAM_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), internal || body?.sandboxId || action.startsWith('PRUEBA_') || action === 'ORDEN_FOTO_GUARDAR' ? 90000 : UPSTREAM_TIMEOUT_MS);
   let response;
   try {
     response = await fetch(upstreamUrl, {
@@ -202,7 +203,7 @@ export async function handleRequest(request, env = {}) {
     }
     if (action === 'ORDEN_DOCUMENTOS_FINALIZAR') {
       const result = await finalizeOrderDocuments(body?.payload?.number, env, async (internalAction, payload) => {
-        const response = await forwardToAppsScript(request, env, { action: internalAction, payload }, requestId, true);
+        const response = await forwardToAppsScript(request, env, { action: internalAction, payload, ...(Object.hasOwn(body || {}, 'sandboxId') ? { sandboxId: body.sandboxId } : {}) }, requestId, true);
         const reply = await response.json();
         if (!response.ok || reply.status !== 'success') throw Object.assign(new Error(reply.msg || 'Falta confirmar los documentos.'), { code: reply.code, status: response.status });
         return reply.data;

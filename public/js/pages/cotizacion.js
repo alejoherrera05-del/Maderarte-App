@@ -1,4 +1,5 @@
-import { apiRequest } from '../core/api.js';
+import { sandboxDraftType, bindSandboxBanner } from '../core/order-sandbox-context.js';
+import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
@@ -13,7 +14,7 @@ import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/ord
 import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
 import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
 import { bindFormDraft } from '../core/form-draft.js?v=save-1';
-import { bindOrderSave } from './pedido-save.js?v=documents-1';
+import { bindOrderSave } from './pedido-save.js?v=sandbox-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
@@ -647,9 +648,10 @@ guardStandalonePage({
     if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
     // QA preview stays ephemeral; real sessions recover only their own tab draft.
     if (!APP_CONFIG.preview.enabled) {
-      state.draft = bindFormDraft({ session, type: COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote', capture: captureDraft, restore: restoreDraft });
+      state.draft = bindFormDraft({ session, type: sandboxDraftType(COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote'), capture: captureDraft, restore: restoreDraft });
       await state.draft?.ready;
     }
+    if (COMMERCIAL_DOCUMENT.isOrder) bindSandboxBanner(app, { prefill: true });
     if (COMMERCIAL_DOCUMENT.isOrder) state.save = bindOrderSave({
       session, validate: () => { state.validating = true; calculate(); return validateForm(); },
       branch: () => state.quoteMeta?.branch || '', photos: () => state.photos,
