@@ -15,7 +15,8 @@ function getScriptProperties_() {
 }
 
 function requiredProperty_(name) {
-  var value = String(getScriptProperties_().getProperty(name) || '').trim();
+  var scoped = typeof osScopedProperty_ === 'function' ? osScopedProperty_(name) : null;
+  var value = scoped === null ? String(getScriptProperties_().getProperty(name) || '').trim() : String(scoped || '');
   if (!value) throw appError_('CONFIG_MISSING', 'Falta la propiedad privada ' + name + '.', 503);
   return value;
 }

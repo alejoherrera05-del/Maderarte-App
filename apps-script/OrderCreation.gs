@@ -270,23 +270,24 @@ function buildOrderCreationBatch_(draft, requestId, session, branchRow, clientRo
 
 function createOrder_(payload, context) {
   // Three closed gates. Deploying this code does NOT enable commercial writes.
-  if (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI') {
+  if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI')) {
     throw appError_('COMMERCIAL_WRITES_DISABLED', 'El guardado comercial todavía no está habilitado.', 403);
   }
   var draft = normalizeOrderCreation_(payload);
   var requestId = orderRequestId_(context.requestId);
-  var lock = LockService.getScriptLock();
+  var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw appError_('ORDER_SAVE_BUSY', 'Hay otro guardado en curso. Reintenta con el mismo pedido.', 503);
   try {
-    if (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI') {
+    if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI')) {
       throw appError_('COMMERCIAL_WRITES_DISABLED', 'El guardado fue deshabilitado. Conserva el borrador.', 403);
     }
     // Revalidate AFTER obtaining the lock; never trust the browser or stale context.
     var session = validateSessionToken_(context.sessionToken, false);
     orderCreationAllowed_(session, draft.branch);
     if (draft.payments.length) requirePermission_(session, 'abonos.create');
-    if (getSpreadsheet_().getName() !== MADERARTE_APP.SPREADSHEET_NAME) throw appError_('SPREADSHEET_NAME_MISMATCH', 'La base configurada no corresponde a Maderarte.', 503);
+    if (getSpreadsheet_().getName() !== (typeof osDatabaseName_ === 'function' ? osDatabaseName_() : MADERARTE_APP.SPREADSHEET_NAME)) throw appError_('SPREADSHEET_NAME_MISMATCH', 'La base configurada no corresponde a Maderarte.', 503);
     orderCreationSchemaReady_();
+    if (typeof osValidateDraft_ === 'function') osValidateDraft_(draft, requestId);
     var fingerprint = sha256_(JSON.stringify(draft));
     var replay = orderCreationReplay_(requestId, session, fingerprint);
     if (replay) {
@@ -306,6 +307,7 @@ function createOrder_(payload, context) {
     // Persist the admission fence BEFORE sending. A timeout may leave Google
     // processing the request after this Apps Script execution releases its lock.
     // A missing result is therefore NOT permission to submit another batch.
+    if (typeof osReserveOrder_ === 'function') osReserveOrder_(requestId);
     reserveOrderFence_(requestId, session.profile.uid, fingerprint);
     try { orderAtomicBatch_(batch.requests); }
     catch (error) {
@@ -321,7 +323,7 @@ function createOrder_(payload, context) {
 function orderCreationStatus_(payload, context) {
   orderObject_(payload, ['requestId'], 'status');
   var requestId = orderRequestId_(payload.requestId);
-  var lock = LockService.getScriptLock();
+  var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw appError_('ORDER_SAVE_BUSY', 'El guardado sigue en curso. Consulta de nuevo.', 503);
   try {
     var session = validateSessionToken_(context.sessionToken, false);
@@ -335,11 +337,12 @@ function orderCreationStatus_(payload, context) {
 
 function orderCreationCapabilities_(session) {
   requirePermission_(session, 'ordenes.read');
+  var sandbox = typeof osActive_ === 'function' && osActive_();
   var ready = typeof mdConfigured_ === 'function' && mdConfigured_()
-    && optionalProperty_('ORDER_DOCUMENTS_ACCEPTED', 'NO') === 'SI';
+    && (sandbox || optionalProperty_('ORDER_DOCUMENTS_ACCEPTED', 'NO') === 'SI');
   if (ready) { try { orderCreationSchemaReady_(); mdSchema_(); } catch (error) { ready = false; } }
-  var enabled = ready && MADERARTE_APP.COMMERCIAL_WRITES && getConfigValue_('MODO_OPERACION', '') === 'OPERACION'
-    && optionalProperty_('ORDER_SAVE_ENABLED', 'NO') === 'SI' && optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') === 'SI';
+  var enabled = ready && (sandbox ? !OWNER_SANDBOX_CONTEXT_.requestId && countRows_('Ordenes_Pedido') === 0 : MADERARTE_APP.COMMERCIAL_WRITES && getConfigValue_('MODO_OPERACION', '') === 'OPERACION'
+    && optionalProperty_('ORDER_SAVE_ENABLED', 'NO') === 'SI' && optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') === 'SI');
   return { contractVersion: ORDER_CREATION_CONTRACT_, enabled: Boolean(enabled), reason: enabled ? '' : 'PREPARACION',
     persistenceImplemented: true, photosReady: Boolean(ready), documentsReady: Boolean(ready), mediaWorkflow: 1 };
 }
@@ -350,10 +353,10 @@ function prepararEsquemaGuardadoOrdenes() {
   if (MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'PREPARACION') {
     throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'Prepara el esquema solo con la operación comercial deshabilitada.', 403);
   }
-  var lock = LockService.getScriptLock();
+  var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw appError_('ORDER_SAVE_BUSY', 'Hay otra operación en curso.', 503);
   try {
-    if (getSpreadsheet_().getName() !== MADERARTE_APP.SPREADSHEET_NAME) throw appError_('SPREADSHEET_NAME_MISMATCH', 'Base incorrecta.', 503);
+    if (getSpreadsheet_().getName() !== (typeof osDatabaseName_ === 'function' ? osDatabaseName_() : MADERARTE_APP.SPREADSHEET_NAME)) throw appError_('SPREADSHEET_NAME_MISMATCH', 'Base incorrecta.', 503);
     verifyCommercialBaseZero_();
     var requests = [];
     Object.keys(REQUIRED_HEADERS).forEach(function(name) {

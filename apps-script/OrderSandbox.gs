@@ -248,9 +248,13 @@ function osValidateDraft_(draft, requestId) {
   }
   if (draft.items.length > 3 || draft.payments.length > 4) osFail_('SANDBOX_LIMIT', 'El ensayo admite hasta tres muebles y cuatro pagos ficticios.');
   if (s.requestId && s.requestId !== requestId || !s.requestId && countRows_('Ordenes_Pedido') > 0) osFail_('SANDBOX_ONE_ORDER', 'Este ensayo admite una sola orden. Reabre la existente o finaliza la prueba.');
-  if (!s.requestId) { s.requestId = requestId; osStore_(s); }
   // This sentinel is generated server-side; PDFs and readbacks stay unmistakable.
   draft.notes = '[PRUEBA AISLADA ' + s.id + ' - SIN VALIDEZ COMERCIAL. NO COBRAR, ENTREGAR NI FABRICAR.]\n' + draft.notes;
+}
+function osReserveOrder_(requestId) {
+  if (!osActive_()) return;
+  var s = OWNER_SANDBOX_CONTEXT_;
+  if (!s.requestId) { s.requestId = requestId; osStore_(s); }
 }
 function osCleanupPlan_(s) {
   var expected = {};

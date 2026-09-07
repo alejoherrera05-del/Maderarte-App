@@ -102,6 +102,7 @@ function mdPlan_(draft, items, result, session, stamp) {
     notes: draft.notes, items: items, subtotal: draft.subtotal, discount: draft.discount, total: draft.total,
     order: { paid: draft.paid, balance: draft.balance, payments: draft.payments.map(function(p) { return { method: p.method, amount: p.amount }; }) },
     folders: { client: clientId, order: opId }, issued: true };
+  if (typeof osActive_ === 'function' && osActive_()) publicData.sandbox = OWNER_SANDBOX_CONTEXT_.id;
   // items contain descriptions/photo manifests, never payment notes or raw bytes.
   files.push({ Archivo_ID: result.number + '-PDF-V1', Numero_OP: result.number, Tipo: 'OP', Nombre: result.number + '.pdf', Mime_Type: 'application/pdf',
     File_ID: ids.shift() || mdIds_(1)[0], Parent_ID: pdfParent, Estado: 'PENDIENTE', Version: 1, Creado_Por: session.profile.uid,
@@ -133,14 +134,14 @@ function mdAccess_(number, context, write) {
   if (write) {
     requirePermission_(session, 'ordenes.create');
     if (!all && row.Creado_Por !== session.profile.uid && session.permissions.indexOf('ordenes.update.all') === -1) throw appError_('ORDER_DOCUMENT_FORBIDDEN', 'Solo el responsable o un administrador puede completar estos documentos.', 403);
-    if (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') !== 'SI') throw appError_('DOCUMENT_WRITES_DISABLED', 'La finalización documental todavía no está habilitada.', 403);
+    if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') !== 'SI')) throw appError_('DOCUMENT_WRITES_DISABLED', 'La finalización documental todavía no está habilitada.', 403);
     if (row.Estado === 'ANULADA' || Number(row.Version) !== 1) throw appError_('DOCUMENT_REVISION_CHANGED', 'La orden cambió; requiere una nueva versión documental.', 409);
   }
   mdSchema_();
   return { row: row, session: session };
 }
 function mdLocked_(run) {
-  var lock = LockService.getScriptLock();
+  var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw appError_('DOCUMENT_BUSY', 'Hay otra operación documental en curso. Consulta su resultado.', 503);
   try { assertNoUnresolvedOrderFence_(); return run(); } finally { lock.releaseLock(); }
 }
