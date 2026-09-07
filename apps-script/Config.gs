@@ -11,7 +11,7 @@ var MADERARTE_APP = Object.freeze({
 });
 
 function getScriptProperties_() {
-  return PropertiesService.getScriptProperties();
+  return typeof orderScopedProperties_ === 'function' ? orderScopedProperties_() : PropertiesService.getScriptProperties();
 }
 
 function requiredProperty_(name) {

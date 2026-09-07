@@ -23,6 +23,12 @@ function routeAction_(action, payload, context) {
     case 'COTIZACION_META': return quoteMeta_(payload, context.session);
     case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
     case 'ORDENES_LISTAR': return listOrders_(payload, context.session);
+    case 'ORDEN_DOCUMENTOS_PREPARAR': return prepareOrderDocuments_(payload, context);
+    case 'ORDEN_DOCUMENTOS_ESTADO': return getOrderDocumentsState_(payload, context);
+    case 'ORDEN_ARCHIVO_INICIAR': return startOrderFile_(payload, context);
+    case 'ORDEN_ARCHIVO_PARTE': return uploadOrderFilePart_(payload, context);
+    case 'ORDEN_ARCHIVO_LEER': return readOrderFilePart_(payload, context);
+    case 'ORDEN_DOCUMENTOS_FINALIZAR': return finishOrderDocuments_(payload, context);
     case 'ORDEN_OBTENER': return getOrder_(payload, context.session);
     case 'ORDEN_CREAR': return createOrder_(payload, context);
     case 'ORDEN_CREACION_ESTADO': return orderCreationStatus_(payload, context);
@@ -44,7 +50,6 @@ function doPost(event) {
     var action = normalizeCode_(body.action);
     if (!action) throw appError_('ACTION_REQUIRED', 'Falta la acción solicitada.', 400);
     validateProxy_(body);
-
     var context = {
       requestId: requestId,
       sessionToken: String(body.sessionToken || ''),
@@ -52,7 +57,8 @@ function doPost(event) {
       session: null
     };
     if (PUBLIC_ACTIONS_.indexOf(action) === -1) context.session = validateSessionToken_(context.sessionToken, true);
-    var data = routeAction_(action, body.payload && typeof body.payload === 'object' ? body.payload : {}, context);
+    var route = function() { return routeAction_(action, body.payload && typeof body.payload === 'object' ? body.payload : {}, context); };
+    var data = typeof withOrderDataContext_ === 'function' ? withOrderDataContext_(body.environment, action, context, route) : route();
     return jsonOutput_(success_('OK', 'Operación completada.', data, requestId, 200));
   } catch (error) {
     return jsonOutput_(failure_(error, requestId));
