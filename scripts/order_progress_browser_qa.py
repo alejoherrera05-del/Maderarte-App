@@ -30,7 +30,7 @@ try:
             page.locator('[data-quote-branch="MP"]').click()
             card=page.locator('[data-item-id="1"]');card.locator('[data-field="description"]').fill('Mueble QA progreso');card.locator('[data-field="unitValue"]').fill('2000000')
             card.locator('.order-plan-option').filter(has=page.locator('[value="ENTREGA_INMEDIATA"]')).click();card.locator('details').first.evaluate('e=>e.open=true')
-            card.locator('[data-photo-input]').set_input_files(str(photo));page.wait_for_function('document.querySelector("[data-photo-input]").files.length===0')
+            card.locator('[data-photo-input]').set_input_files(str(photo));page.wait_for_function('()=>document.querySelector("[data-photo-input]").files.length===0')
             page.locator('#order-no-payment').check();expect(page.locator('#quote-submit')).to_be_enabled()
             page.locator('#quote-submit').click();dialog=page.locator('.order-progress-dialog');expect(dialog).to_be_visible()
             def gate(action):page.wait_for_function('(a)=>typeof window.__gates[a]==="function"',arg=action,timeout=30000)

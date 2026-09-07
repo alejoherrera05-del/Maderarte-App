@@ -2,7 +2,7 @@ name: Integrate reviewed order refinements
 on:
   push:
     branches: [fix/order-progress-refined-pdf]
-    paths: ['tools/apply-order-refinements.py', '.github/workflows/integrate-order-refinements.yml']
+    paths: ['tools/apply-order-refinements.py', 'scripts/order_progress_browser_qa.py', '.github/workflows/integrate-order-refinements.yml']
 permissions:
   contents: write
 jobs:
