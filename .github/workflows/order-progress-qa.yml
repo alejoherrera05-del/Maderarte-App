@@ -24,6 +24,12 @@ jobs:
       - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
       - run: python scripts/order_progress_browser_qa.py
       - run: python scripts/order_document_render_qa.py
+      - name: Fuente exacta del documento y sus pruebas
+        if: always()
+        run: |
+          mkdir -p artifacts/review-source
+          git rev-parse HEAD > artifacts/review-source/COMMIT.txt
+          git archive --format=zip HEAD > artifacts/review-source/source.zip
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -31,4 +37,5 @@ jobs:
           path: |
             artifacts/order-progress/
             artifacts/order-documents/
+            artifacts/review-source/
           retention-days: 7
