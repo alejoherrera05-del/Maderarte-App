@@ -1,3 +1,4 @@
+import { clearDocumentMedia } from './order-media.js';
 import { clearFormDrafts } from './form-draft.js?v=agreements-1';
 import { APP_CONFIG, withPreview } from './config.js';
 import { apiRequest, ApiError } from './api.js';
@@ -106,6 +107,7 @@ export async function logout() {
   } catch {
     // La limpieza local debe ejecutarse incluso si la red falla.
   } finally {
+    await clearDocumentMedia();
     try { clearFormDrafts(); } catch { /* Storage may be unavailable. */ }
     clearSessionSnapshot();
   }

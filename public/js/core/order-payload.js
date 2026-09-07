@@ -6,7 +6,7 @@ const invalid = (message, field) => { throw Object.assign(new Error(message), { 
 
 // A private command payload, NOT the public projection used for client PDFs.
 // Preserve stable row IDs, leading zeros and each payment's internal note.
-export function collectOrderPayload({ root = document, branch, photos = new Map() }) {
+export function collectOrderPayload({ root = document, branch, photos = new Map(), photoManifests = null }) {
   const values = readCommercialValues(root);
   const entry = readOrderEntry(values.total, root);
   if (!['MP', 'TP'].includes(branch)) invalid('Selecciona la sede del pedido.', 'branch');
@@ -27,12 +27,12 @@ export function collectOrderPayload({ root = document, branch, photos = new Map(
       || !Number.isSafeInteger(item.unitValue) || item.unitValue < 1) invalid('Revisa la descripción, cantidad y precio del mueble.', `items.${item.itemId}`);
     const references = photos.get(Number(item.itemId)) || photos.get(item.itemId) || [];
     // v1's server rejects images. Never strip them to make the request succeed.
-    if (references.length || root.querySelector(`[data-item-id="${item.itemId}"] [data-photo-list] img`)) {
+    if (!photoManifests && (references.length || root.querySelector(`[data-item-id="${item.itemId}"] [data-photo-list] img`))) {
       invalid('El guardado de fotografías aún está en preparación. Conserva el borrador con todas sus referencias.', `items.${item.itemId}.photos`);
     }
     return { clientLineId: item.itemId, description: item.description, category: item.category,
       quantity: item.quantity, unitValue: item.unitValue, fabric: item.fabric, wood: item.wood,
-      specifications: item.specifications, agreement: item.agreement.code, fulfillment: item.fulfillment.code, photos: [] };
+      specifications: item.specifications, agreement: item.agreement.code, fulfillment: item.fulfillment.code, photos: photoManifests?.get(String(item.itemId)) || [] };
   });
   const payments = [...root.querySelectorAll('[data-payment-row]')].map(row => ({
     clientPaymentId: row.dataset.paymentRow,
@@ -40,6 +40,6 @@ export function collectOrderPayload({ root = document, branch, photos = new Map(
     amount: paymentAmount(row.querySelector('[data-payment-amount]').value),
     internalNote: row.querySelector('[data-payment-note]').value.trim()
   })).filter(payment => payment.amount > 0);
-  return { schemaVersion: 1, branch, client, items, payments, discount: values.discount,
+  return { schemaVersion: photoManifests ? 2 : 1, branch, client, items, payments, discount: values.discount,
     notes: root.getElementById('quote-notes')?.value.trim() || '', noPayment: entry.noPayment };
 }

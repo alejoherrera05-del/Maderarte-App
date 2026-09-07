@@ -118,6 +118,7 @@ async function forwardToAppsScript(request, env, body, requestId) {
     payload: body?.payload && typeof body.payload === 'object' ? body.payload : {},
     requestId,
     appVersion: String(body?.appVersion || ''),
+    ...(body?.environment === undefined ? {} : { environment: body.environment }),
     proxyToken,
     sessionToken,
     proxyMeta: {

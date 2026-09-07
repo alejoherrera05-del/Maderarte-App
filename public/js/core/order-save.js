@@ -8,7 +8,7 @@ const fail = (code, message) => Object.assign(new Error(message), { code });
 const copy = value => JSON.parse(JSON.stringify(value));
 
 export function saveCapabilitiesReady(value) {
-  return value?.contractVersion === 1 && value.enabled === true
+  return [1, 2].includes(value?.contractVersion) && value.enabled === true
     && value.photosReady === true && value.documentsReady === true;
 }
 
@@ -18,13 +18,14 @@ export function clearOrderSaveSnapshots(storage) {
 }
 
 export function createOrderSave({ uid, request, durable, temporary, locks, crypto,
-  activeUid = () => uid, onState = () => {} }) {
+  activeUid = () => uid, onState = () => {}, environment = '' }) {
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
-  const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}`;
+  const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}${environment ? '.' + environment : ''}`;
   let busy = false;
+  let contractVersion = 1;
   let state = { phase: 'disabled', canSave: false, locked: false, message: '' };
   const notify = (phase, options = {}) => {
-    state = { phase, canSave: false, locked: true, message: '', ...options };
+    state = { phase, contractVersion, canSave: false, locked: true, message: '', ...options };
     onState(copy(state));
     return copy(state);
   };
@@ -62,7 +63,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     try { const saved = JSON.parse(temporary.getItem(key) || 'null'); return saved?.uid === uid && saved.requestId === journal.requestId; }
     catch { return false; }
   };
-  const confirmed = journal => notify('confirmed', { number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal),
+  const confirmed = journal => notify('confirmed', { number: journal.number, requestId: journal.requestId, contractVersion: journal.contractVersion || 1, ownsDraft: owns(journal),
     message: `Pedido ${journal.number} guardado. Puedes abrirlo sin volver a registrarlo.` });
   const uncertain = journal => notify('uncertain', { requestId: journal.requestId,
     message: 'Falta confirmar el resultado. Consulta este intento; no crees otro pedido.' });
@@ -86,6 +87,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     sameUser();
     const response = await request('ORDEN_CAPACIDADES', {});
     sameUser();
+    contractVersion = response?.data?.contractVersion || 1;
     return saveCapabilitiesReady(response?.data);
   }
   async function check(journal) {
@@ -163,7 +165,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
       if (!await capabilities()) return notify('disabled', { locked: false,
         message: 'El guardado comercial aún no está habilitado. Conserva el borrador.' });
       const pending = { version: 1, uid, requestId: `OP-${crypto.randomUUID()}`,
-        digest: await digest(snapshot), stage: 'pending' };
+        digest: await digest(snapshot), contractVersion: snapshot.schemaVersion, stage: 'pending' };
       // Both stores must succeed BEFORE the first POST that can create a sale.
       put(temporary, { uid, requestId: pending.requestId, payload: snapshot });
       put(durable, pending);

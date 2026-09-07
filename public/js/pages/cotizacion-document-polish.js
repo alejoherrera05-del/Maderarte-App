@@ -102,10 +102,10 @@ function documentHeaderMarkup(data) {
 
       <div class="quote-editorial-document">
         <span class="quote-editorial-eyebrow">Propuesta comercial</span>
-        <h1>${escapeHtml(COMMERCIAL_DOCUMENT.title)}</h1>
+        <h1>${escapeHtml(data.documentTitle || COMMERCIAL_DOCUMENT.title)}</h1>
         <div class="quote-editorial-document-identity">
           <div class="quote-editorial-number">
-            <small>${escapeHtml(COMMERCIAL_DOCUMENT.numberLabel)}</small>
+            <small>${escapeHtml(data.numberLabel || COMMERCIAL_DOCUMENT.numberLabel)}</small>
             <strong>${escapeHtml(data.number)}</strong>
           </div>
           <div class="quote-editorial-secondary-meta">
@@ -251,12 +251,12 @@ function signatureMarkup(name) {
   return `<div class="quote-editorial-signature"><span>${escapeHtml(clean)}</span></div>`;
 }
 
-function footerMarkup(pageNumber, totalPages) {
+function footerMarkup(pageNumber, totalPages, issued = '') {
   return `<footer class="quote-editorial-footer quote-document-footer">
     <img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte">
     <div class="quote-editorial-footer-copy">
       <strong>Maderarte · Sistema Maddy</strong>
-      <span>${COMMERCIAL_DOCUMENT.isOrder ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente'} · v${escapeHtml(APP_CONFIG.version)}</span>
+      <span>${issued || (COMMERCIAL_DOCUMENT.isOrder ? 'Borrador · sin validez comercial' : 'Documento generado automáticamente')} · v${escapeHtml(APP_CONFIG.version)}</span>
       <span>${escapeHtml(COMPANY_PROFILE.website)} · ${escapeHtml(COMPANY_PROFILE.socialHandle)}</span>
     </div>
     <span class="quote-document-page-number">Página ${pageNumber} de ${totalPages}</span>
@@ -323,7 +323,7 @@ function appendixGroupMarkup(group) {
   </article>`;
 }
 
-function appendixPageMarkup(groups, number, pageNumber, totalPages) {
+function appendixPageMarkup(groups, number, pageNumber, totalPages, issued = '') {
   return `<section class="quote-preview-page quote-preview-appendix-page" data-page-number="${pageNumber}" data-page-count="${totalPages}" data-group-count="${groups.length}">
     <div class="quote-annex-content">
       <div class="quote-preview-annex-head">
@@ -332,7 +332,7 @@ function appendixPageMarkup(groups, number, pageNumber, totalPages) {
       </div>
       <div class="quote-appendix-groups">${groups.map(appendixGroupMarkup).join('')}</div>
     </div>
-    ${footerMarkup(pageNumber, totalPages)}
+    ${footerMarkup(pageNumber, totalPages, issued)}
   </section>`;
 }
 
@@ -360,7 +360,7 @@ function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
         ${investmentMarkup(data)}
       </div>` : ''}
       <div class="quote-editorial-signoff">
-        ${footerMarkup(pageNumber, totalPages)}
+        ${footerMarkup(pageNumber, totalPages, data.issued)}
         ${page.closing ? signatureMarkup(data.advisor) : ''}
       </div>
     </div>
@@ -379,6 +379,7 @@ async function measuredPages(data) {
     const measured = frame.contentDocument;
     measured.documentElement.lang = 'es';
     measured.body.className = 'quote-page';
+    if (data.issued) measured.body.dataset.commercialDocument = 'order';
     const ready = [];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(source => {
       const link = measured.createElement('link');
@@ -462,3 +463,43 @@ document.addEventListener('keydown', event => {
   event.preventDefault();
   document.getElementById('quote-preview-close')?.focus();
 });
+
+// Issued documents receive ONLY the server's public snapshot. No form reads,
+// hidden payment notes or browser-computed commercial totals enter this path.
+export async function renderIssuedOrder(snapshot, photoData, target, receiptNumber = '') {
+  if (!snapshot || snapshot.template !== 'maddy-documentos-1') throw new Error('Plantilla documental incompatible.');
+  const method = code => ({ EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', ADDI: 'Addi' }[code] || code);
+  const agreements = { ENTREGA_HOY: 'Entrega inmediata', SEPARADO: 'Separado / entregar después', ENTREGA_POSTERIOR: 'Entrega después' };
+  const date = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'America/Bogota' }).format(new Date(snapshot.date));
+  const data = { ...snapshot, date, branchCode: snapshot.branch, branch: companyBranch(snapshot.branch), issued: snapshot.test ? 'ENSAYO · SIN VALIDEZ COMERCIAL' : 'Documento emitido · versión ' + snapshot.revision,
+    items: snapshot.items.map(item => ({ ...item, agreement: { code: item.agreement, label: agreements[item.agreement] }, fulfillment: { code: item.fulfillment, label: item.fulfillment === 'PARA_SOLICITAR' ? 'Solicitar a fábrica' : 'Disponible' }, photos: item.photos.map(photo => { const value = photoData[photo.key]; if (!value) throw new Error('Falta una referencia fotográfica del mueble.'); return typeof value === 'string' ? value : value.dataUrl; }) })),
+    order: { paid: snapshot.paid, balance: snapshot.total - snapshot.paid, payments: snapshot.payments.map(payment => ({ label: method(payment.method), amount: payment.amount })) } };
+  if (receiptNumber) {
+    const receipt = snapshot.payments.find(payment => payment.number === receiptNumber);
+    if (!receipt) throw new Error('El recibo no pertenece a esta orden.');
+    Object.assign(data, { number: receipt.number, documentTitle: 'RECIBO DE CAJA', numberLabel: 'Número de recibo', subtotal: receipt.amount, discount: 0, total: receipt.amount,
+      notes: 'Abono aplicado a la orden ' + snapshot.number + '. ' + [receipt.reference, receipt.comment].filter(Boolean).join(' · '),
+      items: [{ position: 1, description: 'Abono a ' + snapshot.number, category: method(receipt.method), quantity: 1, unitValue: receipt.amount, subtotal: receipt.amount, photos: [] }],
+      order: { paid: receipt.amount, balance: 0, payments: [{ label: method(receipt.method), amount: receipt.amount }] } });
+  }
+  const pages = await measuredPages(data), annex = photoPages(data.items), total = pages.length + annex.length;
+  target.innerHTML = pages.map((page, index) => mainPageMarkup(data, page, index + 1, total)).join('') + annex.map((groups, index) => appendixPageMarkup(groups, data.number, pages.length + index + 1, total, data.issued)).join('');
+  target.querySelectorAll('.quote-editorial-section-head h2').forEach(node => { node.textContent = receiptNumber ? 'Detalle del recibo' : 'Muebles del pedido'; });
+  target.querySelectorAll('.order-finance-paid dt').forEach(node => { node.textContent = 'Pagado hoy'; });
+  target.querySelectorAll('.quote-editorial-table-head span:nth-child(2)').forEach(node => { node.textContent = receiptNumber ? 'Concepto' : 'Mueble / descripción'; });
+  target.querySelectorAll('.order-document-agreement').forEach(node => {
+    const position = Number(node.closest('[data-item-position]').dataset.itemPosition);
+    const item = snapshot.items.find(part => part.position === position);
+    if (!item) return;
+    const factory = item.fulfillment === 'PARA_SOLICITAR';
+    node.textContent = factory ? 'Solicitar a fábrica' : agreements[item.agreement];
+    node.dataset.plan = factory ? 'SOLICITAR_FABRICA' : item.agreement === 'ENTREGA_HOY' ? 'ENTREGA_INMEDIATA' : 'SEPARADO';
+  });
+  target.querySelectorAll('.order-document-conditions p').forEach(node => { if (node.textContent.startsWith('Muebles por solicitar:')) node.textContent = 'Solicitar a fábrica: fabricación estimada de 25 a 30 días desde la confirmación de la solicitud.'; });
+  if (receiptNumber) {
+    target.querySelectorAll('.order-finance-paid,.order-finance-calculation,.quote-editorial-section-head > strong').forEach(node => node.remove());
+    target.querySelectorAll('.order-finance-total dt,.order-finance-heading h2').forEach(node => { node.textContent = 'Valor recibido'; });
+  }
+  for (const image of target.querySelectorAll('img')) { if (!image.complete) await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new Error('Falta una imagen del documento.')); }); if (!image.naturalWidth) throw new Error('No se pudo cargar una referencia del documento.'); }
+  return { pages: total };
+}

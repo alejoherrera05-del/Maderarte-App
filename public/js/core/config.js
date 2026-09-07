@@ -5,6 +5,7 @@ export const APP_CONFIG = Object.freeze({
   name: 'Maddy',
   version: '0.2.0',
   environment: 'preparacion',
+  trial: currentUrl.searchParams.get('ensayo') === '1',
   apiPath: '/api/maderarte',
   requestTimeoutMs: 18_000,
   sessionCacheKey: 'MADERARTE_APP_SESSION_SNAPSHOT_V1',
@@ -24,8 +25,9 @@ export const APP_CONFIG = Object.freeze({
 });
 
 export function withPreview(path) {
-  if (!APP_CONFIG.preview.enabled) return path;
+  if (!APP_CONFIG.preview.enabled && !APP_CONFIG.trial) return path;
   const url = new URL(path, window.location.origin);
-  url.searchParams.set('preview', '1');
+  if (APP_CONFIG.preview.enabled) url.searchParams.set('preview', '1');
+  if (APP_CONFIG.trial) url.searchParams.set('ensayo', '1');
   return `${url.pathname}${url.search}${url.hash}`;
 }
