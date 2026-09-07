@@ -20,6 +20,7 @@ export function collectOrderPayload({ root = document, branch, photos = new Map(
     if (!client[name] && name !== 'alternatePhone') invalid('Completa los datos del cliente.', `client.${name}`);
   }
   if (client.email.toUpperCase() === 'N/A') client.email = 'N/A';
+  if (!values.items.length || values.items.length > 100) invalid('Incluye entre uno y cien muebles.', 'items');
   const items = values.items.map(item => {
     if (!item.agreement || !item.fulfillment) invalid('Selecciona qué se hará con este mueble.', `items.${item.itemId}.agreement`);
     if (!item.description || !Number.isSafeInteger(item.quantity) || item.quantity < 1

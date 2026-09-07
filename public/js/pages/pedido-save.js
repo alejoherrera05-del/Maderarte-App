@@ -49,6 +49,14 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   const orderPath = number => `/orden.html?op=${encodeURIComponent(number)}`;
   function render(state) {
     freeze(state.locked);
+    // A closed/expired tab draft must not hide recovery behind the branch gate.
+    if (state.locked) {
+      document.getElementById('quote-workspace').hidden = false;
+      document.getElementById('quote-branch-gate').classList.add('is-closed');
+    } else if (!branch()) {
+      document.getElementById('quote-workspace').hidden = true;
+      document.getElementById('quote-branch-gate').classList.remove('is-closed');
+    }
     button.disabled = !state.canSave;
     button.textContent = state.phase === 'saving' ? 'Guardando pedido…' : state.phase === 'confirmed' ? 'Pedido guardado' : 'Guardar orden de pedido';
     button.setAttribute('aria-busy', String(['saving', 'checking'].includes(state.phase)));
@@ -86,7 +94,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     event.preventDefault();
     if (locked || !manager.getState().canSave) return;
     if (!validate()) return;
-    if (mediaBusy()) {
+    if (mediaBusy() || [...document.querySelectorAll('[data-photo-input]')].some(input => input.files?.length)) {
       error.textContent = 'Termina de cargar las fotografías antes de guardar. No se descartará ninguna referencia.';
       return;
     }
@@ -95,6 +103,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     catch (failure) { error.textContent = failure.message; return; }
     draft()?.save();
     error.textContent = '';
+    render({ phase: 'saving', locked: true, canSave: false, message: 'Preparando el guardado del pedido…' });
     const result = await manager.save(payload);
     if (result.phase === 'confirmed') navigate(orderPath(result.number));
   });
@@ -108,7 +117,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   });
   window.addEventListener('pageshow', event => { if (event.persisted) void manager.refresh(); });
   window.addEventListener('beforeunload', event => {
-    if (['saving', 'checking', 'uncertain', 'retry', 'other-tab'].includes(manager.getState().phase)) {
+    if (locked && manager.getState().phase !== 'confirmed') {
       event.preventDefault(); event.returnValue = '';
     }
   });
