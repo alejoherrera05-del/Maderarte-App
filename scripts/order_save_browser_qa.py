@@ -1,4 +1,5 @@
 """Browser integration tests. All API responses are synthetic; never contact Google."""
+import base64
 import json
 import shutil
 import subprocess
@@ -69,6 +70,19 @@ try:
             page.locator('[data-payment-amount]').fill('500000')
             page.locator('[data-payment-note]').fill('PRIVADO-NO-PDF-QA')
             assert page.locator('#quote-submit').is_enabled(), page.locator('.quote-write-note').inner_text()
+
+            # Real file input: photo references must block v1, not vanish from a save.
+            first = page.locator('[data-item-id="1"]')
+            first.locator('summary').click()
+            first.locator('[data-photo-input]').set_input_files({'name': 'referencia-qa.png', 'mimeType': 'image/png', 'buffer': base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==')})
+            first.locator('.quote-photo-thumb img').wait_for(state='attached')
+            page.locator('#quote-submit').click()
+            assert 'fotograf' in page.locator('#quote-form-error').inner_text().lower()
+            assert len(posts) == 0
+            assert first.locator('.quote-photo-thumb img').count() == 1
+            first.locator('[data-remove-photo]').click()
+            first.locator('summary').click()
+
             page.locator('#quote-submit').click()
             page.get_by_role('button', name='Consultar resultado', exact=True).wait_for()
             assert len(posts) == 1
@@ -85,12 +99,34 @@ try:
             page.reload()
             page.get_by_role('button', name='Abrir pedido', exact=True).wait_for()
             assert len(posts) == 1
+
+            # A closed/expired tab may lose both the editable draft and snapshot.
+            # The opaque durable receipt must still surface, without a branch gate.
+            page.evaluate("for(const k of Object.keys(sessionStorage)) if(k.startsWith('maderarte.form-draft.')||k.startsWith('maderarte.order-save.')) sessionStorage.removeItem(k)")
+            page.reload()
+            page.get_by_role('button', name='Abrir pedido', exact=True).wait_for()
+            assert page.locator('#quote-workspace').is_visible()
+            assert page.locator('#quote-client-name').is_disabled()
+            assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+            page.get_by_role('button', name='Abrir pedido', exact=True).scroll_into_view_if_needed()
+            page.screenshot(path=str(out / f'guardado-recuperado-{width}.png'))
             page.get_by_role('button', name='Abrir pedido', exact=True).click()
             page.wait_for_url('**/orden.html?op=MP-OP-0001')
             assert len(posts) == 1
+
+            # Only synthetic state is reset. The disabled production-like contract
+            # must leave the ordinary approved form editable, with no create POST.
+            page.evaluate("for(const k of Object.keys(localStorage)) if(k.startsWith('maderarte.order-save.')) localStorage.removeItem(k)")
+            page.goto('http://127.0.0.1:4173/pedido.html')
+            page.locator('[data-quote-branch="MP"]').click()
+            page.locator('#quote-client-name').fill('Borrador sin activar')
+            assert page.locator('#quote-submit').is_disabled()
+            assert page.locator('#quote-preview-button').is_enabled()
+            assert page.locator('#quote-client-name').is_enabled()
+            assert len(posts) == 1
             assert not errors, errors
             context.close()
-            print('PASS', width, 'recarga, bloqueo, un solo envío, captura privada y apertura del pedido confirmado')
+            print('PASS', width, 'fotos preservadas, recarga, pérdida del borrador, bloqueo, un solo envío, captura privada y apertura del pedido confirmado; preparación sin escrituras')
         browser.close()
 finally:
     server.terminate()
