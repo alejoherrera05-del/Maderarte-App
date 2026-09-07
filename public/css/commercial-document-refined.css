@@ -36,8 +36,10 @@
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-copy strong,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-signature::before { font-weight:500 !important; }
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown span,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-value,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-value small { font-weight:400 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown span { text-transform:none; }
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-signature span {
   font-family:"Iowan Old Style",Baskerville,Georgia,serif !important;
   font-weight:500 !important;
@@ -50,6 +52,9 @@
   background:#fafafa;
   border-top:1px solid #c88a61 !important;
   border-bottom:1px solid #dedbd7 !important;
+  border-left:0 !important;
+  border-right:0 !important;
+  border-radius:0 !important;
 }
 [data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > span { font-weight:500 !important; }
 [data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > strong {
