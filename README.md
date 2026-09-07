@@ -4,6 +4,12 @@ Aplicación interna para administrar la operación comercial y documental de Mad
 
 Este repositorio es público y está completamente separado de `alejoherrera05-del/Maderarte`, que continúa siendo la página comercial y el catálogo de la marca.
 
+## Checkpoint vigente — 7 de septiembre de 2026
+
+[**Maddy original: diseño aprobado y guardado comercial completo pendiente**](docs/CHECKPOINT_2026-09-07_VERSION_ORIGINAL.md).
+
+La continuidad se realiza sobre `main` de este repositorio y el dominio habitual `app.maderartepopayan.com`, no sobre la copia de ensayo. Se conserva el formulario y documento aprobados del PR #16, junto con la preparación de guardado de los PR #17 y #18. No se habilitan ventas con este checkpoint: fotos, carpetas, PDF automático y aceptación real de extremo a extremo siguen pendientes. La evidencia de la prueba asistida no sustituye esa aceptación.
+
 ## Estado verificado
 
 **Fundación Base Cero v0.2.0**
