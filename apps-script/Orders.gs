@@ -1,3 +1,7 @@
+function orderBranchReadable_(session, branch) {
+  return session.permissions.indexOf('*') !== -1 || (session.profile && Array.isArray(session.profile.branches) && session.profile.branches.indexOf(normalizeCode_(branch)) !== -1);
+}
+
 function normalizeOrder_(row) {
   return {
     number: String(row.Numero_OP || ''),
@@ -42,6 +46,7 @@ function listOrders_(payload, session) {
   var productionStatus = normalizeCode_(payload && payload.productionStatus);
   var limit = Math.min(MADERARTE_APP.MAX_PAGE_SIZE, Math.max(1, Number(payload && payload.limit || 50)));
   var items = listRows_('Ordenes_Pedido').map(normalizeOrder_).filter(function(item) {
+    if (!orderBranchReadable_(session, item.branch)) return false;
     if (branch && item.branch !== branch) return false;
     if (status && item.status !== status) return false;
     if (productionStatus && item.productionStatus !== productionStatus) return false;
@@ -137,18 +142,20 @@ function getOrder_(payload, session) {
   if (!number) throw appError_('ORDER_NUMBER_REQUIRED', 'Falta el número de la orden.', 400);
   var row = findRow_('Ordenes_Pedido', 'Numero_OP', number);
   if (!row) return null;
+  if (!orderBranchReadable_(session, row.Sede)) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
   return {
     order: normalizeOrder_(row),
     items: orderItems_(number),
     payments: orderPayments_(number),
     remissions: orderRemissions_(number),
-    documents: orderDocuments_(number)
+    documents: orderDocuments_(number),
+    mediaWorkflow: typeof mdConfigured_ === 'function' && mdConfigured_() && mdRows_(number).length > 0 ? 1 : 0
   };
 }
 
 function dashboardSummary_(session) {
   requirePermission_(session, 'app.access');
-  var orders = listRows_('Ordenes_Pedido').map(normalizeOrder_);
+  var orders = listRows_('Ordenes_Pedido').map(normalizeOrder_).filter(function(item) { return orderBranchReadable_(session, item.branch); });
   var active = orders.filter(function(item) { return ['CONFIRMADA', 'EN_PROCESO'].indexOf(item.status) !== -1; });
   var priorities = active.filter(function(item) {
     return item.balance > 0 || ['PENDIENTE', 'EN_PROCESO'].indexOf(item.productionStatus) !== -1;

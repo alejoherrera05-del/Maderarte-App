@@ -1,0 +1,6 @@
+/* The approved A4 document, no browser header or preview chrome. */
+@page { size: A4; margin: 0; }
+html, body.quote-print-export { margin: 0; padding: 0; background: white; }
+body.quote-print-export #quote-preview-content { margin: 0; padding: 0; gap: 0; }
+body.quote-print-export .quote-preview-page { margin: 0; border: 0; border-radius: 0; box-shadow: none; break-after: page; }
+body.quote-print-export .quote-preview-page:last-child { break-after: auto; }

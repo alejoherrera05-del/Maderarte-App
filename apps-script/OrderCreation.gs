@@ -58,7 +58,7 @@ function normalizeOrderCreation_(payload) {
     var path = 'items.' + index;
     orderObject_(raw, ['clientLineId', 'description', 'category', 'quantity', 'unitValue', 'fabric', 'wood', 'specifications', 'agreement', 'fulfillment', 'photos'], path);
     // Never silently discard approved photo references before media storage is ready.
-    if (raw.photos !== undefined && (!Array.isArray(raw.photos) || raw.photos.length)) {
+    if (raw.photos !== undefined && (!Array.isArray(raw.photos) || raw.photos.length) && !(typeof mdConfigured_ === 'function' && mdConfigured_())) {
       throw appError_('ORDER_PHOTOS_NOT_READY', 'El guardado de fotografías aún no está habilitado. Conserva el borrador con todas sus referencias.', 409, { field: path + '.photos' });
     }
     var id = orderText_(raw.clientLineId, path + '.clientLineId', 64, true);
@@ -79,7 +79,8 @@ function normalizeOrderCreation_(payload) {
       fabric: orderText_(raw.fabric, path + '.fabric', 500, false),
       wood: orderText_(raw.wood, path + '.wood', 500, false),
       specifications: orderText_(raw.specifications, path + '.specifications', 8000, false),
-      agreement: agreement, fulfillment: fulfillment
+      agreement: agreement, fulfillment: fulfillment,
+      ...(raw.photos && raw.photos.length ? { photos: mdPhotoManifest_(raw.photos, path + '.photos') } : {})
     };
   });
   var discount = orderInteger_(payload.discount, 'discount', 0);
@@ -256,6 +257,7 @@ function buildOrderCreationBatch_(draft, requestId, session, branchRow, clientRo
   var counters = { Siguiente_OP: Number(branchRow.Siguiente_OP) + 1, Actualizado_En: stamp };
   if (receiptNumbers.length) counters.Siguiente_Recibo = Number(branchRow.Siguiente_Recibo) + receiptNumbers.length;
   requests = requests.concat(orderUpdateRequests_('Sedes', branchRow._row, counters));
+  if (typeof mdConfigured_ === 'function' && mdConfigured_()) requests = requests.concat(mdPlan_(draft, items, result, session, stamp));
   requests.push(orderAppendRequest_('Auditoria', [{ ID: requestId + '-AUD', Fecha: stamp, Usuario: user, Rol: session.profile.role || '',
     Modulo: 'ORDENES', Accion: 'ORDEN_CREAR', Entidad: 'ORDEN', Entidad_ID: number, Resumen: 'Pedido y abonos iniciales confirmados.',
     Estado: 'CONFIRMADA', Request_ID: requestId, Antes_JSON: '{}', Despues_JSON: JSON.stringify(result), Reversible: 'NO',
@@ -333,10 +335,13 @@ function orderCreationStatus_(payload, context) {
 
 function orderCreationCapabilities_(session) {
   requirePermission_(session, 'ordenes.read');
-  // Media/document finalization and deployment acceptance are deliberately NOT
-  // complete. Do not advertise a usable save button until that integration exists.
-  return { contractVersion: ORDER_CREATION_CONTRACT_, enabled: false, reason: 'PREPARACION',
-    persistenceImplemented: true, photosReady: false, documentsReady: false };
+  var ready = typeof mdConfigured_ === 'function' && mdConfigured_()
+    && optionalProperty_('ORDER_DOCUMENTS_ACCEPTED', 'NO') === 'SI';
+  if (ready) { try { orderCreationSchemaReady_(); mdSchema_(); } catch (error) { ready = false; } }
+  var enabled = ready && MADERARTE_APP.COMMERCIAL_WRITES && getConfigValue_('MODO_OPERACION', '') === 'OPERACION'
+    && optionalProperty_('ORDER_SAVE_ENABLED', 'NO') === 'SI' && optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') === 'SI';
+  return { contractVersion: ORDER_CREATION_CONTRACT_, enabled: Boolean(enabled), reason: enabled ? '' : 'PREPARACION',
+    persistenceImplemented: true, photosReady: Boolean(ready), documentsReady: Boolean(ready), mediaWorkflow: 1 };
 }
 
 // Owner-run installation step, not routed from the browser. Only extends empty

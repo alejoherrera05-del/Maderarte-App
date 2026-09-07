@@ -6,7 +6,7 @@ const invalid = (message, field) => { throw Object.assign(new Error(message), { 
 
 // A private command payload, NOT the public projection used for client PDFs.
 // Preserve stable row IDs, leading zeros and each payment's internal note.
-export function collectOrderPayload({ root = document, branch, photos = new Map() }) {
+export function collectOrderPayload({ root = document, branch, photos = new Map(), mediaEnabled = false }) {
   const values = readCommercialValues(root);
   const entry = readOrderEntry(values.total, root);
   if (!['MP', 'TP'].includes(branch)) invalid('Selecciona la sede del pedido.', 'branch');
@@ -26,8 +26,11 @@ export function collectOrderPayload({ root = document, branch, photos = new Map(
     if (!item.description || !Number.isSafeInteger(item.quantity) || item.quantity < 1
       || !Number.isSafeInteger(item.unitValue) || item.unitValue < 1) invalid('Revisa la descripción, cantidad y precio del mueble.', `items.${item.itemId}`);
     const references = photos.get(Number(item.itemId)) || photos.get(item.itemId) || [];
-    // v1's server rejects images. Never strip them to make the request succeed.
-    if (references.length || root.querySelector(`[data-item-id="${item.itemId}"] [data-photo-list] img`)) {
+    if (mediaEnabled && !references.length && root.querySelector(`[data-item-id="${item.itemId}"] [data-photo-list] img`)) {
+      invalid('No se recuperó una referencia del mueble. Conserva el borrador antes de guardar.', `items.${item.itemId}.photos`);
+    }
+    // Callers using the legacy contract must still reject images explicitly.
+    if (!mediaEnabled && (references.length || root.querySelector(`[data-item-id="${item.itemId}"] [data-photo-list] img`))) {
       invalid('El guardado de fotografías aún está en preparación. Conserva el borrador con todas sus referencias.', `items.${item.itemId}.photos`);
     }
     return { clientLineId: item.itemId, description: item.description, category: item.category,

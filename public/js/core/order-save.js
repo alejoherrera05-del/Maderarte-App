@@ -1,3 +1,4 @@
+import { finishOrderDocuments } from './order-media.js?v=documents-1';
 // One pending operation per account/browser. Only an opaque journal survives tab
 // closure; the immutable commercial payload stays in this tab's sessionStorage.
 // Neither a timeout nor an empty status response authorizes a new request ID.
@@ -22,6 +23,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
   const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}`;
   let busy = false;
+  let supportsMedia = false;
   let state = { phase: 'disabled', canSave: false, locked: false, message: '' };
   const notify = (phase, options = {}) => {
     state = { phase, canSave: false, locked: true, message: '', ...options };
@@ -37,8 +39,8 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     let value;
     try { value = JSON.parse(raw); } catch { /* fail closed; do not delete */ }
     if (!value || value.version !== 1 || value.uid !== uid || !ID.test(value.requestId)
-      || !/^[a-f0-9]{64}$/.test(value.digest) || !['pending', 'confirmed'].includes(value.stage)
-      || (value.stage === 'confirmed' && !NUMBER.test(value.number))) {
+      || !/^[a-f0-9]{64}$/.test(value.digest) || !['pending', 'documents', 'confirmed'].includes(value.stage)
+      || (['documents', 'confirmed'].includes(value.stage) && !NUMBER.test(value.number))) {
       throw fail('LOCAL_RECOVERY_REQUIRED', 'El registro de guardado necesita revisión. No borres los datos del navegador.');
     }
     return value;
@@ -66,6 +68,22 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     message: `Pedido ${journal.number} guardado. Puedes abrirlo sin volver a registrarlo.` });
   const uncertain = journal => notify('uncertain', { requestId: journal.requestId,
     message: 'Falta confirmar el resultado. Consulta este intento; no crees otro pedido.' });
+  const documentPending = (journal, message) => notify('documents', { number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal),
+    message: message || `Pedido ${journal.number} registrado. Faltan sus documentos; se completará la misma orden, sin duplicar pagos.` });
+  async function completeDocuments(journal) {
+    documentPending(journal, 'Completando los archivos de la orden registrada…');
+    try {
+      sameUser();
+      const payload = await storedPayload(journal);
+      await finishOrderDocuments(journal.number, payload?._media || [], async (...args) => {
+        sameUser(); const response = await request(...args); sameUser(); return response;
+      }, message => documentPending(journal, message));
+      const receipt = { ...journal, stage: 'confirmed' };
+      put(durable, receipt);
+      if (owns(journal)) { try { put(temporary, { uid, requestId: journal.requestId, confirmed: true }); } catch { /* durable receipt is already confirmed */ } }
+      return confirmed(receipt);
+    } catch (error) { return documentPending(journal, error?.code === 'ORDER_MEDIA_REQUIRED' ? error.message : undefined); }
+  }
   async function accept(data, journal) {
     const order = data?.order;
     if (data?.saved !== true || order?.requestId !== journal.requestId || !NUMBER.test(order?.number || '')
@@ -74,8 +92,9 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     }
     sameUser();
     // Persist the receipt marker before dropping any temporary commercial data.
-    const receipt = { ...journal, stage: 'confirmed', number: order.number };
+    const receipt = { ...journal, stage: order.mediaWorkflow === 1 ? 'documents' : 'confirmed', number: order.number };
     put(durable, receipt);
+    if (receipt.stage === 'documents') return completeDocuments(receipt);
     if (owns(journal)) {
       try { put(temporary, { uid, requestId: journal.requestId, confirmed: true }); }
       catch { /* confirmed marker still prevents resubmission */ }
@@ -86,10 +105,12 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     sameUser();
     const response = await request('ORDEN_CAPACIDADES', {});
     sameUser();
+    supportsMedia = response?.data?.mediaWorkflow === 1;
     return saveCapabilitiesReady(response?.data);
   }
   async function check(journal) {
     if (journal.stage === 'confirmed') return confirmed(journal);
+    if (journal.stage === 'documents') return completeDocuments(journal);
     notify('checking', { requestId: journal.requestId, message: 'Consultando el resultado del pedido…' });
     sameUser();
     const response = await request('ORDEN_CREACION_ESTADO', { requestId: journal.requestId });
@@ -121,7 +142,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     } catch (error) {
       let journal;
       try { journal = getJournal(); } catch { return unavailable(error); }
-      return journal?.stage === 'confirmed' ? confirmed(journal) : journal ? uncertain(journal) : unavailable(error, false);
+      return journal?.stage === 'confirmed' ? confirmed(journal) : journal?.stage === 'documents' ? documentPending(journal) : journal ? uncertain(journal) : unavailable(error, false);
     } finally { busy = false; }
   }
   async function refresh() {
@@ -129,7 +150,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
       const journal = getJournal();
       if (journal) return check(journal); // Works even when creation has since been disabled.
       const enabled = await capabilities();
-      return notify(enabled ? 'ready' : 'disabled', { canSave: enabled, locked: false,
+      return notify(enabled ? 'ready' : 'disabled', { canSave: enabled, mediaEnabled: supportsMedia, locked: false,
         message: enabled ? '' : 'Documento en preparación. El guardado comercial aún no está habilitado.' });
     });
   }
@@ -137,7 +158,9 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     notify('saving', { requestId: journal.requestId, message: 'Guardando pedido…' });
     sameUser();
     try {
-      const response = await request('ORDEN_CREAR', copy(payload), { requestId: journal.requestId });
+      const command = copy(payload);
+      delete command._media; // Binary references never enter the atomic Sheets command.
+      const response = await request('ORDEN_CREAR', command, { requestId: journal.requestId });
       return await accept(response?.data, journal);
     } catch (error) {
       // These contract errors are thrown BEFORE the server admits its first batch.
@@ -162,6 +185,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
       if (journal) return check(journal);
       if (!await capabilities()) return notify('disabled', { locked: false,
         message: 'El guardado comercial aún no está habilitado. Conserva el borrador.' });
+      if (snapshot._media?.length && !supportsMedia) return notify('disabled', { locked: false, message: 'El servidor todavía no admite fotografías. No se envió ni descartó el pedido.' });
       const pending = { version: 1, uid, requestId: `OP-${crypto.randomUUID()}`,
         digest: await digest(snapshot), stage: 'pending' };
       // Both stores must succeed BEFORE the first POST that can create a sale.

@@ -1,0 +1,13 @@
+.od-document-progress { padding: 20px; }
+.od-document-progress h2 { margin: 0 0 10px; font-size: 17px; font-weight: 600; }
+.od-document-progress p { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.od-document-button { display: block; width: 100%; padding: 12px; margin-top: 12px; border: 1px solid #ddd; border-radius: 12px; background: #fff; font: inherit; font-size: 14px; cursor: pointer; }
+.od-document-button:disabled { opacity: .5; cursor: progress; }
+.od-photo-details { margin-top: 12px; min-width: 0; }
+.od-photo-details summary { padding-block: 8px; cursor: pointer; font-size: 14px; }
+.od-photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.od-photo-grid figure { margin: 0; min-width: 0; }
+.od-photo-grid img { display: block; width: 100%; max-height: 200px; object-fit: contain; border-radius: 10px; }
+.od-photo-grid figcaption, .od-photo-grid label { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.od-photo-grid input { max-width: 100%; font-size: 16px; }
+@media(max-width: 500px) { .od-photo-grid { grid-template-columns: 1fr; } }

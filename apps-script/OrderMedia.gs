@@ -217,7 +217,7 @@ function mdPhotoStatus_(number, context) {
   var files = mdRows_(number);
   return { number: number, complete: files.some(function(row) { return row.Tipo === 'OP' && row.Estado === 'LISTO'; }),
     files: files.map(function(row) { var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
-      return { id: row.Archivo_ID, itemId: row.Item_ID || '', photoId: row.Foto_ID || '', type: row.Tipo, name: plan.originalName || row.Nombre,
+      return { id: row.Archivo_ID, itemId: row.Item_ID || '', clientLineId: String(row.Item_ID || '').replace(number + '-I-', ''), photoId: row.Foto_ID || '', type: row.Tipo, name: plan.originalName || row.Nombre,
         position: plan.position || 0, mime: row.Mime_Type, size: Number(row.Bytes) || 0, sha256: row.Hash_SHA256 || '', ready: row.Estado === 'LISTO', url: row.Estado === 'LISTO' ? row.URL : '' };
     }) };
 }
@@ -268,7 +268,7 @@ function mdPreparePdf_(payload, context) {
     if (!data || data.number !== payload.number || data.total !== Number(access.row.Valor_Total)) throw appError_('DOCUMENT_INTEGRITY_ERROR', 'El documento no coincide con la orden confirmada.', 409);
     mdEnsureFolder_(slot.Parent_ID);
     // Create ALL reserved OP subfolders, including receipts/remissions, even when empty.
-    listRows_('Carpetas_Documentales').filter(function(row) { return row.Parent_ID === data.folders.order; }).forEach(function(row) { mdEnsureFolder_(row.File_ID); });
+    listRows_('Carpetas_Documentales').filter(function(row) { return row.Parent_ID === data.folders.order || row.Parent_ID === data.folders.client; }).forEach(function(row) { mdEnsureFolder_(row.File_ID); });
     data.items = data.items.map(function(item) {
       return Object.assign({}, item, { photos: (item.photos || []).map(function(photo) {
         var file = mdUnique_(files, 'Archivo_ID', item.id + '-F-' + photo.id);
@@ -346,4 +346,11 @@ function diagnosticarDocumentosMaddy() {
   result.productionReady = false; // This diagnostic is not an end-to-end acceptance.
   Logger.log(JSON.stringify(result));
   return result;
+}
+
+function mdReadPdf_(payload, context) {
+  mdAccess_(payload.number, context, false);
+  var slot = mdUnique_(mdRows_(payload.number), 'Tipo', 'OP');
+  if (!slot || slot.Estado !== 'LISTO') throw appError_('PDF_PENDING', 'El PDF todavía está pendiente.', 409);
+  return { name: slot.Nombre, mime: 'application/pdf', base64: Utilities.base64Encode(mdDownload_(slot)) };
 }
