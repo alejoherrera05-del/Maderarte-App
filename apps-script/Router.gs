@@ -24,6 +24,9 @@ function routeAction_(action, payload, context) {
     case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
     case 'ORDENES_LISTAR': return listOrders_(payload, context.session);
     case 'ORDEN_OBTENER': return getOrder_(payload, context.session);
+    case 'ORDEN_CREAR': return createOrder_(payload, context);
+    case 'ORDEN_CREACION_ESTADO': return orderCreationStatus_(payload, context);
+    case 'ORDEN_CAPACIDADES': return orderCreationCapabilities_(context.session);
     case 'SISTEMA_ESTADO': return systemState_(context.session);
     case 'USUARIOS_LISTAR': return listUsers_(context.session);
     case 'INVITACION_CREAR': return createInvitation_(payload, context.session);
@@ -43,6 +46,7 @@ function doPost(event) {
     validateProxy_(body);
 
     var context = {
+      requestId: requestId,
       sessionToken: String(body.sessionToken || ''),
       proxyMeta: body.proxyMeta && typeof body.proxyMeta === 'object' ? body.proxyMeta : {},
       session: null
