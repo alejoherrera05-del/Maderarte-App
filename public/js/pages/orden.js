@@ -65,7 +65,7 @@ function renderOrder(data, session) {
 
 guardStandalonePage({
   permission: 'ordenes.read',
-  async render() {
+  async render({ session }) {
     const root = document.getElementById('order-app');
     root.innerHTML = loading();
     root.hidden = false;
@@ -79,7 +79,7 @@ guardStandalonePage({
         root.innerHTML = empty(`No existe la orden ${number} en la base actual.`);
         return;
       }
-      root.innerHTML = renderOrder(response.data);
+      root.innerHTML = renderOrder(response.data, session);
       bindSandboxBanner(root);
       if (response.data.mediaWorkflow === 1) void bindOrderDocuments(root, number);
     } catch (error) {

@@ -132,7 +132,11 @@ function rcPreparePdf_(payload,context) {
       // Initial payments already exist. Reserve ONLY their missing document.
       var advisor=mdUnique_(listRows_('Usuarios'),'UID_Firebase',a.payment.Registrado_Por);
       var plan=rcPlan_(a.payment,a.row,advisor && advisor.Nombre_Completo || a.row.Responsable || '');
-      orderAtomicBatch_(plan.requests);a.slot=mdUnique_(mdRows_(a.row.Numero_OP),'Archivo_ID',plan.slot.Archivo_ID);
+      var reserveId='RC-DOC-'+sha256_(payload.number).slice(0,40),fingerprint=sha256_(plan.slot.Plan_JSON),stamp=now_().toISOString(),uid=a.session.profile.uid;
+      plan.requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:reserveId,Fecha:stamp,Tipo_Operacion:'RECIBO_DOCUMENTO_RESERVAR',Entidad:'RECIBO',Entidad_ID:payload.number,Estado:'CONFIRMADA',Usuario:uid,Resultado_JSON:JSON.stringify({fingerprint:fingerprint,result:{requestId:reserveId,number:payload.number}})}]));
+      reserveOrderFence_(reserveId,uid,fingerprint,'RECIBO_DOCUMENTO_RESERVAR');
+      try {orderAtomicBatch_(plan.requests);} catch(error){throw appError_('DOCUMENT_RESERVATION_UNCERTAIN','La reserva del documento requiere confirmación. No se registró otro pago.',503);}
+      clearConfirmedOrderFence_();a.slot=mdUnique_(mdRows_(a.row.Numero_OP),'Archivo_ID',plan.slot.Archivo_ID);
     }
     if(a.slot.Estado==='LISTO'){mdDownload_(a.slot);return {number:payload.number,complete:true};}
     return {number:payload.number,complete:false,id:a.slot.Archivo_ID,planHash:sha256_(a.slot.Plan_JSON),document:parseJson_(a.slot.Plan_JSON,null)};
