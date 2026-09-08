@@ -137,6 +137,8 @@ try:
             assert '100.000' in ''.join(receipt_text.split()) and '3.200.000' in ''.join(receipt_text.split())
             assert evidence['productionUnchanged'] and not evidence['commercialWrites']
             for payment_index,amount in enumerate([400000,700000,800000],start=2):
+                page.get_by_role('button',name='Nuevo abono',exact=True).click()
+                page.wait_for_url('**/abono.html?prueba=**',timeout=30000)
                 page.goto(order_url)
                 page.get_by_role('link',name='Recibos de caja · consultar y registrar abonos',exact=True).click()
                 expect(page.locator('#receipt-account')).to_be_visible(timeout=30000)
