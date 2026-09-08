@@ -22,6 +22,16 @@ function routeAction_(action, payload, context) {
     case 'CLIENTE_OBTENER': return getClient_(payload, context.session);
     case 'COTIZACION_META': return quoteMeta_(payload, context.session);
     case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
+    case 'COTIZACION_OBTENER': return getQuoteDetail_(payload, context.session);
+    case 'COTIZACION_CAPACIDADES': return quoteCreationCapabilities_(context.session);
+    case 'COTIZACION_CREAR': return createQuote_(payload, context);
+    case 'COTIZACION_CREACION_ESTADO': return quoteCreationStatus_(payload, context);
+    case 'COTIZACION_DOCUMENTOS_ESTADO': return qmdStatus_(payload.number, context);
+    case 'COTIZACION_FOTO_GUARDAR': return qmdUploadPhoto_(payload, context);
+    case 'COTIZACION_FOTO_LEER': return qmdReadPhoto_(payload, context);
+    case 'COTIZACION_PDF_LEER': return qmdReadPdf_(payload, context);
+    case 'INTERNO_COTIZACION_DOCUMENTO_PREPARAR': return qmdPreparePdf_(payload, context);
+    case 'INTERNO_COTIZACION_DOCUMENTO_CONFIRMAR': return qmdConfirmPdf_(payload, context);
     case 'ORDENES_LISTAR': return listOrders_(payload, context.session);
     case 'ORDEN_OBTENER': return getOrder_(payload, context.session);
     case 'ORDEN_CREAR': return createOrder_(payload, context);

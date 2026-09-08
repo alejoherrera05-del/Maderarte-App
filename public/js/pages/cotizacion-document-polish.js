@@ -102,7 +102,7 @@ function documentHeaderMarkup(data) {
       </div>
 
       <div class="quote-editorial-document">
-        <span class="quote-editorial-eyebrow">${data.issued ? 'Detalle de compra' : 'Propuesta comercial'}</span>
+        <span class="quote-editorial-eyebrow">${data.issued && COMMERCIAL_DOCUMENT.isOrder ? 'Detalle de compra' : 'Propuesta comercial'}</span>
         <h1>${escapeHtml(COMMERCIAL_DOCUMENT.title)}</h1>
         <div class="quote-editorial-document-identity">
           <div class="quote-editorial-number">
@@ -347,11 +347,11 @@ function mainPageMarkup(data, page, pageNumber = 1, totalPages = 1) {
       ${client}
       ${page.items.length ? `<section class="quote-editorial-items-section">
         <div class="quote-editorial-section-head">
-          <div><span>${escapeHtml(COMMERCIAL_DOCUMENT.itemsLabel)}</span><h2>${data.issued ? 'Muebles del pedido' : 'Detalle de productos'}</h2></div>
+          <div><span>${escapeHtml(COMMERCIAL_DOCUMENT.itemsLabel)}</span><h2>${data.issued && COMMERCIAL_DOCUMENT.isOrder ? 'Muebles del pedido' : 'Detalle de productos'}</h2></div>
           <strong>${data.items.length} ${data.items.length === 1 ? 'mueble' : 'muebles'}</strong>
         </div>
         <div class="quote-editorial-table-head" aria-hidden="true">
-          <span>#</span><span>${data.issued ? 'Mueble / descripción' : 'Descripción del artículo'}</span><span>Cant.</span><span>V. unitario</span><span>V. total</span>
+          <span>#</span><span>${data.issued && COMMERCIAL_DOCUMENT.isOrder ? 'Mueble / descripción' : 'Descripción del artículo'}</span><span>Cant.</span><span>V. unitario</span><span>V. total</span>
         </div>
         <div class="quote-editorial-items">${items}</div>
       </section>` : ''}
@@ -550,4 +550,30 @@ export async function renderConfirmedOrder(snapshot, target) {
     if (!page.clientHeight || page.scrollHeight > page.clientHeight + 2) throw new Error('Una página no cabe en el formato aprobado.');
   }
   return { pages: total, photos: items.reduce((n, item) => n + item.photos.length, 0) };
+}
+
+// Quotation emission uses the approved preview markup and measured paginator.
+export async function renderConfirmedQuote(snapshot, target) {
+  if (COMMERCIAL_DOCUMENT.isOrder || !target || snapshot?.issued !== true || snapshot.documentKind !== 'quote'
+    || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{4,}$/.test(snapshot.number || '')
+    || !['MP','TP'].includes(snapshot.branchCode) || !Array.isArray(snapshot.items) || !snapshot.items.length || snapshot.items.length > 100
+    || !Number.isSafeInteger(snapshot.subtotal) || !Number.isSafeInteger(snapshot.discount) || snapshot.discount < 0
+    || !Number.isSafeInteger(snapshot.total) || snapshot.total < 0 || snapshot.total !== snapshot.subtotal - snapshot.discount) throw new Error('Cotización confirmada inválida.');
+  for (const key of ['document','name','phone','email','address','city']) if (!String(snapshot.client?.[key] || '').trim()) throw new Error('Cliente incompleto.');
+  const items = snapshot.items.map((item,index) => {
+    if (!item.description || !Number.isSafeInteger(item.quantity) || item.quantity < 1 || !Number.isSafeInteger(item.unitValue) || item.unitValue < 1
+      || !Number.isSafeInteger(item.subtotal) || item.subtotal !== item.quantity * item.unitValue || !Array.isArray(item.photos)) throw new Error('Mueble inválido.');
+    for (const photo of item.photos) if (!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(photo)) throw new Error('Referencia inválida.');
+    return {...item, position:index+1, itemId:item.id};
+  });
+  if (items.reduce((sum,item)=>sum+item.subtotal,0) !== snapshot.subtotal) throw new Error('El detalle no coincide con el total.');
+  const data = {...snapshot, items, branch:companyBranch(snapshot.branchCode), order:null,
+    date:new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'short',year:'numeric',timeZone:'America/Bogota'}).format(new Date(snapshot.date))};
+  const pages = await measuredPages(data), annex = photoPages(items), total = pages.length + annex.length;
+  if (total > 60) throw new Error('El documento excede el límite de páginas.');
+  target.innerHTML = pages.map((page,index)=>mainPageMarkup(data,page,index+1,total)).join('')
+    + annex.map((groups,index)=>appendixPageMarkup(groups,data.number,pages.length+index+1,total,true,snapshot.sandbox)).join('');
+  await previewImagesReady(target);
+  for (const page of target.children) if (!page.clientHeight || page.scrollHeight > page.clientHeight + 2) throw new Error('Una página no cabe en el formato aprobado.');
+  return {pages:total};
 }

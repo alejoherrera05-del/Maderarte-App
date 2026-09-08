@@ -23,6 +23,7 @@ jobs:
       - run: npm test
       - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
       - run: python scripts/compact_loading_qa.py
+      - run: python scripts/quote_emission_browser_qa.py
       - run: python scripts/order_progress_brand_qa.py
       - run: python scripts/order_progress_browser_qa.py
       - run: python scripts/order_document_render_qa.py
@@ -39,6 +40,7 @@ jobs:
           name: order-progress-refined-pdf
           path: |
             artifacts/compact-loading/
+            artifacts/quote-emission/
             artifacts/order-progress/
             artifacts/order-progress-brand/
             artifacts/order-documents/

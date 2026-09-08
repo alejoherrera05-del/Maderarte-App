@@ -35,6 +35,7 @@
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-notes strong,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-copy strong,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-signature::before { font-weight:500 !important; }
+[data-commercial-document="quote"] .quote-preview-page .quote-editorial-signature::before { content:none !important; }
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown strong,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown span,
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-value,

@@ -6,7 +6,7 @@ const rejects=(f,code)=>{assert.throws(f,e=>e.appCode===code,code);checks++;};
 {
  const f=sandboxRuntime(), before=JSON.stringify(f.production()), props={...f.state.props};
  rejects(()=>f.c.createOrder_(f.command,f.ctx),'COMMERCIAL_WRITES_DISABLED');
- const status=f.start();equal(status.state,'ACTIVA');equal(Object.keys(f.state.books[f.c.osState_().sheetId].tables).length,25);
+ const status=f.start();equal(status.state,'ACTIVA');equal(Object.keys(f.state.books[f.c.osState_().sheetId].tables).sort(),Object.keys(f.c.osSchemas_()).sort());
  equal(f.start().id,status.id);equal(f.run('ORDEN_CAPACIDADES').enabled,true);
  const {number,plan}=f.complete();assert.match(number,/^MP-QA-[A-F0-9]{8}-OP-0001$/);checks++;
  equal(f.rows('Ordenes_Pedido').length,1);equal(f.rows('Abonos').length,2);equal(f.rows('Ordenes_Pedido')[0].Estado_Documentos,'COMPLETO');

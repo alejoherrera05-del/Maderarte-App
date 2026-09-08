@@ -5,7 +5,10 @@ var OWNER_SANDBOX_KEY_ = 'MADDY_OWNER_SANDBOX_V1';
 var OWNER_SANDBOX_ACTIONS_ = Object.freeze(['COTIZACION_META', 'CLIENTES_LISTAR', 'CLIENTE_OBTENER',
   'ORDEN_CAPACIDADES', 'ORDEN_CREAR', 'ORDEN_CREACION_ESTADO', 'ORDEN_OBTENER',
   'ORDEN_DOCUMENTOS_ESTADO', 'ORDEN_FOTO_GUARDAR', 'ORDEN_FOTO_LEER', 'ORDEN_PDF_LEER',
-  'INTERNO_DOCUMENTO_PREPARAR', 'INTERNO_DOCUMENTO_CONFIRMAR']);
+  'INTERNO_DOCUMENTO_PREPARAR', 'INTERNO_DOCUMENTO_CONFIRMAR',
+  'COTIZACION_CAPACIDADES', 'COTIZACION_CREAR', 'COTIZACION_CREACION_ESTADO', 'COTIZACION_OBTENER', 'COTIZACIONES_LISTAR',
+  'COTIZACION_DOCUMENTOS_ESTADO', 'COTIZACION_FOTO_GUARDAR', 'COTIZACION_FOTO_LEER', 'COTIZACION_PDF_LEER',
+  'INTERNO_COTIZACION_DOCUMENTO_PREPARAR', 'INTERNO_COTIZACION_DOCUMENTO_CONFIRMAR']);
 
 function osFail_(code, message) { throw appError_(code, message, 409); }
 function osProperty_(name) { return String(getScriptProperties_().getProperty(name) || ''); }
@@ -55,6 +58,7 @@ function osScopedProperty_(name) {
   if (!OWNER_SANDBOX_CONTEXT_) return null;
   if (name === 'SPREADSHEET_ID') return OWNER_SANDBOX_CONTEXT_.sheetId;
   if (name === 'DRIVE_DOCUMENTS_ROOT_ID') return OWNER_SANDBOX_CONTEXT_.rootId;
+  if (name === 'QUOTE_DOCUMENTS_SCHEMA_VERSION') return OWNER_SANDBOX_CONTEXT_.quoteSchemaVersion === 1 ? '1' : '';
   return null;
 }
 function osAuthSheet_(name) {
@@ -127,6 +131,7 @@ function osSchemas_() {
   var schemas = {};
   Object.keys(REQUIRED_HEADERS).forEach(function(name) { schemas[name] = REQUIRED_HEADERS[name].concat(ORDER_CREATION_EXTRA_HEADERS_[name] || []); });
   Object.keys(ORDER_MEDIA_HEADERS_).forEach(function(name) { schemas[name] = ORDER_MEDIA_HEADERS_[name]; });
+  Object.keys(QUOTE_MEDIA_HEADERS_).forEach(function(name) { schemas[name] = QUOTE_MEDIA_HEADERS_[name]; });
   return schemas;
 }
 function osSeed_(s, branches) {
@@ -187,6 +192,15 @@ function osPublic_(s) {
       result.documentStatus = orders.length === 1 ? orders[0].Estado_Documentos : '';
       result.counts = { orders: orders.length, items: countRows_('Orden_Items'), payments: countRows_('Abonos'), documents: countRows_('Documentos') };
       result.canClean = !readOrderFence_() && (!orders.length && !s.requestId || orders.length === 1 && orders[0].Estado_Documentos === 'COMPLETO');
+      result.quoteReady = s.quoteSchemaVersion === 1;
+      if (result.quoteReady) {
+        var quotes = listRows_('Cotizaciones');
+        result.counts.quotes = quotes.length;
+        result.quoteNumber = quotes.length === 1 ? quotes[0].Numero_Cotizacion : '';
+        var files = listRows_('Archivos_Cotizacion');
+        result.quoteDocumentsComplete = quotes.length === 1 && files.some(function(r) { return r.Tipo === 'COTIZACION'; }) && files.every(function(r) { return r.Estado === 'LISTO'; });
+        result.canClean = result.canClean && (!quotes.length && !s.quoteRequestId || quotes.length === 1 && result.quoteDocumentsComplete);
+      }
     } finally { OWNER_SANDBOX_CONTEXT_ = null; }
   }
   return result;
@@ -216,6 +230,7 @@ function osStart_(payload, context) {
     var branches = listRows_('Sedes').filter(function(b) { return ['MP', 'TP'].includes(b.Sede_ID) && b.Estado === 'ACTIVA'; });
     if (!branches.length) osFail_('SANDBOX_BRANCH_REQUIRED', 'No hay una sede activa para el ensayo.');
     osSeed_(s, branches);
+    s.quoteSchemaVersion = 1;
     s.stage = 'ACTIVA'; osStore_(s);
     return osPublic_(s);
   });
@@ -260,6 +275,21 @@ function osReserveOrder_(requestId) {
   var s = OWNER_SANDBOX_CONTEXT_;
   if (!s.requestId) { s.requestId = requestId; osStore_(s); }
 }
+function osValidateQuote_(draft, requestId) {
+  if (!osActive_()) return;
+  var s = OWNER_SANDBOX_CONTEXT_;
+  var expected = { document: '0000000001', name: 'PRUEBA MADDY - NO ES UNA VENTA', phone: '0000000011', alternatePhone: '0000000022', email: 'qa@example.invalid', address: 'SIN ENTREGA - DATOS FICTICIOS', city: 'Popayán (prueba)' };
+  if (Object.keys(expected).some(function(key) { return draft.client[key] !== expected[key]; })) osFail_('SANDBOX_SYNTHETIC_CLIENT_REQUIRED', 'Usa el cliente ficticio del ensayo.');
+  if (s.quoteSchemaVersion !== 1) osFail_('SANDBOX_QUOTE_SCHEMA_REQUIRED', 'Este ensayo anterior no está preparado para cotizaciones. Conserva sus recursos y consulta al propietario.');
+  if (draft.items.length > 3) osFail_('SANDBOX_LIMIT', 'El ensayo admite hasta tres muebles.');
+  if (s.quoteRequestId && s.quoteRequestId !== requestId || !s.quoteRequestId && countRows_('Cotizaciones')) osFail_('SANDBOX_ONE_QUOTE', 'El ensayo admite una sola cotización. Recupera el mismo intento.');
+  draft.notes = '[PRUEBA AISLADA ' + s.id + ' - SIN VALIDEZ COMERCIAL. NO COBRAR, ENTREGAR NI FABRICAR.]\n' + draft.notes;
+}
+function osReserveQuote_(requestId) {
+  if (!osActive_()) return;
+  var s = OWNER_SANDBOX_CONTEXT_;
+  if (!s.quoteRequestId) { s.quoteRequestId = requestId; osStore_(s); }
+}
 function osCleanupPlan_(s) {
   var expected = {};
   expected[s.containerId] = { role: 'container', parent: s.parentId };
@@ -274,6 +304,13 @@ function osCleanupPlan_(s) {
     }
     listRows_('Carpetas_Documentales').forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
     var slots = listRows_('Archivos_Orden');
+    if (s.quoteSchemaVersion === 1) {
+      var quotes = listRows_('Cotizaciones'), quoteSlots = listRows_('Archivos_Cotizacion');
+      if (quotes.length > 1 || !quotes.length && s.quoteRequestId || quotes.length === 1 && (!quoteSlots.some(function(r) { return r.Tipo === 'COTIZACION'; }) || quoteSlots.some(function(r) { return r.Estado !== 'LISTO'; }))) {
+        osFail_('SANDBOX_DOCUMENTS_PENDING', 'Primero confirma la cotización y completa sus archivos.');
+      }
+      slots = slots.concat(quoteSlots);
+    }
     slots.forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
     var candidates = [];
     function visit(id, depth) {

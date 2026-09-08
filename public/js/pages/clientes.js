@@ -1,3 +1,4 @@
+import { sandboxLink } from '../core/order-sandbox-context.js';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { withPreview } from '../core/config.js';
@@ -177,6 +178,7 @@ function quoteMarkup(quote) {
     <div class="client-doc-head"><strong class="client-doc-code">${escapeHtml(quote.number || 'Cotización')}</strong><div class="client-doc-head-right"><span class="client-status ${statusClass(quote.status)}">${escapeHtml(humanizeCode(quote.status || 'BORRADOR'))}</span></div></div>
     <div class="client-quote-body">${escapeHtml(description)}<div class="client-doc-date">${escapeHtml(date(quote.date))}${quote.branch ? ` · ${escapeHtml(quote.branch)}` : ''}</div></div>
     <div class="client-quote-total"><span>Valor cotizado</span><strong>${escapeHtml(money(quote.total))}</strong></div>
+    ${quote.number ? `<a class="client-quote-action" href="${escapeHtml(sandboxLink(withPreview(`/cotizacion-ver.html?cot=${encodeURIComponent(quote.number)}`)))}">Abrir cotización</a>` : ''}
     ${(pdf || orderUrl) ? `<div class="client-quote-actions">${pdf ? `<a class="client-quote-action" href="${escapeHtml(pdf)}" target="_blank" rel="noopener noreferrer">Ver PDF</a>` : ''}${orderUrl ? `<a class="client-quote-action primary" href="${escapeHtml(orderUrl)}">Ver OP convertida</a>` : ''}</div>` : ''}
   </article>`;
 }

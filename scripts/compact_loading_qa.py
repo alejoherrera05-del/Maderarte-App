@@ -31,15 +31,15 @@ results = []
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'), args=['--no-sandbox'])
     for width, height in [(1440,900), (768,1024), (390,844), (320,568), (844,390)]:
-        for kind in ('quote', 'order'):
+        for kind, mode in [('quote', 'preview'), ('quote', 'save'), ('order', 'save')]:
             page = browser.new_page(viewport={'width':width,'height':height}, reduced_motion='reduce')
             page.set_content('<!doctype html><html lang="es"><body><button id="start">Documento</button></body></html>')
             page.add_style_tag(content=css)
             page.add_script_tag(content=source)
-            page.evaluate("kind => { document.querySelector('#start').focus(); window.qa=createDocumentProgress({kind, mode:kind==='quote'?'preview':'save'}); qa.begin(); }", kind)
+            page.evaluate("config => { document.querySelector('#start').focus(); window.qa=createDocumentProgress(config); qa.begin(); }", {'kind':kind,'mode':mode})
             dialog = page.locator('.order-progress-dialog')
             page.locator('.order-progress-portrait').evaluate('e=>e.decode()')
-            expected_steps = 4 if kind == 'quote' else 5
+            expected_steps = 4 if mode == 'preview' else 5
             assert page.locator('[data-progress-step]').count() == expected_steps
             expect(page.locator('[data-progress-number]')).to_be_hidden()
             page.evaluate("() => { qa.update({step:'prepare',status:'complete'}); qa.update({step:'document',status:'running',message:'Mensaje técnico que la interfaz no debe repetir.',number:'NO-CONFIRMADO'}); }")
@@ -49,13 +49,21 @@ with sync_playwright() as p:
             assert box['height'] <= height - 20, (width,height,kind,box)
             assert page.locator('.order-progress-steps').bounding_box()['height'] <= 26
             expect(page.locator('[data-progress-step="document"]')).to_have_attribute('data-state','running')
-            expected_headline = 'Estoy dándole forma a la propuesta de Maderarte.' if kind == 'quote' else 'Estoy armando el expediente del pedido.'
+            expected_headline = ('Estoy dándole forma a la propuesta de Maderarte.' if mode == 'preview' else 'Estoy archivando la propuesta como corresponde.') if kind == 'quote' else 'Estoy armando el expediente del pedido.'
             expect(page.locator('h2')).to_have_text(expected_headline)
-            expected_context = 'los totales y las condiciones' if kind == 'quote' else 'sus carpetas dentro del archivo del cliente'
+            expected_context = ('los totales y las condiciones' if mode == 'preview' else 'carpeta de cotizaciones de este cliente') if kind == 'quote' else 'sus carpetas dentro del archivo del cliente'
             expect(page.locator('[role="status"]')).to_contain_text(expected_context)
             # Passive dots are labelled for assistive technology, not a visible shopping list.
             assert page.locator('[data-progress-step] .order-progress-sr').evaluate_all('nodes=>nodes.every(e=>getComputedStyle(e).clipPath==="inset(50%)")')
-            page.screenshot(path=str(OUT / f'{kind}-component-{width}.png'))
+            page.evaluate("() => qa.update({step:'photos',status:'complete',number:'NO-CONFIRMADO'})")
+            expect(page.locator('[data-progress-number]')).to_be_hidden()
+            page.evaluate("() => qa.update({step:'record',status:'complete',number:'MP-QA-COT-0001'})")
+            if mode == 'preview':
+                expect(page.locator('[data-progress-number]')).to_be_hidden()
+                assert page.locator('[data-progress-step="record"]').count() == 0
+            else:
+                expect(page.locator('[data-progress-number]')).to_contain_text('MP-QA-COT-0001')
+            page.screenshot(path=str(OUT / f'{kind}-{mode}-component-{width}.png'))
             page.evaluate("() => qa.pause('No se confirmó la respuesta. Tu formulario se conserva.')")
             expect(page.locator('.order-progress-return')).to_be_visible()
             page.locator('.order-progress-return').click()
@@ -65,8 +73,8 @@ with sync_playwright() as p:
             # Both components may coexist on the OP page; IDs and text must stay independent.
             ids = page.evaluate("() => {const a=createOrderProgress();const b=createDocumentProgress({kind:'quote',mode:'preview'});const ids=[...document.querySelectorAll('.order-progress-dialog h2')].map(e=>e.id);a.destroy();b.destroy();return ids;}")
             assert len(set(ids)) == 2
-            assert page.evaluate("() => {try {createDocumentProgress({kind:'quote',mode:'save'});return false;}catch{return true;}}")
-            results.append({'kind':kind,'viewport':[width,height],'compact':True,'confirmedNumbersOnly':True,'uniqueIds':True,'operationalCopy':True})
+            assert page.evaluate("() => {try {createDocumentProgress({kind:'quote',mode:'unknown'});return false;}catch{return true;}}")
+            results.append({'kind':kind,'mode':mode,'viewport':[width,height],'compact':True,'confirmedNumbersOnly':True,'uniqueIds':True,'operationalCopy':True})
             page.close()
     if '--offline-only' not in sys.argv:
         origin = 'http://127.0.0.1:4184'

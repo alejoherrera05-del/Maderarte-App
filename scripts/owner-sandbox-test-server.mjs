@@ -1,7 +1,7 @@
 // Loopback-only QA: actual Worker + Apps Script; Google transport is synthetic.
 import http from 'node:http';
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { resolve, extname } from 'node:path';
+import { resolve, extname, sep } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { sandboxRuntime } from './fixtures/owner-sandbox-runtime.mjs';
@@ -9,9 +9,9 @@ import { handleRequest } from '../functions/api/maderarte.js';
 const exec=promisify(execFile),port=4177,origin=`http://127.0.0.1:${port}`,root=resolve('public'),out=resolve('artifacts/owner-sandbox');mkdirSync(out,{recursive:true});
 let fixture=sandboxRuntime(),initial=JSON.stringify(fixture.production()),actions=[],pdfs=0,faults={};
 const env={MADERARTE_APPS_SCRIPT_URL:'https://qa-script.invalid/exec',MADERARTE_PROXY_TOKEN:'qa-proxy',BROWSER:{async quickAction(type,options){
- if(type!=='pdf'||options.url!=='https://app.maderartepopayan.com/documento-render.html')throw Error('Unexpected render URL');
+ if(type!=='pdf'||!['https://app.maderartepopayan.com/documento-render.html','https://app.maderartepopayan.com/cotizacion-render.html'].includes(options.url))throw Error('Unexpected render URL');
  const plan=JSON.parse(options.addScriptTag[0].content),n=++pdfs,source=resolve(out,`render-plan-${n}.json`),destination=resolve(out,`pedido-${n}.pdf`);
- writeFileSync(source,JSON.stringify(plan));await exec('python',['scripts/render_owner_sandbox_pdf.py',source,destination,origin],{timeout:60000});
+ writeFileSync(source,JSON.stringify(plan));await exec(process.env.QA_PYTHON || 'python',['scripts/render_owner_sandbox_pdf.py',source,destination,origin],{timeout:60000});
  return new Response(readFileSync(destination),{headers:{'content-type':'application/pdf'}});
 }}};
 globalThis.fetch=async(url,opts)=>{
@@ -34,7 +34,7 @@ const server=http.createServer(async(req,res)=>{
    const response=await handleRequest(request,env);res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()));
  }
  const path=resolve(root,'.'+decodeURIComponent(u.pathname));
- if(!path.startsWith(root+'/')||!existsSync(path)){res.writeHead(404);return res.end('Not found');}
+ if(!path.startsWith(root+sep)||!existsSync(path)){res.writeHead(404);return res.end('Not found');}
  const types={'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.jpg':'image/jpeg','.webmanifest':'application/manifest+json'};
  const headers={'content-type':types[extname(path)]||'application/octet-stream','cache-control':'no-store'};
  if(extname(path)==='.html')headers['Content-Security-Policy']="default-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-src 'self' https://drive.google.com; object-src 'none'; base-uri 'self'; form-action 'self'";

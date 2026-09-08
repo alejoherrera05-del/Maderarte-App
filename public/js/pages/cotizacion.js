@@ -651,7 +651,7 @@ guardStandalonePage({
       state.draft = bindFormDraft({ session, type: sandboxDraftType(COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote'), capture: captureDraft, restore: restoreDraft });
       await state.draft?.ready;
     }
-    if (COMMERCIAL_DOCUMENT.isOrder) bindSandboxBanner(app, { prefill: true });
+    bindSandboxBanner(app, { prefill: true });
     if (COMMERCIAL_DOCUMENT.isOrder) state.save = bindOrderSave({
       session, validate: () => { state.validating = true; calculate(); return validateForm(); },
       branch: () => state.quoteMeta?.branch || '', photos: () => state.photos,
