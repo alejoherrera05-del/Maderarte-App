@@ -1,0 +1,1 @@
+Continuidad del cambio solicitado: imagen aprobada recortada, mensaje único y confirmaciones discretas en cotización y pedido. El alcance está en MADDY_COMPACT_LOADING_2026-09-08.md. Esta rama se actualizará con main antes de integrar.
