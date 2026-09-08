@@ -157,6 +157,18 @@ try:
             for n,label in [(1,'cotizacion'),(2,'orden'),(3,'recibo-1'),(4,'recibo-2'),(5,'recibo-3'),(6,'recibo-4')]:
                 shutil.copyfile(f'artifacts/owner-sandbox/pedido-{n}.pdf',OUT/f'recorrido-{label}.pdf')
             subprocess.run(['pdftoppm','-scale-to','1600','-png','-singlefile',str(OUT/'recorrido-recibo-4.pdf'),str(OUT/'recorrido-recibo-4')],check=True)
+            if width==1440:
+                long_history=json.loads(Path('artifacts/owner-sandbox/render-plan-6.json').read_text())
+                long_history['history']=[{'number':f'MP-QA-REC-{n:04d}','date':long_history['date'],'method':'TRANSFERENCIA','amount':10000,'balance':3300000-n*10000} for n in range(1,31)]
+                long_history.update(number='MP-QA-REC-0030',amount=10000,previousBalance=3010000,balance=3000000,total=3300000)
+                long_source=OUT/'historial-largo.json';long_source.write_text(json.dumps(long_history))
+                long_pdf_path=OUT/'historial-largo.pdf'
+                subprocess.run(['python','scripts/render_owner_sandbox_pdf.py',str(long_source),str(long_pdf_path),ORIGIN],check=True)
+                long_pdf=PdfReader(long_pdf_path);assert len(long_pdf.pages)>1
+                long_text=' '.join(p.extract_text() for p in long_pdf.pages)
+                for row in long_history['history']:assert row['number'] in long_text
+                for p in long_pdf.pages:assert abs(float(p.mediabox.width)-612)<1 and abs(float(p.mediabox.height)-396)<1
+                subprocess.run(['pdftoppm','-scale-to','1600','-png',str(long_pdf_path),str(OUT/'historial-largo')],check=True)
             before_sample=evidence['counts'].copy()
             with page.expect_response(lambda r:r.url.endswith('/api/maderarte') and r.request.post_data_json.get('action')=='RECIBO_MUESTRA_PDF',timeout=90000) as sample_response:
                 page.get_by_role('button',name='PDF de muestra',exact=True).click()
