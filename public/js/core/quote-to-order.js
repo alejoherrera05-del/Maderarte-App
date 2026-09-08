@@ -1,4 +1,4 @@
-// HomeEasy parity: quote action -> existing order form with confirmed data.
+// Quote action -> existing order form with confirmed data.
 export const conversionNumber = search => {
   const params = new URLSearchParams(search);
   if (!params.has('cotizacion')) return '';
