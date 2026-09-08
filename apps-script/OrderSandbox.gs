@@ -107,10 +107,17 @@ function osEnsureSheet_(s) {
     // Google Workspace file creation does NOT support pregenerated IDs.
     // Persist intent BEFORE POST. After a timeout, search the same marker;
     // never repeat creation merely because an immediate search was empty.
-    var query = "'" + s.containerId + "' in parents and trashed = false and appProperties has { key='maddySandbox' and value='" + s.id + "' } and mimeType='application/vnd.google-apps.spreadsheet'";
+    // Discover within the reserved folder; appProperties search indexing may lag.
+    // Identity still comes from direct metadata, never from the filename alone.
+    var query = "'" + s.containerId + "' in parents and trashed = false and mimeType='application/vnd.google-apps.spreadsheet'";
     var found = osList_(query);
     if (found.length > 1) osFail_('SANDBOX_RECOVERY_REQUIRED', 'Hay más de una hoja candidata. Requiere revisión.');
-    if (found.length === 1) s.sheetId = found[0].id;
+    if (found.length === 1) {
+      var candidate = osMeta_(found[0].id);
+      osExpect_(candidate, s, 'sheet', s.containerId);
+      if (candidate.trashed || candidate.name !== s.sheetName || candidate.mimeType !== 'application/vnd.google-apps.spreadsheet') osFail_('SANDBOX_IDENTITY_MISMATCH', 'La hoja encontrada no coincide con el ensayo.');
+      s.sheetId = candidate.id;
+    }
     else if (s.sheetCreationSent) osFail_('SANDBOX_PROVISION_UNCERTAIN', 'Google aún no confirma la hoja de prueba. Vuelve a consultar; no se creará otra.');
     else {
       s.sheetCreationSent = true; osStore_(s);
