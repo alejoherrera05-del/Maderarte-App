@@ -22,6 +22,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
+      - run: sudo apt-get update -qq && sudo apt-get install -y poppler-utils
       - run: python scripts/compact_loading_qa.py
       - run: python scripts/quote_emission_browser_qa.py
       - run: python scripts/order_progress_brand_qa.py

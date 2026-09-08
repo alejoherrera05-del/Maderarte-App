@@ -1,5 +1,5 @@
 """Real form + Worker + Apps Script, loopback Google transport; no real writes."""
-import json,os,sys,subprocess,time,urllib.request,shutil
+import json,os,sys,subprocess,time,urllib.request,shutil,base64
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 from pypdf import PdfReader
@@ -132,9 +132,27 @@ try:
             receipt_pdf=PdfReader('artifacts/owner-sandbox/pedido-3.pdf')
             receipt_text=' '.join(pg.extract_text() or '' for pg in receipt_pdf.pages)
             assert len(receipt_pdf.pages)==1 and 'RECIBO DE CAJA' in receipt_text
+            assert abs(float(receipt_pdf.pages[0].mediabox.width)-612)<1 and abs(float(receipt_pdf.pages[0].mediabox.height)-396)<1
             assert 'PRIVADO' not in receipt_text and 'Abono de caja de prueba' in receipt_text
             assert '100.000' in ''.join(receipt_text.split()) and '3.200.000' in ''.join(receipt_text.split())
             assert evidence['productionUnchanged'] and not evidence['commercialWrites']
+            before_sample=evidence['counts'].copy()
+            with page.expect_response(lambda r:r.url.endswith('/api/maderarte') and r.request.post_data_json.get('action')=='RECIBO_MUESTRA_PDF',timeout=90000) as sample_response:
+                page.get_by_role('button',name='PDF de muestra',exact=True).click()
+            sample_data=sample_response.value.json()['data']
+            expect(page.get_by_role('link',name='Abrir PDF de muestra',exact=True)).to_be_visible(timeout=30000)
+            sample_path=OUT/'recibo-muestra-media-carta.pdf'
+            sample_path.write_bytes(base64.b64decode(sample_data['base64']))
+            sample_pdf=PdfReader(sample_path)
+            assert len(sample_pdf.pages)==1
+            assert abs(float(sample_pdf.pages[0].mediabox.width)-612)<1 and abs(float(sample_pdf.pages[0].mediabox.height)-396)<1
+            assert 'SIN VALIDEZ COMERCIAL' in sample_pdf.pages[0].extract_text()
+            assert api('/__qa/evidence')['counts']==before_sample
+            subprocess.run(['pdftoppm','-scale-to','1600','-png','-singlefile',str(sample_path),str(OUT/'recibo-muestra-media-carta')],check=True)
+            page.goto(ORIGIN+'/abono.html')
+            expect(page.get_by_role('heading',name='Pagos y recibos')).to_be_visible()
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+            page.screenshot(path=str(OUT/f'recibo-inicio-{width}.png'),full_page=True)
             assert not errors,errors
             results.append({'width':width,'quotes':1,'orders':1,'receipts':1,'pdfs':3,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
             context.close();print(results[-1])
