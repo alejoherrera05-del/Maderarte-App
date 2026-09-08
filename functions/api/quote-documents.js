@@ -9,16 +9,16 @@ function base64(bytes) {
   return result;
 }
 
-function quotePdfOptions(document) {
+function quotePdfOptions(document, origin = ORIGIN) {
   return {
-    url: `${ORIGIN}/cotizacion-render.html`,
+    url: `${origin}/cotizacion-render.html`,
     cacheTTL: 0,
     bestAttempt: false,
     gotoOptions: { waitUntil: 'networkidle0', timeout: 30000 },
     addScriptTag: [{ id: 'maddy-document-data', type: 'application/json', content: JSON.stringify(document) }],
     waitForSelector: { selector: '[data-document-ready="true"]', timeout: 30000 },
     allowRequestPattern: [
-      `^${ORIGIN.replaceAll('.', '\\.')}\/(?:cotizacion-render\\.html|(?:assets|css|js)\/[^?#]*)(?:\\?[^#]*)?$`,
+      `^${origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\/(?:cotizacion-render\\.html|(?:assets|css|js)\/[^?#]*)(?:\\?[^#]*)?$`,
       '^data:image\\/(?:png|jpeg|webp);base64,'
     ],
     rejectResourceTypes: ['xhr', 'fetch', 'websocket', 'eventsource'],
@@ -41,7 +41,17 @@ export async function finalizeQuoteDocuments(number, env, upstream) {
     || prepared.document?.number !== number || prepared.document?.issued !== true || prepared.document?.documentKind !== 'quote') {
     throw fail('QUOTE_DOCUMENT_PLAN_INVALID', 'El servidor no confirmó la versión de la cotización.');
   }
-  const response = await env.BROWSER.quickAction('pdf', quotePdfOptions(prepared.document));
+  let origin = ORIGIN;
+  // Deployment-owned setting, never accepted from the browser payload. Only a
+  // server-confirmed sandbox projection can use a pre-merge renderer.
+  if (prepared.document.sandbox && env.QUOTE_SANDBOX_RENDER_ORIGIN) {
+    const candidate = new URL(env.QUOTE_SANDBOX_RENDER_ORIGIN);
+    if (candidate.protocol !== 'https:' || candidate.username || candidate.password || candidate.pathname !== '/' || candidate.search || candidate.hash) {
+      throw fail('QUOTE_RENDER_ORIGIN_INVALID', 'Revisa el origen del renderizador del ensayo.');
+    }
+    origin = candidate.origin;
+  }
+  const response = await env.BROWSER.quickAction('pdf', quotePdfOptions(prepared.document, origin));
   if (!response.ok || !response.headers.get('content-type')?.includes('application/pdf')) {
     throw fail('QUOTE_PDF_RENDER_FAILED', 'No se pudo generar el PDF. Conservamos la cotización y sus referencias para reintentar.');
   }

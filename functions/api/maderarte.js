@@ -168,7 +168,7 @@ export async function handleRequest(request, env = {}) {
       return jsonResponse({ ...reply, data: { ...reply.data, pdfEngine: engine, productionReady: false } });
     }
     if (action === 'ORDEN_DOCUMENTOS_FINALIZAR') return runDocumentPipeline(request, env, body, requestId, finalizeOrderDocuments);
-    if (action === 'COTIZACION_DOCUMENTOS_FINALIZAR') return runDocumentPipeline(request, env, body, requestId, finalizeQuoteDocuments);
+    if (action === 'COTIZACION_DOCUMENTOS_FINALIZAR') return await runDocumentPipeline(request, env, body, requestId, finalizeQuoteDocuments);
     return forwardToAppsScript(request, env, body, requestId);
   } catch (error) {
     return jsonResponse(errorBody(error.code || 'BAD_REQUEST', error.message || 'Solicitud no válida.', requestId), error.status || 400);

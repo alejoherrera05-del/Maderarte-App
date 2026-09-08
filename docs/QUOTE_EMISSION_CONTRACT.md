@@ -37,3 +37,27 @@ Cada item conserva `clientLineId`, descripción, categoría, cantidad, valor uni
 
 ## Criterio de aceptación
 Una única cotización de prueba debe quedar con un único consecutivo, cliente, items, fotos, PDF y URLs recuperables; reintentos y respuestas perdidas deben devolver la misma cotización. Después se habilita la conversión Cotización → OP como fase separada.
+
+## Cierre técnico del PR #36 (8 de septiembre de 2026)
+
+- QA de `quote/preview` y `quote/save` independientes; el número del loader solo se muestra con el evento `record/complete`.
+- El resultado persistido declara el flujo documental antes de serializar idempotencia. El cliente siempre verifica documentos, también al recuperar respuestas anteriores sin esa señal.
+- La emisión usa la misma protección duradera de batch incierto que OP. Un timeout con Google todavía procesando impide enviar otro batch, incluso de otra operación. No expirar ni borrar esa protección por ausencia momentánea de filas.
+- Sandbox: acciones de cotización, tabla `Archivos_Cotizacion`, Sedes y prefijos QA. Una cotización por ensayo. `quoteReady=false` identifica ensayos anteriores; no se reinicializan, migran ni limpian automáticamente.
+- El PDF emitido reutiliza el marcado y paginador aprobado de la vista previa. Firma solo con nombre. El detalle reabierto conserva el contacto de la versión emitida.
+- Auditoría, consecutivo, cliente, cotización, reservas y Request_ID se confirman en el mismo batch. El nuevo cliente exige `clientes.create`.
+
+Pruebas automatizadas: `test-quote-save-client.mjs`, `test-quote-progress.mjs`, `test-quote-emission.mjs`, `test-quote-document-edge.mjs`, `compact_loading_qa.py` y `quote_emission_browser_qa.py`. El navegador ejecuta formulario → Worker → módulos Apps Script → transporte Google simulado → PDF Chromium real. Esto NO sustituye la aceptación en Google real.
+
+## Siguiente puerta: propietario y Google real
+
+No fusionar ni cerrar #30 todavía. No iniciar #34.
+
+1. El propietario actualiza en Apps Script los seis módulos de esta rama: `QuoteCreation.gs`, `QuoteMedia.gs`, `QuoteRead.gs`, `Router.gs`, `OrderSandbox.gs` y `OrderCreationRecovery.gs`. Publica una nueva versión de la implementación existente, conservando URL, propiedades privadas y permisos. No ejecutar rutinas de preparación del esquema productivo para este ensayo.
+2. Mantener `COMMERCIAL_WRITES=false`, `MODO_OPERACION=PREPARACION` y banderas comerciales sin activar.
+3. Antes de crear un ensayo, consultar `PRUEBA_ESTADO` con la sesión propietaria. Conservar identificación y estado del ensayo anterior. Si está activo y `quoteReady=false`, detenerse: el propietario debe decidir sobre esos recursos y confirmar cualquier limpieza exacta. Nunca llamar automáticamente a `PRUEBA_LIMPIAR`.
+4. Para probar el PDF antes del merge, configurar **solo en la versión de ensayo de Cloudflare** `QUOTE_SANDBOX_RENDER_ORIGIN` con el origen HTTPS de la preview publicada del PR. Confirmar que `/cotizacion-render.html` corresponde al SHA probado. La variable solo se usa con un documento que Apps Script identifica como sandbox; documentos normales conservan el dominio habitual. No se acepta origen desde el payload del navegador.
+5. Con el ensayo apto, abrir Probar cotización desde el control de pruebas. Cliente ficticio precargado, dos muebles ($2.000.000 y $1.500.000), foto solo en el primero, descuento $200.000 y observación. Total esperado $3.300.000.
+6. Verificar en Google: un cliente, una cotización QA, dos items en Items_JSON, Request_ID en Idempotencia/Registro_Numeros/Auditoria/Documentos, una carpeta cliente con `00_COTIZACIONES`, una foto y un PDF. Sin OP, recibos ni consumo de numeración productiva.
+7. Reabrir y recuperar el mismo intento; confirmar misma cotización, mismos File_ID y mismo PDF. Revisar PDF A4, anexo únicamente del mueble con foto, firma y valores. Registrar evidencia privada fuera del repositorio.
+8. Solo con aceptación real y CI verde considerar merge, verificar Cloudflare y dominio habitual. Mantener producción cerrada. La limpieza requiere confirmación separada del identificador exacto.
