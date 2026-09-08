@@ -74,7 +74,15 @@ const rejects=(f,code)=>{assert.throws(f,e=>e.appCode===code,code);checks++;};
  const id=f.c.osState_().id;equal(f.c.osState_().sheetCreationSent,true);equal(f.c.osState_().stage,'PREPARANDO');
  f.state.hideSearch=true;rejects(f.start,'SANDBOX_PROVISION_UNCERTAIN');
  equal([...f.state.files.values()].filter(x=>x.mimeType==='application/vnd.google-apps.spreadsheet').length,2);
- f.state.hideSearch=false;equal(f.start().id,id);equal(f.start().state,'ACTIVA');equal(f.clean().state,'CERRADA');
+ f.state.hideSearch=false;f.state.hideMarkerSearch=true;equal(f.start().id,id);equal(f.start().state,'ACTIVA');
+ f.state.hideMarkerSearch=false;equal(f.clean().state,'CERRADA');
+}
+{
+ const f=sandboxRuntime();f.state.loseNativeCreate=true;rejects(f.start,'SANDBOX_PROVISION_UNCERTAIN');
+ const sheet=[...f.state.files.values()].find(x=>x.appProperties?.maddySandboxRole==='sheet');
+ sheet.appProperties.maddySandbox='QA-foreign';
+ rejects(f.start,'SANDBOX_IDENTITY_MISMATCH');equal(f.c.osState_().sheetId,'');
+ equal([...f.state.files.values()].filter(x=>x.mimeType==='application/vnd.google-apps.spreadsheet').length,2);
 }
 {
  const f=sandboxRuntime();f.start();f.complete();const photo=f.rows('Archivos_Orden').find(x=>x.Tipo==='FOTO');

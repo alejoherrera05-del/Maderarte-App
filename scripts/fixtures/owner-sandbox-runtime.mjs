@@ -87,6 +87,7 @@ export function sandboxRuntime() {
       let files=[...state.files.values()].filter(f=>!f.trashed&&(!parent||f.parents?.includes(parent))&&(!marker||f.appProperties?.maddySandbox===marker));
       if(q.includes("mimeType='application/vnd.google-apps.spreadsheet'"))files=files.filter(f=>f.mimeType==='application/vnd.google-apps.spreadsheet');
       if(state.hideSearch)files=[];
+      if(state.hideMarkerSearch && marker)files=[];
       const offset=Number(u.searchParams.get('pageToken')||0),size=state.pageSize||100;
       return response({files:files.slice(offset,offset+size),...(files.length>offset+size?{nextPageToken:String(offset+size)}:{})});
     }
