@@ -13,6 +13,21 @@ let account=null, sequence=0,manager,locked=false,capabilities=false;
 const receiptPath=number=>sandboxLink('/abono.html?recibo='+encodeURIComponent(number));
 function action(root,label,run){const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>void run());root.append(button);return button;}
 function error(message){$('receipt-error').textContent=message;}
+let sampleUrl='';
+async function showSample(){
+  const button=$('receipt-sample');button.disabled=true;
+  $('receipt-feedback').textContent='Generando muestra en media carta horizontal…';
+  try {
+    const {data}=await apiRequest('RECIBO_MUESTRA_PDF',{}, {timeoutMs:150000});
+    if(data?.mime!=='application/pdf'||!data.base64||data.sample!==true)throw Error('No se pudo generar la muestra. Vuelve a intentarlo.');
+    if(sampleUrl)URL.revokeObjectURL(sampleUrl);
+    sampleUrl=URL.createObjectURL(new Blob([Uint8Array.from(atob(data.base64),c=>c.charCodeAt(0))],{type:'application/pdf'}));
+    const links=$('receipt-sample-links');links.replaceChildren();links.hidden=false;
+    const open=document.createElement('a');open.href=sampleUrl;open.target='_blank';open.rel='noopener';open.textContent='Abrir PDF de muestra';
+    const download=document.createElement('a');download.href=sampleUrl;download.download='Recibo-muestra-media-carta.pdf';download.textContent='Descargar PDF';links.append(open,download);
+    $('receipt-feedback').textContent='Muestra lista · media carta horizontal · datos ficticios, sin validez comercial.';
+  }catch(e){$('receipt-feedback').textContent=e.message;}finally{button.disabled=false;}
+}
 function calculate(){
   const amount=paymentAmount($('receipt-amount').value);
   $('receipt-next-balance').textContent=account && Number.isSafeInteger(amount) && amount>=0 && amount<=account.position.balance ? money(account.position.balance-amount):'Revisa el importe';
@@ -80,6 +95,7 @@ guardStandalonePage({permission:'abonos.read',async render({session}){
   $('receipt-app').hidden=false;
   $('receipt-version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   bindSandboxBanner($('receipt-app'));
+  $('receipt-sample').addEventListener('click',()=>void showSample());
   const params=new URLSearchParams(window.location.search),op=params.get('op'),receipt=params.get('recibo');
   if(op){$('receipt-back').href=sandboxLink('/orden.html?op='+encodeURIComponent(op));$('receipt-back').setAttribute('aria-label','Volver a la orden');}
   $('receipt-search-form').addEventListener('submit',e=>{e.preventDefault();void search();});
