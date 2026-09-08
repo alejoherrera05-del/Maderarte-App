@@ -2,7 +2,6 @@ import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { readSessionSnapshot } from '../core/session.js';
 import { hasPermission } from '../core/permissions.js';
-import { COMPANY_PROFILE } from '../core/company-profile.js';
 import { APP_CONFIG } from '../core/config.js';
 import { money, date, humanizeCode, escapeHtml as esc } from '../core/format.js';
 import { paymentAmount } from '../core/commercial-rules.js?v=agreements-1';
@@ -78,7 +77,7 @@ async function search(){
   }catch(e){if(ticket===sequence)$('receipt-search-status').textContent=e.message;}
 }
 guardStandalonePage({permission:'abonos.read',async render({session}){
-  $('receipt-app').hidden=false;$('receipt-company').textContent=`${COMPANY_PROFILE.legalName} · NIT ${COMPANY_PROFILE.nit} · ${COMPANY_PROFILE.website}`;
+  $('receipt-app').hidden=false;
   $('receipt-version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   bindSandboxBanner($('receipt-app'));
   const params=new URLSearchParams(window.location.search),op=params.get('op'),receipt=params.get('recibo');
