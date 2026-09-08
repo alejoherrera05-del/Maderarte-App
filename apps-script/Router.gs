@@ -21,6 +21,7 @@ function routeAction_(action, payload, context) {
     case 'CLIENTES_LISTAR': return listClients_(payload, context.session);
     case 'CLIENTE_OBTENER': return getClient_(payload, context.session);
     case 'COTIZACION_META': return quoteMeta_(payload, context.session);
+    case 'COTIZACION_PREPARAR_PEDIDO': return prepareQuoteOrder_(payload, context.session);
     case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
     case 'COTIZACION_OBTENER': return getQuoteDetail_(payload, context.session);
     case 'COTIZACION_CAPACIDADES': return quoteCreationCapabilities_(context.session);

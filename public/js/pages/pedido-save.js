@@ -9,7 +9,7 @@ import { createOrderSave } from '../core/order-save.js?v=progress-1';
 import { collectOrderPayload } from '../core/order-payload.js?v=documents-1';
 
 // No independent form or accounting UI. Reuse the approved button and helper.
-export function bindOrderSave({ session, validate, branch, photos, draft, mediaBusy = () => false,
+export function bindOrderSave({ session, validate, branch, photos, draft, mediaBusy = () => false, quoteOrigin = () => null,
   request = apiRequest, navigate = path => window.location.assign(path) }) {
   if (APP_CONFIG.preview.enabled || !hasPermission(session, 'ordenes.create')) return null;
   const form = document.getElementById('quote-form');
@@ -118,6 +118,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     const selectedPhotos = new Map([...photos()].map(([id, values]) => [id, values.map(value => ({ ...value }))]));
     try {
       payload = collectOrderPayload({ branch: branch(), photos: selectedPhotos, mediaEnabled: manager.getState().mediaEnabled === true });
+      if (quoteOrigin()) payload.quoteOrigin = { ...quoteOrigin() };
       freeze(true); button.disabled = true; button.setAttribute('aria-busy', 'true');
       progress.begin();
       progress.update({ step: 'prepare', status: 'running', message: 'Validando los datos y preparando las referencias…' });

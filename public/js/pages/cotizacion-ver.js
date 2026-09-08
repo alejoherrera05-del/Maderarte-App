@@ -2,6 +2,7 @@ import { sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
+import { hasPermission } from '../core/permissions.js';
 
 const money = value => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(Number(value)||0);
 const params = new URLSearchParams(location.search);
@@ -27,7 +28,7 @@ async function openPdf(){
   finally{ if(button) button.disabled=false; }
 }
 
-function render(data){
+function render(data,session){
   const app=document.getElementById('quote-view-app');
   const c=data.clientDetail||{};
   const items=Array.isArray(data.items)?data.items:[];
@@ -41,6 +42,11 @@ function render(data){
     <section class="qv-card"><h2 class="qv-section-title">Estado comercial</h2><p>${escapeHtml(data.status||'ACTIVA')}</p>${data.convertedOrder?`<a class="qv-action" href="${escapeHtml(sandboxLink(`/orden.html?op=${encodeURIComponent(data.convertedOrder)}`))}">Ver OP ${escapeHtml(data.convertedOrder)}</a>`:''}</section><section class="qv-card"><h2 class="qv-section-title">Documento</h2><div class="qv-actions"><button class="qv-action qv-action-primary" id="qv-open-pdf" type="button" ${docs.complete?'':'disabled'}>Abrir PDF</button><a class="qv-action" href="/cotizaciones.html">Ir a seguimiento</a></div><p id="qv-message" class="qv-meta">${docs.complete?'El PDF corresponde a esta misma cotización y se lee desde el archivo privado.':'La cotización existe, pero su PDF todavía no está confirmado.'}</p></section>
   </div>`;
   app.hidden=false;
+  if (!data.convertedOrder && ['ACTIVA','EMITIDA'].includes(data.status) && docs.complete && hasPermission(session,'ordenes.create')) {
+    const convert = document.createElement('a'); convert.className = 'qv-action qv-action-primary';
+    convert.href = sandboxLink(`/pedido.html?cotizacion=${encodeURIComponent(data.number)}`);
+    convert.textContent = 'Preparar orden de pedido'; app.querySelector('.qv-actions').prepend(convert);
+  }
   app.querySelectorAll('a[href^="/"]').forEach(link=>{link.href=sandboxLink(link.getAttribute('href'));});
   bindSandboxBanner(app);
   document.getElementById('qv-open-pdf')?.addEventListener('click',openPdf);
@@ -51,7 +57,7 @@ function renderError(error){
   app.innerHTML=`<div class="qv-shell"><section class="qv-card qv-error"><h2>No pude abrir esta cotización</h2><p>${escapeHtml(error.message||'Revisa el número e inténtalo nuevamente.')}</p><a class="qv-action" href="/cotizaciones.html">Volver a seguimiento</a></section></div>`;
 }
 
-guardStandalonePage({permission:'cotizaciones.read',async render(){
+guardStandalonePage({permission:'cotizaciones.read',async render({session}){
   if(!number){renderError(new Error('Falta el número de cotización.'));return;}
-  try{const response=await apiRequest('COTIZACION_OBTENER',{number});render(response.data);}catch(error){renderError(error);}
+  try{const response=await apiRequest('COTIZACION_OBTENER',{number});render(response.data,session);}catch(error){renderError(error);}
 }});
