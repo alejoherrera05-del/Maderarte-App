@@ -50,7 +50,7 @@ with sync_playwright() as p:
             progress.update({step:'record',status:'complete',number:'MP-QA-OP-0001'});
             progress.update({step:'photos',status:'running',message:'Guardando las referencias.'});
         }""")
-        expect(page.locator('[data-progress-wait]')).not_to_contain_text('Google todavía no confirma esta etapa')
+        expect(page.locator('[data-progress-wait]')).to_be_hidden()
         assert page.locator('[aria-current="step"]').count() == 1
         expect(page.locator('[data-progress-number]')).to_have_text('Pedido MP-QA-OP-0001')
         expect(page.locator('#order-progress-message')).to_contain_text('Archivo cada fotografía en el mueble correcto')
