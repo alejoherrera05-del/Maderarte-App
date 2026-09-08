@@ -651,13 +651,13 @@ guardStandalonePage({
     if (COMMERCIAL_DOCUMENT.isOrder) state.agreements = bindOrderAgreements(() => { calculate(); state.draft?.changed(); });
     addItem();
     if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
-    if (COMMERCIAL_DOCUMENT.isOrder && new URLSearchParams(location.search).has('cotizacion')) {
+    if (COMMERCIAL_DOCUMENT.isOrder && new URLSearchParams(window.location.search).has('cotizacion')) {
       try {
-        const number = conversionNumber(location.search);
+        const number = conversionNumber(window.location.search);
         document.querySelectorAll('[data-quote-branch]').forEach(button => { button.disabled = true; });
         document.getElementById('quote-gate-message').textContent = 'Recuperando la cotización y sus referencias…';
         const prepared = await loadQuoteOrder(number, apiRequest);
-        if (prepared.convertedOrder) { location.replace(sandboxLink(`/orden.html?op=${encodeURIComponent(prepared.convertedOrder)}`)); return; }
+        if (prepared.convertedOrder) { window.location.replace(sandboxLink(`/orden.html?op=${encodeURIComponent(prepared.convertedOrder)}`)); return; }
         state.conversion = prepared.origin;
         await restoreDraft(prepared.draft);
         const notice = document.createElement('p'); notice.className = 'quote-draft-status'; notice.id = 'quote-origin-notice';
@@ -666,7 +666,7 @@ guardStandalonePage({
         if (back) back.href = sandboxLink(`/cotizacion-ver.html?cot=${encodeURIComponent(number)}`);
       } catch (error) {
         app.innerHTML = `<section class="quote-panel"><h1>No se pudo preparar el pedido</h1><p>${escapeHtml(error.message)}</p><a href="/cotizaciones.html">Volver a cotizaciones</a><button type="button" id="conversion-retry">Volver a intentar</button></section>`;
-        document.getElementById('conversion-retry').addEventListener('click', () => location.reload());
+        document.getElementById('conversion-retry').addEventListener('click', () => window.location.reload());
         return;
       }
     }
