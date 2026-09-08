@@ -136,6 +136,27 @@ try:
             assert 'PRIVADO' not in receipt_text and 'Abono de caja de prueba' in receipt_text
             assert '100.000' in ''.join(receipt_text.split()) and '3.200.000' in ''.join(receipt_text.split())
             assert evidence['productionUnchanged'] and not evidence['commercialWrites']
+            for payment_index,amount in enumerate([400000,700000,800000],start=2):
+                page.goto(order_url)
+                page.get_by_role('link',name='Recibos de caja · consultar y registrar abonos',exact=True).click()
+                expect(page.locator('#receipt-account')).to_be_visible(timeout=30000)
+                expect(page.locator('.receipt-history-row')).to_have_count(payment_index-1)
+                page.locator('#receipt-amount').fill(str(amount))
+                page.locator('#receipt-method').select_option('TRANSFERENCIA')
+                page.locator('#receipt-concept').fill('Abono de prueba '+str(payment_index))
+                page.locator('#receipt-submit').click()
+                page.wait_for_url('**/abono.html?recibo=**',timeout=60000)
+                expect(page.get_by_role('button',name='Abrir PDF',exact=True)).to_be_enabled(timeout=30000)
+            evidence=api('/__qa/evidence')
+            assert evidence['counts']['Abonos']==4 and evidence['orders'][0]['Abonado_Total']==2000000 and evidence['orders'][0]['Saldo_Pendiente']==1300000
+            final_pdf=PdfReader('artifacts/owner-sandbox/pedido-6.pdf')
+            assert len(final_pdf.pages)==1,'four payments fit on one half-letter page'
+            final_text=final_pdf.pages[0].extract_text()
+            assert 'Historial de abonos' in final_text and 'PRIVADO' not in final_text
+            for payment in evidence['payments']:assert payment['Numero_Recibo'] in final_text
+            for n,label in [(1,'cotizacion'),(2,'orden'),(3,'recibo-1'),(4,'recibo-2'),(5,'recibo-3'),(6,'recibo-4')]:
+                shutil.copyfile(f'artifacts/owner-sandbox/pedido-{n}.pdf',OUT/f'recorrido-{label}.pdf')
+            subprocess.run(['pdftoppm','-scale-to','1600','-png','-singlefile',str(OUT/'recorrido-recibo-4.pdf'),str(OUT/'recorrido-recibo-4')],check=True)
             before_sample=evidence['counts'].copy()
             with page.expect_response(lambda r:r.url.endswith('/api/maderarte') and r.request.post_data_json.get('action')=='RECIBO_MUESTRA_PDF',timeout=90000) as sample_response:
                 page.get_by_role('button',name='PDF de muestra',exact=True).click()
@@ -154,7 +175,7 @@ try:
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             page.screenshot(path=str(OUT/f'recibo-inicio-{width}.png'),full_page=True)
             assert not errors,errors
-            results.append({'width':width,'quotes':1,'orders':1,'receipts':1,'pdfs':3,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
+            results.append({'width':width,'quotes':1,'orders':1,'receipts':4,'pdfs':6,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
             context.close();print(results[-1])
         browser.close()
     (OUT/'resultado.json').write_text(json.dumps(results,indent=2))

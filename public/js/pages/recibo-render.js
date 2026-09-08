@@ -35,7 +35,7 @@ export async function renderReceipt(snapshot, target) {
     const continuation=document.createElement('section');continuation.className='receipt-document receipt-history-page';
     continuation.innerHTML=page.querySelector('header').outerHTML+`<p class="receipt-history-caption">${esc(c.name)} · Orden ${esc(r.orderNumber)} · Historial hasta este recibo</p>`+historyTable([],r.number)+page.querySelector('footer').outerHTML;
     target.append(continuation);const rows=continuation.querySelector('tbody');
-    while(remaining.length){rows.insertAdjacentHTML('beforeend',remaining[0]);if(overflow(continuation)){rows.lastElementChild.remove();break;}remaining.shift();}
+    while(remaining.length){rows.insertAdjacentHTML('beforeend',remaining[0]);if(overflow(continuation)||rows.getBoundingClientRect().bottom>continuation.querySelector('footer').getBoundingClientRect().top-8){rows.lastElementChild.remove();break;}remaining.shift();}
     if(!rows.children.length)throw Error('El historial excede la hoja');
   }
   const pages=[...target.querySelectorAll('.receipt-document')];

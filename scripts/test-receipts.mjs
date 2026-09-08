@@ -55,7 +55,7 @@ console.log('OK · recibos: saldo conciliado, pago inicial único, PDF privado, 
  assert.throws(()=>f.run('RECIBO_CUENTA',{number:f.order.number}),e=>e.appCode==='RECEIPT_BALANCE_INTEGRITY');
 }
 {
- const f=sandboxRuntime();f.start();const command=structuredClone(f.command);command.payments=[];
+ const f=sandboxRuntime();f.start();const command=structuredClone(f.command);command.payments=[];command.noPayment=true;
  const order=f.run('ORDEN_CREAR',command).order,plans=[];
  for(const [i,amount] of [500000,700000,600000,500000].entries()){
   const account=f.run('RECIBO_CUENTA',{number:order.number});
