@@ -25,14 +25,14 @@ async function openPdf(number){
     const bytes=Uint8Array.from(atob(data.base64),c=>c.charCodeAt(0)),url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
     if(popup)popup.location=url;else {const a=document.createElement('a');a.href=url;a.download=data.name||number+'.pdf';a.click();}
     setTimeout(()=>URL.revokeObjectURL(url),120000);
-  }catch(failure){popup?.close();$('receipt-search-status').textContent=failure.message;}
+  }catch(failure){popup?.close();$('receipt-feedback').textContent=failure.message;}
 }
 async function showReceipt(number){
   $('receipt-entry').hidden=true;$('receipt-result').hidden=false;$('receipt-result').textContent='Consultando el recibo…';
   try {const {data:r}=await apiRequest('RECIBO_OBTENER',{number});
     $('receipt-result').innerHTML=`<span>Recibo registrado</span><h2>${esc(r.number)}</h2><p>${esc(r.client)}</p><p class="receipt-result-amount">${esc(money(r.amount))}</p><p>${esc(humanizeCode(r.method))} · ${esc(date(r.date))}</p><p>${esc(r.concept)}</p><p>Saldo después de este pago: <strong>${esc(money(r.balance))}</strong></p><a href="${esc(sandboxLink('/orden.html?op='+encodeURIComponent(r.orderNumber)))}">Abrir ${esc(r.orderNumber)}</a><p>${r.complete?'PDF archivado.':'Pago registrado. Su PDF está pendiente.'}</p>`;
     if(r.complete)action($('receipt-result'),'Abrir PDF',()=>openPdf(number));
-    else if(capabilities)action($('receipt-result'),'Completar PDF',async()=>{try {await apiRequest('RECIBO_DOCUMENTOS_FINALIZAR',{number},{timeoutMs:150000});await showReceipt(number);}catch(e){$('receipt-search-status').textContent=e.message;}});
+    else if(capabilities)action($('receipt-result'),'Completar PDF',async()=>{try {$('receipt-feedback').textContent='Completando el PDF…';await apiRequest('RECIBO_DOCUMENTOS_FINALIZAR',{number},{timeoutMs:150000});$('receipt-feedback').textContent='';await showReceipt(number);}catch(e){$('receipt-feedback').textContent=e.message;}});
   }catch(e){$('receipt-result').textContent=e.message;action($('receipt-result'),'Volver a intentar',()=>showReceipt(number));}
 }
 function renderSave(state){

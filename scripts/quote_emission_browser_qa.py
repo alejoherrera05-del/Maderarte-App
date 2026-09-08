@@ -136,7 +136,7 @@ try:
             assert '100.000' in ''.join(receipt_text.split()) and '3.200.000' in ''.join(receipt_text.split())
             assert evidence['productionUnchanged'] and not evidence['commercialWrites']
             assert not errors,errors
-            results.append({'width':width,'quotes':1,'orders':1,'pdfs':2,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
+            results.append({'width':width,'quotes':1,'orders':1,'receipts':1,'pdfs':3,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
             context.close();print(results[-1])
         browser.close()
     (OUT/'resultado.json').write_text(json.dumps(results,indent=2))
