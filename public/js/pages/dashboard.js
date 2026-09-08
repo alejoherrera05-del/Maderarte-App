@@ -20,7 +20,7 @@ const MENU_GROUPS = Object.freeze([
   },
   {
     key: 'operacion', label: 'Operación', tone: 'gold', items: [
-      { key: 'abonos', label: 'Registrar abono', description: 'Recibos, pagos y saldos', icon: 'wallet', permission: 'abonos.read', available: false },
+      { key: 'abonos', label: 'Recibos de caja', description: 'Recibos, pagos y saldos', icon: 'wallet', permission: 'abonos.read', href: '/abono.html' },
       { key: 'produccion', label: 'Producción', description: 'Pedidos en fabricación', icon: 'stack', permission: 'produccion.read', available: false },
       { key: 'documentos', label: 'Centro documental', description: 'PDF, recibos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
       { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false },

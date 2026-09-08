@@ -1,3 +1,4 @@
+import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
 import { bindOrderDocuments } from './orden-documentos.js?v=family-1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
@@ -45,7 +46,7 @@ function renderDocuments(items) {
   return links || '<div class="od-empty">No hay documentos adicionales.</div>';
 }
 
-function renderOrder(data) {
+function renderOrder(data, session) {
   const order = data.order || {};
   const items = Array.isArray(data.items) ? data.items : [];
   const payments = Array.isArray(data.payments) ? data.payments : [];
@@ -57,7 +58,7 @@ function renderOrder(data) {
   <main class="od-shell">
     <section class="od-hero"><div class="od-hero-top"><div><span class="od-kicker">Orden de pedido</span><h1>${escapeHtml(order.number || number)}</h1><p>${escapeHtml(order.client || 'Expediente comercial')}</p></div><div class="od-status-group"><span class="od-pill">${escapeHtml(humanizeCode(order.status))}</span><span class="od-pill">${escapeHtml(humanizeCode(order.productionStatus))}</span></div></div></section>
     <section class="od-metrics"><article class="od-metric"><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong><small>Valor vigente</small></article><article class="od-metric"><span>Total abonado</span><strong>${escapeHtml(money(order.paid))}</strong><small>${payments.length} ${payments.length === 1 ? 'abono' : 'abonos'}</small></article><article class="od-metric"><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong><small>Por recaudar</small></article><article class="od-metric"><span>Entrega estimada</span><strong>${escapeHtml(date(order.deliveryDate))}</strong><small>${escapeHtml(order.branch || '—')}</small></article></section>
-    <div class="od-layout"><div class="od-stack"><section class="od-card"><div class="od-card-head"><h2>Datos de la orden</h2></div><div class="od-kv">${kv('Cliente', order.client)}${kv('Cédula o NIT', order.document)}${kv('Teléfono', order.phone)}${order.alternatePhone ? kv('Segundo teléfono', order.alternatePhone) : ''}${kv('Correo', order.email)}${kv('Ciudad', order.city)}${kv('Dirección de entrega', order.address)}${kv('Responsable', order.owner)}${kv('Descripción', order.description)}${kv('Observaciones', order.notes)}</div></section><section class="od-card"><div class="od-card-head"><h2>Productos</h2><span class="od-count">${items.length}</span></div>${renderItems(items)}</section><section class="od-card"><div class="od-card-head"><h2>Abonos</h2><span class="od-count">${payments.length}</span></div>${renderPayments(payments)}</section></div>
+    <div class="od-layout"><div class="od-stack"><section class="od-card"><div class="od-card-head"><h2>Datos de la orden</h2></div><div class="od-kv">${kv('Cliente', order.client)}${kv('Cédula o NIT', order.document)}${kv('Teléfono', order.phone)}${order.alternatePhone ? kv('Segundo teléfono', order.alternatePhone) : ''}${kv('Correo', order.email)}${kv('Ciudad', order.city)}${kv('Dirección de entrega', order.address)}${kv('Responsable', order.owner)}${kv('Descripción', order.description)}${kv('Observaciones', order.notes)}</div></section><section class="od-card"><div class="od-card-head"><h2>Productos</h2><span class="od-count">${items.length}</span></div>${renderItems(items)}</section><section class="od-card"><div class="od-card-head"><h2>Abonos</h2><span class="od-count">${payments.length}</span></div>${renderPayments(payments)}${hasPermission(session, 'abonos.read') ? `<a class="od-link" href="${escapeHtml(sandboxLink('/abono.html?op=' + encodeURIComponent(order.number)))}">Recibos de caja · consultar y registrar abonos</a>` : ''}</section></div>
     <aside class="od-stack"><section class="od-card"><div class="od-card-head"><h2>Documentos principales</h2></div>${quoteLink}${primaryLinks || '<div class="od-empty">No hay enlaces disponibles todavía.</div>'}</section><section class="od-card"><div class="od-card-head"><h2>Remisiones</h2><span class="od-count">${remissions.length}</span></div>${renderRemissions(remissions)}</section><section class="od-card"><div class="od-card-head"><h2>Documentos</h2><span class="od-count">${documents.length}</span></div>${renderDocuments(documents)}</section></aside></div>
   </main>`;
 }
