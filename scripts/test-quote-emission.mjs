@@ -83,4 +83,32 @@ for(const [mutate,code] of [
  eq((await manager.refresh()).phase,'confirmed');eq(events.at(-1).step,'verify');eq(f.rows('Cotizaciones').length,1);eq(f.rows('Archivos_Cotizacion').filter(x=>x.Tipo==='COTIZACION').length,1);
  eq(JSON.stringify(f.production()),before);
 }
+
+{
+ const f=fixture();const {number}=complete(f);
+ f.rows('Clientes')[0].Email='changed@example.invalid';
+ eq(f.run('COTIZACION_OBTENER',{number}).clientDetail.email,'qa@example.invalid','reopen frozen contact');
+ const session={profile:{uid:'seller',branches:['TP']},permissions:['cotizaciones.read','cotizaciones.create']};
+ bad(()=>f.c.quoteCreationAllowed_(session,'MP'),'BRANCH_NOT_ALLOWED');
+ bad(()=>f.c.quoteCreationAllowed_({...session,permissions:['cotizaciones.read']},'TP'),'PERMISSION_DENIED');
+ bad(()=>f.c.quoteCreationStatus_({requestId:f.ctx.requestId},{session:{...session,permissions:[]}}),'PERMISSION_DENIED');
+ f.state.files.set('foreign',{id:'foreign',name:'Foreign',mimeType:'text/plain',parents:[f.c.osState_().rootId]});
+ bad(f.clean,'SANDBOX_FOREIGN_FILE');eq([...f.state.files.values()].some(x=>x.trashed===true),false);
+}
+{
+ const f=fixture();
+ // Numbering unit scenario: lift only the one-quote QA quota, keeping actual
+ // validation, authorization, lock, journal, Sheets and Drive modules intact.
+ f.c.osValidateQuote_=()=>{};f.c.osReserveQuote_=()=>{};
+ const first=f.run('COTIZACION_CREAR',f.command).quote;
+ const next=f.run('COTIZACION_CREAR',f.command,'SECOND-QUOTE-REQUEST').quote;
+ eq(first.number===next.number,false);eq(f.rows('Clientes').length,1);eq(f.rows('Cotizaciones').length,2);
+ f.rows('Sedes')[0].Siguiente_Cotizacion=1;
+ bad(()=>f.run('COTIZACION_CREAR',f.command,'THIRD-QUOTE-REQUEST'),'NUMBER_ALREADY_USED');
+ const changed=structuredClone(f.command);changed.branch='TP';
+ const third=f.run('COTIZACION_CREAR',changed,'THIRD-QUOTE-REQUEST').quote;
+ assert.match(third.number,/^TP-QA-.*-0001$/);checks++;
+ const row=f.rows('Idempotencia')[0];row.Usuario='another-user';
+ bad(()=>f.run('COTIZACION_CREAR',f.command),'REQUEST_ID_CONFLICT');
+}
 console.log(`OK · ${checks} quote backend/sandbox assertions using real Apps Script modules and simulated Google transport. No real Google writes.`);

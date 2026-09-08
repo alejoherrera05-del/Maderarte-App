@@ -153,8 +153,8 @@ async function bind() {
   });
 
   form.addEventListener('submit', async event => {
-    if (locked) return;
     event.preventDefault();
+    if (locked) return;
     const payload = collectPayload();
     if (!basicValid(payload)) return;
     let prepared;
@@ -165,7 +165,8 @@ async function bind() {
       prepared = await prepareQuoteMedia(payload, photoMap(), progress.update);
       progress.update({ step: 'prepare', status: 'complete' });
     } catch (error) {
-      disableForm(false); progress.pause(error.message || 'No se pudieron preparar las referencias.'); return;
+      disableForm(false); button.disabled = !manager.getState().canSave;
+      progress.pause(error.message || 'No se pudieron preparar las referencias.'); return;
     }
     const result = await manager.save(prepared);
     if (result.phase === 'confirmed') openQuote(result.number);

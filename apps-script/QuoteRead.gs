@@ -3,7 +3,7 @@ function quoteDocumentSnapshot_(number) {
   var files = qmdRows_(number);
   return {
     number: number,
-    complete: files.some(function(row) { return row.Tipo === 'COTIZACION' && row.Estado === 'LISTO'; }),
+    complete: files.some(function(row) { return row.Tipo === 'COTIZACION'; }) && files.every(function(row) { return row.Estado === 'LISTO' && row.URL; }),
     files: files.map(function(row) {
       var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
       return {
@@ -35,6 +35,11 @@ function getQuoteDetail_(payload, session) {
   var result = normalizeQuote_(row);
   var clientRow = findRow_('Clientes', 'Cedula_NIT', row.Cedula_NIT);
   result.clientDetail = clientRow ? normalizeClient_(clientRow) : null;
+  if (typeof qmdConfigured_ === 'function' && qmdConfigured_()) {
+    var pdf = mdUnique_(qmdRows_(number), 'Tipo', 'COTIZACION');
+    var plan = pdf && parseJson_(pdf.Plan_JSON, null);
+    if (plan && plan.number === number && plan.client) result.clientDetail = plan.client;
+  }
   result.documents = quoteDocumentSnapshot_(number);
   return result;
 }

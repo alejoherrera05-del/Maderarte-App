@@ -1,3 +1,4 @@
+import { sandboxLink } from '../core/order-sandbox-context.js';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { APP_CONFIG, withPreview } from '../core/config.js';
@@ -76,6 +77,7 @@ function actionMarkup(item) {
   const pdf = safeExternalUrl(item.pdfUrl);
   const order = String(item.convertedOrder || '').trim();
   const actions = [];
+  if (item.number) actions.push(`<a class="tracking-action" href="${escapeHtml(sandboxLink(withPreview(`/cotizacion-ver.html?cot=${encodeURIComponent(item.number)}`)))}">Abrir expediente</a>`);
   if (pdf) {
     actions.push(`<button class="tracking-action primary" type="button" data-pdf-url="${escapeHtml(pdf)}" data-pdf-number="${escapeHtml(item.number || '')}"><img src="/assets/icons/file-text.svg" alt="" aria-hidden="true"><span>Ver cotización</span></button>`);
   } else {

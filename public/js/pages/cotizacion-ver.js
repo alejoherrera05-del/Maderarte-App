@@ -1,3 +1,4 @@
+import { sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
@@ -8,7 +9,7 @@ const number = String(params.get('cot') || '').trim();
 
 function itemMarkup(item,index){
   const facts=[item.category,item.fabric,item.wood].filter(Boolean).join(' · ');
-  return `<article class="qv-item"><span class="qv-index">${String(index+1).padStart(2,'0')}</span><div><h3>${escapeHtml(item.description||'Mueble')}</h3><p>${escapeHtml([facts,item.specifications].filter(Boolean).join(' · '))}</p></div><strong class="qv-item-price">${escapeHtml(money(item.subtotal))}</strong></article>`;
+  return `<article class="qv-item"><span class="qv-index">${String(index+1).padStart(2,'0')}</span><div><h3>${escapeHtml(item.description||'Mueble')}</h3><p>${escapeHtml([`${item.quantity} × ${money(item.unitValue)}`,facts,item.specifications].filter(Boolean).join(' · '))}</p></div><strong class="qv-item-price">${escapeHtml(money(item.subtotal))}</strong></article>`;
 }
 
 async function openPdf(){
@@ -37,9 +38,11 @@ function render(data){
     <section class="qv-card"><h2 class="qv-section-title">Cliente</h2><div class="qv-grid"><div class="qv-field"><small>Nombre</small><strong>${escapeHtml(data.client||c.name||'—')}</strong></div><div class="qv-field"><small>Cédula / NIT</small><strong>${escapeHtml(data.document||c.document||'—')}</strong></div><div class="qv-field"><small>Teléfono</small><strong>${escapeHtml(data.phone||c.phone||'—')}</strong></div><div class="qv-field"><small>Correo</small><strong>${escapeHtml(c.email||'—')}</strong></div><div class="qv-field"><small>Ciudad</small><strong>${escapeHtml(c.city||'—')}</strong></div><div class="qv-field"><small>Dirección</small><strong>${escapeHtml(c.address||data.address||'—')}</strong></div></div></section>
     <section class="qv-card"><h2 class="qv-section-title">Mobiliario cotizado</h2><div class="qv-items">${items.map(itemMarkup).join('')}</div></section>
     <section class="qv-card"><h2 class="qv-section-title">Resumen</h2><div class="qv-finance"><div><span>Subtotal</span><strong>${escapeHtml(money(data.subtotal))}</strong></div><div><span>Descuento</span><strong>${escapeHtml(money(data.discount))}</strong></div><div><span>Total</span><strong>${escapeHtml(money(data.total))}</strong></div></div>${data.observations?`<p class="qv-note">${escapeHtml(data.observations)}</p>`:''}</section>
-    <section class="qv-card"><h2 class="qv-section-title">Documento</h2><div class="qv-actions"><button class="qv-action qv-action-primary" id="qv-open-pdf" type="button" ${docs.complete?'':'disabled'}>Abrir PDF</button><a class="qv-action" href="/cotizaciones.html">Ir a seguimiento</a></div><p id="qv-message" class="qv-meta">${docs.complete?'El PDF corresponde a esta misma cotización y se lee desde el archivo privado.':'La cotización existe, pero su PDF todavía no está confirmado.'}</p></section>
+    <section class="qv-card"><h2 class="qv-section-title">Estado comercial</h2><p>${escapeHtml(data.status||'ACTIVA')}</p>${data.convertedOrder?`<a class="qv-action" href="${escapeHtml(sandboxLink(`/orden.html?op=${encodeURIComponent(data.convertedOrder)}`))}">Ver OP ${escapeHtml(data.convertedOrder)}</a>`:''}</section><section class="qv-card"><h2 class="qv-section-title">Documento</h2><div class="qv-actions"><button class="qv-action qv-action-primary" id="qv-open-pdf" type="button" ${docs.complete?'':'disabled'}>Abrir PDF</button><a class="qv-action" href="/cotizaciones.html">Ir a seguimiento</a></div><p id="qv-message" class="qv-meta">${docs.complete?'El PDF corresponde a esta misma cotización y se lee desde el archivo privado.':'La cotización existe, pero su PDF todavía no está confirmado.'}</p></section>
   </div>`;
   app.hidden=false;
+  app.querySelectorAll('a[href^="/"]').forEach(link=>{link.href=sandboxLink(link.getAttribute('href'));});
+  bindSandboxBanner(app);
   document.getElementById('qv-open-pdf')?.addEventListener('click',openPdf);
 }
 

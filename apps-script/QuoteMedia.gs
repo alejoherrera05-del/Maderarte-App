@@ -190,7 +190,7 @@ function qmdStatus_(number, context) {
   var files = qmdRows_(number);
   return {
     number: number,
-    complete: files.some(function(row) { return row.Tipo === 'COTIZACION' && row.Estado === 'LISTO'; }),
+    complete: files.some(function(row) { return row.Tipo === 'COTIZACION'; }) && files.every(function(row) { return row.Estado === 'LISTO' && row.URL; }),
     files: files.map(function(row) {
       var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
       return {
