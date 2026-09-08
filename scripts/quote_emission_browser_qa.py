@@ -39,6 +39,8 @@ try:
             expect(page.locator('#quote-submit')).to_be_enabled()
             baseline=api('/__qa/evidence')['actions']
             page.locator('#quote-preview-button').click();expect(page.locator('#quote-preview-content')).to_have_attribute('aria-busy','false',timeout=30000)
+            ids=page.locator('.order-progress-dialog h2').evaluate_all('nodes=>nodes.map(n=>n.id)')
+            assert len(ids)==len(set(ids)),'Preview/save module versions must retain unique accessible IDs'
             assert page.locator('.quote-preview-page').count()>=2
             evidence=api('/__qa/evidence');assert evidence['counts']['Clientes']==0 and evidence['counts']['Cotizaciones']==0
             assert evidence['actions']==baseline,'Preview must not call the API'

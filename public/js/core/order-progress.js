@@ -71,7 +71,9 @@ export function createDocumentProgress({ kind = 'order', mode = 'save' } = {}, d
     document: 'Genero la orden y organizo su PDF y sus carpetas dentro del archivo del cliente.',
     verify: 'Compruebo que pedido, pagos, fotografías y documento hayan quedado enlazados antes de terminar.'
   };
-  const count = (INSTANCES.get(doc) || 0) + 1;
+  let count = (INSTANCES.get(doc) || 0) + 1;
+  // Versioned module URLs can load this module twice on the same form.
+  while (doc.getElementById((count === 1 ? 'order-progress' : `order-progress-${count}`) + '-title')) count++;
   INSTANCES.set(doc, count);
   const prefix = count === 1 ? 'order-progress' : `order-progress-${count}`;
   const dialog = doc.createElement('dialog');
