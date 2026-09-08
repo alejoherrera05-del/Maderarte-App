@@ -19,10 +19,10 @@ export function clearOrderSaveSnapshots(storage) {
 }
 
 export function createOrderSave({ uid, request, durable, temporary, locks, crypto,
-  activeUid = () => uid, onState = () => {}, onProgress = () => {}, scope = '' }) {
+  activeUid = () => uid, onState = () => {}, onProgress = () => {}, scope = '', kind = 'order', finishDocuments = finishOrderDocuments }) {
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
   if (scope && !/^QA-[a-f0-9]{32}$/.test(scope)) throw fail('SANDBOX_INVALID', 'Ensayo no válido.');
-  const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
+  const key = `${ORDER_SAVE_PREFIX}${kind === 'receipt' ? 'receipt.' : ''}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
   const progress = event => { try { onProgress(event); } catch { /* Feedback cannot interrupt a save. */ } };
   let busy = false;
   let supportsMedia = false;
@@ -79,7 +79,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     try {
       sameUser();
       const payload = await storedPayload(journal);
-      await finishOrderDocuments(journal.number, payload?._media || [], async (...args) => {
+      await finishDocuments(journal.number, payload?._media || [], async (...args) => {
         sameUser(); const response = await request(...args); sameUser(); return response;
       }, message => documentPending(journal, message, true), progress);
       const receipt = { ...journal, stage: 'confirmed' };
@@ -170,7 +170,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     } catch (error) {
       // These contract errors are thrown BEFORE the server admits its first batch.
       // Never use a later rejection to erase a previous uncertain transmission.
-      const rejected = ['ORDER_INPUT_INVALID', 'ORDER_CONTRACT_MISMATCH', 'ORDER_PHOTOS_NOT_READY', 'COMMERCIAL_WRITES_DISABLED', 'REQUEST_ID_REQUIRED'];
+      const rejected = ['ORDER_INPUT_INVALID', 'ORDER_CONTRACT_MISMATCH', 'ORDER_PHOTOS_NOT_READY', 'COMMERCIAL_WRITES_DISABLED', 'REQUEST_ID_REQUIRED', 'RECEIPT_BALANCE_CHANGED', 'RECEIPT_EXCEEDS_BALANCE', 'RECEIPT_ORDER_INACTIVE'];
       if (firstAttempt && error?.requestId === journal.requestId && rejected.includes(error.code)) {
         temporary.removeItem(key);
         durable.removeItem(key);

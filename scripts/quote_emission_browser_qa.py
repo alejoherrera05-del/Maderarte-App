@@ -103,8 +103,40 @@ try:
             expect(page.get_by_role('link',name='Preparar orden de pedido',exact=True)).to_have_count(0)
             page.goto(conversion_url);page.wait_for_url(order_url,timeout=30000)
             assert api('/__qa/evidence')['counts']['Ordenes_Pedido']==1
+            page.get_by_role('link',name='Recibos de caja · consultar y registrar abonos',exact=True).click()
+            page.wait_for_url('**/abono.html?**',timeout=30000)
+            expect(page.locator('#receipt-account')).to_be_visible(timeout=30000)
+            expect(page.locator('#receipt-balance')).to_contain_text('3.300.000')
+            page.locator('#receipt-amount').fill('100000')
+            page.locator('#receipt-method').select_option('TRANSFERENCIA')
+            page.locator('#receipt-concept').fill('Abono de caja de prueba')
+            page.locator('summary').filter(has_text='Nota interna').click()
+            page.locator('#receipt-internal').fill('PRIVADO JAMAS IMPRIMIR')
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+            page.screenshot(path=str(OUT/f'recibo-formulario-{width}.png'),full_page=True)
+            if width==1440:api('/__qa/faults',{'RECIBO_CREAR':True,'INTERNO_RECIBO_DOCUMENTO_CONFIRMAR':True})
+            expect(page.locator('#receipt-submit')).to_be_enabled()
+            page.locator('#receipt-submit').click()
+            if width==1440:
+                page.get_by_role('button',name='Consultar resultado',exact=True).wait_for(timeout=60000)
+                page.reload()
+                page.get_by_role('button',name='Consultar resultado',exact=True).wait_for(timeout=60000)
+                page.reload()
+                page.get_by_role('button',name='Abrir recibo',exact=True).click(timeout=60000)
+            page.wait_for_url('**/abono.html?recibo=**',timeout=60000)
+            expect(page.get_by_role('button',name='Abrir PDF',exact=True)).to_be_enabled(timeout=30000)
+            page.screenshot(path=str(OUT/f'recibo-confirmado-{width}.png'),full_page=True)
+            evidence=api('/__qa/evidence')
+            assert evidence['counts']['Abonos']==1 and evidence['orders'][0]['Abonado_Total']==100000
+            assert evidence['orders'][0]['Saldo_Pendiente']==3200000
+            receipt_pdf=PdfReader('artifacts/owner-sandbox/pedido-3.pdf')
+            receipt_text=' '.join(pg.extract_text() or '' for pg in receipt_pdf.pages)
+            assert len(receipt_pdf.pages)==1 and 'RECIBO DE CAJA' in receipt_text
+            assert 'PRIVADO' not in receipt_text and 'Abono de caja de prueba' in receipt_text
+            assert '100.000' in ''.join(receipt_text.split()) and '3.200.000' in ''.join(receipt_text.split())
+            assert evidence['productionUnchanged'] and not evidence['commercialWrites']
             assert not errors,errors
-            results.append({'width':width,'quotes':1,'orders':1,'pdfs':2,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
+            results.append({'width':width,'quotes':1,'orders':1,'receipts':1,'pdfs':3,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
             context.close();print(results[-1])
         browser.close()
     (OUT/'resultado.json').write_text(json.dumps(results,indent=2))

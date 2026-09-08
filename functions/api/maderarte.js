@@ -167,6 +167,11 @@ export async function handleRequest(request, env = {}) {
       const engine = await probePdfEngine(env);
       return jsonResponse({ ...reply, data: { ...reply.data, pdfEngine: engine, productionReady: false } });
     }
+    if (action === 'RECIBO_DOCUMENTOS_FINALIZAR') return runDocumentPipeline(request, env, body, requestId, (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
+      const result = await upstream(internal.replace('INTERNO_DOCUMENTO_', 'INTERNO_RECIBO_DOCUMENTO_'), payload);
+      if (internal === 'INTERNO_DOCUMENTO_PREPARAR' && !result.complete && result.document?.documentKind !== 'receipt') throw Object.assign(new Error('El servidor no confirmó el recibo.'), { code: 'DOCUMENT_PLAN_INVALID', status: 503 });
+      return result;
+    }));
     if (action === 'ORDEN_DOCUMENTOS_FINALIZAR') return runDocumentPipeline(request, env, body, requestId, finalizeOrderDocuments);
     if (action === 'COTIZACION_DOCUMENTOS_FINALIZAR') return await runDocumentPipeline(request, env, body, requestId, finalizeQuoteDocuments);
     return forwardToAppsScript(request, env, body, requestId);

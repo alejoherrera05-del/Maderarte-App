@@ -183,12 +183,12 @@ function mdMagic_(bytes, mime) {
 }
 function mdDownload_(slot) {
   var meta = mdMeta_(slot.File_ID);
-  mdVerifyMeta_(meta, slot.File_ID, slot.Nombre, slot.Mime_Type, slot.Parent_ID, slot.Tipo === 'OP' ? sha256_(slot.Plan_JSON) : slot.Hash_SHA256);
-  var max = slot.Tipo === 'OP' ? ORDER_MEDIA_LIMITS_.pdfBytes : ORDER_MEDIA_LIMITS_.bytes;
+  mdVerifyMeta_(meta, slot.File_ID, slot.Nombre, slot.Mime_Type, slot.Parent_ID, slot.Mime_Type === 'application/pdf' ? sha256_(slot.Plan_JSON) : slot.Hash_SHA256);
+  var max = slot.Mime_Type === 'application/pdf' ? ORDER_MEDIA_LIMITS_.pdfBytes : ORDER_MEDIA_LIMITS_.bytes;
   if (Number(meta.size) > max) throw appError_('MEDIA_INVALID', 'El archivo de Drive excede el límite.', 413);
   var bytes = mdDrive_('drive/v3/files/' + encodeURIComponent(slot.File_ID) + '?alt=media').getBlob().getBytes();
   if (bytes.length > max || !mdMagic_(bytes, slot.Mime_Type)) throw appError_('MEDIA_INVALID', 'El contenido de Drive no coincide con su tipo.', 409);
-  if ((slot.Tipo !== 'OP' || slot.Estado === 'LISTO') && (bytes.length !== Number(slot.Bytes) || mdBytesHash_(bytes) !== slot.Hash_SHA256)) throw appError_('MEDIA_HASH_MISMATCH', 'La fotografía cambió o quedó incompleta.', 409);
+  if ((slot.Mime_Type !== 'application/pdf' || slot.Estado === 'LISTO') && (bytes.length !== Number(slot.Bytes) || mdBytesHash_(bytes) !== slot.Hash_SHA256)) throw appError_('MEDIA_HASH_MISMATCH', 'La fotografía cambió o quedó incompleta.', 409);
   return bytes;
 }
 function mdStore_(slot, bytes) {
@@ -197,7 +197,7 @@ function mdStore_(slot, bytes) {
   catch (error) { if (error.appCode !== 'DRIVE_REQUEST_FAILED' || error.details && error.details.status !== 404) throw error; }
   var boundary = 'maddy_' + Utilities.getUuid().replace(/-/g, '');
   var metadata = { id: slot.File_ID, name: slot.Nombre, parents: [slot.Parent_ID], mimeType: slot.Mime_Type,
-    appProperties: { maddyScope: mdScope_(), maddyPlan: slot.Tipo === 'OP' ? sha256_(slot.Plan_JSON) : slot.Hash_SHA256 } };
+    appProperties: { maddyScope: mdScope_(), maddyPlan: slot.Mime_Type === 'application/pdf' ? sha256_(slot.Plan_JSON) : slot.Hash_SHA256 } };
   var start = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata)
     + '\r\n--' + boundary + '\r\nContent-Type: ' + slot.Mime_Type + '\r\n\r\n';
   var body = Utilities.newBlob(start).getBytes().concat(bytes).concat(Utilities.newBlob('\r\n--' + boundary + '--').getBytes());
@@ -217,7 +217,7 @@ function mdPhotoStatus_(number, context) {
   mdAccess_(number, context, false);
   var files = mdRows_(number);
   return { number: number, complete: files.some(function(row) { return row.Tipo === 'OP' && row.Estado === 'LISTO'; }),
-    files: files.map(function(row) { var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
+    files: files.filter(function(row) { return row.Tipo === 'OP' || row.Tipo === 'FOTO'; }).map(function(row) { var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
       return { id: row.Archivo_ID, itemId: row.Item_ID || '', clientLineId: String(row.Item_ID || '').replace(number + '-I-', ''), photoId: row.Foto_ID || '', type: row.Tipo, name: plan.originalName || row.Nombre,
         position: plan.position || 0, mime: row.Mime_Type, size: Number(row.Bytes) || 0, sha256: row.Hash_SHA256 || '', ready: row.Estado === 'LISTO', url: row.Estado === 'LISTO' ? row.URL : '' };
     }) };
