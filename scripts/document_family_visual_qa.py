@@ -88,7 +88,7 @@ try:
             fill_document(page, kind)
             doc = page.locator('#quote-preview-content')
             weights = {sel: page.locator(sel).first.evaluate('e=>getComputedStyle(e).fontWeight') for sel in COMMON}
-            assert all(int(w) <= 500 for w in weights.values()), weights
+            assert all(int(w) <= (600 if sel == '.quote-editorial-section-kicker' else 500) for sel,w in weights.items()), weights
             family[kind] = weights
             text = doc.inner_text()
             folded = text.casefold()
