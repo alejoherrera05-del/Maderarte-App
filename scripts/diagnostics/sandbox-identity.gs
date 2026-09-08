@@ -22,12 +22,12 @@ function repararIdentidadHojaVaciaEnsayo() {
     osExpect_(osMeta_(s.rootId),s,'root',s.containerId);
     var candidates=osList_("'"+s.containerId+"' in parents and trashed = false and mimeType='application/vnd.google-apps.spreadsheet'");
     if(candidates.length!==1) throw Error('Se requiere una única hoja candidata.');
-    var m=JSON.parse(mdDrive_('drive/v3/files/'+encodeURIComponent(candidates[0].id)+'?fields=id,name,mimeType,parents,trashed,appProperties,createdTime,owners(emailAddress)').getContentText());
+    var m=JSON.parse(mdDrive_('drive/v3/files/'+encodeURIComponent(candidates[0].id)+'?fields=id,name,mimeType,parents,trashed,appProperties,createdTime,ownedByMe').getContentText());
     var age=Date.parse(m.createdTime)-Date.parse(s.createdAt);
     if(m.id===osProperty_('SPREADSHEET_ID') || m.trashed || m.name!==s.sheetName || m.mimeType!=='application/vnd.google-apps.spreadsheet'
       || m.parents.length!==1 || m.parents[0]!==s.containerId || Object.keys(m.appProperties||{}).length
       || !Number.isFinite(age) || age<0 || age>120000
-      || !m.owners.some(function(o){return o.emailAddress===Session.getEffectiveUser().getEmail();})) throw Error('La identidad candidata no cumple las comprobaciones.');
+      || m.ownedByMe!==true) throw Error('La identidad candidata no cumple las comprobaciones.');
     var ss=SpreadsheetApp.openById(m.id),tabs=ss.getSheets();
     if(ss.getName()!==s.sheetName || tabs.length!==1 || tabs[0].getLastRow() || tabs[0].getLastColumn()) throw Error('La hoja debe seguir completamente vacía.');
     mdDrive_('drive/v3/files/'+encodeURIComponent(m.id)+'?fields=id',{method:'patch',contentType:'application/json',payload:JSON.stringify({appProperties:osMarker_(s,'sheet')})});
