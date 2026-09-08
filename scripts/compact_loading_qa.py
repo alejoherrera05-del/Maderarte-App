@@ -42,13 +42,17 @@ with sync_playwright() as p:
             expected_steps = 4 if kind == 'quote' else 5
             assert page.locator('[data-progress-step]').count() == expected_steps
             expect(page.locator('[data-progress-number]')).to_be_hidden()
-            page.evaluate("() => { qa.update({step:'prepare',status:'complete'}); qa.update({step:'document',status:'running',message:'Componiendo el documento con el diseño de Maderarte.',number:'NO-CONFIRMADO'}); }")
+            page.evaluate("() => { qa.update({step:'prepare',status:'complete'}); qa.update({step:'document',status:'running',message:'Mensaje técnico que la interfaz no debe repetir.',number:'NO-CONFIRMADO'}); }")
             expect(page.locator('[data-progress-number]')).to_be_hidden()
             assert dialog.evaluate('e=>e.scrollWidth<=e.clientWidth+1')
             box = page.locator('.order-progress-shell').bounding_box()
             assert box['height'] <= height - 20, (width,height,kind,box)
             assert page.locator('.order-progress-steps').bounding_box()['height'] <= 26
             expect(page.locator('[data-progress-step="document"]')).to_have_attribute('data-state','running')
+            expected_headline = 'Estoy dándole forma a la propuesta de Maderarte.' if kind == 'quote' else 'Estoy armando el expediente del pedido.'
+            expect(page.locator('h2')).to_have_text(expected_headline)
+            expected_context = 'los totales y las condiciones' if kind == 'quote' else 'sus carpetas dentro del archivo del cliente'
+            expect(page.locator('[role="status"]')).to_contain_text(expected_context)
             # Passive dots are labelled for assistive technology, not a visible shopping list.
             assert page.locator('[data-progress-step] .order-progress-sr').evaluate_all('nodes=>nodes.every(e=>getComputedStyle(e).clipPath==="inset(50%)")')
             page.screenshot(path=str(OUT / f'{kind}-component-{width}.png'))
@@ -62,7 +66,7 @@ with sync_playwright() as p:
             ids = page.evaluate("() => {const a=createOrderProgress();const b=createDocumentProgress({kind:'quote',mode:'preview'});const ids=[...document.querySelectorAll('.order-progress-dialog h2')].map(e=>e.id);a.destroy();b.destroy();return ids;}")
             assert len(set(ids)) == 2
             assert page.evaluate("() => {try {createDocumentProgress({kind:'quote',mode:'save'});return false;}catch{return true;}}")
-            results.append({'kind':kind,'viewport':[width,height],'compact':True,'confirmedNumbersOnly':True,'uniqueIds':True})
+            results.append({'kind':kind,'viewport':[width,height],'compact':True,'confirmedNumbersOnly':True,'uniqueIds':True,'operationalCopy':True})
             page.close()
     if '--offline-only' not in sys.argv:
         origin = 'http://127.0.0.1:4184'
@@ -92,7 +96,8 @@ with sync_playwright() as p:
                 dialog=page.locator('.order-progress-dialog[open]')
                 expect(dialog).to_have_attribute('data-document-kind','quote')
                 expect(dialog.locator('[data-progress-step="document"]')).to_have_attribute('data-state','running')
-                expect(dialog.locator('h2')).to_have_text('Tu propuesta va tomando forma…')
+                expect(dialog.locator('h2')).to_have_text('Estoy dándole forma a la propuesta de Maderarte.')
+                expect(dialog.locator('[role="status"]')).to_contain_text('los totales y las condiciones')
                 # No timer completes pagination before the held stylesheet actually loads.
                 page.wait_for_timeout(300)
                 assert held, 'Pagination did not request the controlled stylesheet'
@@ -116,7 +121,7 @@ with sync_playwright() as p:
                 assert page.locator('.order-progress-dialog').count()==0
                 assert not errors,errors
                 assert not external,external
-                results.append({'realQuotePreview':True,'viewport':[width,height],'heldStylesheetBlocksConfirmation':True,'emitRemainsDisabled':True,'externalRequests':0})
+                results.append({'realQuotePreview':True,'viewport':[width,height],'heldStylesheetBlocksConfirmation':True,'emitRemainsDisabled':True,'operationalCopy':True,'externalRequests':0})
                 context.close()
         finally: server.terminate();server.wait(timeout=10)
     browser.close()
