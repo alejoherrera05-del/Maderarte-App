@@ -43,7 +43,7 @@ for(const [mutate,code] of [[p=>p.amount=0,'ORDER_INPUT_INVALID'],[p=>p.amount=3
 console.log('OK · recibos: saldo conciliado, pago inicial único, PDF privado, vínculo OP, numeración y recuperación.');
 {
  const f=fixture();
- assert.throws(()=>f.c.rcOrder_(f.order.number,{permissions:['ordenes.read'],profile:{branches:['TP']}}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
+ assert.throws(()=>f.c.osAdmit_(f.c.osState_().id,'RECIBO_CUENTA',f.ctx,()=>f.c.rcOrder_(f.order.number,{permissions:['ordenes.read'],profile:{branches:['TP']}})),e=>e.appCode==='BRANCH_NOT_ALLOWED');
  assert.throws(()=>f.c.rcCreate_(f.command,f.ctx),e=>e.appCode==='COMMERCIAL_WRITES_DISABLED');
  const validate=f.c.validateSessionToken_;
  f.c.validateSessionToken_=()=>({permissions:['ordenes.read','abonos.read'],profile:{uid:'reader',branches:['MP']}});
