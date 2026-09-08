@@ -1,5 +1,6 @@
 import { browserReady, finalizeOrderDocuments, probePdfEngine } from './order-documents.js';
 import { finalizeQuoteDocuments } from './quote-documents.js';
+import { generateReceiptSample } from './receipt-sample.js';
 const COOKIE_NAME = '__Host-maderarte_session';
 const MAX_BODY_BYTES = 1_048_576;
 const UPSTREAM_TIMEOUT_MS = 20_000;
@@ -166,6 +167,13 @@ export async function handleRequest(request, env = {}) {
       if (reply.status !== 'success') return jsonResponse(reply, 403);
       const engine = await probePdfEngine(env);
       return jsonResponse({ ...reply, data: { ...reply.data, pdfEngine: engine, productionReady: false } });
+    }
+    if (action === 'RECIBO_MUESTRA_PDF') {
+      const permission = await forwardToAppsScript(request, env, { action: 'RECIBO_CAPACIDADES', payload: {} }, requestId);
+      if (!permission.ok) return permission;
+      const checked = await permission.json();
+      if (checked.status !== 'success') return jsonResponse(checked, 403);
+      return jsonResponse({ status: 'success', code: 'OK', requestId, data: await generateReceiptSample(env) });
     }
     if (action === 'RECIBO_DOCUMENTOS_FINALIZAR') return runDocumentPipeline(request, env, body, requestId, (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
       const result = await upstream(internal.replace('INTERNO_DOCUMENTO_', 'INTERNO_RECIBO_DOCUMENTO_'), payload);

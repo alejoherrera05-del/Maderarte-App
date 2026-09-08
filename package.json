@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "check": "node scripts/check-project.mjs",
-    "test:edge": "node scripts/test-edge.mjs",
+    "test:edge": "node scripts/test-edge.mjs && node scripts/test-receipt-sample.mjs",
     "test:worker": "node scripts/test-worker.mjs",
     "test:brain": "node scripts/test-apps-script.mjs",
     "test:clients": "node scripts/test-clients.mjs && node scripts/test-client-lookup.mjs",
