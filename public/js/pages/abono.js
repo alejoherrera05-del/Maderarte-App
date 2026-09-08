@@ -47,6 +47,7 @@ function renderSave(state){
     action(root,'Abrir recibo',()=>window.location.assign(receiptPath(state.number)));
     action(root,'Nuevo abono',async()=>{const result=await manager.startNew();if(result.phase==='new')window.location.assign(sandboxLink('/abono.html'));});
   }else if(!['saving','checking'].includes(state.phase) && !state.working){
+    if(state.phase==='rejected' && account)action(root,'Actualizar saldo de la orden',()=>selectOrder(account.order.number));
     action(root,'Consultar resultado',()=>manager.refresh());
     if(state.phase==='retry')action(root,'Reenviar el mismo intento',()=>manager.retry());
     if(state.phase==='documents')action(root,'Abrir recibo registrado',()=>window.location.assign(receiptPath(state.number)));
@@ -86,11 +87,11 @@ guardStandalonePage({permission:'abonos.read',async render({session}){
   $('receipt-query').addEventListener('input',()=>{sequence++;account=null;$('receipt-account').hidden=true;$('receipt-results').replaceChildren();});
   $('receipt-amount').addEventListener('input',calculate);
   try {const {data}=await apiRequest('RECIBO_CAPACIDADES',{});capabilities=data.enabled===true;}catch(e){$('receipt-mode').textContent='No se pudo comprobar la disponibilidad. Puedes consultar las órdenes.';}
-  if(hasPermission(session,'abonos.create')){
+  if(hasPermission(session,'abonos.create')){try {
     manager=createReceiptSave({uid:session.profile.uid,scope:currentSandboxId(),request:apiRequest,durable:window.localStorage,temporary:window.sessionStorage,locks:window.navigator.locks,crypto:window.crypto,activeUid:()=>readSessionSnapshot()?.profile.uid||'',onState:renderSave});
     await manager.refresh();
     window.addEventListener('storage',event=>{if(event.key===manager.key)void manager.refresh();});
-  }
+  }catch(e){$('receipt-mode').textContent='No se pudo asegurar la recuperación del guardado. Puedes consultar órdenes y recibos.';}}
   if(receipt)await showReceipt(receipt);else if(op && !locked)await selectOrder(op);
   $('receipt-form').addEventListener('submit',async event=>{
     event.preventDefault();if(locked || !account || !manager?.getState().canSave)return;

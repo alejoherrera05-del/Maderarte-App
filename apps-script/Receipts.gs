@@ -61,7 +61,7 @@ function rcPlan_(payment,row,advisor) {
   var parent=mdUnique_(listRows_('Carpetas_Documentales'),'Clave',mdScope_()+':OP:'+row.Numero_OP+':PAY');
   if (!parent) throw appError_('DOCUMENT_NOT_PLANNED','Completa primero la documentación de la orden.',409);
   var document={documentKind:'receipt',issued:true,number:payment.Numero_Recibo,orderNumber:row.Numero_OP,date:payment.Fecha_Pago,
-    branchCode:row.Sede,advisor:advisor,client:{document:String(row.Cedula_NIT),name:row.Nombre_Cliente,phone:row.Telefono,address:row.Direccion_Entrega,city:row.Ciudad,email:row.Email},
+    branchCode:row.Sede,advisor:advisor,client:{document:String(row.Cedula_NIT),name:row.Nombre_Cliente,phone:row.Telefono,alternatePhone:row.Telefono_Alterno,address:row.Direccion_Entrega,city:row.Ciudad,email:row.Email},
     amount:payment.Valor_Abono,method:payment.Medio_Pago,concept:payment.Comentario,reference:payment.Referencia,
     previousBalance:payment.Saldo_Anterior,balance:payment.Saldo_Nuevo,total:Number(row.Valor_Total)};
   if (typeof osActive_==='function' && osActive_()) document.sandbox=OWNER_SANDBOX_CONTEXT_.id;

@@ -41,3 +41,14 @@ for(const [mutate,code] of [[p=>p.amount=0,'ORDER_INPUT_INVALID'],[p=>p.amount=3
  assert.throws(()=>f.run('RECIBO_CREAR',f.command,'RECEIPT-DELAY-TEST-02'),e=>e.appCode==='ORDER_RECOVERY_REQUIRED');assert.equal(f.rows('Abonos').length,2);
 }
 console.log('OK · recibos: saldo conciliado, pago inicial único, PDF privado, vínculo OP, numeración y recuperación.');
+{
+ const f=fixture();
+ assert.throws(()=>f.c.rcOrder_(f.order.number,{permissions:['ordenes.read'],profile:{branches:['TP']}}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
+ assert.throws(()=>f.c.rcCreate_(f.command,f.ctx),e=>e.appCode==='COMMERCIAL_WRITES_DISABLED');
+ const validate=f.c.validateSessionToken_;
+ f.c.validateSessionToken_=()=>({permissions:['ordenes.read','abonos.read'],profile:{uid:'reader',branches:['MP']}});
+ assert.throws(()=>f.c.rcSession_(f.ctx,true),e=>e.appCode==='PERMISSION_DENIED');
+ f.c.validateSessionToken_=validate;
+ f.rows('Ordenes_Pedido')[0].Saldo_Pendiente=1;
+ assert.throws(()=>f.run('RECIBO_CUENTA',{number:f.order.number}),e=>e.appCode==='RECEIPT_BALANCE_INTEGRITY');
+}
