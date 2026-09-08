@@ -51,7 +51,9 @@ try:
   assert 'Borrador' not in text and text.count('Saldo pendiente') == 1 and '00000001' in text
   assert page.locator('.order-finance-balance dd').inner_text().replace('\u00a0',' ') == '$ 2.900.000'
   for selector in ['.quote-editorial-client-field strong','.quote-editorial-item-title h3','.quote-editorial-item-total','.order-finance-figures dd']:
-   for node in page.locator(selector).all(): assert int(node.evaluate('e=>getComputedStyle(e).fontWeight')) <= 500
+   for node in page.locator(selector).all():
+    limit=600 if node.evaluate('e=>e.matches(".order-finance-balance dd")') else 500
+    assert int(node.evaluate('e=>getComputedStyle(e).fontWeight')) <= limit
   # No photo means no appendix. A bad image must fail instead of producing a partial PDF.
   for item in data['items']: item['photos']=[]
   page.goto('http://127.0.0.1:4173/documento-render.html',wait_until='networkidle')

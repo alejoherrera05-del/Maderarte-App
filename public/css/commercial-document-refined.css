@@ -1,5 +1,5 @@
 /* One document family for quotes and orders. Loaded only by document forms/renderers.
- * Keep the approved layout, branding and content. Regular body, medium headings.
+ * Keep the approved layout, branding and content. Regular body, selective semibold anchors.
  * Explicit specificity also covers the shared editorial stylesheet loaded asynchronously.
  */
 :is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page strong,
@@ -66,3 +66,12 @@
   letter-spacing:-.025em;
   color:#9e592f !important;
 }
+
+/* Reading anchors: emphasize sections and final amounts, not every label or paragraph. */
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-client-heading span,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-section-head h2,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-section-kicker,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-appendix-header h2,
+[data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > strong { font-weight:600 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-item-title h3,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-appendix-group h3 { font-weight:500 !important; }
