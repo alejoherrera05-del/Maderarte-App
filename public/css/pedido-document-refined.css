@@ -1,5 +1,6 @@
 /* Shared typography: commercial-document-refined.css. Only OP finances belong here. */
 
+
 /* Only the overall remaining balance returns. Per-item allocation stays hidden. */
 [data-commercial-document="order"] .quote-preview-page .order-finance-balance { display:block !important; }
 [data-commercial-document="order"] .quote-preview-page .order-finance { background:#fafafa; border-top:1px solid #c88a61; border-bottom:1px solid #dedbd7; padding:15px 17px; }
@@ -17,3 +18,6 @@
 @media print {
   [data-commercial-document="order"] .quote-preview-page .order-finance-figures { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
+/* The balance and section heading guide scanning; supporting figures stay light. */
+[data-commercial-document="order"] .quote-preview-page .order-finance-heading h2,
+[data-commercial-document="order"] .quote-preview-page .order-finance-balance dd { font-weight:600; }

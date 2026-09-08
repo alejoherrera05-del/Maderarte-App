@@ -10,7 +10,7 @@ export async function renderReceipt(snapshot, target) {
   if (snapshot?.documentKind !== 'receipt' || snapshot.issued !== true || !snapshot.number || !snapshot.orderNumber
     || !Number.isSafeInteger(snapshot.amount) || snapshot.amount <= 0 || snapshot.previousBalance - snapshot.amount !== snapshot.balance || snapshot.balance < 0) throw Error('Recibo incompleto');
   if (!document.querySelector('link[data-receipt-document]')) {
-    await new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/css/recibo-documento.css?v=half-letter-1';link.dataset.receiptDocument='true';link.onload=resolve;link.onerror=reject;document.head.append(link);});
+    await new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/css/recibo-documento.css?v=hierarchy-2';link.dataset.receiptDocument='true';link.onload=resolve;link.onerror=reject;document.head.append(link);});
   }
   const r=snapshot,c=r.client||{},branch=companyBranch(r.branchCode),company=COMPANY_PROFILE;
   const history=Array.isArray(r.history)?r.history:[];
