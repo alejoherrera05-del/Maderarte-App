@@ -1,4 +1,4 @@
-import { finishOrderDocuments } from './order-media.js?v=documents-1';
+import { finishOrderDocuments } from './order-media.js?v=progress-1';
 // One pending operation per account/browser. Only an opaque journal survives tab
 // closure; the immutable commercial payload stays in this tab's sessionStorage.
 // Neither a timeout nor an empty status response authorizes a new request ID.
@@ -19,10 +19,11 @@ export function clearOrderSaveSnapshots(storage) {
 }
 
 export function createOrderSave({ uid, request, durable, temporary, locks, crypto,
-  activeUid = () => uid, onState = () => {}, scope = '' }) {
+  activeUid = () => uid, onState = () => {}, onProgress = () => {}, scope = '' }) {
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
   if (scope && !/^QA-[a-f0-9]{32}$/.test(scope)) throw fail('SANDBOX_INVALID', 'Ensayo no válido.');
   const key = `${ORDER_SAVE_PREFIX}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
+  const progress = event => { try { onProgress(event); } catch { /* Feedback cannot interrupt a save. */ } };
   let busy = false;
   let supportsMedia = false;
   let state = { phase: 'disabled', canSave: false, locked: false, message: '' };
@@ -69,16 +70,18 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     message: `Pedido ${journal.number} guardado. Puedes abrirlo sin volver a registrarlo.` });
   const uncertain = journal => notify('uncertain', { requestId: journal.requestId,
     message: 'Falta confirmar el resultado. Consulta este intento; no crees otro pedido.' });
-  const documentPending = (journal, message) => notify('documents', { number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal),
+  const documentPending = (journal, message, working = false) => notify('documents', { working, number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal),
     message: message || `Pedido ${journal.number} registrado. Faltan sus documentos; se completará la misma orden, sin duplicar pagos.` });
   async function completeDocuments(journal) {
-    documentPending(journal, 'Completando los archivos de la orden registrada…');
+    progress({ step: 'prepare', status: 'complete', message: 'Datos de la orden confirmada recuperados.' });
+    progress({ step: 'record', status: 'complete', number: journal.number, message: 'Pedido registrado. Los pagos no se volverán a enviar.' });
+    documentPending(journal, 'Completando los archivos de la orden registrada…', true);
     try {
       sameUser();
       const payload = await storedPayload(journal);
       await finishOrderDocuments(journal.number, payload?._media || [], async (...args) => {
         sameUser(); const response = await request(...args); sameUser(); return response;
-      }, message => documentPending(journal, message));
+      }, message => documentPending(journal, message, true), progress);
       const receipt = { ...journal, stage: 'confirmed' };
       put(durable, receipt);
       if (owns(journal)) { try { put(temporary, { uid, requestId: journal.requestId, confirmed: true }); } catch { /* durable receipt is already confirmed */ } }
@@ -157,6 +160,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
   }
   async function transmit(payload, journal, firstAttempt = false) {
     notify('saving', { requestId: journal.requestId, message: 'Guardando pedido…' });
+    progress({ step: 'record', status: 'running', message: 'Esperando la confirmación del pedido y sus pagos…' });
     sameUser();
     try {
       const command = copy(payload);

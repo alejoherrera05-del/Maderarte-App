@@ -120,7 +120,7 @@ try:
         click_visible(driver.find_element(By.ID, 'quote-preview-button'))
         wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.order-document-page')))
         wait.until(lambda d: 'Detalle de compra' in d.find_element(By.ID, 'quote-preview-content').get_attribute('textContent'))
-        assert not visible('.order-finance-balance')
+        assert visible('.order-finance-balance')
         assert not visible('.order-document-allocation')
         text = driver.find_element(By.ID, 'quote-preview-content').get_attribute('textContent')
         assert 'Sala de revisión' in text and 'Comedor de revisión' in text
@@ -133,7 +133,7 @@ try:
         assert labels[:2] == ['Entrega inmediata', 'Solicitar a fábrica'], labels
         driver.find_element(By.CSS_SELECTOR, '.order-document-page').screenshot(str(ARTIFACTS / f'pedido-simple-documento-{width}.png'))
 
-        results.append({'width': width, 'plans': chips, 'documentLabels': labels[:2], 'legacyHidden': True, 'balanceHidden': True})
+        results.append({'width': width, 'plans': chips, 'documentLabels': labels[:2], 'legacyHidden': True, 'overallBalanceVisible': True})
         if width == 1440:
             print_preview_pdf()
 
@@ -143,7 +143,7 @@ try:
     assert 'entrega inmediata' in pdf_casefold and 'solicitar a fábrica' in pdf_casefold
     assert 'pagado hoy' in pdf_casefold and 'muebles del pedido' in pdf_casefold
     assert 'propuesta comercial' not in pdf_casefold and 'se entrega hoy' not in pdf_casefold
-    assert 'saldo por pagar' not in pdf_casefold
+    assert 'saldo pendiente' in pdf_casefold
     assert 'interno' not in pdf_casefold
     errors = [entry['message'] for entry in driver.get_log('browser') if entry['level'] == 'SEVERE' and 'favicon.ico' not in entry['message']]
     assert not errors, errors

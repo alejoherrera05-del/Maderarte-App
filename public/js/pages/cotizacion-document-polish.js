@@ -202,7 +202,7 @@ function orderInvestmentMarkup(data) {
     <dl class="order-finance-figures">
       <div class="order-finance-total"><dt>Total del pedido</dt><dd>${escapeHtml(money(data.total))}</dd></div>
       <div class="order-finance-paid"><dt>${data.issued ? 'Pagado hoy' : 'Abono indicado'}</dt><dd>${escapeHtml(money(data.order.paid))}</dd></div>
-      <div class="order-finance-balance"><dt>Saldo por pagar</dt><dd>${escapeHtml(money(data.order.balance))}</dd></div>
+      <div class="order-finance-balance"><dt>Saldo pendiente</dt><dd>${escapeHtml(money(data.order.balance))}</dd></div>
     </dl>
     ${payments.length ? `<div class="order-finance-payments"><span>Medios de pago</span><dl>${payments.map(([method, amount]) => `<div><dt>${escapeHtml(method)}</dt><dd>${escapeHtml(money(amount))}</dd></div>`).join('')}</dl></div>` : ''}
   </section>`;
@@ -218,7 +218,7 @@ function investmentMarkup(data) {
   return `<section class="quote-editorial-investment">
     <div class="quote-editorial-investment-context">${breakdown}</div>
     <div class="quote-editorial-total">
-      <span>Total</span>
+      <span>Total cotizado</span>
       <strong>${escapeHtml(money(data.total))}</strong>
 
     </div>
@@ -379,6 +379,8 @@ async function measuredPages(data) {
     const measured = frame.contentDocument;
     measured.documentElement.lang = 'es';
     measured.body.className = 'quote-page';
+    // Measurement must use the same scoped document styles as the visible/printed page.
+    measured.body.dataset.commercialDocument = COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote';
     const ready = [];
     document.querySelectorAll('link[rel="stylesheet"]').forEach(source => {
       const link = measured.createElement('link');
@@ -472,6 +474,11 @@ export async function renderConfirmedOrder(snapshot, target) {
     || !Array.isArray(snapshot.items) || !snapshot.items.length || snapshot.items.length > 100
     || !['MP', 'TP'].includes(snapshot.branchCode) || !Number.isSafeInteger(snapshot.total)) {
     throw new Error('La versión confirmada del pedido es inválida.');
+  }
+  if (!Number.isSafeInteger(snapshot.order?.paid) || snapshot.order.paid < 0
+    || !Number.isSafeInteger(snapshot.order?.balance) || snapshot.order.balance < 0
+    || snapshot.order.balance !== snapshot.total - snapshot.order.paid) {
+    throw new Error('El saldo confirmado del pedido no coincide con sus importes.');
   }
   const labels = { EFECTIVO: 'Efectivo', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta', ADDI: 'Addi' };
   const items = snapshot.items.map((item, index) => {

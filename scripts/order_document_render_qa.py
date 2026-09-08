@@ -48,7 +48,10 @@ try:
   pdf=PdfReader(out/'pedido-con-referencias.pdf');text=' '.join(p.extract_text() or '' for p in pdf.pages)
   assert len(pdf.pages)==total,(len(pdf.pages),total)
   assert 'Sofá sintético' in text and 'Comedor sintético' in text and 'Referencias por mueble' in text
-  assert 'Borrador' not in text and 'Saldo por pagar' not in text and '00000001' in text
+  assert 'Borrador' not in text and text.count('Saldo pendiente') == 1 and '00000001' in text
+  assert page.locator('.order-finance-balance dd').inner_text().replace('\u00a0',' ') == '$ 2.900.000'
+  for selector in ['.quote-editorial-client-field strong','.quote-editorial-item-title h3','.quote-editorial-item-total','.order-finance-figures dd']:
+   for node in page.locator(selector).all(): assert int(node.evaluate('e=>getComputedStyle(e).fontWeight')) <= 500
   # No photo means no appendix. A bad image must fail instead of producing a partial PDF.
   for item in data['items']: item['photos']=[]
   page.goto('http://127.0.0.1:4173/documento-render.html',wait_until='networkidle')

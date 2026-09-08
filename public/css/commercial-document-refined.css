@@ -1,0 +1,67 @@
+/* One document family for quotes and orders. Loaded only by document forms/renderers.
+ * Keep the approved layout, branding and content. Regular body, medium headings.
+ * Explicit specificity also covers the shared editorial stylesheet loaded asynchronously.
+ */
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page b { font-weight:500; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-client-field strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-company-copy strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-company-copy b,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-secondary-meta strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-item-title h3,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-item-total,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-item-quantity,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-item-number,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-item-facts strong { font-weight:400 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-number strong { font-weight:500 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-client-heading span,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-client-field small,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-table-head,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-table-head span,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-section-head h2,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-section-kicker,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-section-head > strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-number small,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-meta-label { font-weight:500 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .order-document-agreement { font-weight:400 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .order-document-closing .quote-editorial-notes strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .order-document-conditions strong { font-weight:500; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-appendix-group h3,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-appendix-header h2,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-footer-copy strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-document-page-number { font-weight:400 !important; }
+
+/* Shared closing language: subtle rules, regular supporting amounts, medium emphasis. */
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-notes strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-copy strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-signature::before { font-weight:500 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown strong,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown span,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-value,
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-term-value small { font-weight:400 !important; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-price-breakdown span { text-transform:none; }
+:is([data-commercial-document="quote"], [data-commercial-document="order"]) .quote-preview-page .quote-editorial-signature span {
+  font-family:"Iowan Old Style",Baskerville,Georgia,serif !important;
+  font-weight:500 !important;
+  font-style:italic !important;
+  font-size:1.05rem !important;
+}
+
+/* A quote keeps its own total/conditions; it never inherits received payments or balances. */
+[data-commercial-document="quote"] .quote-preview-page .quote-editorial-investment {
+  background:#fafafa;
+  border-top:1px solid #c88a61 !important;
+  border-bottom:1px solid #dedbd7 !important;
+  border-left:0 !important;
+  border-right:0 !important;
+  border-radius:0 !important;
+}
+[data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > span { font-weight:500 !important; }
+[data-commercial-document="quote"] .quote-preview-page .quote-editorial-total > strong {
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif !important;
+  font-size:24px !important;
+  line-height:1.25 !important;
+  font-weight:500 !important;
+  letter-spacing:-.025em;
+  color:#9e592f !important;
+}

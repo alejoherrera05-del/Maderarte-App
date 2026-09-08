@@ -15,8 +15,8 @@ for(const lost of ['upload','pdf','none']) {
   if(action==='ORDEN_CAPACIDADES') return {data:capabilities};
   if(action==='ORDEN_CREAR'){created++;eq(payload._media,undefined);eq(payload.payments[0].internalNote,'PRIVATE-NOTE');order={requestId:options.requestId,branch:'MP',number,mediaWorkflow:1};return {data:{saved:true,order}};}
   if(action==='ORDEN_CREACION_ESTADO') return {data:{saved:true,order}};
-  if(action==='ORDEN_DOCUMENTOS_ESTADO') return {data:{number,complete:pdfReady,files:[{id:'slot',itemId:number+'-I-1',clientLineId:'1',type:'FOTO',photoId:'p1',sha256:'a'.repeat(64),ready:photoReady}]}};
-  if(action==='ORDEN_FOTO_GUARDAR'){eq(payload.id,'slot');photoReady=true;if(lost==='upload'&&!failed){failed=true;throw new Error('lost after upload');}return {data:{ready:true}};}
+  if(action==='ORDEN_DOCUMENTOS_ESTADO') return {data:{number,complete:pdfReady,files:[{id:'slot',itemId:number+'-I-1',clientLineId:'1',type:'FOTO',photoId:'p1',sha256:'a'.repeat(64),ready:photoReady,url:photoReady?'https://drive.google.com/file/d/qa-photo/view':''},{id:'pdf-slot',type:'OP',ready:pdfReady,url:pdfReady?'https://drive.google.com/file/d/qa-pdf/view':''}]}};
+  if(action==='ORDEN_FOTO_GUARDAR'){eq(payload.id,'slot');photoReady=true;if(lost==='upload'&&!failed){failed=true;throw new Error('lost after upload');}return {data:{number,id:'slot',ready:true}};}
   if(action==='ORDEN_DOCUMENTOS_FINALIZAR'){assert(photoReady);pdfReady=true;if(lost==='pdf'&&!failed){failed=true;throw new Error('lost after PDF');}return {data:{complete:true,number}};}
   throw new Error('Unexpected '+action);
  };

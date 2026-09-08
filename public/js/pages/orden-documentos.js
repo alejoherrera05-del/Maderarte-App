@@ -1,5 +1,6 @@
+import { createOrderProgress } from '../core/order-progress.js?v=progress-1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
-import { photoReference, finishOrderDocuments } from '../core/order-media.js?v=documents-1';
+import { photoReference, finishOrderDocuments } from '../core/order-media.js?v=progress-1';
 // Photos and PDFs are read through the authenticated app. Drive files stay private.
 export async function bindOrderDocuments(root, number, request = apiRequest) {
   const container = document.createElement('section'); container.className = 'od-card od-document-progress';
@@ -72,9 +73,17 @@ export async function bindOrderDocuments(root, number, request = apiRequest) {
         } catch (error) { popup?.close(); throw error; }
       }));
     } else {
+      let progress;
       container.append(button('Completar documentos de esta orden', async () => {
-        await finishOrderDocuments(number, [], request, value => { message.textContent = value; });
-        window.location.reload();
+        progress ||= createOrderProgress();
+        progress.begin();
+        progress.update({ step: 'prepare', status: 'complete', message: 'Datos de la orden recuperados.' });
+        progress.update({ step: 'record', status: 'complete', number, message: 'El pedido ya está registrado. No se duplicarán los pagos.' });
+        try {
+          await finishOrderDocuments(number, [], request, value => { message.textContent = value; }, progress.update);
+          progress.destroy(); window.location.reload();
+        } catch (error) { progress.pause(error.message); throw error; }
+
       }));
     }
   } catch (error) { message.textContent = error.message || 'No se pudo comprobar la documentación. No se modificó la orden.'; }

@@ -1,0 +1,43 @@
+name: Order progress and document family QA
+on:
+  pull_request:
+    paths: ['public/**', 'scripts/**', 'package.json', '.github/workflows/order-progress-qa.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm test
+      - run: pip install playwright==1.55.0 pypdf==5.9.0 pillow==11.3.0
+      - run: python scripts/order_progress_browser_qa.py
+      - run: python scripts/order_document_render_qa.py
+      - run: python scripts/document_family_visual_qa.py
+      - name: Fuente exacta del documento y sus pruebas
+        if: always()
+        run: |
+          mkdir -p artifacts/review-source
+          git rev-parse HEAD > artifacts/review-source/COMMIT.txt
+          git archive --format=zip HEAD > artifacts/review-source/source.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: order-progress-refined-pdf
+          path: |
+            artifacts/order-progress/
+            artifacts/order-documents/
+            artifacts/document-family/
+            artifacts/review-source/
+          retention-days: 7

@@ -1,0 +1,19 @@
+/* Shared typography: commercial-document-refined.css. Only OP finances belong here. */
+
+/* Only the overall remaining balance returns. Per-item allocation stays hidden. */
+[data-commercial-document="order"] .quote-preview-page .order-finance-balance { display:block !important; }
+[data-commercial-document="order"] .quote-preview-page .order-finance { background:#fafafa; border-top:1px solid #c88a61; border-bottom:1px solid #dedbd7; padding:15px 17px; }
+[data-commercial-document="order"] .quote-preview-page .order-finance-heading h2 { color:#6d6157; font-weight:500; font-size:11px; letter-spacing:.08em; }
+[data-commercial-document="order"] .quote-preview-page .order-finance-figures { grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:14px; }
+[data-commercial-document="order"] .quote-preview-page .order-finance-figures dt { font-weight:400; color:#766f67; }
+[data-commercial-document="order"] .quote-preview-page .order-finance-figures dd { font-size:22px; font-weight:400; letter-spacing:-.025em; line-height:1.25; color:#37332f; }
+[data-commercial-document="order"] .quote-preview-page .order-finance-balance dd { color:#9e592f; font-weight:500; }
+[data-commercial-document="order"] .quote-preview-page .order-finance-payments dd,
+[data-commercial-document="order"] .quote-preview-page .order-finance-calculation b { font-weight:400; }
+@media screen and (max-width:720px) {
+  [data-commercial-document="order"] .quote-preview-page .order-finance-figures { grid-template-columns:1fr; }
+  [data-commercial-document="order"] .quote-preview-page .order-finance-balance { display:flex !important; }
+}
+@media print {
+  [data-commercial-document="order"] .quote-preview-page .order-finance-figures { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
