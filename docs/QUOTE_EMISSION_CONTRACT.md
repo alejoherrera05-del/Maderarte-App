@@ -57,7 +57,11 @@ La comprobación real `verificarBaseCero` terminó correctamente a las 14:56:13:
 
 La instalación real usa un archivo único: generar con `node scripts/export-cerebro.mjs` y reemplazar su contenido completo. No añadir los seis módulos por separado junto al archivo único, porque duplicaría funciones. El paso 1 siguiente ya se completó mediante ese formato equivalente.
 
-No fusionar ni cerrar #30 todavía. No iniciar #34.
+### Instrucción vigente del propietario: revisión en el dominio habitual
+
+El 8 de septiembre el propietario sustituyó la puerta de ensayo aislado: solicita publicar los cambios en GitHub y verificarlos directamente en `https://app.maderartepopayan.com`, sin nuevas pruebas locales ni ensayos aislados. Autoriza publicar el PR con las verificaciones de GitHub correctas, conservando PREPARACION y las escrituras comerciales deshabilitadas. La publicación no constituye aceptación de emisión comercial ni autoriza activar ventas. También autorizó enviar a la papelera el ensayo anterior de OP; no implica borrado definitivo ni limpieza de recursos productivos.
+
+Los pasos siguientes quedan como referencia histórica de la aceptación aislada propuesta, no como requisito para publicar en el dominio habitual. No cerrar #30 como aceptación comercial completada: ese recorrido real sigue pendiente.
 
 1. El propietario actualiza en Apps Script los seis módulos de esta rama: `QuoteCreation.gs`, `QuoteMedia.gs`, `QuoteRead.gs`, `Router.gs`, `OrderSandbox.gs` y `OrderCreationRecovery.gs`. Publica una nueva versión de la implementación existente, conservando URL, propiedades privadas y permisos. No ejecutar rutinas de preparación del esquema productivo para este ensayo.
 2. Mantener `COMMERCIAL_WRITES=false`, `MODO_OPERACION=PREPARACION` y banderas comerciales sin activar.
