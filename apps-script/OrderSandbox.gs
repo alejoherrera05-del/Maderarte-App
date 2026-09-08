@@ -3,6 +3,9 @@
 var OWNER_SANDBOX_CONTEXT_ = null; // execution-local, never supplied by a client
 var OWNER_SANDBOX_KEY_ = 'MADDY_OWNER_SANDBOX_V1';
 var OWNER_SANDBOX_ACTIONS_ = Object.freeze(['COTIZACION_META', 'CLIENTES_LISTAR', 'CLIENTE_OBTENER',
+  'COTIZACION_OBTENER', 'COTIZACION_CAPACIDADES', 'COTIZACION_CREAR', 'COTIZACION_CREACION_ESTADO',
+  'COTIZACION_DOCUMENTOS_ESTADO', 'COTIZACION_FOTO_GUARDAR', 'COTIZACION_FOTO_LEER', 'COTIZACION_PDF_LEER',
+  'INTERNO_COTIZACION_DOCUMENTO_PREPARAR', 'INTERNO_COTIZACION_DOCUMENTO_CONFIRMAR',
   'ORDEN_CAPACIDADES', 'ORDEN_CREAR', 'ORDEN_CREACION_ESTADO', 'ORDEN_OBTENER',
   'ORDEN_DOCUMENTOS_ESTADO', 'ORDEN_FOTO_GUARDAR', 'ORDEN_FOTO_LEER', 'ORDEN_PDF_LEER',
   'INTERNO_DOCUMENTO_PREPARAR', 'INTERNO_DOCUMENTO_CONFIRMAR']);
@@ -26,8 +29,6 @@ function osStore_(s) {
   if (osProperty_(OWNER_SANDBOX_KEY_) !== value) osFail_('SANDBOX_RECOVERY_REQUIRED', 'No se pudo asegurar la recuperación del ensayo.');
 }
 function osOwner_(context) {
-  // Called before a sandbox context is installed; subsequent auth reads also
-  // use production via getSheet_, including revocation/expiration checks.
   var session = validateSessionToken_(context.sessionToken, false);
   if (session.profile.role !== 'PROPIETARIO' || session.profile.status && session.profile.status !== 'ACTIVO') {
     throw appError_('SANDBOX_OWNER_ONLY', 'El ensayo está disponible únicamente para el propietario activo.', 403);
@@ -46,7 +47,6 @@ function osLock_(run) {
   try { return run(); } finally { OWNER_SANDBOX_CONTEXT_ = null; lock.releaseLock(); }
 }
 function osOperationLock_() {
-  // Inner order/media routines already execute under the outer ScriptLock.
   if (OWNER_SANDBOX_CONTEXT_) return { tryLock: function() { return true; }, releaseLock: function() {} };
   return LockService.getScriptLock();
 }
@@ -65,6 +65,7 @@ function osAuthSheet_(name) {
 }
 function osDatabaseName_() { return OWNER_SANDBOX_CONTEXT_ ? OWNER_SANDBOX_CONTEXT_.sheetName : MADERARTE_APP.SPREADSHEET_NAME; }
 function osFenceKey_() { return 'ORDER_CREATION_PENDING' + (OWNER_SANDBOX_CONTEXT_ ? ':' + OWNER_SANDBOX_CONTEXT_.id : ''); }
+function osQuoteFenceKey_() { return 'QUOTE_CREATION_PENDING' + (OWNER_SANDBOX_CONTEXT_ ? ':' + OWNER_SANDBOX_CONTEXT_.id : ''); }
 function osMarker_(s, role) { return { maddySandbox: s.id, maddySandboxRole: role }; }
 function osMeta_(id) {
   return JSON.parse(mdDrive_('drive/v3/files/' + encodeURIComponent(id) + '?fields=id,name,mimeType,parents,trashed,appProperties').getContentText());
@@ -100,9 +101,6 @@ function osList_(query) {
 }
 function osEnsureSheet_(s) {
   if (!s.sheetId) {
-    // Google Workspace file creation does NOT support pregenerated IDs.
-    // Persist intent BEFORE POST. After a timeout, search the same marker;
-    // never repeat creation merely because an immediate search was empty.
     var query = "'" + s.containerId + "' in parents and trashed = false and appProperties has { key='maddySandbox' and value='" + s.id + "' } and mimeType='application/vnd.google-apps.spreadsheet'";
     var found = osList_(query);
     if (found.length > 1) osFail_('SANDBOX_RECOVERY_REQUIRED', 'Hay más de una hoja candidata. Requiere revisión.');
@@ -127,6 +125,7 @@ function osSchemas_() {
   var schemas = {};
   Object.keys(REQUIRED_HEADERS).forEach(function(name) { schemas[name] = REQUIRED_HEADERS[name].concat(ORDER_CREATION_EXTRA_HEADERS_[name] || []); });
   Object.keys(ORDER_MEDIA_HEADERS_).forEach(function(name) { schemas[name] = ORDER_MEDIA_HEADERS_[name]; });
+  if (typeof QUOTE_MEDIA_HEADERS_ !== 'undefined') Object.keys(QUOTE_MEDIA_HEADERS_).forEach(function(name) { schemas[name] = QUOTE_MEDIA_HEADERS_[name]; });
   return schemas;
 }
 function osSeed_(s, branches) {
@@ -149,7 +148,7 @@ function osSeed_(s, branches) {
     } else {
       requests.push({ addSheet: { properties: { sheetId: id, title: name, gridProperties: { rowCount: 100, columnCount: Math.max(headers.length, 20), frozenRowCount: 1 } } } });
       requests.push({ updateCells: { start: { sheetId: id, rowIndex: 0, columnIndex: 0 }, rows: [{ values: headers.map(orderCell_) }], fields: 'userEnteredValue' } });
-      requests.push({ repeatCell: { range: { sheetId: id, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: headers.length }, cell: { userEnteredFormat: { backgroundColor: { red: .94, green: .94, blue: .94 }, textFormat: { bold: true }, wrapStrategy: 'WRAP' } }, fields: 'userEnteredFormat' } });
+      requests.push({ repeatCell: { range: { sheetId: id, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: headers.length }, cell: { userEnteredFormat: { backgroundColor: { red: .94, green: .94, blue: .94 }, textFormat: { bold: true }, wrapStrategy: 'WRAP' } }, fields: 'userEnteredFormat' } } });
     }
     var rows = [];
     if (name === 'Configuracion') rows = [{ Clave: 'MODO_OPERACION', Valor: 'PREPARACION' }];
@@ -165,7 +164,6 @@ function osSeed_(s, branches) {
   OWNER_SANDBOX_CONTEXT_ = s;
   try {
     orderAtomicBatch_(requests);
-    // Reopen after REST writes; do not accept a marker without schema readback.
     var verify = SpreadsheetApp.openById(s.sheetId);
     Object.keys(schemas).forEach(function(name) {
       var tab = verify.getSheetByName(name);
@@ -175,18 +173,23 @@ function osSeed_(s, branches) {
 }
 function osPublic_(s) {
   if (!s) return { available: true, state: 'SIN_PRUEBA', productionWrites: false };
-  var result = { available: true, id: s.id, state: s.stage, productionWrites: false, number: s.number || '', closedAt: s.closedAt || '',
+  var result = { available: true, id: s.id, state: s.stage, productionWrites: false, number: s.number || '', quoteNumber: s.quoteNumber || '', closedAt: s.closedAt || '',
     folderUrl: 'https://drive.google.com/drive/folders/' + s.containerId,
-    sheetUrl: s.sheetId ? 'https://docs.google.com/spreadsheets/d/' + s.sheetId + '/edit' : '',
-    cleanupConfirmed: s.stage === 'CERRADA' };
+    sheetUrl: s.sheetId ? 'https://docs.google.com/spreadsheets/d/' + s.sheetId + '/edit' : '', cleanupConfirmed: s.stage === 'CERRADA' };
   if (s.stage === 'ACTIVA') {
     OWNER_SANDBOX_CONTEXT_ = s;
     try {
-      var orders = listRows_('Ordenes_Pedido');
+      var orders = listRows_('Ordenes_Pedido'), quotes = listRows_('Cotizaciones');
       result.number = orders.length === 1 ? orders[0].Numero_OP : '';
+      result.quoteNumber = quotes.length === 1 ? quotes[0].Numero_Cotizacion : '';
       result.documentStatus = orders.length === 1 ? orders[0].Estado_Documentos : '';
-      result.counts = { orders: orders.length, items: countRows_('Orden_Items'), payments: countRows_('Abonos'), documents: countRows_('Documentos') };
-      result.canClean = !readOrderFence_() && (!orders.length && !s.requestId || orders.length === 1 && orders[0].Estado_Documentos === 'COMPLETO');
+      result.quoteDocumentStatus = quotes.length === 1 ? (String(quotes[0].URL_PDF_Cotizacion || '').trim() ? 'COMPLETO' : 'PENDIENTE') : '';
+      result.counts = { orders: orders.length, quotes: quotes.length, items: countRows_('Orden_Items'), payments: countRows_('Abonos'), documents: countRows_('Documentos') };
+      var noOrderFence = !readOrderFence_(), noQuoteFence = !readQuoteFence_();
+      var orderReady = orders.length === 1 && orders[0].Estado_Documentos === 'COMPLETO' && quotes.length === 0;
+      var quoteReady = quotes.length === 1 && String(quotes[0].URL_PDF_Cotizacion || '').trim() && orders.length === 0;
+      var empty = !orders.length && !quotes.length && !s.requestId && !s.quoteRequestId;
+      result.canClean = noOrderFence && noQuoteFence && (empty || orderReady || quoteReady);
     } finally { OWNER_SANDBOX_CONTEXT_ = null; }
   }
   return result;
@@ -195,7 +198,7 @@ function osStart_(payload, context) {
   orderObject_(payload, ['confirm'], 'sandbox');
   if (payload.confirm !== 'CREAR PRUEBA AISLADA') osFail_('SANDBOX_CONFIRM_REQUIRED', 'Confirma que crearás una prueba aislada.');
   return osLock_(function() {
-    var session = osOwner_(context); osProductionClosed_(); orderCreationSchemaReady_(); mdSchema_();
+    var session = osOwner_(context); osProductionClosed_(); orderCreationSchemaReady_(); mdSchema_(); quoteCreationSchemaReady_(); qmSchema_();
     var s = osState_();
     if (s && s.uid !== session.profile.uid) throw appError_('SANDBOX_OWNER_ONLY', 'Este ensayo pertenece a otro propietario.', 403);
     if (s && s.stage === 'LIMPIANDO') osFail_('SANDBOX_CLEANUP_PENDING', 'Completa la limpieza del ensayo anterior.');
@@ -243,22 +246,36 @@ function osAdmit_(id, action, context, run) {
 function osValidateDraft_(draft, requestId) {
   if (!osActive_()) return;
   var s = OWNER_SANDBOX_CONTEXT_;
-  // Fixed synthetic contact; product descriptions, quantities, prices and photos
-  // are captured through the actual approved form, not inserted in Sheets.
   if (draft.client.document !== '0000000001' || draft.client.name !== 'PRUEBA MADDY - NO ES UNA VENTA'
     || draft.client.phone !== '0000000011' || draft.client.alternatePhone !== '0000000022'
     || draft.client.email !== 'qa@example.invalid' || draft.client.address !== 'SIN ENTREGA - DATOS FICTICIOS' || draft.client.city !== 'Popayán (prueba)') {
     osFail_('SANDBOX_SYNTHETIC_CLIENT_REQUIRED', 'Usa los datos ficticios precargados; no registres un cliente real en el ensayo.');
   }
   if (draft.items.length > 3 || draft.payments.length > 4) osFail_('SANDBOX_LIMIT', 'El ensayo admite hasta tres muebles y cuatro pagos ficticios.');
+  if (countRows_('Cotizaciones') > 0 || s.quoteRequestId) osFail_('SANDBOX_ONE_OPERATION', 'Este ensayo ya contiene una cotización. Finalízala y limpia la prueba antes de crear una orden.');
   if (s.requestId && s.requestId !== requestId || !s.requestId && countRows_('Ordenes_Pedido') > 0) osFail_('SANDBOX_ONE_ORDER', 'Este ensayo admite una sola orden. Reabre la existente o finaliza la prueba.');
-  // This sentinel is generated server-side; PDFs and readbacks stay unmistakable.
   draft.notes = '[PRUEBA AISLADA ' + s.id + ' - SIN VALIDEZ COMERCIAL. NO COBRAR, ENTREGAR NI FABRICAR.]\n' + draft.notes;
+}
+function qsValidateDraft_(draft, requestId) {
+  if (!osActive_()) return;
+  var s = OWNER_SANDBOX_CONTEXT_;
+  if (draft.client.document !== '0000000001' || draft.client.name !== 'PRUEBA MADDY - NO ES UNA VENTA'
+    || draft.client.phone !== '0000000011' || draft.client.alternatePhone !== '0000000022'
+    || draft.client.email !== 'qa@example.invalid' || draft.client.address !== 'SIN ENTREGA - DATOS FICTICIOS' || draft.client.city !== 'Popayán (prueba)') {
+    osFail_('SANDBOX_SYNTHETIC_CLIENT_REQUIRED', 'Usa los datos ficticios precargados; no registres un cliente real en el ensayo.');
+  }
+  if (draft.items.length > 3) osFail_('SANDBOX_LIMIT', 'El ensayo admite hasta tres muebles en la cotización.');
+  if (countRows_('Ordenes_Pedido') > 0 || s.requestId) osFail_('SANDBOX_ONE_OPERATION', 'Este ensayo ya contiene una orden. Finalízala y limpia la prueba antes de emitir una cotización.');
+  if (s.quoteRequestId && s.quoteRequestId !== requestId || !s.quoteRequestId && countRows_('Cotizaciones') > 0) osFail_('SANDBOX_ONE_QUOTE', 'Este ensayo admite una sola cotización. Reabre la existente o finaliza la prueba.');
+  draft.notes = '[PRUEBA AISLADA ' + s.id + ' - SIN VALIDEZ COMERCIAL.]\n' + draft.notes;
 }
 function osReserveOrder_(requestId) {
   if (!osActive_()) return;
-  var s = OWNER_SANDBOX_CONTEXT_;
-  if (!s.requestId) { s.requestId = requestId; osStore_(s); }
+  var s = OWNER_SANDBOX_CONTEXT_; if (!s.requestId) { s.requestId = requestId; osStore_(s); }
+}
+function osReserveQuote_(requestId) {
+  if (!osActive_()) return;
+  var s = OWNER_SANDBOX_CONTEXT_; if (!s.quoteRequestId) { s.quoteRequestId = requestId; osStore_(s); }
 }
 function osCleanupPlan_(s) {
   var expected = {};
@@ -267,13 +284,17 @@ function osCleanupPlan_(s) {
   expected[s.sheetId] = { role: 'sheet', parent: s.containerId };
   OWNER_SANDBOX_CONTEXT_ = s;
   try {
-    assertNoUnresolvedOrderFence_();
-    var orders = listRows_('Ordenes_Pedido');
-    if (orders.length > 1 || orders.length === 1 && orders[0].Estado_Documentos !== 'COMPLETO' || !orders.length && s.requestId) {
+    assertNoUnresolvedOrderFence_(); assertNoUnresolvedQuoteFence_();
+    var orders = listRows_('Ordenes_Pedido'), quotes = listRows_('Cotizaciones');
+    if (orders.length > 1 || quotes.length > 1 || orders.length && quotes.length) osFail_('SANDBOX_ONE_OPERATION', 'El ensayo contiene más de una operación comercial y requiere revisión.');
+    if (orders.length === 1 && orders[0].Estado_Documentos !== 'COMPLETO' || !orders.length && s.requestId) {
       osFail_('SANDBOX_DOCUMENTS_PENDING', 'Primero confirma el pedido y completa sus archivos. No se limpiará un guardado incierto.');
     }
+    if (quotes.length === 1 && !String(quotes[0].URL_PDF_Cotizacion || '').trim() || !quotes.length && s.quoteRequestId) {
+      osFail_('SANDBOX_DOCUMENTS_PENDING', 'Primero confirma la cotización y completa su PDF. No se limpiará una emisión incierta.');
+    }
     listRows_('Carpetas_Documentales').forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
-    var slots = listRows_('Archivos_Orden');
+    var slots = listRows_('Archivos_Orden').concat(typeof QUOTE_MEDIA_HEADERS_ !== 'undefined' ? listRows_('Archivos_Cotizacion') : []);
     slots.forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
     var candidates = [];
     function visit(id, depth) {
@@ -288,7 +309,6 @@ function osCleanupPlan_(s) {
       candidates.push({ id: id, parent: spec.parent, role: spec.role, folder: meta.mimeType === 'application/vnd.google-apps.folder' });
     }
     visit(s.containerId, 0);
-    // Uploaded resources moved out of the tree must not be silently orphaned.
     var visitedIds = candidates.map(function(entry) { return entry.id; });
     if (slots.some(function(slot) { return slot.Estado !== 'LISTO' || !visitedIds.includes(slot.File_ID); })) osFail_('SANDBOX_IDENTITY_MISMATCH', 'Falta un archivo confirmado dentro del ensayo. No se limpiará parcialmente.');
     if (!candidates.some(function(x) { return x.id === s.sheetId; }) || !candidates.some(function(x) { return x.id === s.rootId; })) osFail_('SANDBOX_IDENTITY_MISMATCH', 'No se encontró el espacio completo.');
@@ -306,7 +326,7 @@ function osClean_(payload, context) {
     if (!s.cleanup) {
       if (s.stage !== 'ACTIVA') osFail_('SANDBOX_NOT_READY', 'La preparación no terminó. No se limpiará a ciegas.');
       var files = osCleanupPlan_(s);
-      s.cleanup = files; s.stage = 'LIMPIANDO'; osStore_(s); // prevents late/queued saves
+      s.cleanup = files; s.stage = 'LIMPIANDO'; osStore_(s);
     }
     var scope = sha256_(s.sheetId).slice(0, 32), allowed = s.cleanup.map(function(x) { return x.id; });
     s.cleanup.forEach(function(entry) {
