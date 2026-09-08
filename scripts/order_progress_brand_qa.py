@@ -34,25 +34,32 @@ with sync_playwright() as p:
         page.locator('.order-progress-portrait').evaluate('e => e.decode()')
         assert page.locator('.order-progress-portrait').evaluate('e => e.naturalWidth === 420')
         expect(page.locator('[data-progress-number]')).to_be_hidden()
+        expect(page.locator('#order-progress-message')).to_have_text('Reviso cliente, sede, muebles, cantidades y lo acordado para cada producto antes de registrar nada.')
         page.evaluate("() => progress.update({step:'record',status:'running',message:'Esperando confirmación.'})")
+        expect(page.locator('h2')).to_have_text('Estoy registrando exactamente lo que se acordó.')
+        expect(page.locator('#order-progress-message')).to_contain_text('notas internas permanecen fuera del documento del cliente')
         page.keyboard.press('Escape')
         expect(dialog).to_be_visible()
         expect(page.locator('[data-progress-step="record"]')).to_have_attribute('aria-current', 'step')
         page.evaluate("() => { const real = Date.now; window.timeOffset = 16000; Date.now = () => real() + window.timeOffset; }")
         page.wait_for_timeout(1100)
-        expect(page.locator('[data-progress-wait]')).to_contain_text('aún no confirma')
+        expect(page.locator('[data-progress-wait]')).to_contain_text('Google todavía no confirma esta etapa')
         expect(page.locator('[data-progress-step="record"]')).to_have_attribute('data-state', 'running')
         expect(page.locator('[data-progress-step="photos"]')).to_have_attribute('data-state', 'pending')
         page.evaluate("""() => {
             progress.update({step:'record',status:'complete',number:'MP-QA-OP-0001'});
             progress.update({step:'photos',status:'running',message:'Guardando las referencias.'});
         }""")
-        expect(page.locator('[data-progress-wait]')).not_to_contain_text('aún no confirma')
+        expect(page.locator('[data-progress-wait]')).not_to_contain_text('Google todavía no confirma esta etapa')
         assert page.locator('[aria-current="step"]').count() == 1
         expect(page.locator('[data-progress-number]')).to_have_text('Pedido MP-QA-OP-0001')
+        expect(page.locator('#order-progress-message')).to_contain_text('Archivo cada fotografía en el mueble correcto')
         page.evaluate("() => progress.update({step:'photos',status:'skipped',detail:'No hay referencias para este pedido.'})")
         expect(page.locator('[data-progress-step="photos"] .order-progress-state')).to_have_text('No aplica')
+        expect(page.locator('#order-progress-message')).to_have_text('Este pedido no lleva referencias fotográficas; continúo directamente con su documento.')
         page.evaluate("() => progress.update({step:'document',status:'running'})")
+        expect(page.locator('h2')).to_have_text('Estoy armando el expediente del pedido.')
+        expect(page.locator('#order-progress-message')).to_contain_text('sus carpetas dentro del archivo del cliente')
         assert page.locator('[data-state="running"] .order-progress-icon').evaluate('e => getComputedStyle(e).animationName') == 'none'
         page.evaluate("() => progress.pause('No se confirmó el PDF. Conservamos la misma orden para recuperar su documentación.')")
         expect(page.locator('[data-progress-live]')).to_have_text('Por confirmar')
@@ -68,14 +75,14 @@ with sync_playwright() as p:
         expect(page.locator('[data-progress-number]')).to_be_hidden()
         expect(page.locator('.order-progress-portrait')).to_be_hidden()
         expect(page.locator('.order-progress-signature')).to_be_visible()
-        expect(page.locator('#order-progress-message')).to_have_text('Comprobando los datos…')
+        expect(page.locator('#order-progress-message')).to_have_text('Reviso cliente, sede, muebles, cantidades y lo acordado para cada producto antes de registrar nada.')
         assert page.locator('.order-progress-dialog').count() == 1
         page.evaluate("() => progress.sync({phase:'confirmed'})")
         expect(dialog).not_to_be_visible()
         page.evaluate('() => progress.destroy()')
         assert page.locator('.order-progress-dialog').count() == 0
         assert not errors, errors
-        results.append({'viewport': [width, height], 'focusAndEscape': True, 'waitDoesNotConfirm': True, 'stageWaitResets': True, 'imageFallback': True, 'resetAndRecovery': True, 'reducedMotion': True, 'apiCalls': 0})
+        results.append({'viewport': [width, height], 'focusAndEscape': True, 'waitDoesNotConfirm': True, 'stageWaitResets': True, 'imageFallback': True, 'resetAndRecovery': True, 'reducedMotion': True, 'operationalCopy': True, 'apiCalls': 0})
         page.close()
     browser.close()
 (OUT / 'resultado.json').write_text(json.dumps(results, indent=2, ensure_ascii=False))
