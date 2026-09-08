@@ -28,6 +28,7 @@ function complete(f){
  eq(f.state.calls.slice(calls).some(x=>x.method==='post'),false,'metadata does not write');
  const {number,plan}=complete(f);assert.match(number,/^MP-QA-[A-F0-9]{8}-COT-0001$/);checks++;
  eq(f.rows('Cotizaciones').length,1);eq(f.rows('Clientes').length,1);eq(f.rows('Ordenes_Pedido').length,0);eq(f.rows('Abonos').length,0);
+ eq(f.rows('Auditoria').filter(x=>x.Accion==='COTIZACION_CREAR').length,1);
  eq(f.rows('Cotizaciones')[0].Total_Cotizado,3300000);eq(JSON.parse(f.rows('Cotizaciones')[0].Items_JSON).length,2);
  eq(plan.document.sandbox,f.c.osState_().id);eq(plan.document.items.map(x=>x.photos.length),[1,0]);
  const slots=JSON.stringify(f.rows('Archivos_Cotizacion'));complete(f);eq(JSON.stringify(f.rows('Archivos_Cotizacion')),slots,'retry uses same PDF/photo identities');

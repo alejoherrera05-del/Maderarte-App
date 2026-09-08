@@ -267,12 +267,22 @@ function createQuote_(payload, context) {
       Request_ID: requestId
     };
     var requests = [];
+    var previousClient = findRow_('Clientes', 'Cedula_NIT', draft.client.document);
+    if (!previousClient) requirePermission_(session, 'clientes.create');
     requests = requests.concat(quoteClientRequests_(draft, stamp));
     requests.push(orderAppendRequest_('Cotizaciones', [quoteRow]));
     requests.push(orderAppendRequest_('Registro_Numeros', [numberRegistry]));
     requests.push(orderAppendRequest_('Idempotencia', [idempotency]));
     requests = requests.concat(orderUpdateRequests_('Sedes', branchRow._row, { Siguiente_Cotizacion: reserved.next + 1, Actualizado_En: stamp }));
     requests = requests.concat(qmdPlan_(draft, result, session, stamp));
+    requests.push(orderAppendRequest_('Auditoria', [{
+      ID: 'COT-' + sha256_(requestId).slice(0, 28), Fecha: stamp, Usuario: session.profile.uid,
+      Rol: session.profile.role || '', Modulo: 'COTIZACIONES', Accion: 'COTIZACION_CREAR',
+      Entidad: 'Cotizaciones', Entidad_ID: result.number, Estado: 'CONFIRMADA', Request_ID: requestId,
+      Antes_JSON: JSON.stringify(previousClient ? { client: normalizeClient_(previousClient) } : {}),
+      Despues_JSON: JSON.stringify({ number: result.number, total: draft.total, client: draft.client, fingerprint: fingerprint }),
+      Reversible: 'NO', Motivo_No_Reversible: 'La cotización emitida conserva su historial.'
+    }]));
     SpreadsheetApp.flush();
     if (typeof osReserveQuote_ === 'function') osReserveQuote_(requestId);
     reserveOrderFence_(requestId, session.profile.uid, fingerprint, 'COTIZACION_CREAR');

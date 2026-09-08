@@ -47,6 +47,9 @@ guardStandalonePage({ permission:'config.read', async render({session}) {
         try {
           window.localStorage.removeItem(key);window.sessionStorage.removeItem(key);
           window.sessionStorage.removeItem('maderarte.form-draft.v1.'+session.profile.uid+'.order:'+data.id);
+          const quoteKey='maderarte.quote-save.v1.'+encodeURIComponent(session.profile.uid)+'.'+data.id;
+          window.localStorage.removeItem(quoteKey);window.sessionStorage.removeItem(quoteKey);
+          window.sessionStorage.removeItem('maderarte.form-draft.v1.'+session.profile.uid+'.quote:'+data.id);
         } catch { /* Server cleanup is confirmed; stale keys cannot reopen it. */ }
       }
       render(data);
