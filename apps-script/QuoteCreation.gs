@@ -160,7 +160,10 @@ function quoteNumber_(branchRow) {
 }
 
 function quoteClientRequests_(draft, stamp) {
-  var existing = findRow_('Clientes', 'Cedula_NIT', draft.client.document);
+  var clients = listRows_('Clientes').filter(function(row) { return String(row.Cedula_NIT || '').trim() === draft.client.document; });
+  if (clients.length > 1) throw appError_('CLIENT_INTEGRITY_ERROR', 'La identificación está duplicada. Revisa el cliente.', 409);
+  var existing = clients[0];
+  if (existing && existing.Estado !== 'ACTIVO') throw appError_('CLIENT_INACTIVE', 'El cliente no está activo.', 409);
   var patch = {
     Nombre_Completo: draft.client.name,
     Telefono: draft.client.phone,
@@ -192,6 +195,7 @@ function createQuote_(payload, context) {
   var draft = normalizeQuoteCreation_(payload);
   quoteCreationAllowed_(session, draft.branch);
   qmdSchema_();
+  if (typeof osValidateQuote_ === 'function') osValidateQuote_(draft, requestId);
   var fingerprint = sha256_(JSON.stringify(draft));
   var replay = quoteCreationReplay_(requestId, session, fingerprint);
   if (replay) return { saved: true, quote: replay };
@@ -201,8 +205,11 @@ function createQuote_(payload, context) {
   if (!lock.tryLock(5000)) throw appError_('QUOTE_BUSY', 'Hay otra emisión en curso. Consulta el resultado antes de repetir.', 503);
   try {
     replay = quoteCreationReplay_(requestId, session, fingerprint);
-    if (replay) return { saved: true, quote: replay };
-    var branchRow = findRow_('Sedes', 'Sede_ID', draft.branch);
+    if (replay) { clearConfirmedOrderFence_(); return { saved: true, quote: replay }; }
+    assertNoUnresolvedOrderFence_();
+    var branches = listRows_('Sedes').filter(function(row) { return row.Sede_ID === draft.branch; });
+    if (branches.length !== 1) throw appError_('BRANCH_NOT_AVAILABLE', 'La sede requiere revisión.', 409);
+    var branchRow = branches[0];
     if (!branchRow || normalizeCode_(branchRow.Estado) !== 'ACTIVA') throw appError_('BRANCH_NOT_AVAILABLE', 'La sede seleccionada no está disponible.', 409);
     var reserved = quoteNumber_(branchRow);
     var stamp = now_().toISOString();
@@ -266,10 +273,14 @@ function createQuote_(payload, context) {
     requests.push(orderAppendRequest_('Idempotencia', [idempotency]));
     requests = requests.concat(orderUpdateRequests_('Sedes', branchRow._row, { Siguiente_Cotizacion: reserved.next + 1, Actualizado_En: stamp }));
     requests = requests.concat(qmdPlan_(draft, result, session, stamp));
+    SpreadsheetApp.flush();
+    if (typeof osReserveQuote_ === 'function') osReserveQuote_(requestId);
+    reserveOrderFence_(requestId, session.profile.uid, fingerprint, 'COTIZACION_CREAR');
     orderAtomicBatch_(requests);
     var confirmed = findRow_('Cotizaciones', 'Numero_Cotizacion', result.number);
     var replayAfter = quoteCreationReplay_(requestId, session, fingerprint);
     if (!confirmed || !replayAfter || replayAfter.number !== result.number) throw appError_('QUOTE_BATCH_UNCONFIRMED', 'No se pudo confirmar la emisión. Conserva el mismo intento al reintentar.', 503);
+    clearConfirmedOrderFence_();
     return { saved: true, quote: replayAfter };
   } finally {
     lock.releaseLock();
@@ -278,7 +289,11 @@ function createQuote_(payload, context) {
 
 function quoteCreationStatus_(payload, context) {
   var requestId = quoteRequestId_(payload && payload.requestId);
-  var replay = quoteCreationReplay_(requestId, context.session, '');
-  if (!replay) return { saved: false, requestId: requestId, state: 'NO_CONFIRMADO', retrySameRequest: true };
-  return { saved: true, quote: replay };
+  requirePermission_(context.session, 'cotizaciones.create');
+  return qmdLocked_(function() {
+    var replay = quoteCreationReplay_(requestId, context.session, '');
+    if (replay) { clearConfirmedOrderFence_(); return { saved: true, quote: replay }; }
+    var fence = readOrderFence_();
+    return { saved: false, requestId: requestId, state: fence ? 'REVISION_REQUERIDA' : 'NO_CONFIRMADO', retrySameRequest: !fence };
+  });
 }

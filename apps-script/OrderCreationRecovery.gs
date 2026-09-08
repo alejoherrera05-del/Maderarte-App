@@ -21,7 +21,7 @@ function clearConfirmedOrderFence_() {
   if (rows.length !== 1) return false;
   var row = rows[0];
   var saved = parseJson_(row.Resultado_JSON, null);
-  if (row.Estado !== 'CONFIRMADA' || row.Usuario !== fence.uid || row.Tipo_Operacion !== 'ORDEN_CREAR'
+  if (row.Estado !== 'CONFIRMADA' || row.Usuario !== fence.uid || row.Tipo_Operacion !== (fence.operation || 'ORDEN_CREAR')
     || !saved || saved.fingerprint !== fence.fingerprint || !saved.result
     || saved.result.requestId !== fence.requestId) return false;
   getScriptProperties_().deleteProperty(orderFenceKey_());
@@ -36,9 +36,9 @@ function assertNoUnresolvedOrderFence_() {
   }
 }
 
-function reserveOrderFence_(requestId, uid, fingerprint) {
+function reserveOrderFence_(requestId, uid, fingerprint, operation) {
   assertNoUnresolvedOrderFence_();
-  var serialized = JSON.stringify({ requestId: requestId, uid: uid, fingerprint: fingerprint, createdAt: now_().toISOString() });
+  var serialized = JSON.stringify({ requestId: requestId, uid: uid, fingerprint: fingerprint, operation: operation || 'ORDEN_CREAR', createdAt: now_().toISOString() });
   getScriptProperties_().setProperty(orderFenceKey_(), serialized);
   if (getScriptProperties_().getProperty(orderFenceKey_()) !== serialized) {
     throw appError_('ORDER_RECOVERY_REQUIRED', 'No se pudo asegurar el guardado. Conserva el borrador.', 503);

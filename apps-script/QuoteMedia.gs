@@ -2,7 +2,10 @@ var QUOTE_MEDIA_HEADERS_ = Object.freeze({
   Archivos_Cotizacion: ['Archivo_ID', 'Numero_Cotizacion', 'Item_ID', 'Foto_ID', 'Tipo', 'Nombre', 'Mime_Type', 'Bytes', 'Hash_SHA256', 'File_ID', 'Parent_ID', 'Estado', 'URL', 'Version', 'Creado_Por', 'Request_ID', 'Fecha_Registro', 'Plan_JSON']
 });
 
-function qmdConfigured_() { return optionalProperty_('QUOTE_DOCUMENTS_SCHEMA_VERSION', '') === '1'; }
+function qmdConfigured_() {
+  if (typeof osActive_ === 'function' && osActive_()) return OWNER_SANDBOX_CONTEXT_.quoteSchemaVersion === 1;
+  return optionalProperty_('QUOTE_DOCUMENTS_SCHEMA_VERSION', '') === '1';
+}
 function qmdSchema_() {
   if (!qmdConfigured_()) throw appError_('QUOTE_DOCUMENT_SCHEMA_NOT_READY', 'Falta preparar el esquema documental de cotizaciones.', 503);
   mdSchema_();

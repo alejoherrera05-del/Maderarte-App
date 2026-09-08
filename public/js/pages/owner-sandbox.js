@@ -18,9 +18,13 @@ guardStandalonePage({ permission:'config.read', async render({session}) {
     message.textContent=labels[s.state]||'Estado no reconocido. No continúes.';
     fact('Estado',s.state);fact('Ventas normales','Deshabilitadas');
     if(s.number)fact('Orden de prueba',s.number);
+    if(s.quoteNumber)fact('Cotización de prueba',s.quoteNumber);
     if(s.counts){fact('Muebles / pagos ficticios',`${s.counts.items} / ${s.counts.payments}`);fact('Documentación',s.documentStatus||'Sin pedido');}
     if(['SIN_PRUEBA','CERRADA','PREPARANDO'].includes(s.state))action(s.state==='PREPARANDO'?'Retomar preparación':'Preparar espacio de prueba',()=>run('PRUEBA_INICIAR',{confirm:'CREAR PRUEBA AISLADA'}),true);
     if(s.state==='ACTIVA') {
+      if(s.quoteReady) link(s.quoteNumber?'Reabrir cotización de prueba':'Probar cotización',sandboxLink(s.quoteNumber?`/cotizacion-ver.html?cot=${encodeURIComponent(s.quoteNumber)}`:'/cotizacion.html',s.id));
+      else fact('Cotizaciones','Ensayo anterior: requiere revisión del propietario; no se modifica ni se limpia automáticamente.');
+      if(s.quoteNumber&&!s.quoteDocumentsComplete)link('Recuperar emisión de cotización',sandboxLink('/cotizacion.html',s.id));
       link(s.number?'Reabrir la orden de prueba':'Abrir formulario de prueba',sandboxLink(s.number?`/orden.html?op=${encodeURIComponent(s.number)}`:'/pedido.html',s.id));
       for(const [label,value,host] of [['Ver hoja de prueba',s.sheetUrl,'docs.google.com'],['Ver carpeta de prueba',s.folderUrl,'drive.google.com']]){
         const u=new URL(value);if(u.protocol==='https:'&&u.hostname===host)link(label,u.href,true);
