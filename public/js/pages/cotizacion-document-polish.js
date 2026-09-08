@@ -84,7 +84,7 @@ function collectDocumentData() {
   };
 }
 
-function documentHeaderMarkup(data) {
+function documentHeaderMarkup(data, documentType = COMMERCIAL_DOCUMENT) {
   const branch = data.branch;
   const branchName = branch?.name || text('quote-meta-branch-name') || data.branchCode || 'Maderarte';
   const branchAddress = branch?.address || '';
@@ -102,11 +102,11 @@ function documentHeaderMarkup(data) {
       </div>
 
       <div class="quote-editorial-document">
-        <span class="quote-editorial-eyebrow">${data.issued && COMMERCIAL_DOCUMENT.isOrder ? 'Detalle de compra' : 'Propuesta comercial'}</span>
-        <h1>${escapeHtml(COMMERCIAL_DOCUMENT.title)}</h1>
+        <span class="quote-editorial-eyebrow">${data.issued && documentType.isOrder ? 'Detalle de compra' : 'Propuesta comercial'}</span>
+        <h1>${escapeHtml(documentType.title)}</h1>
         <div class="quote-editorial-document-identity">
           <div class="quote-editorial-number">
-            <small>${escapeHtml(COMMERCIAL_DOCUMENT.numberLabel)}</small>
+            <small>${escapeHtml(documentType.numberLabel)}</small>
             <strong>${escapeHtml(data.number)}</strong>
           </div>
           <div class="quote-editorial-secondary-meta">
@@ -577,3 +577,5 @@ export async function renderConfirmedQuote(snapshot, target) {
   for (const page of target.children) if (!page.clientHeight || page.scrollHeight > page.clientHeight + 2) throw new Error('Una página no cabe en el formato aprobado.');
   return {pages:total};
 }
+
+export { documentHeaderMarkup, clientMarkup, footerMarkup };
