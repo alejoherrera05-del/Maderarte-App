@@ -51,6 +51,12 @@ Pruebas automatizadas: `test-quote-save-client.mjs`, `test-quote-progress.mjs`, 
 
 ## Siguiente puerta: propietario y Google real
 
+Actualización del 8 de septiembre de 2026: el propietario delegó expresamente en Codex la implementación y el despliegue. Codex actualizó el archivo único existente desde `a589a8f197bfa21f095ce59d8e5d89a6cf1c14d4`, conservó un respaldo local y verificó la igualdad íntegra del contenido guardado. Google confirmó la publicación de la versión 6 a las 14:58 (Bogotá), sobre la misma implementación, sin cambiar URL, manifiesto, propiedades ni permisos.
+
+La comprobación real `verificarBaseCero` terminó correctamente a las 14:56:13: 23 contratos, un propietario, sedes MP/TP, todos los conteos comerciales en cero, `COMMERCIAL_WRITES=false` y `MODO_OPERACION=PREPARACION`. Esto valida el despliegue del backend y la base; no equivale a aceptación de emisión documental. El ensayo anterior de OP se conserva y su limpieza sigue requiriendo confirmación exacta. La prueba de cotización en Google y el merge continúan pendientes.
+
+La instalación real usa un archivo único: generar con `node scripts/export-cerebro.mjs` y reemplazar su contenido completo. No añadir los seis módulos por separado junto al archivo único, porque duplicaría funciones. El paso 1 siguiente ya se completó mediante ese formato equivalente.
+
 No fusionar ni cerrar #30 todavía. No iniciar #34.
 
 1. El propietario actualiza en Apps Script los seis módulos de esta rama: `QuoteCreation.gs`, `QuoteMedia.gs`, `QuoteRead.gs`, `Router.gs`, `OrderSandbox.gs` y `OrderCreationRecovery.gs`. Publica una nueva versión de la implementación existente, conservando URL, propiedades privadas y permisos. No ejecutar rutinas de preparación del esquema productivo para este ensayo.
