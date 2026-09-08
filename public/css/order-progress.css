@@ -1,31 +1,44 @@
-.order-progress-dialog { width:min(540px, calc(100vw - 32px)); max-height:calc(100dvh - 32px); box-sizing:border-box; margin:auto; padding:30px; overflow:auto; border:1px solid #e5e3e0; border-radius:24px; background:#fff; color:#302e2b; box-shadow:0 28px 90px #1b191b2b; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }
+.order-progress-dialog { width:100vw; height:100dvh; max-width:none; max-height:none; box-sizing:border-box; margin:0; padding:0; overflow:auto; border:0; border-radius:0; background:linear-gradient(180deg,#f8f7f5 0%,#f3f1ee 100%); color:#302e2b; box-shadow:none; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; }
 .order-progress-dialog:not([open]) { display:none; }
-.order-progress-dialog::backdrop { background:#20202666; backdrop-filter:blur(7px); }
-.order-progress-brand { display:flex; align-items:center; gap:13px; margin-bottom:23px; }
-.order-progress-brand > img { width:44px; height:44px; object-fit:contain; }
-.order-progress-brand > span { font-size:12px; font-weight:500; letter-spacing:.14em; }
-.order-progress-brand small { display:block; margin-top:4px; color:#77736f; font-size:12px; font-weight:400; letter-spacing:0; }
-.order-progress-dialog h2 { margin:0 0 9px; font-size:25px; font-weight:500; line-height:1.2; letter-spacing:-.035em; overflow-wrap:anywhere; outline:none; }
-.order-progress-dialog [role="status"] { min-height:42px; margin:0 0 18px; font-size:14px; line-height:1.5; color:#6d6863; }
-.order-progress-steps { list-style:none; padding:0; margin:0; }
-.order-progress-steps > li { display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; gap:12px; padding:15px 0; border-top:1px solid #eeece9; }
-.order-progress-icon { display:grid; place-items:center; width:26px; height:26px; box-sizing:border-box; border:1px solid #dad7d3; border-radius:50%; color:#8d8780; font-size:12px; }
-.order-progress-step-title { display:block; font-size:14px; line-height:1.35; font-weight:500; }
-.order-progress-steps small { display:block; margin-top:3px; color:#817b74; font-size:12px; line-height:1.4; }
-.order-progress-state { color:#938d86; font-size:10px; white-space:nowrap; }
-.order-progress-steps [data-state="complete"] .order-progress-icon { background:#f0f6f1; border-color:#dbe7de; color:#47684f; }
+.order-progress-dialog::backdrop { background:#f3f1ee; }
+.order-progress-dialog > * { width:min(720px,calc(100vw - 48px)); box-sizing:border-box; margin-left:auto; margin-right:auto; }
+.order-progress-brand { display:flex; align-items:center; gap:14px; margin-top:clamp(46px,9vh,96px); margin-bottom:34px; }
+.order-progress-brand > img { width:48px; height:48px; object-fit:contain; }
+.order-progress-brand > span { font-size:12px; font-weight:500; letter-spacing:.15em; }
+.order-progress-brand small { display:block; margin-top:5px; color:#77736f; font-size:12px; font-weight:400; letter-spacing:0; }
+.order-progress-dialog h2 { margin-top:0; margin-bottom:10px; font-size:clamp(30px,4vw,42px); font-weight:500; line-height:1.08; letter-spacing:-.045em; overflow-wrap:anywhere; outline:none; }
+.order-progress-dialog [role="status"] { min-height:44px; margin-top:0; margin-bottom:28px; max-width:620px; font-size:15px; line-height:1.55; color:#6d6863; }
+.order-progress-steps { list-style:none; padding:0; margin-top:0; margin-bottom:0; border-top:1px solid #dedad5; }
+.order-progress-steps > li { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:16px; min-height:74px; padding:13px 2px; border-bottom:1px solid #e3dfda; }
+.order-progress-icon { display:grid; place-items:center; width:32px; height:32px; box-sizing:border-box; border:1px solid #d7d2cc; border-radius:50%; background:#fbfaf8; color:#8d8780; font-size:12px; }
+.order-progress-step-title { display:block; font-size:15px; line-height:1.35; font-weight:500; }
+.order-progress-steps small { display:block; margin-top:4px; color:#817b74; font-size:12px; line-height:1.4; }
+.order-progress-state { color:#938d86; font-size:11px; white-space:nowrap; letter-spacing:.01em; }
+.order-progress-steps [data-state="complete"] .order-progress-icon { background:#eef5ef; border-color:#d7e4da; color:#47684f; }
 .order-progress-steps [data-state="complete"] .order-progress-state { color:#47684f; }
-.order-progress-steps [data-state="running"] .order-progress-icon { color:transparent; border-color:#ece4dc; border-top-color:#bc6536; animation:order-progress-spin 1.2s linear infinite; }
+.order-progress-steps [data-state="running"] { background:linear-gradient(90deg,#fff8f2 0%,rgba(255,248,242,0) 70%); }
+.order-progress-steps [data-state="running"] .order-progress-icon { color:transparent; background:#fffaf6; border-color:#eadfd5; border-top-color:#b65b2e; animation:order-progress-spin 1.2s linear infinite; }
 .order-progress-steps [data-state="running"] .order-progress-state { color:#9c542d; }
 .order-progress-steps [data-state="unconfirmed"] .order-progress-icon { color:#8f682f; background:#faf5ec; border-color:#e9d8bb; }
-.order-progress-foot { display:grid; grid-template-columns:64px 1fr; gap:7px 13px; align-items:center; margin-top:13px; padding-top:16px; border-top:1px solid #eeece9; }
-.order-progress-foot > img { width:62px; max-height:45px; opacity:.65; }
-.order-progress-foot > p { margin:0; color:#77716b; font-size:12px; line-height:1.45; }
+.order-progress-foot { display:grid; grid-template-columns:72px minmax(0,1fr); gap:8px 16px; align-items:center; margin-top:28px; margin-bottom:clamp(34px,8vh,80px); padding-top:22px; border-top:1px solid #dedad5; }
+.order-progress-foot > img { width:68px; max-height:50px; opacity:.7; }
+.order-progress-foot > p { margin:0; color:#77716b; font-size:12px; line-height:1.5; }
 .order-progress-foot > span { grid-column:2; color:#8a837b; font-size:11px; font-variant-numeric:tabular-nums; }
-.order-progress-return { width:100%; margin-top:20px; min-height:44px; border-radius:12px; border:1px solid #dcd5ce; background:#f8f6f3; color:#52473e; font:inherit; font-size:14px; cursor:pointer; }
+.order-progress-return { display:block; width:min(720px,calc(100vw - 48px)); margin-top:-46px; margin-bottom:46px; min-height:46px; border-radius:12px; border:1px solid #d8d2cc; background:#fff; color:#52473e; font:inherit; font-size:14px; cursor:pointer; }
 .order-progress-return[hidden] { display:none; }
 .order-progress-return:focus-visible { outline:2px solid #b56537; outline-offset:3px; }
 @keyframes order-progress-spin { to { transform:rotate(360deg); } }
-@media(prefers-reduced-motion:reduce) { .order-progress-steps [data-state="running"] .order-progress-icon { animation:none; } .order-progress-dialog::backdrop { backdrop-filter:none; } }
-@media(max-width:480px) { .order-progress-dialog { padding:22px 18px; border-radius:20px; } .order-progress-dialog h2 { font-size:22px; } .order-progress-steps > li { gap:9px; grid-template-columns:26px minmax(0,1fr); padding:12px 0; } .order-progress-state { grid-column:2; margin-top:-5px; } .order-progress-brand { margin-bottom:18px; } }
+@media(prefers-reduced-motion:reduce) { .order-progress-steps [data-state="running"] .order-progress-icon { animation:none; } }
+@media(max-width:600px) {
+  .order-progress-dialog > * { width:min(100% - 32px,720px); }
+  .order-progress-brand { margin-top:34px; margin-bottom:27px; }
+  .order-progress-brand > img { width:42px; height:42px; }
+  .order-progress-dialog h2 { font-size:30px; }
+  .order-progress-dialog [role="status"] { margin-bottom:21px; font-size:14px; }
+  .order-progress-steps > li { grid-template-columns:34px minmax(0,1fr); gap:11px; min-height:70px; padding:12px 0; }
+  .order-progress-state { grid-column:2; margin-top:-7px; }
+  .order-progress-foot { grid-template-columns:60px minmax(0,1fr); margin-top:22px; margin-bottom:30px; }
+  .order-progress-foot > img { width:56px; }
+  .order-progress-return { width:calc(100% - 32px); margin-top:-8px; margin-bottom:28px; }
+}
 @media print { .order-progress-dialog { display:none !important; } }
