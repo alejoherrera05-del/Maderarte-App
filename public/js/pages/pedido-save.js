@@ -54,13 +54,15 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   }
   const orderPath = number => sandboxLink(`/orden.html?op=${encodeURIComponent(number)}`);
   function render(state) {
+    const matchesOrigin = (quoteOrigin()?.number || '') === (state.quoteOrigin || '');
+    const ownsDraft = state.ownsDraft && matchesOrigin;
     freeze(state.locked);
     progress.sync(state);
     const gate = document.getElementById('quote-branch-gate');
     // A closed/expired tab draft must not hide recovery behind the branch gate,
     // or present empty/unrelated draft values as the confirmed order's figures.
     const recoveryOnly = state.locked && (!branch() || state.phase === 'other-tab'
-      || (['confirmed', 'documents'].includes(state.phase) && !state.ownsDraft));
+      || (['confirmed', 'documents'].includes(state.phase) && !ownsDraft));
     gate.hidden = recoveryOnly;
     document.querySelectorAll('.quote-editor, .quote-document-head, .quote-summary-row, .quote-summary-total, #quote-summary-preview, #quote-item-count, #quote-draft-status, #quote-form-error')
       .forEach(node => { node.hidden = recoveryOnly; });
@@ -81,11 +83,11 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
         action('Abrir pedido', () => navigate(orderPath(state.number)));
-        if (!currentSandboxId()) action('Nuevo pedido', async () => {
-          const result = await manager.startNew(() => draft()?.complete());
+        if (!currentSandboxId()) action(quoteOrigin() && !matchesOrigin ? 'Continuar con esta cotización' : 'Nuevo pedido', async () => {
+          const result = await manager.startNew(() => { if (ownsDraft) draft()?.complete(); });
           if (result.phase === 'new') window.location.reload();
         });
-        if (state.ownsDraft && confirmedRequest !== state.requestId) { confirmedRequest = state.requestId; draft()?.complete(); }
+        if (ownsDraft && confirmedRequest !== state.requestId) { confirmedRequest = state.requestId; draft()?.complete(); }
       } else if (state.phase === 'documents') {
         action('Completar documentos', () => manager.refresh());
         action('Abrir pedido registrado', () => navigate(orderPath(state.number)));

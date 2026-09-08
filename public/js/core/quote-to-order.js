@@ -31,7 +31,7 @@ export async function loadQuoteOrder(number, request) {
     }
     photos.push([id,references]);
   }
-  return { origin, draft: { quoteOrigin: origin, branch: source.branch, itemIds: source.items.map((_,i)=>i+1), paymentIds: [], fields, photos } };
+  return { origin, draft: { quoteOrigin: origin, branch: source.branch, itemIds: source.items.map((_,i)=>i+1), agreementModes: Object.fromEntries(source.items.map((_,i)=>[String(i+1),'inherit'])), paymentIds: [], fields, photos } };
 }
 
 export function lockQuoteSource(root = document) {

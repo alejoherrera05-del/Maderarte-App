@@ -66,11 +66,11 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     try { const saved = JSON.parse(temporary.getItem(key) || 'null'); return saved?.uid === uid && saved.requestId === journal.requestId; }
     catch { return false; }
   };
-  const confirmed = journal => notify('confirmed', { number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal),
+  const confirmed = journal => notify('confirmed', { number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal), ...(journal.quoteOrigin ? { quoteOrigin: journal.quoteOrigin } : {}),
     message: `Pedido ${journal.number} guardado. Puedes abrirlo sin volver a registrarlo.` });
   const uncertain = journal => notify('uncertain', { requestId: journal.requestId,
     message: 'Falta confirmar el resultado. Consulta este intento; no crees otro pedido.' });
-  const documentPending = (journal, message, working = false) => notify('documents', { working, number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal),
+  const documentPending = (journal, message, working = false) => notify('documents', { working, number: journal.number, requestId: journal.requestId, ownsDraft: owns(journal), ...(journal.quoteOrigin ? { quoteOrigin: journal.quoteOrigin } : {}),
     message: message || `Pedido ${journal.number} registrado. Faltan sus documentos; se completará la misma orden, sin duplicar pagos.` });
   async function completeDocuments(journal) {
     progress({ step: 'prepare', status: 'complete', message: 'Datos de la orden confirmada recuperados.' });
@@ -96,7 +96,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     }
     sameUser();
     // Persist the receipt marker before dropping any temporary commercial data.
-    const receipt = { ...journal, stage: order.mediaWorkflow === 1 ? 'documents' : 'confirmed', number: order.number };
+    const receipt = { ...journal, stage: order.mediaWorkflow === 1 ? 'documents' : 'confirmed', number: order.number, ...(order.quoteOrigin ? { quoteOrigin: order.quoteOrigin } : {}) };
     put(durable, receipt);
     if (receipt.stage === 'documents') return completeDocuments(receipt);
     if (owns(journal)) {
