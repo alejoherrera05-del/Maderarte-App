@@ -40,7 +40,14 @@ function orderEnum_(value, allowed, field) {
 }
 
 function normalizeOrderCreation_(payload) {
-  orderObject_(payload, ['schemaVersion', 'branch', 'client', 'items', 'payments', 'discount', 'notes', 'noPayment'], 'order');
+  orderObject_(payload, ['schemaVersion', 'branch', 'client', 'items', 'payments', 'discount', 'notes', 'noPayment', 'quoteOrigin'], 'order');
+  var quoteOrigin;
+  if (payload.quoteOrigin !== undefined) {
+    orderObject_(payload.quoteOrigin, ['number', 'fingerprint'], 'quoteOrigin');
+    if (typeof payload.quoteOrigin.number !== 'string' || !/^(MP|TP)-[A-Z0-9-]+-[0-9]+$/.test(payload.quoteOrigin.number)
+      || typeof payload.quoteOrigin.fingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(payload.quoteOrigin.fingerprint)) orderInputError_('quoteOrigin', 'La cotización de origen no es válida.');
+    quoteOrigin = { number: payload.quoteOrigin.number, fingerprint: payload.quoteOrigin.fingerprint };
+  }
   if (payload.schemaVersion !== ORDER_CREATION_CONTRACT_) throw appError_('ORDER_CONTRACT_MISMATCH', 'Actualiza la aplicación antes de guardar.', 409);
   var branch = orderEnum_(payload.branch, ['MP', 'TP'], 'branch');
   var rawClient = orderObject_(payload.client, ['document', 'name', 'phone', 'alternatePhone', 'email', 'address', 'city'], 'client');
@@ -116,7 +123,7 @@ function normalizeOrderCreation_(payload) {
   if (JSON.stringify(items).length > 40000) orderInputError_('items', 'El detalle es demasiado extenso para guardar íntegramente.');
   return { schemaVersion: ORDER_CREATION_CONTRACT_, branch: branch, client: client, items: items, payments: payments,
     discount: discount, notes: orderText_(payload.notes, 'notes', 10000, false), noPayment: payload.noPayment,
-    subtotal: subtotal, total: total, paid: paid, balance: total - paid };
+    subtotal: subtotal, total: total, paid: paid, balance: total - paid, ...(quoteOrigin ? { quoteOrigin: quoteOrigin } : {}) };
 }
 
 function orderCreationAllowed_(session, branch) {
@@ -221,7 +228,7 @@ function buildOrderCreationBatch_(draft, requestId, session, branchRow, clientRo
   var user = session.profile.uid;
   var items = draft.items.map(function(item) { return Object.assign({}, item, { id: number + '-I-' + item.clientLineId }); });
   var result = { number: number, branch: draft.branch, requestId: requestId, revision: 1, total: draft.total, paid: draft.paid, balance: draft.balance,
-    documentStatus: 'PENDIENTE', items: items.map(function(item) { return { clientLineId: item.clientLineId, id: item.id }; }),
+    documentStatus: 'PENDIENTE', ...(draft.quoteOrigin ? { quoteOrigin: draft.quoteOrigin.number } : {}), items: items.map(function(item) { return { clientLineId: item.clientLineId, id: item.id }; }),
     receipts: draft.payments.map(function(payment, index) { return { number: receiptNumbers[index], amount: payment.amount, method: payment.method }; }) };
   var requests = [];
   if (!clientRow) requests.push(orderAppendRequest_('Clientes', [{ Cedula_NIT: client.document, Nombre_Completo: client.name, Telefono: client.phone,
@@ -233,6 +240,7 @@ function buildOrderCreationBatch_(draft, requestId, session, branchRow, clientRo
     Descripcion_Detallada: items.map(function(item) { return item.description; }).join(' · '), Observaciones: draft.notes,
     Subtotal: draft.subtotal, Descuento: draft.discount, Valor_Total: draft.total, Abonado_Total: draft.paid, Saldo_Pendiente: draft.balance,
     Estado: 'CONFIRMADA', Estado_Produccion: 'PENDIENTE', Responsable: session.profile.name || '', Items_JSON: JSON.stringify(items),
+    Cotizacion_Origen: draft.quoteOrigin ? draft.quoteOrigin.number : '',
     Ultimo_Abono: draft.payments.length ? draft.payments[draft.payments.length - 1].amount : 0, Fecha_Ultimo_Abono: draft.payments.length ? stamp : '',
     Comentarios_Abonos: draft.payments.map(function(payment) { return payment.comment; }).filter(Boolean).join(' · '),
     Creado_Por: user, Fecha_Registro: stamp, Actualizado_Por: user, Actualizado_En: stamp, Request_ID: requestId, Version: 1, Estado_Documentos: 'PENDIENTE' }]));
@@ -258,6 +266,7 @@ function buildOrderCreationBatch_(draft, requestId, session, branchRow, clientRo
   if (receiptNumbers.length) counters.Siguiente_Recibo = Number(branchRow.Siguiente_Recibo) + receiptNumbers.length;
   requests = requests.concat(orderUpdateRequests_('Sedes', branchRow._row, counters));
   if (typeof mdConfigured_ === 'function' && mdConfigured_()) requests = requests.concat(mdPlan_(draft, items, result, session, stamp));
+  if (draft.quoteOrigin) requests = requests.concat(quoteConversionRequests_(draft, result, session, stamp));
   requests.push(orderAppendRequest_('Auditoria', [{ ID: requestId + '-AUD', Fecha: stamp, Usuario: user, Rol: session.profile.role || '',
     Modulo: 'ORDENES', Accion: 'ORDEN_CREAR', Entidad: 'ORDEN', Entidad_ID: number, Resumen: 'Pedido y abonos iniciales confirmados.',
     Estado: 'CONFIRMADA', Request_ID: requestId, Antes_JSON: '{}', Despues_JSON: JSON.stringify(result), Reversible: 'NO',
@@ -295,6 +304,7 @@ function createOrder_(payload, context) {
       return { saved: true, replayed: true, order: replay };
     }
     assertNoUnresolvedOrderFence_();
+    if (draft.quoteOrigin) validateQuoteConversion_(draft, session);
     var branches = listRows_('Sedes').filter(function(row) { return row.Sede_ID === draft.branch; });
     if (branches.length !== 1 || branches[0].Estado !== 'ACTIVA') throw appError_('BRANCH_NOT_AVAILABLE', 'La sede no está disponible para guardar.', 403);
     var clients = listRows_('Clientes').filter(function(row) { return String(row.Cedula_NIT).trim() === draft.client.document; });

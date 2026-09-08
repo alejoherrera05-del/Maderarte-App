@@ -9,7 +9,7 @@ import { createOrderSave } from '../core/order-save.js?v=progress-1';
 import { collectOrderPayload } from '../core/order-payload.js?v=documents-1';
 
 // No independent form or accounting UI. Reuse the approved button and helper.
-export function bindOrderSave({ session, validate, branch, photos, draft, mediaBusy = () => false,
+export function bindOrderSave({ session, validate, branch, photos, draft, mediaBusy = () => false, quoteOrigin = () => null,
   request = apiRequest, navigate = path => window.location.assign(path) }) {
   if (APP_CONFIG.preview.enabled || !hasPermission(session, 'ordenes.create')) return null;
   const form = document.getElementById('quote-form');
@@ -54,13 +54,15 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   }
   const orderPath = number => sandboxLink(`/orden.html?op=${encodeURIComponent(number)}`);
   function render(state) {
+    const matchesOrigin = (quoteOrigin()?.number || '') === (state.quoteOrigin || '');
+    const ownsDraft = state.ownsDraft && matchesOrigin;
     freeze(state.locked);
     progress.sync(state);
     const gate = document.getElementById('quote-branch-gate');
     // A closed/expired tab draft must not hide recovery behind the branch gate,
     // or present empty/unrelated draft values as the confirmed order's figures.
     const recoveryOnly = state.locked && (!branch() || state.phase === 'other-tab'
-      || (['confirmed', 'documents'].includes(state.phase) && !state.ownsDraft));
+      || (['confirmed', 'documents'].includes(state.phase) && !ownsDraft));
     gate.hidden = recoveryOnly;
     document.querySelectorAll('.quote-editor, .quote-document-head, .quote-summary-row, .quote-summary-total, #quote-summary-preview, #quote-item-count, #quote-draft-status, #quote-form-error')
       .forEach(node => { node.hidden = recoveryOnly; });
@@ -81,11 +83,11 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
         action('Abrir pedido', () => navigate(orderPath(state.number)));
-        if (!currentSandboxId()) action('Nuevo pedido', async () => {
-          const result = await manager.startNew(() => draft()?.complete());
+        if (!currentSandboxId()) action(quoteOrigin() && !matchesOrigin ? 'Continuar con esta cotización' : 'Nuevo pedido', async () => {
+          const result = await manager.startNew(() => { if (ownsDraft) draft()?.complete(); });
           if (result.phase === 'new') window.location.reload();
         });
-        if (state.ownsDraft && confirmedRequest !== state.requestId) { confirmedRequest = state.requestId; draft()?.complete(); }
+        if (ownsDraft && confirmedRequest !== state.requestId) { confirmedRequest = state.requestId; draft()?.complete(); }
       } else if (state.phase === 'documents') {
         action('Completar documentos', () => manager.refresh());
         action('Abrir pedido registrado', () => navigate(orderPath(state.number)));
@@ -118,6 +120,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     const selectedPhotos = new Map([...photos()].map(([id, values]) => [id, values.map(value => ({ ...value }))]));
     try {
       payload = collectOrderPayload({ branch: branch(), photos: selectedPhotos, mediaEnabled: manager.getState().mediaEnabled === true });
+      if (quoteOrigin()) payload.quoteOrigin = { ...quoteOrigin() };
       freeze(true); button.disabled = true; button.setAttribute('aria-busy', 'true');
       progress.begin();
       progress.update({ step: 'prepare', status: 'running', message: 'Validando los datos y preparando las referencias…' });

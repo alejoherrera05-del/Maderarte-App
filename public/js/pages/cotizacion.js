@@ -16,6 +16,8 @@ import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
 import { bindFormDraft } from '../core/form-draft.js?v=save-1';
 import { bindOrderSave } from './pedido-save.js?v=compact-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
+import { conversionNumber, loadQuoteOrder, lockQuoteSource } from '../core/quote-to-order.js';
+import { sandboxLink } from '../core/order-sandbox-context.js';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
   style: 'currency',
@@ -574,6 +576,7 @@ function bindGlobalInteractions() {
 
 function captureDraft() {
   return {
+    ...(state.conversion ? { quoteOrigin: state.conversion } : {}),
     branch: state.quoteMeta?.branch || '',
     agreementModes: state.agreements?.modes(),
     removedItems: state.removedItems,
@@ -586,6 +589,7 @@ function captureDraft() {
 }
 
 async function restoreDraft(data) {
+  if (state.conversion && (data?.quoteOrigin?.number !== state.conversion.number || data?.quoteOrigin?.fingerprint !== state.conversion.fingerprint)) throw new Error('La propuesta del borrador cambió.');
   if (!data || !Array.isArray(data.itemIds) || !data.itemIds.length || data.itemIds.length > 100
     || !data.itemIds.every(id => Number.isSafeInteger(id) && id > 0) || new Set(data.itemIds).size !== data.itemIds.length
     || !Array.isArray(data.fields) || data.fields.length > 2000
@@ -631,6 +635,7 @@ async function restoreDraft(data) {
   renderRemovedItem();
   if (data.branch && allowedBranches().includes(data.branch)) await selectBranch(data.branch, { focusClient: false });
   calculate();
+  if (state.conversion) lockQuoteSource();
 }
 
 guardStandalonePage({
@@ -646,16 +651,35 @@ guardStandalonePage({
     if (COMMERCIAL_DOCUMENT.isOrder) state.agreements = bindOrderAgreements(() => { calculate(); state.draft?.changed(); });
     addItem();
     if (COMMERCIAL_DOCUMENT.isOrder) state.payments = bindOrderEntry(() => { calculate(); state.draft?.changed(); });
+    if (COMMERCIAL_DOCUMENT.isOrder && new URLSearchParams(window.location.search).has('cotizacion')) {
+      try {
+        const number = conversionNumber(window.location.search);
+        document.querySelectorAll('[data-quote-branch]').forEach(button => { button.disabled = true; });
+        document.getElementById('quote-gate-message').textContent = 'Recuperando la cotización y sus referencias…';
+        const prepared = await loadQuoteOrder(number, apiRequest);
+        if (prepared.convertedOrder) { window.location.replace(sandboxLink(`/orden.html?op=${encodeURIComponent(prepared.convertedOrder)}`)); return; }
+        state.conversion = prepared.origin;
+        await restoreDraft(prepared.draft);
+        const notice = document.createElement('p'); notice.className = 'quote-draft-status'; notice.id = 'quote-origin-notice';
+        notice.textContent = `Desde ${number}. Revisa acuerdos, disponibilidad, pagos y observaciones antes de guardar.`;
+        document.getElementById('quote-form').prepend(notice);
+        if (back) back.href = sandboxLink(`/cotizacion-ver.html?cot=${encodeURIComponent(number)}`);
+      } catch (error) {
+        app.innerHTML = `<section class="quote-panel"><h1>No se pudo preparar el pedido</h1><p>${escapeHtml(error.message)}</p><a href="/cotizaciones.html">Volver a cotizaciones</a><button type="button" id="conversion-retry">Volver a intentar</button></section>`;
+        document.getElementById('conversion-retry').addEventListener('click', () => window.location.reload());
+        return;
+      }
+    }
     // QA preview stays ephemeral; real sessions recover only their own tab draft.
     if (!APP_CONFIG.preview.enabled) {
-      state.draft = bindFormDraft({ session, type: sandboxDraftType(COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote'), capture: captureDraft, restore: restoreDraft });
+      state.draft = bindFormDraft({ session, type: sandboxDraftType(state.conversion ? `order-from-${state.conversion.number}` : COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote'), capture: captureDraft, restore: restoreDraft });
       await state.draft?.ready;
     }
     bindSandboxBanner(app, { prefill: true });
     if (COMMERCIAL_DOCUMENT.isOrder) state.save = bindOrderSave({
       session, validate: () => { state.validating = true; calculate(); return validateForm(); },
       branch: () => state.quoteMeta?.branch || '', photos: () => state.photos,
-      draft: () => state.draft, mediaBusy: () => state.mediaReads > 0
+      draft: () => state.draft, mediaBusy: () => state.mediaReads > 0, quoteOrigin: () => state.conversion
     });
   }
 });
