@@ -32,7 +32,7 @@ with sync_playwright() as p:
         assert dialog.evaluate('e => e.scrollWidth <= e.clientWidth + 1')
         assert page.locator('.order-progress-shell').evaluate('e => e.getBoundingClientRect().width <= innerWidth')
         page.locator('.order-progress-portrait').evaluate('e => e.decode()')
-        assert page.locator('.order-progress-portrait').evaluate('e => e.naturalWidth === 400')
+        assert page.locator('.order-progress-portrait').evaluate('e => e.naturalWidth === 420')
         expect(page.locator('[data-progress-number]')).to_be_hidden()
         page.evaluate("() => progress.update({step:'record',status:'running',message:'Esperando confirmación.'})")
         page.keyboard.press('Escape')
