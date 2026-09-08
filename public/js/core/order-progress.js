@@ -171,7 +171,7 @@ export function createDocumentProgress({ kind = 'order', mode = 'save' } = {}, d
     row.querySelector('.order-progress-icon').textContent = event.status === 'complete' ? '✓' : event.status === 'skipped' ? '—' : '·';
     setText(row.querySelector('.order-progress-state'), STATE_LABELS[event.status]); if (event.detail) setText(row.querySelector('small'), event.detail);
     if (event.status === 'skipped' && event.step === 'photos') setText(message, kind === 'quote' ? 'Esta cotización no lleva referencias fotográficas; continúo sin crear un anexo.' : 'Este pedido no lleva referencias fotográficas; continúo directamente con su documento.');
-    if (!preview && event.number && event.status === 'complete') {
+    if (!preview && event.step === 'record' && event.number && event.status === 'complete') {
       setText(numberNode, (kind === 'quote' ? 'Cotización ' : 'Pedido ') + String(event.number).slice(0, 100)); numberNode.hidden = false;
     }
   }

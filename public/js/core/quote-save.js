@@ -86,7 +86,9 @@ export function createQuoteSave({ uid, request, durable, temporary, locks, crypt
       throw fail('INVALID_SAVE_RESPONSE', 'La respuesta no confirma esta cotización. Consulta el resultado.');
     }
     sameUser();
-    const receipt = { ...journal, stage: quote.mediaWorkflow === 1 ? 'documents' : 'confirmed', number: quote.number };
+    // Every emitted quote requires document readback, including receipts from
+    // earlier deployments that omitted mediaWorkflow from their journal.
+    const receipt = { ...journal, stage: 'documents', number: quote.number };
     put(durable, receipt);
     return receipt.stage === 'documents' ? completeDocuments(receipt) : confirmed(receipt);
   }

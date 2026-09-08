@@ -211,7 +211,8 @@ function createQuote_(payload, context) {
       branch: draft.branch,
       requestId: requestId,
       createdAt: stamp,
-      documentStatus: 'PENDIENTE'
+      documentStatus: 'PENDIENTE',
+      mediaWorkflow: 1
     };
     var quoteRow = {
       Numero_Cotizacion: result.number,
