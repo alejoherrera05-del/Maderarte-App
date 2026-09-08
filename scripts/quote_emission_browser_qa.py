@@ -71,8 +71,40 @@ try:
             assert 'SIN VALIDEZ COMERCIAL' in text
             for pg in reader.pages:assert abs(float(pg.mediabox.width)-595.28)<2 and abs(float(pg.mediabox.height)-841.89)<2
             page.reload();expect(page.get_by_role('button',name='Abrir PDF',exact=True)).to_be_enabled()
+            page.get_by_role('link',name='Preparar orden de pedido',exact=True).click()
+            page.wait_for_url('**/pedido.html?**',timeout=30000)
+            conversion_url=page.url
+            expect(page.locator('#quote-origin-notice')).to_be_visible(timeout=30000)
+            expect(page.locator('.quote-item')).to_have_count(2)
+            expect(page.locator('#quote-discount')).to_have_value('200000')
+            assert page.locator('#quote-client-document').evaluate('e=>e.readOnly')
+            expect(page.locator('#quote-add-item')).to_be_disabled()
+            expect(page.locator('.quote-photo-thumb img')).to_have_count(1)
+            assert api('/__qa/evidence')['counts']['Ordenes_Pedido']==0
+            for card in page.locator('.quote-item').all():
+                assert card.locator('[data-field="description"]').evaluate('e=>e.readOnly')
+                card.locator('.order-plan-option').filter(has=page.locator('[value="ENTREGA_INMEDIATA"]')).click()
+            page.locator('#order-no-payment').check()
+            page.locator('#quote-notes').fill('Acuerdo revisado desde la cotización.')
+            expect(page.locator('#quote-submit')).to_be_enabled()
+            page.locator('#quote-submit').click()
+            page.wait_for_url('**/orden.html?**',timeout=60000)
+            source_link=page.get_by_role('link',name='Cotización de origen',exact=False)
+            expect(source_link).to_be_visible(timeout=30000)
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+            page.screenshot(path=str(OUT/f'conversion-{width}.png'),full_page=True)
+            evidence=api('/__qa/evidence')
+            assert evidence['counts']['Cotizaciones']==1 and evidence['counts']['Ordenes_Pedido']==1
+            assert evidence['counts']['Abonos']==0 and evidence['pdfs']==2
+            assert evidence['productionUnchanged'] and not evidence['commercialWrites']
+            order_url=page.url
+            source_link.click()
+            expect(page.get_by_role('link',name='Ver OP',exact=False)).to_be_visible(timeout=30000)
+            expect(page.get_by_role('link',name='Preparar orden de pedido',exact=True)).to_have_count(0)
+            page.goto(conversion_url);page.wait_for_url(order_url,timeout=30000)
+            assert api('/__qa/evidence')['counts']['Ordenes_Pedido']==1
             assert not errors,errors
-            results.append({'width':width,'quotes':1,'pdfs':1,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
+            results.append({'width':width,'quotes':1,'orders':1,'pdfs':2,'pages':len(reader.pages),'previewWrites':0,'productionUnchanged':True,'google':'SIMULADO'})
             context.close();print(results[-1])
         browser.close()
     (OUT/'resultado.json').write_text(json.dumps(results,indent=2))
