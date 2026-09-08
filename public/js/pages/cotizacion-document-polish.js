@@ -1,3 +1,4 @@
+import { createDocumentProgress } from '../core/order-progress.js?v=compact-1';
 import { escapeHtml } from '../core/format.js';
 import { paginateQuoteDocument } from '../core/quote-pagination.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
@@ -410,22 +411,54 @@ async function measuredPages(data) {
 }
 
 let previewGeneration = 0;
+let previewProgress = null;
+async function previewImagesReady(target) {
+  let timeout;
+  try {
+    await Promise.race([
+      Promise.all([document.fonts?.ready, ...[...target.querySelectorAll('img')].map(async image => {
+        await image.decode();
+        if (!image.naturalWidth) throw new Error('No se cargó una imagen del documento.');
+      })]),
+      new Promise((_, reject) => { timeout = window.setTimeout(() => reject(new Error('Una imagen está tardando demasiado. Revisa la vista previa nuevamente.')), 8000); })
+    ]);
+  } finally { window.clearTimeout(timeout); }
+}
 async function renderDocumentPreview() {
   const generation = ++previewGeneration;
   const target = document.getElementById('quote-preview-content');
   if (!target) return;
+  previewProgress ||= createDocumentProgress({ kind: COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote', mode: 'preview' });
+  const progress = previewProgress;
+  progress.begin();
+  progress.update({ step: 'prepare', status: 'running', message: 'Revisando muebles, acabados y valores.' });
   target.setAttribute('aria-busy', 'true');
   target.innerHTML = '<p class="quote-preview-preparing" role="status">Preparando las páginas del documento…</p>';
   try {
+    // Yield a frame so the processing scene can paint before pagination work.
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (generation !== previewGeneration) return;
     const data = collectDocumentData();
+    progress.update({ step: 'prepare', status: 'complete' });
+    progress.update({ step: 'document', status: 'running', message: 'Componiendo las páginas con el diseño de Maderarte.' });
     const pages = await measuredPages(data);
     if (generation !== previewGeneration) return;
+    progress.update({ step: 'document', status: 'complete' });
+    const hasPhotos = data.items.some(item => item.photos.length);
+    progress.update({ step: 'photos', status: hasPhotos ? 'running' : 'skipped', message: hasPhotos ? 'Organizando las referencias de cada mueble.' : 'Sin fotografías: no hace falta un anexo.' });
     const annexPages = photoPages(data.items);
     const totalPages = pages.length + annexPages.length;
     target.innerHTML = pages.map((page, index) => mainPageMarkup(data, page, index + 1, totalPages)).join('')
       + annexPages.map((groups, index) => appendixPageMarkup(groups, data.number, pages.length + index + 1, totalPages)).join('');
+    if (hasPhotos) progress.update({ step: 'photos', status: 'complete' });
+    progress.update({ step: 'verify', status: 'running', message: 'Comprobando las imágenes antes de mostrar el documento.' });
+    await previewImagesReady(target);
+    if (generation !== previewGeneration) return;
+    progress.update({ step: 'verify', status: 'complete', message: 'Vista previa lista. No se ha emitido ni guardado un documento comercial.' });
+    progress.sync({ phase: 'confirmed' });
   } catch (error) {
     if (generation !== previewGeneration) return;
+    progress.pause(error?.message || 'No se pudo preparar el documento.');
     target.innerHTML = `<p class="quote-preview-preparing" role="alert">${escapeHtml(error?.message || 'No se pudo preparar el documento. Cierra la vista previa e inténtalo nuevamente.')}</p>`;
   } finally {
     if (generation === previewGeneration) target.setAttribute('aria-busy', 'false');
@@ -436,7 +469,7 @@ let previewTrigger = null;
 
 export function openDocumentPreview() {
   const overlay = document.getElementById('quote-preview-overlay');
-  if (!overlay) return;
+  if (!overlay || overlay.classList.contains('is-open')) return;
   previewTrigger = document.activeElement;
   overlay.classList.add('is-open');
   overlay.setAttribute('aria-hidden', 'false');
@@ -450,6 +483,7 @@ export function closeDocumentPreview() {
   const overlay = document.getElementById('quote-preview-overlay');
   if (!overlay?.classList.contains('is-open')) return;
   ++previewGeneration;
+  previewProgress?.destroy(); previewProgress = null;
   overlay.classList.remove('is-open');
   overlay.setAttribute('aria-hidden', 'true');
   document.querySelectorAll('.quote-header, .quote-workspace, .quote-branch-gate').forEach(node => { node.inert = false; });
@@ -459,6 +493,7 @@ export function closeDocumentPreview() {
 
 document.addEventListener('keydown', event => {
   const overlay = document.getElementById('quote-preview-overlay');
+  if (document.querySelector('.order-progress-dialog[open]')) return;
   if (event.key !== 'Tab' || !overlay?.classList.contains('is-open')) return;
   // The current preview contains only one interactive control.
   event.preventDefault();

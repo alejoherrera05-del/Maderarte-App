@@ -3,7 +3,7 @@ import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=family-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=compact-1';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
@@ -14,7 +14,7 @@ import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/ord
 import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
 import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
 import { bindFormDraft } from '../core/form-draft.js?v=save-1';
-import { bindOrderSave } from './pedido-save.js?v=progress-1';
+import { bindOrderSave } from './pedido-save.js?v=compact-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 
 const moneyFormatter = new Intl.NumberFormat('es-CO', {
@@ -527,7 +527,7 @@ function bindGlobalInteractions() {
     if (event.target === event.currentTarget) closeDocumentPreview();
   });
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && document.getElementById('quote-preview-overlay')?.classList.contains('is-open')) closeDocumentPreview();
+    if (event.key === 'Escape' && !document.querySelector('.order-progress-dialog[open]') && document.getElementById('quote-preview-overlay')?.classList.contains('is-open')) closeDocumentPreview();
   });
 
   const discount = document.getElementById('quote-discount');

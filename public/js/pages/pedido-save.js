@@ -1,4 +1,4 @@
-import { createOrderProgress } from '../core/order-progress.js?v=progress-1';
+import { createOrderProgress } from '../core/order-progress.js?v=compact-1';
 import { currentSandboxId, sandboxLink } from '../core/order-sandbox-context.js';
 import { prepareOrderMedia } from '../core/order-media.js?v=progress-1';
 import { APP_CONFIG } from '../core/config.js';

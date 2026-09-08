@@ -1,4 +1,4 @@
-import { createOrderProgress } from '../core/order-progress.js?v=progress-1';
+import { createOrderProgress } from '../core/order-progress.js?v=compact-1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { photoReference, finishOrderDocuments } from '../core/order-media.js?v=progress-1';
 // Photos and PDFs are read through the authenticated app. Drive files stay private.
