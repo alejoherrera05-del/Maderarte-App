@@ -11,6 +11,7 @@ function fixture(){const f=sandboxRuntime();f.start();const order=f.run('ORDEN_C
  assert.equal(f.rows('Abonos').length,3);assert.equal(f.rows('Ordenes_Pedido').length,1);
  const plan=f.run('INTERNO_RECIBO_DOCUMENTO_PREPARAR',{number:saved.number});
  assert.equal(plan.document.amount,100000);assert.equal(plan.document.documentKind,'receipt');
+ assert.equal(plan.document.history.length,3);assert.equal(plan.document.history.reduce((n,p)=>n+p.amount,0),800000);
  assert.ok(!JSON.stringify(plan).includes('PRIVADO'));assert.ok(!JSON.stringify(plan).includes('Nota_Interna'));
  f.run('INTERNO_RECIBO_DOCUMENTO_CONFIRMAR',{number:saved.number,id:plan.id,planHash:plan.planHash,base64:Buffer.from('%PDF-1.4\nreceipt\n%%EOF').toString('base64')});
  assert.equal(f.run('RECIBO_OBTENER',{number:saved.number}).complete,true);
@@ -19,6 +20,7 @@ function fixture(){const f=sandboxRuntime();f.start();const order=f.run('ORDEN_C
  const initial=f.rows('Abonos')[0].Numero_Recibo;
  const originalPlan=f.run('INTERNO_RECIBO_DOCUMENTO_PREPARAR',{number:initial});
  assert.equal(originalPlan.document.amount,500000);assert.equal(originalPlan.document.balance,2800000);
+ assert.equal(originalPlan.document.history.length,1,'initial receipt excludes every later payment');
  assert.equal(f.rows('Abonos').length,3,'initial receipt PDF never charges again');
  assert.equal(f.run('ORDEN_DOCUMENTOS_ESTADO',{number:f.order.number}).files.filter(x=>x.type==='RECIBO').length,0,'receipt slots do not change order completion');
  assert.equal(JSON.stringify(f.production()),before);
@@ -51,4 +53,18 @@ console.log('OK · recibos: saldo conciliado, pago inicial único, PDF privado, 
  f.c.validateSessionToken_=validate;
  f.rows('Ordenes_Pedido')[0].Saldo_Pendiente=1;
  assert.throws(()=>f.run('RECIBO_CUENTA',{number:f.order.number}),e=>e.appCode==='RECEIPT_BALANCE_INTEGRITY');
+}
+{
+ const f=sandboxRuntime();f.start();const command=structuredClone(f.command);command.payments=[];
+ const order=f.run('ORDEN_CREAR',command).order,plans=[];
+ for(const [i,amount] of [500000,700000,600000,500000].entries()){
+  const account=f.run('RECIBO_CUENTA',{number:order.number});
+  const saved=f.run('RECIBO_CREAR',{number:order.number,fingerprint:account.position.fingerprint,amount,method:'TRANSFERENCIA',concept:'Abono '+(i+1),reference:'',internalNote:'PRIVADO HISTORIAL'},'HISTORY-RECEIPT-TEST-0'+i).receipt;
+  const plan=f.run('INTERNO_RECIBO_DOCUMENTO_PREPARAR',{number:saved.number});plans.push(plan);
+  assert.equal(plan.document.history.length,i+1);assert.equal(plan.document.history.at(-1).number,saved.number);
+  assert.ok(!JSON.stringify(plan).includes('PRIVADO'));
+ }
+ assert.equal(plans.at(-1).document.balance,1000000);
+ assert.equal(f.run('RECIBO_CUENTA',{number:order.number}).payments.length,4);
+ assert.deepEqual(f.run('INTERNO_RECIBO_DOCUMENTO_PREPARAR',{number:plans[0].number}).document.history,plans[0].document.history,'first PDF history stays frozen after four payments');
 }
