@@ -22,7 +22,7 @@ function routeAction_(action, payload, context) {
     case 'CLIENTE_OBTENER': return getClient_(payload, context.session);
     case 'COTIZACION_META': return quoteMeta_(payload, context.session);
     case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
-    case 'COTIZACION_OBTENER': return getQuote_(payload, context.session);
+    case 'COTIZACION_OBTENER': return getQuoteDetail_(payload, context.session);
     case 'COTIZACION_CAPACIDADES': return quoteCreationCapabilities_(context.session);
     case 'COTIZACION_CREAR': return createQuote_(payload, context);
     case 'COTIZACION_CREACION_ESTADO': return quoteCreationStatus_(payload, context);
