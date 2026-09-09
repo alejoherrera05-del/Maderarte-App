@@ -1,46 +1,15 @@
-# QA visual — expresiones y postura natural
+# OP Maddy — revisión del modelo 3
+
+Referencia: modelo 3 adjunto y aprobado por el propietario; excepción explícita de encabezado claro de la aplicación. Implementación 0c3a358, PR #53, rama feat/maddy-order-workbench.
+
+Se abrieron juntos el modelo y las capturas de GitHub Actions 34416886414, expediente-1366 y expediente-390. La referencia tiene 1487 px de ancho; las capturas operativas tienen datos sintéticos distintos y no incluyen fotografías. Se compara composición y adaptación, no igualdad de contenido ni de píxeles.
+
+Iteración inicial: recorrido demasiado alto y espacio vacío de fotografía excesivo. Corrección: detalle breve por etapa, explicación completa en el diálogo existente; menor altura cuando no hay referencia. Capturas posteriores confirman la reducción sin truncar contenido.
+
+Selector de muebles, detalle central con pestañas y recorrido grafito conservan la dirección elegida. Encabezado claro, recursos de marca existentes y tipografía del sistema. En móvil se apilan las regiones; las suites verifican 320/390 y 1366/1916 sin desbordamiento. Las imágenes del mueble proceden exclusivamente de la API privada; no se sustituyen por fotos inventadas. Maddy usa el recurso aprobado.
+
+Verificación funcional: selección cambia detalle y recorrido; pestañas admiten teclado; acciones respetan permisos; referencias privadas reabiertas conservan SHA256; PDF, abonos y remisiones continúan accesibles. Las fases sin evidencia dicen «Sin registro». Despacho no implica recepción.
+
+Limitación de contenido: la OP de revisión existente no tiene fotos; se ve el estado vacío diseñado. La prueba documental ejercita imágenes sintéticas y su integridad. No se afirma equivalencia fotográfica con el sofá ilustrativo de la propuesta.
 
 final result: passed
-
-## Referencia y capturas
-
-Identidad aprobada: outputs/maddy-exact-reference/maddy-reference.png. Poses anteriores aprobadas: outputs/maddy-category-poses/. Nuevas fuentes y prompts: outputs/maddy-natural-gestures/{clientes,abonos,remisiones}-source.png y *-prompt.txt. Todas a 1086×1448. Se compararon las imágenes completas y los contornos sobre gris y grafito.
-
-Implementación cf050290fb7a867581b0f47436c8e7fe1be841b0, PR #49. [GitHub Actions](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34390761879), artefacto remissions-qa, artifacts/remissions/entrada-*.png. Copia de revisión work/natural-qa/artifacts/remissions/.
-
-Viewports: 1916×950, 1440×1000, 1366×768 con densidad 2x (2732×1536), 1024×768, 390×800 y 320×800; los demás a 1x. Estado inicial autenticado y vacío. Fuente y render abiertos en el mismo conjunto de comparación; fuente de ilustración sin interfaz, por lo que se compara identidad y gesto con su tamaño CSS proporcional, no una pantalla fuente 1:1.
-
-## Hallazgos y resolución
-
-- P1 resuelto: se repetían cabeza, mirada y sonrisa. Clientes ahora dirige ojos/cabeza a la ficha; Abonos mira hacia quien paga y sonríe con gesto abierto; Remisiones mira la comprobación y sostiene la caja desde abajo. Se conserva el estilo animado y vestuario. La revisión es visual, no certificación biomecánica.
-- P2 de preparación resuelto: el recorte automático retiraba el papel del datáfono y dejaba cuadriculado junto al brazo. Se preservó el recibo mediante su contorno y se recortó el hueco de Clientes. Los píxeles visibles mantienen RGB de cada fuente generada. Se revisaron completos y en detalle antes de integrar.
-- La firma móvil baja de 67% a 78% para dejar libres carpeta y paquete; entrada-remision-320.png y entrada-clientes-390.png confirman separación de los objetos y firma dentro de pantalla.
-- entrada-clientes-1916.png confirma columnas, fondo gris y base grafito de ancho completo. Las capturas móviles confirman objetos reconocibles y rostros diferenciados. Tipografía del sistema y controles existentes conservados.
-
-Sin hallazgos P0/P1/P2 pendientes en comparación final. Las tres nuevas imágenes son ediciones con referencia mediante la herramienta integrada de generación; recorte posterior con Python autorizado. No se afirma identidad píxel a píxel de los nuevos rostros. WebP sin pérdida, resolución 1086×1448, aproximadamente 1,1 MB por sección.
-
-## Verificación
-
-Suites de GitHub con npm ci y npm test y flujos sintéticos existentes: Calidad, Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Comprobaciones de resolución, carga, ausencia de overflow y búsqueda. No hay cambios en reglas comerciales. Runner Chromium, no Safari físico. Verificación del dominio habitual tras merge.
-
-# QA visual — telón de Producción
-
-Implementación: 135ebfb79845a041cea24c2687fb247fb65a5457, PR #51.
-
-Se reutilizan maddy-entrance.css y createEntrance de Clientes, Abonos y Remisiones. Maddy mide una pieza de madera; fuente generada a 1086 × 1448 y WebP sin pérdida con recorte alfa autorizado. Fuente y composición sobre grafito revisadas, conservando RGB visible. La mirada y las manos siguen el objeto de trabajo.
-
-Capturas de GitHub Actions 34399357072, artefacto remissions-qa, artifacts/production: entrada, solicitud y mensaje en 1916, 1366, 390 y 320 px. Comparación conjunta con las entradas aprobadas de Clientes: mismo encabezado, búsqueda, gris, tipografía y base grafito a ancho completo. Las capturas de Producción incluyen la banda adicional del ensayo; no forma parte del telón comercial. Sin desbordamiento horizontal ni superposición del metro con la firma. Mensaje móvil visible bajo el encabezado fijo.
-
-Cinco suites aprobadas: Calidad (npm ci/npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Se verifican búsquedas vacías/fallidas/exactas, selección, restricciones por disponibilidad, aviso de separado, invalidación del borrador, copia y vuelta a otra OP. WhatsApp no se envía. Sin cambios en las escrituras comerciales.
-
-La OP demostrativa se crea mediante el formulario publicado y el espacio aislado del propietario. El control del ensayo incorpora un enlace a Producción con su OP y contexto de prueba; no se incluyen identificadores privados en el código. El ensayo nuevo permanece disponible para revisión.
-
-# QA — expediente por producto y proveedores
-
-PR #52, rama feat/order-product-journey, implementación 939bdd5; ajuste de captura 0d6bd34. Referencia HomeEasy: ventas.html en aa21decbe809a91362a2cddfd272c7c5744dfddd, panel contextual y jerarquía de detalle; capturas del propietario usadas como estado anterior, con comparación conjunta frente al expediente nuevo. Los telones no se modifican.
-
-Se revisaron expediente-1916/390, solicitud-1916 y recorrido-1916/390/320 en artefactos remissions-qa. Run final de captura 34404893364. Se corrigió la captura que fotografiaba el panel durante su animación: espera el final y verifica que el panel ocupe la parte alta del viewport. Recorrido móvil con cierre accesible y desplazamiento interno; escritorio lateral con fondo atenuado. No hay desbordamiento horizontal.
-
-Productos antes de datos; estados accionables con color y texto, documentos privados siguen cargando por API, balance separado de fabricación. Favoritos y recientes probados con selección, persistencia y separación por cuenta/ensayo. Almacenamiento por navegador, no directorio compartido en Google. El seguimiento persistente de proveedor todavía no está implementado: el recorrido dice sin registro y nunca infiere envío o fabricación desde WhatsApp. Las cantidades de despacho provienen de la OP y no certifican recepción.
-
-Cinco suites completas aprobadas en 939bdd5, incluyendo npm ci/npm test; fotografías reabiertas comparadas por SHA256. Pruebas adaptadas a la nueva acción Registrar abono y al selector específico de fotografías. Detector Impeccable sin hallazgos mecánicos. Revisión final en dominio publicado con la OP aislada existente; no se crea otra venta ni se envían mensajes.
