@@ -5,26 +5,25 @@ import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
   {
-    key: 'gestion', label: 'Gestión', tone: 'orange', items: [
-      { key: 'clientes', label: 'Consultar cliente', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
-      { key: 'ventas', label: 'Historial de ventas', description: 'OP, pagos, saldos y filtros', icon: 'clipboard-text', permission: 'ordenes.read', href: '/ordenes.html' },
-      { key: 'cotizaciones', label: 'Cotización', description: 'Crear y hacer seguimiento', icon: 'file-text', permission: 'cotizaciones.read', options: [
+    key: 'diario', label: 'Día a día', tone: 'orange', primary: true, items: [
+      { key: 'ventas', label: 'Ventas', description: 'Crear una OP o consultar tus ventas', icon: 'clipboard-text', permission: 'ordenes.read', options: [
+        { label: 'Nueva orden de pedido', description: 'Registrar una venta y sus muebles', href: '/pedido.html' },
+        { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' }
+      ] },
+      { key: 'cotizaciones', label: 'Cotizaciones', description: 'Crear propuestas y hacer seguimiento', icon: 'file-text', permission: 'cotizaciones.read', options: [
         { label: 'Formulario', description: 'Crear una propuesta con items y referencias', href: '/cotizacion.html' },
         { label: 'Seguimiento', description: 'Radar comercial por antigüedad y valor', href: '/cotizaciones.html' }
       ] },
-      { key: 'pedido', label: 'Orden de pedido', description: 'Crear y consultar expedientes', icon: 'clipboard-text', permission: 'ordenes.read', options: [
-        { label: 'Formulario', description: 'Preparar el pedido y revisar su documento', href: '/pedido.html' },
-        { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' }
-      ] }
+      { key: 'abonos', label: 'Abonos', description: 'Registrar pagos y emitir recibos de caja', icon: 'wallet', permission: 'abonos.read', href: '/abono.html' },
+      { key: 'remisiones', label: 'Remisiones', description: 'Buscar una OP y preparar la entrega', icon: 'truck', permission: 'remisiones.read', href: '/remision.html' }
     ]
   },
   {
-    key: 'operacion', label: 'Operación', tone: 'gold', items: [
-      { key: 'abonos', label: 'Recibos de caja', description: 'Recibos, pagos y saldos', icon: 'wallet', permission: 'abonos.read', href: '/abono.html' },
+    key: 'operacion', label: 'Más herramientas', tone: 'gold', items: [
+      { key: 'clientes', label: 'Consultar cliente', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
       { key: 'produccion', label: 'Producción', description: 'Pedidos en fabricación', icon: 'stack', permission: 'produccion.read', available: false },
       { key: 'documentos', label: 'Centro documental', description: 'PDF, recibos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
-      { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false },
-      { key: 'remisiones', label: 'Remisiones', description: 'Muebles, despachos y transportadores', icon: 'truck', permission: 'remisiones.read', href: '/remision.html' }
+      { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false }
     ]
   }
 ]);
@@ -66,10 +65,10 @@ function menuItem(item, tone) {
 
 function menuGroup(group, index) {
   const expanded = index === 0 ? 'true' : 'false';
-  return `<section class="dashboard-menu-group" data-tone="${escapeHtml(group.tone)}">
-    <button class="dashboard-group-toggle" type="button" aria-expanded="${expanded}" aria-controls="dashboard-group-${escapeHtml(group.key)}">
+  return `<section class="dashboard-menu-group${group.primary ? ' is-primary' : ''}" data-tone="${escapeHtml(group.tone)}">
+    ${group.primary ? `<h2 class="dashboard-group-heading">${escapeHtml(group.label)}</h2>` : `<button class="dashboard-group-toggle" type="button" aria-expanded="${expanded}" aria-controls="dashboard-group-${escapeHtml(group.key)}">
       <span>${escapeHtml(group.label)}</span><img src="/assets/icons/caret-down.svg" alt="" aria-hidden="true">
-    </button>
+    </button>`}
     <div class="dashboard-menu-list" id="dashboard-group-${escapeHtml(group.key)}"${index === 0 ? '' : ' data-mobile-collapsed="true"'}>
       ${group.items.map(item => menuItem(item, group.tone)).join('')}
     </div>

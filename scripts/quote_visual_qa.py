@@ -118,7 +118,7 @@ def check_order():
         driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
         driver.set_window_size(width, 1100)
         driver.get(home_url)
-        menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="pedido"]')))
+        menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="ventas"]')))
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
         menu.click()
         link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.dashboard-dialog-option[href*="pedido.html"]')))
