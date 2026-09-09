@@ -1,4 +1,5 @@
 import { renderReceipt } from './recibo-render.js';
+import { renderRemission } from './remision-render.js';
 import { renderConfirmedOrder } from './cotizacion-document-polish.js?v=family-1';
 let started = false;
 async function consume() {
@@ -9,7 +10,7 @@ async function consume() {
   try {
     const snapshot = JSON.parse(node.textContent);
     node.remove();
-    const result = await (snapshot.documentKind === 'receipt' ? renderReceipt(snapshot, target) : renderConfirmedOrder(snapshot, target));
+    const result = await (snapshot.documentKind === 'remission' ? renderRemission(snapshot, target) : snapshot.documentKind === 'receipt' ? renderReceipt(snapshot, target) : renderConfirmedOrder(snapshot, target));
     target.dataset.documentPages = String(result.pages);
     target.dataset.documentReady = 'true';
   } catch {
