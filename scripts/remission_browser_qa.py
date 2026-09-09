@@ -17,7 +17,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),args=['--no-sandbox'])
   for width in (1916,1366,1024,1440,390,320):
-   context=browser.new_context(viewport={'width':width,'height':{1916:950,1366:768,1024:768,1440:1000}.get(width,800)})
+   context=browser.new_context(viewport={'width':width,'height':{1916:950,1366:768,1024:768,1440:1000}.get(width,800)},device_scale_factor=2 if width==1366 else 1)
    context.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));" % json.dumps(SESSION))
    state={'creates':0,'finishes':0,'complete':False,'saved':None,'doc':None,'searches':[],'held':None};errors=[]
    orders=[{'number':n,'client':'Cliente de muestra','document':'00000001','city':'Popayán','date':'2026-09-08T18:00:00Z','description':description,'address':'Dirección de prueba'} for n,description in [(OP,'Sofá de muestra'),('MP-OP-0002','Comedor de cuatro puestos')]]
@@ -58,6 +58,7 @@ try:
     assert page.evaluate("getComputedStyle(document.querySelector('.maddy-entrance')).backgroundColor==='rgb(245, 245, 244)'")
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
     assert page.locator('.maddy-entrance-character').evaluate('(e)=>getComputedStyle(e).filter==="none"&&getComputedStyle(e).mixBlendMode==="normal"'), 'Mascot must retain its original colors'
+    assert page.locator('.maddy-entrance-character').evaluate('(e)=>e.naturalWidth>=1086&&e.naturalHeight>=1448&&e.naturalHeight>=e.getBoundingClientRect().height*2'), 'Mascot must provide real pixels for a 2x display'
     if width>=900:
      assert page.locator('.maddy-entrance-folio').evaluate('(e)=>e.getBoundingClientRect().left===0&&Math.abs(e.getBoundingClientRect().right-innerWidth)<=1'), 'Desktop graphite field must span the viewport'
      assert page.locator('.maddy-entrance-folio').evaluate('(e)=>e.getBoundingClientRect().height<innerHeight*.31'), 'Desktop base must not split the viewport in half'
