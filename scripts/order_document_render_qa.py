@@ -64,11 +64,16 @@ try:
   # A short order with longer notes must keep the signature and footer in the PDF.
   # DOM scrollHeight alone can miss children clipped when Chromium switches to print.
   data['number']='MP-QA-12345678-OP-0001'
+  data['sandbox']='QA-00000000000000000000000000000000'
   data['advisor']='Asesor de demostración'
   data['client']={'document':'0000000001','name':'PRUEBA MADDY - NO ES UNA VENTA','phone':'0000000011','alternatePhone':'0000000022','email':'qa@example.invalid','address':'SIN ENTREGA - DATOS FICTICIOS','city':'Popayán (prueba)'}
   data['order']={'paid':0,'balance':data['total'],'payments':[]}
   for item in data['items']:
    for key in ['category','fabric','wood','specifications']: item[key]=''
+   item['agreement']='ENTREGA_HOY'
+   item['fulfillment']='DISPONIBLE'
+  data['items'][0]['description']='Sofá de tres puestos · ejemplo QA'
+  data['items'][1]['description']='Comedor de cuatro puestos · ejemplo QA'
   notice='[PRUEBA AISLADA QA-00000000000000000000000000000000 - SIN VALIDEZ COMERCIAL. NO COBRAR, ENTREGAR NI FABRICAR.]'
   data['notes']=notice+'\n'+notice+'\nDemostración del recorrido cotización a orden y cuatro abonos. Datos ficticios, sin cobro ni entrega.'
   page.goto('http://127.0.0.1:4173/documento-render.html',wait_until='networkidle')
