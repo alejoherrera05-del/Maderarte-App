@@ -1,23 +1,33 @@
-# QA visual — revisión de escritorio y recurso HD
+# QA visual — escritorio y Maddy exacta
 
-final result: blocked
+final result: passed
 
-## Evidencia y corrección de composición
+## Evidencia
 
-Solicitud: captura del propietario a 1916×950, entrada Clientes en tema claro. Comparada en el mismo bloque visual con el HTML renderizado por GitHub a 1916×950; revisión adicional de Remisiones a 1366×768. Fuente del render: [Remisiones QA 34374183698](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34374183698), commit `80d05fb3de0a4c7dba0204b3e0fcf688ee0165b4`, PR #47.
+Implementación comprobada: `7983072ac21fa5e6405020ef8dd93ec074038467`, PR #47. Capturas: [Remisiones QA 34377825202](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34377825202), artefacto remissions-qa.
 
-P1 corregido en código: la composición anterior separaba el buscador y el personaje mediante una franja que ocupaba casi media pantalla. El buscador pasa a la altura del retrato; la base grafito ocupa aproximadamente23% de la altura y conserva todo el ancho. Firma anclada a esa base. Revisión en1916,1440,1366,1024,390 y320px; sin desplazamiento horizontal ni vertical en la entrada de escritorio, sin colisión entre columnas. Se conserva la estructura móvil.
+Se comparó la captura del propietario de Clientes a 1916×950 con el render en ese mismo tamaño y estado vacío. La referencia exacta de Maddy adjunta por el propietario se comparó con el recorte sobre gris y grafito y con las capturas de la interfaz. Verificación adicional a 1440×1000, 1366×768 con densidad 2x, 1024×768, 390×800 y 320×800.
 
-Tipografía: fuente del sistema, títulos650, búsqueda16px. Colores: gris del Inicio y grafito originales, sin filtros sobre Maddy. Contenido: títulos y búsqueda operativos, sin nuevos párrafos. La sustitución de fuentes de Chromium/Linux difiere del sistema Windows y de SF nativa Apple.
+## Hallazgos resueltos
 
-## Bloqueo de calidad de imagen
+- P1, composición: el buscador quedaba aislado sobre una franja oscura que ocupaba casi media pantalla. Ahora título y búsqueda se relacionan en altura con el retrato; la base grafito ocupa aproximadamente 23% de la altura y conserva todo el ancho. Firma anclada a esa base. Columnas separadas, sin scroll inicial en los tamaños de escritorio verificados.
+- P1, identidad y resolución: se retiraron las variantes generadas rechazadas y la copia pequeña de 420×560 de estas entradas. El recurso final es exactamente la imagen adjunta del propietario a 1086×1448, con recorte técnico autorizado; solo cambia el alfa. Igualdad de todos los píxeles RGB visibles comprobada después de exportar el WebP sin pérdida. Máximo de presentación 720 px para disponer de resolución a densidad 2x.
+- P2, borde de tableta: la primera limpieza de contaminación neutra afectaba su opacidad. Se limitó la limpieza al contorno del cabello. El render final a 1916×950 confirma el borde sólido de la tableta, sin banda clara.
 
-P1 pendiente: Maddy usa el archivo de carga de420×560px. La nueva composición requiere más detalle; ampliarlo no recupera resolución. El original documentado1086×1448 llamado Maddy_Carga_Aprobada_2026-09-08.png no está disponible en los archivos locales consultados ni en la búsqueda de Drive. La Biblioteca de ChatGPT exige inicio de sesión en el navegador disponible.
+## Superficies revisadas
 
-Dos intentos de restauración con Image Gen devolvieron1086×1448RGB con damero pintado y variaciones del rostro. Rechazados; no se incorporaron al repositorio ni al dominio. Se necesita el PNG original para completar la sustitución y repetir la revisión visual de nitidez. La composición revisada queda en la rama remota, sin publicar al dominio mientras conserve este bloqueo.
+Tipografía: cadena de fuentes del sistema, título 650, búsqueda 16 px. SF nativa en Apple y fallback en Windows/Linux; no se acredita Safari físico mediante Chromium Linux.
 
-## Verificación funcional
+Espaciado: alineación común del encabezado y contenido; base más baja; firma libre; personaje proporcional; búsqueda accesible en móvil. Sin colisiones ni desplazamiento horizontal en los tamaños revisados. La composición móvil se conserva.
 
-Las cinco suites de GitHub pasaron para80d05fb: Calidad (npm ci y npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Las comprobaciones añaden los tamaños1916×950,1366×768 y1024×768, base menor al31% de la altura, separación entre buscador y personaje, y ausencia de scroll inicial. Las pruebas funcionales existentes y documentos también pasaron.
+Colores: gris #f5f5f4 del Inicio, grafito #282624 y cobre en controles. Maddy sin filtros de color, brillo o mezcla. Se mantienen los colores exactos del archivo adjunto.
 
-Siguiente paso: incorporar el original HD, comprobar transparencia/resolución y comparación visual; luego merge y verificación del dominio habitual. No afirmar que el problema de nitidez está resuelto.
+Imagen: 1086×1448 con transparencia real, sin cuadriculado visible; los píxeles visibles conservan su color original. Sin interpolación ni cambios generativos del rostro. El WebP sin pérdida pesa aproximadamente 1,2 MB, compartido y cacheable entre las tres entradas; se prioriza la fidelidad solicitada.
+
+Contenido e interacción: títulos y buscador operativos, sin explicaciones iniciales. Coincidencias y selección abren el flujo existente. No hay cambios en reglas comerciales.
+
+No quedan hallazgos P0/P1/P2 pendientes en estas capturas. No se declara concluida toda la aplicación.
+
+## Regresión y publicación
+
+Las cinco suites de GitHub para 7983072 terminaron correctamente: Calidad (npm ci y npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Incluyen búsquedas, retorno, recuperación, cotización a OP, abonos y documentos mediante datos sintéticos del runner. El commit posterior únicamente registra este informe. La publicación se verifica en el dominio habitual después del merge.
