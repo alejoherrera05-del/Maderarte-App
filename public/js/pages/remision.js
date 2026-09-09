@@ -11,7 +11,7 @@ const path=n=>sandboxLink('/remision.html?remision='+encodeURIComponent(n));
 const orderPath=n=>sandboxLink('/orden.html?op='+encodeURIComponent(n));
 const key=n=>n.trim().replace(/\s+/g,' ').toLocaleUpperCase('es');
 const silhouette='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2a7.5 7.5 0 0 1 15 0v2"/></svg>';
-let account=null,manager,locked=false,capabilities=false,sequence=0;
+let account=null,manager,locked=false,capabilities=false,sequence=0,searchTimer;
 function button(root,label,run){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>void run());root.append(b);return b;}
 function renderPeople(role){
   const list=role==='transporter'?account?.people.transporters:account?.people.assistants;
@@ -37,7 +37,7 @@ function renderItems(){
 }
 function renderSave(state){
   locked=state.locked;$('fields').disabled=locked||!account?.canDeliver||!capabilities;
-  $('query').disabled=locked;$('search-form').querySelector('button').disabled=locked;
+  $('query').disabled=locked;for(const control of $('search-form').querySelectorAll('button'))control.disabled=locked;
   $('submit').disabled=!state.canSave||!account?.canDeliver||!account?.position.items.some(i=>i.pending>0&&!i.blocked);
   $('mode').textContent=state.phase==='disabled'?'En preparación: puedes consultar los despachos.':state.phase==='ready'?'La remisión se numera al confirmar la salida del almacén.':state.message;
   const root=$('recovery');root.replaceChildren();root.hidden=['disabled','ready','new'].includes(state.phase);
@@ -54,7 +54,8 @@ function renderSave(state){
   if(state.locked)$('account').hidden=true;
 }
 async function selectOrder(number){
-  const ticket=++sequence;account=null;$('account').hidden=true;$('results').replaceChildren();$('search-status').textContent='Consultando cantidades y despachos…';
+  if(locked)return;clearTimeout(searchTimer);
+  const ticket=++sequence;account=null;$('account').hidden=true;$('results').replaceChildren();searchStatus('Consultando cantidades y despachos…','loading');
   try{const {data}=await apiRequest('REMISION_CUENTA',{number});if(ticket!==sequence)return;
     account=data;$('form').reset();$('query').value=number;$('client').textContent=data.order.client;$('address').textContent=[data.order.address,data.order.city].filter(Boolean).join(' · ');$('contact').textContent=[data.order.document,data.order.phone,data.order.alternatePhone].filter(Boolean).join(' · ');$('order-link').href=orderPath(number);$('order-link').textContent=number;$('dispatcher').textContent=data.dispatcher;
     for(const [label,prop] of [['total','quantity'],['dispatched','delivered'],['pending','pending']])$(label).textContent=data.position.items.reduce((n,i)=>n+i[prop],0);
@@ -63,17 +64,46 @@ async function selectOrder(number){
     const history=$('history');history.replaceChildren();
     for(const r of [...data.position.history].reverse()){const row=document.createElement('article');row.className='rm-history-row';row.innerHTML=`<strong>${esc(r.number)}</strong><p>${esc(dateTime(r.date))} · Transporta ${esc(r.transporter.name)}</p><p>${esc(r.items.map(i=>i.quantity+' × '+i.description).join(' · '))}</p><a href="${esc(path(r.number))}">Ver remisión y PDF</a>`;history.append(row);}
     if(!history.children.length)history.textContent='Todavía no hay despachos de esta orden.';
-    $('search-status').textContent=!data.canDeliver?'Esta orden no admite despachos.':data.position.items.every(i=>!i.pending)?'✓ Todos los muebles salieron del almacén.':'';
+    searchStatus(!data.canDeliver?'Esta orden no admite despachos.':data.position.items.every(i=>!i.pending)?'✓ Todos los muebles salieron del almacén.':'Orden lista. Selecciona los muebles que salen hoy.');$('clear').hidden=false;
     $('account').hidden=false;$('error').textContent='';if(manager?.getState().phase==='rejected')await manager.refresh();renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});
-  }catch(e){if(ticket===sequence)$('search-status').textContent=e.message;}
+  }catch(e){if(ticket===sequence)searchStatus(e.message+' Puedes revisar el número y volver a buscar.','error');}
+}
+function searchStatus(message,state='idle'){
+  $('search-status').textContent=message;$('search-form').dataset.state=state;
+  $('results').setAttribute('aria-busy',String(state==='loading'));
+}
+function clearSearch(){
+  clearTimeout(searchTimer);sequence++;account=null;$('account').hidden=true;$('results').replaceChildren();
+  $('clear').hidden=!$('query').value;
+  searchStatus('Busca por nombre, cédula o número de OP.');
+}
+function renderOrderResults(data){
+  const groups=new Map();
+  for(const order of data.items){
+    const identity=order.document||key(order.client);
+    if(!groups.has(identity))groups.set(identity,[]);groups.get(identity).push(order);
+  }
+  searchStatus(data.items.length?`${data.total} ${data.total===1?'orden encontrada':'órdenes encontradas'}. Elige la que vas a despachar.${data.total>data.items.length?' Hay más resultados; completa el nombre o la cédula.':''}`:'No encontramos órdenes con esos datos. Revisa la cédula o prueba con el nombre del cliente.');
+  for(const orders of groups.values()){
+    const client=orders[0],group=document.createElement('section');group.className='rm-client-group';
+    group.innerHTML=`<header class="rm-client-heading">${silhouette}<div><h2>${esc(client.client)}</h2><p>${esc(client.document||'Sin cédula registrada')}${client.city?' · '+esc(client.city):''}</p></div><span>${orders.length} ${orders.length===1?'OP':'OPs'}</span></header>`;
+    for(const order of orders){
+      const row=button(group,'',()=>selectOrder(order.number));row.className='rm-order-option';
+      const date=order.date?dateTime(order.date).split(',')[0]:'';
+      row.innerHTML=`<span class="rm-order-copy"><strong>${esc(order.number)}</strong><span class="rm-order-detail">${esc(order.description||'Consultar muebles y cantidades pendientes')}</span><small>${esc([date,order.address].filter(Boolean).join(' · '))}</small></span><img src="/assets/icons/caret-right.svg" alt="" aria-hidden="true">`;
+    }
+    $('results').append(group);
+  }
 }
 async function search(){
-  if(locked)return;const query=$('query').value.trim(),ticket=++sequence;account=null;$('account').hidden=true;$('results').replaceChildren();
-  if(!query){$('search-status').textContent='Escribe una OP, nombre o cédula.';return;}$('search-status').textContent='Buscando órdenes…';
+  clearTimeout(searchTimer);if(locked)return;const query=$('query').value.trim(),ticket=++sequence;account=null;$('account').hidden=true;$('results').replaceChildren();
+  if(!query){searchStatus('Escribe una OP, nombre o cédula.');return;}
+  if(/^[A-Z]{2}(?:-QA-[A-Z0-9]+)?-OP-\d{4,}$/i.test(query)){await selectOrder(query.toUpperCase());return;}
+  searchStatus('Buscando las órdenes del cliente…','loading');
   try{const {data}=await apiRequest('ORDENES_LISTAR',{query,limit:50});if(ticket!==sequence)return;
-    $('search-status').textContent=data.items.length?`${data.total} órdenes encontradas.${data.total>data.items.length?' Precisa la búsqueda para ver las demás.':''}`:'No se encontraron órdenes.';
-    for(const order of data.items){const b=button($('results'),'',()=>selectOrder(order.number));b.innerHTML=`<strong>${esc(order.number)}</strong><small>${esc(order.client)} · ${esc(order.document)}</small>`;}
-  }catch(e){if(ticket===sequence)$('search-status').textContent=e.message;}
+    const exact=data.items.find(order=>key(order.number)===key(query));
+    if(exact){await selectOrder(exact.number);return;}renderOrderResults(data);
+  }catch(e){if(ticket===sequence)searchStatus(e.message+' Pulsa Buscar para volver a intentar.','error');}
 }
 async function openPdf(number){
   const popup=window.open('about:blank','_blank');if(popup)popup.opener=null;
@@ -95,7 +125,9 @@ async function showRemission(number){
 guardStandalonePage({permission:'remisiones.read',async render({session}){
   $('app').hidden=false;bindSandboxBanner($('app'));$('version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   const params=new URLSearchParams(location.search),op=params.get('op'),number=params.get('remision');if(op){$('back').href=orderPath(op);$('back').setAttribute('aria-label','Volver a la orden');}
-  $('search-form').addEventListener('submit',e=>{e.preventDefault();void search();});$('query').addEventListener('input',()=>{sequence++;account=null;$('account').hidden=true;$('results').replaceChildren();});
+  $('search-form').addEventListener('submit',e=>{e.preventDefault();void search();});
+  $('query').addEventListener('input',()=>{clearSearch();if($('query').value.trim().length>=3)searchTimer=setTimeout(()=>void search(),450);});
+  $('clear').addEventListener('click',()=>{$('query').value='';clearSearch();$('query').focus();});
   $('mode-person').addEventListener('change',labelTransporter);
   for(const role of ['transporter','assistant'])$(role).addEventListener('input',()=>{const person=(role==='transporter'?account?.people.transporters:account?.people.assistants)?.find(p=>key(p.name)===key($(role).value));$(role+'-favorite').checked=person?.favorite===true;renderPeople(role);});
   $('accompanied').addEventListener('change',()=>{$('assistant-section').hidden=!$('accompanied').checked;$('assistant').required=$('accompanied').checked;if($('accompanied').checked)$('assistant').focus();});
