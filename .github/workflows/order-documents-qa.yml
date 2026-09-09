@@ -13,6 +13,29 @@ on:
 permissions:
   contents: read
 jobs:
+  cloudflare-renderer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # The PDFs returned by Browser Run identify Chromium 128.
+      - run: pip install playwright==1.46.1 pypdf==5.9.0 pillow==11.3.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Firma y pie con la versión del motor publicado
+        run: python scripts/order_document_render_qa.py
+        env:
+          QA_BUNDLED_BROWSER: '1'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: order-documents-chromium128
+          path: artifacts/order-documents/
   documents:
     runs-on: ubuntu-latest
     timeout-minutes: 12
