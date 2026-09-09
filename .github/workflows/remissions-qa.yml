@@ -1,0 +1,32 @@
+name: Remisiones QA
+on:
+  pull_request:
+    paths: ['apps-script/**', 'public/**', 'functions/**', 'scripts/**', 'package*.json', '.github/workflows/remissions-qa.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npm test
+      - run: pip install playwright==1.55.0 pypdf==5.9.0
+      - run: python scripts/remission_browser_qa.py
+      - run: node scripts/export-cerebro.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: remissions-qa
+          path: |
+            artifacts/remissions/
+            dist/cerebro-manual/
