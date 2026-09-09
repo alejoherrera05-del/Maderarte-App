@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright, expect
 from pypdf import PdfReader
 OUT=Path('artifacts/remissions');OUT.mkdir(parents=True,exist_ok=True)
 ORIGIN='http://127.0.0.1:4173'
-SESSION={'profile':{'uid':'qa-remission','name':'Despachador de prueba','role':'PROPIETARIO','status':'ACTIVO','mainBranch':'MP','branches':['MP','TP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00.000Z','persistence':'session'}
+SESSION={'profile':{'uid':'qa-remission','email':'qa@example.invalid','name':'Despachador de prueba','role':'PROPIETARIO','status':'ACTIVO','mainBranch':'MP','branches':['MP','TP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00.000Z','persistence':'session'}
 OP='MP-QA-OP-0001';REM='MP-QA-REM-0001';QA='QA-'+'a'*32
 PEOPLE={'transporters':[{'name':'Piallero de prueba','favorite':True,'lastUsed':'2026-09-08T18:00:00Z','mode':'PIALLERO'}],'assistants':[{'name':'Operario de prueba','favorite':False,'lastUsed':'2026-09-08T18:00:00Z','mode':''}]}
 BASE={'documentKind':'remission','issued':True,'number':REM,'orderNumber':OP,'date':'2026-09-08T18:00:00Z','branchCode':'MP','dispatcher':'Despachador de prueba','transporter':{'name':'Piallero de prueba','mode':'PIALLERO'},'assistant':'Operario de prueba','sandbox':True,'client':{'name':'CLIENTE DE MUESTRA','document':'00000001','phone':'00000002','alternatePhone':'00000003','address':'Dirección de prueba, sin entrega real','city':'Popayán (prueba)'},'items':[{'itemId':OP+'-I-1','description':'Sofá de muestra','quantity':2,'pendingAfter':2,'unit':'UN'}],'notes':'SIN ENTREGA REAL. Solo verificación de formato.'}
@@ -48,7 +48,7 @@ try:
    page.locator('#remission-accompanied').check();page.locator('#remission-assistant-people').get_by_role('button',name='Operario de prueba').click()
    page.locator('#remission-accompanied').uncheck();expect(page.locator('#remission-assistant-section')).to_be_hidden();page.locator('#remission-accompanied').check()
    page.locator('#rm-select-0').check();page.locator('#rm-qty-0').fill('2');page.locator('#remission-physical').check()
-   page.screenshot(path=str(OUT/f'remision-form-{width}.png'),full_page=True);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+   page.evaluate('window.scrollTo(0,0)');page.screenshot(path=str(OUT/f'remision-form-{width}.png'),full_page=True);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    page.locator('#remission-submit').click();page.get_by_role('button',name='Consultar resultado',exact=True).wait_for();page.reload();page.get_by_role('button',name='Abrir remisión',exact=True).wait_for();page.get_by_role('button',name='Abrir remisión',exact=True).click();expect(page.locator('#remission-result')).to_contain_text('Piallero de prueba');expect(page.locator('#remission-result')).to_contain_text('Operario de prueba')
    assert state['creates']==1 and state['finishes']==1;assert not errors,errors;assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1');page.screenshot(path=str(OUT/f'remision-result-{width}.png'),full_page=True);context.close()
   for name,many in [('remision-horizontal',False),('remision-continuacion',True)]:
