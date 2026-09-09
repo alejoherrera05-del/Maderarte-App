@@ -33,7 +33,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-sans); }
 .production-item.is-blocked { opacity:.6; }
 .production-check { display:flex; align-items:flex-start; gap:10px; margin:22px 0; font-size:14px; line-height:1.5; }
 .production-check input,.production-item>input { width:19px; height:19px; flex:none; accent-color:#ad5d29; }
-.production-preview { margin-top:24px; }
+.production-preview { margin-top:24px; scroll-margin-top:96px; }
 .production-preview-heading { display:flex; justify-content:space-between; gap:15px; }
 .production-preview-heading span { font-size:12px; color:#795934; }
 .production-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }

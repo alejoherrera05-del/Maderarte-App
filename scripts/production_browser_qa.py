@@ -43,14 +43,16 @@ try:
    page.locator('#production-select-0').check();expect(page.locator('#production-notice-wrap')).to_be_visible()
    page.locator('#production-reviewed').check();page.locator('#production-prepare').click();expect(page.locator('#production-preview')).to_be_hidden()
    page.locator('#production-notice').check();page.locator('#production-supplier').fill('Taller de muestra');page.locator('#production-notes').fill('Confirmar tono antes de tapizar')
-   page.screenshot(path=str(OUT/f'solicitud-{width}.png'),full_page=True)
+   page.evaluate('window.scrollTo(0,0)');page.screenshot(path=str(OUT/f'solicitud-{width}.png'),full_page=True)
    page.locator('#production-prepare').click();expect(page.locator('#production-preview')).to_be_visible()
+   assert page.locator('#production-preview-title').evaluate('(e)=>e.getBoundingClientRect().top>=document.querySelector(".quote-header").getBoundingClientRect().bottom'), 'Preview title hidden by sticky header'
+   page.screenshot(path=str(OUT/f'mensaje-visible-{width}.png'))
    message=page.locator('#production-message').input_value()
    assert 'Lino gris' in message and 'Cantidad: 1 UN' in message and 'Comedor disponible' not in message
    assert all(secret not in message for secret in ['DATO PRIVADO','TEL PRIVADO','NOTA PRIVADA','7654321'])
    assert page.locator('#production-whatsapp').get_attribute('href').startswith('https://wa.me/?text=')
    page.locator('#production-copy').click();expect(page.locator('#production-copy-status')).to_have_text('Mensaje copiado.')
-   page.screenshot(path=str(OUT/f'mensaje-{width}.png'),full_page=True)
+   page.evaluate('window.scrollTo(0,0)');page.screenshot(path=str(OUT/f'mensaje-{width}.png'),full_page=True)
    page.locator('#production-notes').fill('Cambio');expect(page.locator('#production-preview')).to_be_hidden()
    page.locator('#production-new-search').click();query.fill(OP);query.press('Enter');expect(page.locator('#production-workspace')).to_be_visible()
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
