@@ -50,6 +50,7 @@ try:
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
    page.goto(ORIGIN+'/index.html')
    expect(page.locator('#dashboard-group-diario .dashboard-menu-copy strong')).to_have_text(['Ventas','Cotizaciones','Abonos','Remisiones'])
+   assert page.evaluate("document.querySelectorAll('.dashboard-menu-group')[1].getBoundingClientRect().top>=document.querySelector('.dashboard-menu-group').getBoundingClientRect().bottom"),'Secondary tools must be below all daily actions'
    if width<=760:
     page.get_by_role('button',name='Más herramientas').click()
     for item in page.locator('#dashboard-group-diario .dashboard-menu-item').all():expect(item).to_be_visible()
