@@ -19,12 +19,20 @@ try:
   for width in (1440,390,320):
    context=browser.new_context(viewport={'width':width,'height':1000})
    context.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));" % json.dumps(SESSION))
-   state={'creates':0,'finishes':0,'complete':False,'saved':None,'doc':None};errors=[]
+   state={'creates':0,'finishes':0,'complete':False,'saved':None,'doc':None,'searches':[],'held':None};errors=[]
+   orders=[{'number':n,'client':'Cliente de muestra','document':'00000001','city':'Popayán','date':'2026-09-08T18:00:00Z','description':description,'address':'Dirección de prueba'} for n,description in [(OP,'Sofá de muestra'),('MP-OP-0002','Comedor de cuatro puestos')]]
    def route(r):
     req=r.request.post_data_json;a=req['action'];data={}
-    if a.startswith('REMISION_'):assert req.get('sandboxId')==QA
+    if a.startswith('REMISION_') and a!='REMISION_CAPACIDADES':assert req.get('sandboxId')==QA
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
-    elif a=='REMISION_CAPACIDADES':data={'contractVersion':1,'enabled':True,'photosReady':True,'documentsReady':True}
+    elif a=='REMISION_CAPACIDADES':data={'contractVersion':1,'enabled':req.get('sandboxId')==QA,'photosReady':True,'documentsReady':True}
+    elif a=='ORDENES_LISTAR':
+     assert req.get('sandboxId')==QA
+     query=req['payload']['query'];state['searches'].append(query)
+     if query=='anterior':state['held']=r;return
+     if query=='fallo':r.fulfill(status=400,json={'status':'error','code':'BAD_REQUEST','requestId':req['requestId'],'msg':'Consulta de prueba no disponible'});return
+     matches=[] if query=='sin coincidencias' else orders
+     data={'items':matches,'total':len(matches),'limit':50}
     elif a=='REMISION_CUENTA':
      data={'order':{'number':OP,'client':BASE['client']['name'],'document':'00000001','phone':'00000002','alternatePhone':'00000003','address':BASE['client']['address'],'city':BASE['client']['city'],'notes':'Sin entrega real'},'dispatcher':BASE['dispatcher'],'people':PEOPLE,'canDeliver':True,'position':{'fingerprint':'a'*64,'history':[],'items':[{'id':OP+'-I-1','description':'Sofá de muestra','quantity':4,'delivered':0,'pending':4,'blocked':''},{'id':OP+'-I-2','description':'Mueble en fabricación','quantity':1,'delivered':0,'pending':1,'blocked':'Requiere revisión de producción antes de entregar.'},{'id':OP+'-I-3','description':'Mueble ya despachado','quantity':1,'delivered':1,'pending':0,'blocked':''}]}}
     elif a=='REMISION_CREAR':
@@ -40,6 +48,39 @@ try:
     else:raise AssertionError(a)
     r.fulfill(status=200,json={'status':'success','code':'OK','requestId':req['requestId'],'data':data})
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
+   page.goto(ORIGIN+'/index.html')
+   expect(page.locator('#dashboard-group-diario .dashboard-menu-copy strong')).to_have_text(['Ventas','Cotizaciones','Abonos','Remisiones'])
+   assert page.evaluate("document.querySelectorAll('.dashboard-menu-group')[1].getBoundingClientRect().top>=document.querySelector('.dashboard-menu-group').getBoundingClientRect().bottom"),'Secondary tools must be below all daily actions'
+   if width<=760:
+    page.get_by_role('button',name='Más herramientas').click()
+    for item in page.locator('#dashboard-group-diario .dashboard-menu-item').all():expect(item).to_be_visible()
+   page.screenshot(path=str(OUT/f'inicio-diario-{width}.png'),full_page=True)
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+   page.get_by_role('link',name='Remisiones Buscar una OP y preparar la entrega').click()
+   expect(page).to_have_url(ORIGIN+'/remision.html');expect(page.locator('#remission-query')).to_be_visible()
+   page.goto(ORIGIN+'/remision.html?prueba='+QA)
+   query=page.locator('#remission-query');query.fill('00000001')
+   expect(page.locator('.rm-client-group')).to_have_count(1);expect(page.locator('.rm-order-option')).to_have_count(2)
+   expect(page.locator('.rm-client-heading')).to_contain_text('Cliente de muestra')
+   page.screenshot(path=str(OUT/f'busqueda-remisiones-{width}.png'),full_page=True)
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+   query.fill('anterior')
+   page.wait_for_function("document.querySelector('#remission-search-form').dataset.state==='loading'")
+   deadline=time.monotonic()+10
+   while not state['held'] and time.monotonic()<deadline:page.wait_for_timeout(20)
+   assert state['held'],'Previous search did not reach the API'
+   query.fill('Cliente de muestra');expect(page.locator('.rm-order-option')).to_have_count(2)
+   state['held'].fulfill(status=200,json={'status':'success','code':'OK','data':{'items':[],'total':0}})
+   page.wait_for_timeout(100);expect(page.locator('.rm-order-option')).to_have_count(2)
+   query.fill('sin coincidencias');expect(page.locator('#remission-search-status')).to_contain_text('No encontramos órdenes')
+   query.fill('fallo');expect(page.locator('#remission-search-status')).to_contain_text('Pulsa Buscar para volver a intentar')
+   page.get_by_role('button',name='Limpiar búsqueda').click();expect(query).to_have_value('');expect(page.locator('#remission-account')).to_be_hidden()
+   query.fill('Cliente de muestra');expect(page.locator('.rm-order-option')).to_have_count(2)
+   page.locator('.rm-order-option').first.click();expect(page.locator('#remission-account')).to_be_visible()
+   page.get_by_role('button',name='Limpiar búsqueda').click();count=len(state['searches'])
+   query.fill('mp-op-0002');query.press('Enter');expect(page.locator('#remission-account')).to_be_visible()
+   assert len(state['searches'])==count,'Exact OP must skip list search'
+   expect(page.locator('#remission-order-link')).to_have_text('MP-OP-0002')
    page.goto(ORIGIN+'/remision.html?op='+OP+'&prueba='+QA)
    expect(page.locator('#remission-account')).to_be_visible();expect(page.locator('#rm-select-0')).not_to_be_checked();expect(page.locator('#rm-select-1')).to_be_disabled();expect(page.locator('#rm-select-2')).to_be_disabled()
    assert page.locator('.is-complete').inner_text().find('✓ Despacho completo')>=0

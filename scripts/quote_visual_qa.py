@@ -102,7 +102,7 @@ def check_editor_and_home():
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
             menu.click()
             wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.dashboard-sheet-overlay.active')))
-            assert driver.find_element(By.ID, 'dashboard-dialog-title').text == 'Cotización'
+            assert driver.find_element(By.ID, 'dashboard-dialog-title').text == 'Cotizaciones'
             assert driver.find_element(By.CSS_SELECTOR, '.dashboard-dialog-option').size['height'] >= 88
             driver.save_screenshot(str(PNG.with_name('inicio-opciones-mobile.png')))
         results.append({'editor': editor, 'home': home})
@@ -118,7 +118,7 @@ def check_order():
         driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
         driver.set_window_size(width, 1100)
         driver.get(home_url)
-        menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="pedido"]')))
+        menu = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-menu-key="ventas"]')))
         driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
         menu.click()
         link = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.dashboard-dialog-option[href*="pedido.html"]')))

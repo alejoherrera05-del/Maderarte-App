@@ -15,6 +15,10 @@
 }
 
 /* Navigation rows keep a comfortable scale on desktop and mobile. */
+.dashboard-group-heading { margin: 0; padding: 0 0 14px; font-size: 1.0625rem; font-weight: 600; line-height: 1.5; }
+.dashboard-menu-group:nth-child(n) { grid-column: 1 / -1; }
+.dashboard-menu-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dashboard-menu-item:nth-child(odd) { border-right: 1px solid var(--line); }
 .dashboard-group-toggle { padding-bottom: 14px; }
 .dashboard-group-toggle span { font-size: 1.0625rem; font-weight: 600; }
 .dashboard-menu-list {
@@ -73,6 +77,9 @@
 .dashboard-footer-version { font-size: .8125rem; }
 
 @media (max-width: 760px) {
+  .dashboard-menu-list { grid-template-columns: 1fr; }
+  .dashboard-menu-item:nth-child(odd) { border-right: 0; }
+  .dashboard-group-heading { padding-inline: 4px; }
   .dashboard-groups {
     grid-template-columns: 1fr;
     max-width: none;
