@@ -17,7 +17,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),args=['--no-sandbox'])
   for width in (1440,390,320):
-   context=browser.new_context(viewport={'width':width,'height':1000})
+   context=browser.new_context(viewport={'width':width,'height':800 if width<900 else 1000})
    context.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));" % json.dumps(SESSION))
    state={'creates':0,'finishes':0,'complete':False,'saved':None,'doc':None,'searches':[],'held':None};errors=[]
    orders=[{'number':n,'client':'Cliente de muestra','document':'00000001','city':'Popayán','date':'2026-09-08T18:00:00Z','description':description,'address':'Dirección de prueba'} for n,description in [(OP,'Sofá de muestra'),('MP-OP-0002','Comedor de cuatro puestos')]]
@@ -25,6 +25,7 @@ try:
     req=r.request.post_data_json;a=req['action'];data={}
     if a.startswith('REMISION_') and a!='REMISION_CAPACIDADES':assert req.get('sandboxId')==QA
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
+    elif a=='RECIBO_CAPACIDADES':data={'enabled':False}
     elif a=='REMISION_CAPACIDADES':data={'contractVersion':1,'enabled':req.get('sandboxId')==QA,'photosReady':True,'documentsReady':True}
     elif a=='ORDENES_LISTAR':
      assert req.get('sandboxId')==QA
@@ -48,6 +49,22 @@ try:
     else:raise AssertionError(a)
     r.fulfill(status=200,json={'status':'success','code':'OK','requestId':req['requestId'],'data':data})
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
+   # Approved entrance: no operational data before choosing a match.
+   for route_name,prefix,input_id in [('clientes','clients','clients-search-input'),('abono','receipt','receipt-query'),('remision','remission','remission-query')]:
+    page.goto(ORIGIN+'/'+route_name+'.html')
+    cover=page.locator('.maddy-entrance');expect(cover).to_be_visible()
+    page.wait_for_function("[...document.querySelectorAll('.maddy-entrance img')].every(i=>i.complete&&i.naturalWidth>0)")
+    expect(page.locator('#'+input_id)).not_to_be_focused()
+    assert page.evaluate("getComputedStyle(document.querySelector('.maddy-entrance')).backgroundColor==='rgb(245, 245, 244)'")
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    assert page.locator('.maddy-entrance-character').evaluate('(e)=>getComputedStyle(e).filter==="none"&&getComputedStyle(e).mixBlendMode==="normal"'), 'Mascot must retain its original colors'
+    if width>=900:
+     assert page.locator('.maddy-entrance-folio').evaluate('(e)=>e.getBoundingClientRect().left===0&&Math.abs(e.getBoundingClientRect().right-innerWidth)<=1'), 'Desktop graphite field must span the viewport'
+    assert page.locator('.maddy-entrance button[type=submit]').evaluate('(e)=>Math.abs(e.getBoundingClientRect().y-e.closest("form").querySelector("input").getBoundingClientRect().y)<16'), 'Search action must stay beside the input'
+    page.screenshot(path=str(OUT/f'entrada-{route_name}-{width}.png'),full_page=True)
+    page.locator('#'+input_id).focus()
+    if width<900:expect(page.locator('.maddy-entrance-art')).to_be_hidden()
+    page.screenshot(path=str(OUT/f'buscador-{route_name}-{width}.png'),full_page=True)
    page.goto(ORIGIN+'/index.html')
    expect(page.locator('#dashboard-group-diario .dashboard-menu-copy strong')).to_have_text(['Ventas','Cotizaciones','Abonos','Remisiones'])
    assert page.evaluate("document.querySelectorAll('.dashboard-menu-group')[1].getBoundingClientRect().top>=document.querySelector('.dashboard-menu-group').getBoundingClientRect().bottom"),'Secondary tools must be below all daily actions'
@@ -77,7 +94,8 @@ try:
    page.get_by_role('button',name='Limpiar búsqueda').click();expect(query).to_have_value('');expect(page.locator('#remission-account')).to_be_hidden()
    query.fill('Cliente de muestra');expect(page.locator('.rm-order-option')).to_have_count(2)
    page.locator('.rm-order-option').first.click();expect(page.locator('#remission-account')).to_be_visible()
-   page.get_by_role('button',name='Limpiar búsqueda').click();count=len(state['searches'])
+   expect(page.locator('#remission-cover')).to_be_hidden()
+   page.get_by_role('button',name='Nueva búsqueda').click();count=len(state['searches'])
    query.fill('mp-op-0002');query.press('Enter');expect(page.locator('#remission-account')).to_be_visible()
    assert len(state['searches'])==count,'Exact OP must skip list search'
    expect(page.locator('#remission-order-link')).to_have_text('MP-OP-0002')
