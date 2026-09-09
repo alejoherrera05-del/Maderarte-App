@@ -65,7 +65,9 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    query.fill('anterior')
    page.wait_for_function("document.querySelector('#remission-search-form').dataset.state==='loading'")
-   while not state['held']:page.wait_for_timeout(20)
+   deadline=time.monotonic()+10
+   while not state['held'] and time.monotonic()<deadline:page.wait_for_timeout(20)
+   assert state['held'],'Previous search did not reach the API'
    query.fill('Cliente de muestra');expect(page.locator('.rm-order-option')).to_have_count(2)
    state['held'].fulfill(status=200,json={'status':'success','code':'OK','data':{'items':[],'total':0}})
    page.wait_for_timeout(100);expect(page.locator('.rm-order-option')).to_have_count(2)
