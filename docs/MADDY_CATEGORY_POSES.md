@@ -17,3 +17,5 @@ Integración: tres WebP sin pérdida de 1086×1448 con transparencia real. Se ed
 
 ## Expresiones y postura natural
 Nueva solicitud: diferenciar la mirada, expresión y postura completa según la actividad. Clientes lee la ficha; Abonos presenta el datáfono al cliente con una sonrisa de atención; Remisiones mira el control de despacho mientras sostiene la caja desde abajo. Se revisarán carga del objeto, ejes de hombros, codos, muñecas y dedos. Se conserva la identidad animada aprobada. Producción y verificación en curso.
+
+Implementación: recursos maddy-clientes-natural.webp, maddy-abonos-natural.webp y maddy-remisiones-natural.webp (1086×1448), con mirada y apoyo de objetos propios de cada acción. Se conserva el recibo del datáfono y se limpia el hueco entre brazo y torso. Firma móvil reubicada para evitar solapamientos. Revisión en design-qa.md.
