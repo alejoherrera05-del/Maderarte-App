@@ -1,31 +1,26 @@
 # QA visual — telones Maddy
 
-final result: blocked
-
-Actualización del propietario: revisar manchas/saturación del personaje y extender el fondo oscuro a todo el ancho en computador. Se sustituye la placa generada por el recorte transparente original sin filtros. Pendiente comparación del nuevo render; el informe siguiente corresponde a la revisión anterior y no certifica esta corrección.
+final result: passed
 
 ## Alcance y evidencia
 
-Diseño aprobado: Clientes, Remisiones y Abonos de la propuesta editorial del propietario, con cambio explícito a gris del Inicio y tipografía San Francisco del sistema. Implementación comprobada: código `5a1ff93531e03ba267e6cedaa90aea5bb0179697`, PR #46.
+Clientes, Remisiones y Abonos. Código verificado: `50d32424bf5f09bb35ed9f3b1ea3ddd7adcb08f9`, PR #46. La última indicación del propietario sustituye las placas generadas por Maddy original transparente sin filtros y extiende el grafito de lado a lado en escritorio.
 
-Capturas del HTML ejecutado en GitHub: [Remisiones QA, ejecución 34370594858](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34370594858), artefacto `remissions-qa`. Incluye entradas y búsqueda de las tres secciones a 320, 390 y 1440 px. Las referencias originales de 875×1797 se normalizaron a 390×800 para compararlas junto con las capturas móviles de 390×800, densidad 1. Comparación adicional a 320×800 y 1440×1000. Estado: entrada vacía, tema claro y sesión autorizada; foco revisado por separado.
+Capturas del HTML ejecutado en GitHub: [Remisiones QA, ejecución 34371640704](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34371640704), artefacto `remissions-qa`. Entradas y búsqueda de las tres secciones a 320, 390 y 1440 px. Comparación conjunta de referencia normalizada y render a 390×800; revisión adicional a 320×800 y 1440×1000, sesión autorizada, tema claro y entrada vacía.
 
-## Hallazgos corregidos
+## Resultado visual
 
-- P2: el buscador de Remisiones heredaba dirección vertical en móvil. Se fija dirección horizontal y se verifica que entrada y botón compartan altura.
-- P2: la imagen crecía con toda la altura libre y ocupaba el espacio de la firma. Se limita la altura de la composición, se conserva el encuadre y se usa la misma familia de placas en las tres pantallas. Las capturas finales muestran la firma libre a la izquierda.
-- P2: Remisiones reutilizaba inicialmente un recorte con escala distinta. La placa final conserva tamaño, borde y encuadre de Clientes y Abonos.
+- Fondo del Inicio rgb(245,245,244), búsqueda blanca, cobre y grafito plano #282624.
+- Personaje original con transparencia real, sin filtros ni mezclas CSS. Se descartan las placas con fondos pintados. Misma pose original en las tres entradas; decisión comunicada al propietario para conservar identidad y evitar manchas.
+- Grafito a todo el ancho en escritorio, sin contenedor central ni costuras. La cabeza emerge por encima de su borde y la firma conserva espacio propio.
+- Buscadores horizontales, controles de 44 px, sin desbordamiento horizontal. Al buscar en móvil se retira la ilustración y se priorizan las coincidencias.
+- Logo, wordmark y firma originales. Títulos móviles más compactos que la maqueta para conservar una escala común en Remisiones. No hay párrafos de explicación iniciales.
+- San Francisco mediante la cadena tipográfica del sistema Apple; fallback en Windows y Linux. Las capturas de Chromium Linux no acreditan Safari físico. No se distribuyen fuentes.
 
-## Superficies revisadas
-
-- Tipografía: `--font-sans`, peso 650 en títulos, cuerpo de búsqueda de 16 px y etiquetas legibles. SF nativa en Apple con sustitución del sistema en otras plataformas; no se distribuyen fuentes. Las capturas de Chromium en Linux usan su fallback, no acreditan un render de Safari físico.
-- Espaciado: jerarquía marca → título → búsqueda → Maddy; controles de 44 px; sin superposición entre firma y personaje ni desplazamiento horizontal. En pantallas estrechas se prioriza el campo sobre el icono de lupa.
-- Colores: fondo verificado como rgb(245,245,244), cobre en acción/foco y grafito en el folio. El placeholder tiene más contraste que la maqueta. Las placas incorporan integración tonal en CSS.
-- Imágenes: WebP optimizadas, recursos cargados y proporciones conservadas. Logo, wordmark y firma originales. Imágenes decorativas sin controles incrustados.
-- Contenido: títulos operativos y búsqueda, sin párrafos de explicación ni resultados iniciales. Los formularios aparecen tras seleccionar la coincidencia.
-
-Las firmas usan el recurso vectorial original en vez de la interpretación generada de la maqueta. El título móvil es más compacto para conservar la escala común y la lectura de Remisiones; diferencias deliberadas de implementación, sin hallazgos P0/P1/P2 pendientes. La cabecera y el buscador fueron legibles en las comparaciones completas, por lo que no requirieron recortes adicionales.
+No se identificaron problemas P0/P1/P2 pendientes en estas capturas. El recurso original de Maddy tiene resolución limitada (420×560); puede verse más suave en pantallas densas, pero no incorpora el tratamiento de color rechazado.
 
 ## Interacción y regresión
 
-GitHub ejecutó npm ci y npm test. Pasaron Calidad, Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Se conservan consultas, recuperación sin duplicados, selección de cantidades, cotización a OP, cuatro abonos y PDFs. La portada no enfoca automáticamente el campo y oculta el personaje al buscar en móvil. El dominio habitual se verifica después del merge conforme a la instrucción del propietario.
+Las cinco ejecuciones de GitHub para el código indicado finalizaron correctamente: Calidad (incluye npm ci y npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Se comprueban consultas, selección, retorno a búsqueda, recuperación sin duplicados, cantidades, cotización a OP, cuatro abonos y PDFs con datos sintéticos del runner. Las nuevas comprobaciones exigen ausencia de filtros en Maddy y grafito de ancho completo en escritorio.
+
+La verificación del dominio habitual se realiza después del merge. Este informe certifica las entradas y regresiones indicadas; no declara concluida toda la aplicación.
