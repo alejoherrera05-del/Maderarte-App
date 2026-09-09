@@ -1,3 +1,4 @@
+import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { sandboxLink } from '../core/order-sandbox-context.js';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
@@ -5,6 +6,8 @@ import { withPreview } from '../core/config.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { date, escapeHtml, humanizeCode, initials, money, normalizeCode, safeExternalUrl } from '../core/format.js';
 
+let entrance;
+let searchSequence = 0;
 const state = {
   session: null,
   suggestions: [],
@@ -77,7 +80,7 @@ function hideSuggestions() {
 
 function suggestionMarkup(item) {
   const secondary = [item.document, item.phone, item.city].filter(Boolean).join(' · ') || 'Sin datos adicionales';
-  return `<button class="clients-suggestion" type="button" role="option" data-client-document="${escapeHtml(item.document)}">
+  return `<button class="clients-suggestion" type="button" data-client-document="${escapeHtml(item.document)}">
     <span class="clients-suggestion-avatar">${escapeHtml(initials(item.name))}</span>
     <span class="clients-suggestion-copy"><strong>${escapeHtml(item.name || 'Sin nombre')}</strong><span>${escapeHtml(secondary)}</span></span>
     <span class="clients-suggestion-chevron" aria-hidden="true">›</span>
@@ -100,6 +103,7 @@ function renderSuggestions(items) {
 }
 
 async function updateSuggestions() {
+  const ticket=++searchSequence;
   const query = searchInput()?.value.trim() || '';
   if (query.length < 2) {
     hideSuggestions();
@@ -108,11 +112,13 @@ async function updateSuggestions() {
   }
   try {
     const response = await requestClients({ query, limit: 8 });
+    if(ticket!==searchSequence)return;
     const items = Array.isArray(response.data?.items) ? response.data.items : [];
     renderSuggestions(items);
     if (!items.length) setMessage('No encontramos clientes con esa búsqueda.');
     else setMessage(`${items.length} ${items.length === 1 ? 'coincidencia' : 'coincidencias'}. Selecciona un cliente.`);
   } catch (error) {
+    if(ticket!==searchSequence)return;
     hideSuggestions();
     setMessage(error.message || 'No fue posible consultar clientes.', true);
   }
@@ -279,6 +285,7 @@ function bindDossierInteractions() {
 
 function openResults(document) {
   app()?.classList.add('is-results');
+  searchSequence++; entrance?.open();
   const url = new URL(window.location.href);
   url.searchParams.set('search', document);
   window.history.replaceState({}, '', `${url.pathname}${url.search}`);
@@ -286,6 +293,7 @@ function openResults(document) {
 
 function returnToSearch({ clear = true } = {}) {
   app()?.classList.remove('is-results');
+  searchSequence++; entrance?.close();
   state.activeClient = null;
   if (clear && searchInput()) searchInput().value = '';
   hideSuggestions();
@@ -320,6 +328,8 @@ async function loadClient(document) {
 }
 
 async function submitSearch() {
+  window.clearTimeout(state.searchTimer);
+  const ticket=++searchSequence;
   const query = searchInput()?.value.trim() || '';
   if (!query) {
     setMessage('Escribe la identificación o el nombre del cliente.', true);
@@ -328,6 +338,7 @@ async function submitSearch() {
   setMessage('Buscando…');
   try {
     const response = await requestClients({ query, limit: 12 });
+    if(ticket!==searchSequence)return;
     const items = Array.isArray(response.data?.items) ? response.data.items : [];
     if (!items.length) {
       hideSuggestions();
@@ -342,6 +353,7 @@ async function submitSearch() {
     renderSuggestions(items);
     setMessage('Encontramos varias coincidencias. Selecciona el cliente correcto.');
   } catch (error) {
+    if(ticket!==searchSequence)return;
     hideSuggestions();
     setMessage(error.message || 'No fue posible consultar clientes.', true);
   }
@@ -355,6 +367,7 @@ function bindSearchInteractions() {
     submitSearch();
   });
   input?.addEventListener('input', () => {
+    searchSequence++;hideSuggestions();setMessage('');
     window.clearTimeout(state.searchTimer);
     state.searchTimer = window.setTimeout(updateSuggestions, 230);
   });
@@ -376,6 +389,7 @@ guardStandalonePage({
     const root = app();
     if (!root) return;
     root.hidden = false;
+    entrance=createEntrance({cover:document.getElementById('clients-search-screen'),workflow:document.getElementById('clients-result-screen'),input:searchInput()});
     bindSearchInteractions();
 
     const params = new URLSearchParams(window.location.search);
@@ -391,8 +405,6 @@ guardStandalonePage({
       } catch (error) {
         setMessage(error.message || 'No fue posible consultar clientes.', true);
       }
-    } else {
-      searchInput()?.focus({ preventScroll: true });
     }
   }
 });

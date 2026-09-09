@@ -1,3 +1,4 @@
+import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js?v=remission-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { readSessionSnapshot } from '../core/session.js';
@@ -11,6 +12,7 @@ const path=n=>sandboxLink('/remision.html?remision='+encodeURIComponent(n));
 const orderPath=n=>sandboxLink('/orden.html?op='+encodeURIComponent(n));
 const key=n=>n.trim().replace(/\s+/g,' ').toLocaleUpperCase('es');
 const silhouette='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2a7.5 7.5 0 0 1 15 0v2"/></svg>';
+let entrance;
 let account=null,manager,locked=false,capabilities=false,sequence=0,searchTimer;
 function button(root,label,run){const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>void run());root.append(b);return b;}
 function renderPeople(role){
@@ -51,7 +53,7 @@ function renderSave(state){
     if(state.phase==='retry')button(root,'Reenviar el mismo intento',()=>manager.retry());
     if(state.phase==='documents')button(root,'Abrir despacho registrado',()=>window.location.assign(path(state.number)));
   }
-  if(state.locked)$('account').hidden=true;
+  if(state.locked){$('account').hidden=true;entrance?.open();}
 }
 async function selectOrder(number){
   if(locked)return;clearTimeout(searchTimer);
@@ -65,7 +67,7 @@ async function selectOrder(number){
     for(const r of [...data.position.history].reverse()){const row=document.createElement('article');row.className='rm-history-row';row.innerHTML=`<strong>${esc(r.number)}</strong><p>${esc(dateTime(r.date))} · Transporta ${esc(r.transporter.name)}</p><p>${esc(r.items.map(i=>i.quantity+' × '+i.description).join(' · '))}</p><a href="${esc(path(r.number))}">Ver remisión y PDF</a>`;history.append(row);}
     if(!history.children.length)history.textContent='Todavía no hay despachos de esta orden.';
     searchStatus(!data.canDeliver?'Esta orden no admite despachos.':data.position.items.every(i=>!i.pending)?'✓ Todos los muebles salieron del almacén.':'Orden lista. Selecciona los muebles que salen hoy.');$('clear').hidden=false;
-    $('account').hidden=false;$('error').textContent='';if(manager?.getState().phase==='rejected')await manager.refresh();renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});
+    $('account').hidden=false;$('error').textContent='';if(manager?.getState().phase==='rejected')await manager.refresh();renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});entrance?.open();
   }catch(e){if(ticket===sequence)searchStatus(e.message+' Puedes revisar el número y volver a buscar.','error');}
 }
 function searchStatus(message,state='idle'){
@@ -75,7 +77,7 @@ function searchStatus(message,state='idle'){
 function clearSearch(){
   clearTimeout(searchTimer);sequence++;account=null;$('account').hidden=true;$('results').replaceChildren();
   $('clear').hidden=!$('query').value;
-  searchStatus('Busca por nombre, cédula o número de OP.');
+  searchStatus('');
 }
 function renderOrderResults(data){
   const groups=new Map();
@@ -113,6 +115,7 @@ async function openPdf(number){
   }catch(e){popup?.close();$('feedback').textContent=e.message;}
 }
 async function showRemission(number){
+  entrance?.open();
   $('entry').hidden=true;$('result').hidden=false;$('result').textContent='Consultando la remisión…';
   try{const {data:r}=await apiRequest('REMISION_OBTENER',{number}),d=r.document;
     $('back').href=orderPath(r.orderNumber);$('back').setAttribute('aria-label','Volver a la orden');
@@ -123,7 +126,9 @@ async function showRemission(number){
   }catch(e){$('result').textContent=e.message;button($('result'),'Volver a intentar',()=>showRemission(number));}
 }
 guardStandalonePage({permission:'remisiones.read',async render({session}){
-  $('app').hidden=false;bindSandboxBanner($('app'));$('version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
+  $('app').hidden=false;
+  entrance=createEntrance({cover:$('cover'),workflow:$('workflow'),input:$('query'),newSearch:$('new-search'),onReturn:()=>{if(locked)return false;$('query').value='';clearSearch();}});
+bindSandboxBanner($('app'));$('version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   const params=new URLSearchParams(location.search),op=params.get('op'),number=params.get('remision');if(op){$('back').href=orderPath(op);$('back').setAttribute('aria-label','Volver a la orden');}
   $('search-form').addEventListener('submit',e=>{e.preventDefault();void search();});
   $('query').addEventListener('input',()=>{clearSearch();if($('query').value.trim().length>=3)searchTimer=setTimeout(()=>void search(),450);});

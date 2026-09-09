@@ -1,3 +1,4 @@
+import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { readSessionSnapshot } from '../core/session.js';
@@ -9,11 +10,12 @@ import { createReceiptSave } from '../core/receipt-save.js';
 import { currentSandboxId, sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
 
 const $ = id => document.getElementById(id);
+let entrance;
 let account=null, sequence=0,manager,locked=false,capabilities=false;
 const receiptPath=number=>sandboxLink('/abono.html?recibo='+encodeURIComponent(number));
 function action(root,label,run){const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>void run());root.append(button);return button;}
 function error(message){$('receipt-error').textContent=message;}
-let sampleUrl='';
+let sampleUrl='', searchTimer;
 async function showSample(){
   const button=$('receipt-sample');button.disabled=true;
   $('receipt-feedback').textContent='Generando muestra en media carta horizontal…';
@@ -42,6 +44,7 @@ async function openPdf(number){
   }catch(failure){popup?.close();$('receipt-feedback').textContent=failure.message;}
 }
 async function showReceipt(number){
+  entrance?.open();
   $('receipt-entry').hidden=true;$('receipt-result').hidden=false;$('receipt-result').textContent='Consultando el recibo…';
   try {const {data:r}=await apiRequest('RECIBO_OBTENER',{number});
     $('receipt-result').innerHTML=`<span>Recibo registrado</span><h2>${esc(r.number)}</h2><p>${esc(r.client)}</p><p class="receipt-result-amount">${esc(money(r.amount))}</p><p>${esc(humanizeCode(r.method))} · ${esc(date(r.date))}</p><p>${esc(r.concept)}</p><p>Saldo después de este pago: <strong>${esc(money(r.balance))}</strong></p><a href="${esc(sandboxLink('/orden.html?op='+encodeURIComponent(r.orderNumber)))}">Abrir ${esc(r.orderNumber)}</a><p>${r.complete?'PDF archivado.':'Pago registrado. Su PDF está pendiente.'}</p>`;
@@ -66,9 +69,10 @@ function renderSave(state){
     if(state.phase==='retry')action(root,'Reenviar el mismo intento',()=>manager.retry());
     if(state.phase==='documents')action(root,'Abrir recibo registrado',()=>window.location.assign(receiptPath(state.number)));
   }
-  if(state.locked)$('receipt-account').hidden=true;
+  if(state.locked){$('receipt-account').hidden=true;entrance?.open();}
 }
 async function selectOrder(number){
+  if(locked)return;clearTimeout(searchTimer);
   const ticket=++sequence;account=null;$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='Consultando historial y saldo…';
   try {const {data}=await apiRequest('RECIBO_CUENTA',{number});if(ticket!==sequence)return;
     account=data;$('receipt-query').value=data.order.number;$('receipt-client-name').textContent=data.order.client;
@@ -79,10 +83,11 @@ async function selectOrder(number){
     for(const p of data.payments){const row=document.createElement('div');row.className='receipt-history-row';row.innerHTML=`<div>${esc(p.number)}<small>${esc(date(p.date))} · ${esc(humanizeCode(p.method))}${p.comment?' · '+esc(p.comment):''}</small></div><div><strong>${esc(money(p.value))}</strong></div>`;action(row.lastElementChild,'Ver recibo',()=>window.location.assign(receiptPath(p.number)));history.append(row);}
     $('receipt-form').reset();$('receipt-concept').value='Abono a la orden '+number;error('');
     $('receipt-search-status').textContent=!data.canReceive?'Esta orden no admite nuevos pagos.':data.position.balance===0?'La orden no tiene saldo pendiente.':'';
-    $('receipt-account').hidden=false;renderSave(manager?.getState()||{phase:'disabled',locked:false,canSave:false});calculate();
+    $('receipt-account').hidden=false;renderSave(manager?.getState()||{phase:'disabled',locked:false,canSave:false});calculate();entrance?.open();
   }catch(e){if(ticket===sequence)$('receipt-search-status').textContent=e.message;}
 }
 async function search(){
+  clearTimeout(searchTimer);
   if(locked)return;const query=$('receipt-query').value.trim();const ticket=++sequence;account=null;$('receipt-account').hidden=true;$('receipt-results').replaceChildren();
   if(!query){$('receipt-search-status').textContent='Escribe una OP, nombre o cédula.';return;}
   $('receipt-search-status').textContent='Buscando órdenes…';
@@ -93,13 +98,16 @@ async function search(){
 }
 guardStandalonePage({permission:'abonos.read',async render({session}){
   $('receipt-app').hidden=false;
+  entrance=createEntrance({cover:$('receipt-cover'),workflow:$('receipt-workflow'),input:$('receipt-query'),newSearch:$('receipt-new-search'),onReturn:()=>{
+    if(locked)return false;clearTimeout(searchTimer);sequence++;account=null;$('receipt-query').value='';$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';
+  }});
   $('receipt-version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   bindSandboxBanner($('receipt-app'));
   $('receipt-sample').addEventListener('click',()=>void showSample());
   const params=new URLSearchParams(window.location.search),op=params.get('op'),receipt=params.get('recibo');
   if(op){$('receipt-back').href=sandboxLink('/orden.html?op='+encodeURIComponent(op));$('receipt-back').setAttribute('aria-label','Volver a la orden');}
   $('receipt-search-form').addEventListener('submit',e=>{e.preventDefault();void search();});
-  $('receipt-query').addEventListener('input',()=>{sequence++;account=null;$('receipt-account').hidden=true;$('receipt-results').replaceChildren();});
+  $('receipt-query').addEventListener('input',()=>{clearTimeout(searchTimer);sequence++;account=null;$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';if($('receipt-query').value.trim().length>=3)searchTimer=setTimeout(()=>void search(),450);});
   $('receipt-amount').addEventListener('input',calculate);
   try {const {data}=await apiRequest('RECIBO_CAPACIDADES',{});capabilities=data.enabled===true;}catch(e){$('receipt-mode').textContent='No se pudo comprobar la disponibilidad. Puedes consultar las órdenes.';}
   if(hasPermission(session,'abonos.create')){try {
