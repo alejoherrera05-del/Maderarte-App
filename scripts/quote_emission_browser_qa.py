@@ -185,7 +185,8 @@ try:
             assert api('/__qa/evidence')['counts']==before_sample
             subprocess.run(['pdftoppm','-scale-to','1600','-png','-singlefile',str(sample_path),str(OUT/'recibo-muestra-media-carta')],check=True)
             page.goto(ORIGIN+'/abono.html')
-            expect(page.get_by_role('heading',name='Pagos y recibos')).to_be_visible()
+            expect(page.get_by_role('heading',name='Abonos',exact=True)).to_be_visible()
+            expect(page.locator('#receipt-workflow')).to_be_hidden()
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             page.screenshot(path=str(OUT/f'recibo-inicio-{width}.png'),full_page=True)
             assert not errors,errors
