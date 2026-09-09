@@ -69,7 +69,7 @@ async function search(event) {
 guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   if (!hasPermission(session, 'produccion.read')) { $('app').hidden = false; $('app').textContent = 'No tienes permiso para consultar Producción.'; return; }
   $('app').hidden = false; bindSandboxBanner($('app'));
-  bindSupplierDirectory({uid:session.profile.uid,root:document.getElementById('supplier-directory'),name:$('supplier'),phone:$('phone'),onSelect:invalidate});
+  const supplierContacts = bindSupplierDirectory({uid:session.profile.uid,root:document.getElementById('supplier-directory'),name:$('supplier'),phone:$('phone'),onSelect:invalidate});
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });
   entrance = createEntrance({ cover: $('cover'), workflow: $('workflow'), input: $('query'), newSearch: $('new-search'), onReturn() { sequence++; account = null; invalidate(); $('workspace').hidden = true; } });
@@ -80,7 +80,7 @@ guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
     try {
       const message = buildProductionRequest({ ...account, selected: selection(), supplier: $('supplier').value, notes: $('notes').value, customerNotice: $('notice').checked, priorReview: $('reviewed').checked });
       $('whatsapp').href = supplierWhatsAppUrl($('phone').value, message);
-      $('message').value = message; $('preview').hidden = false;
+      $('message').value = message; $('preview').hidden = false; supplierContacts?.remember();
       $('preview-title').focus(); $('preview').scrollIntoView({ behavior: 'auto', block: 'start' });
     } catch (error) { $('feedback').textContent = error.message; }
   });
