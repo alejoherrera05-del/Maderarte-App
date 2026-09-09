@@ -60,6 +60,33 @@ try:
   page.evaluate('(data)=>{const s=document.createElement("script");s.type="application/json";s.id="maddy-document-data";s.textContent=JSON.stringify(data);document.body.append(s)}',data)
   page.wait_for_selector('[data-document-ready="true"]')
   assert page.locator('.quote-preview-appendix-page').count()==0
+  # A short order with longer notes must keep the signature and footer in the PDF.
+  # DOM scrollHeight alone can miss children clipped when Chromium switches to print.
+  data['number']='MP-QA-12345678-OP-0001'
+  data['order']={'paid':0,'balance':data['total'],'payments':[]}
+  for item in data['items']:
+   for key in ['category','fabric','wood','specifications']: item[key]=''
+  notice='[PRUEBA AISLADA QA-00000000000000000000000000000000 - SIN VALIDEZ COMERCIAL. NO COBRAR, ENTREGAR NI FABRICAR.]'
+  data['notes']=notice+'\n'+notice+'\nDemostración de cotización, pedido y cuatro abonos. Datos ficticios, sin cobro ni entrega.'
+  page.goto('http://127.0.0.1:4173/documento-render.html',wait_until='networkidle')
+  page.evaluate('(data)=>{const s=document.createElement("script");s.type="application/json";s.id="maddy-document-data";s.textContent=JSON.stringify(data);document.body.append(s)}',data)
+  page.wait_for_selector('[data-document-ready="true"]')
+  geometry="""() => [...document.querySelectorAll('.quote-preview-page')].map(p=>({
+    page:p.getBoundingClientRect().toJSON(), client:p.clientHeight, scroll:p.scrollHeight,
+    children:[...p.querySelectorAll('.quote-editorial-body,.quote-editorial-signoff,.quote-document-footer,.quote-editorial-signature')].map(e=>({className:e.className,rect:e.getBoundingClientRect().toJSON()}))
+  }))"""
+  screen=page.evaluate(geometry)
+  page.emulate_media(media='print')
+  printed=page.evaluate(geometry)
+  (out/'print-geometry.json').write_text(json.dumps({'screen':screen,'print':printed},indent=2))
+  page.pdf(path=str(out/'pedido-observaciones.pdf'),format='A4',print_background=True,prefer_css_page_size=True,display_header_footer=False,margin={'top':'0','bottom':'0','left':'0','right':'0'})
+  notes_pdf=PdfReader(out/'pedido-observaciones.pdf')
+  notes_text=' '.join(p.extract_text() or '' for p in notes_pdf.pages)
+  assert 'Asesor QA' in notes_text, 'La firma quedó fuera del PDF'
+  assert all('Página' in (p.extract_text() or '') for p in notes_pdf.pages), 'Falta el pie de página'
+  for p in printed:
+   assert all(c['rect']['bottom']<=p['page']['bottom']+1 for c in p['children']),p
+  page.emulate_media(media='screen')
   data['items'][0]['photos']=['data:image/png;base64,bm90LWFuLWltYWdl']
   page.goto('http://127.0.0.1:4173/documento-render.html',wait_until='networkidle')
   page.evaluate('(data)=>{const s=document.createElement("script");s.type="application/json";s.id="maddy-document-data";s.textContent=JSON.stringify(data);document.body.append(s)}',data)
