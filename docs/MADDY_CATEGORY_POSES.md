@@ -14,3 +14,6 @@ Recursos integrados y revisados en capturas de escritorio y móvil en GitHub. In
 
 Integración: tres WebP sin pérdida de 1086×1448 con transparencia real. Se editó cada pose usando la referencia aprobada y se revisó el rostro, vestuario y gesto. El recorte posterior modifica únicamente el canal alfa; se comprobó que todos los píxeles visibles mantienen el RGB de cada imagen generada. Limpieza de contorno limitada al cabello y los huecos de fondo para conservar opacos los objetos. Recursos: maddy-clientes-hd.webp, maddy-abonos-hd.webp y maddy-remisiones-hd.webp.
 
+
+## Expresiones y postura natural
+Nueva solicitud: diferenciar la mirada, expresión y postura completa según la actividad. Clientes lee la ficha; Abonos presenta el datáfono al cliente con una sonrisa de atención; Remisiones mira el control de despacho mientras sostiene la caja desde abajo. Se revisarán carga del objeto, ejes de hombros, codos, muñecas y dedos. Se conserva la identidad animada aprobada. Producción y verificación en curso.
