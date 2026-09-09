@@ -52,3 +52,6 @@
 - Envío manual por WhatsApp.
 - WAHA y Bridge propios de Maderarte en el VPS actual.
 - Reportes y controles administrativos.
+
+## Avance del 9 de septiembre de 2026 — Producción
+Primer incremento: preparación de solicitudes al proveedor desde una OP, publicado mediante PR #50. Reglas confirmadas por el propietario y alcance en PRODUCTION_REQUESTS.md. El seguimiento de confirmación, fabricación, transporte y recepción permanece pendiente; preparar o abrir WhatsApp no registra esos movimientos.
