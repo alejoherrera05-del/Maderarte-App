@@ -1,5 +1,6 @@
 /* Approved Maddy entrance family. System SF on Apple; no bundled fonts. */
 body.maddy-entry-page { background:var(--bg); font-family:var(--font-sans); -webkit-font-smoothing:antialiased; font-synthesis:none; }
+.maddy-entry-page .quote-app:has(>.maddy-entrance:not([hidden])) { padding-bottom:0; }
 .maddy-entry-page [hidden] { display:none!important; }
 .maddy-entrance { position:relative; isolation:isolate; min-height:100svh; display:flex; flex-direction:column; overflow:hidden; background:var(--bg); color:#232328; }
 .maddy-entrance-header { flex:none; width:calc(100% - 44px); max-width:1160px; min-height:88px; margin:0 auto; padding:calc(16px + env(safe-area-inset-top,0px)) 0 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #cececd; gap:20px; }

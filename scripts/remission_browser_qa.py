@@ -25,6 +25,7 @@ try:
     req=r.request.post_data_json;a=req['action'];data={}
     if a.startswith('REMISION_') and a!='REMISION_CAPACIDADES':assert req.get('sandboxId')==QA
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
+    elif a=='RECIBO_CAPACIDADES':data={'enabled':False}
     elif a=='REMISION_CAPACIDADES':data={'contractVersion':1,'enabled':req.get('sandboxId')==QA,'photosReady':True,'documentsReady':True}
     elif a=='ORDENES_LISTAR':
      assert req.get('sandboxId')==QA
@@ -48,6 +49,18 @@ try:
     else:raise AssertionError(a)
     r.fulfill(status=200,json={'status':'success','code':'OK','requestId':req['requestId'],'data':data})
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
+   # Approved entrance: no operational data before choosing a match.
+   for route_name,prefix,input_id in [('clientes','clients','clients-search-input'),('abono','receipt','receipt-query'),('remision','remission','remission-query')]:
+    page.goto(ORIGIN+'/'+route_name+'.html')
+    cover=page.locator('.maddy-entrance');expect(cover).to_be_visible()
+    page.wait_for_function("[...document.querySelectorAll('.maddy-entrance img')].every(i=>i.complete&&i.naturalWidth>0)")
+    expect(page.locator('#'+input_id)).not_to_be_focused()
+    assert page.evaluate("getComputedStyle(document.querySelector('.maddy-entrance')).backgroundColor==='rgb(245, 245, 244)'")
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    page.screenshot(path=str(OUT/f'entrada-{route_name}-{width}.png'),full_page=True)
+    page.locator('#'+input_id).focus()
+    if width<900:expect(page.locator('.maddy-entrance-art')).to_be_hidden()
+    page.screenshot(path=str(OUT/f'buscador-{route_name}-{width}.png'),full_page=True)
    page.goto(ORIGIN+'/index.html')
    expect(page.locator('#dashboard-group-diario .dashboard-menu-copy strong')).to_have_text(['Ventas','Cotizaciones','Abonos','Remisiones'])
    assert page.evaluate("document.querySelectorAll('.dashboard-menu-group')[1].getBoundingClientRect().top>=document.querySelector('.dashboard-menu-group').getBoundingClientRect().bottom"),'Secondary tools must be below all daily actions'
