@@ -103,7 +103,7 @@ try:
             expect(page.get_by_role('link',name='Preparar orden de pedido',exact=True)).to_have_count(0)
             page.goto(conversion_url);page.wait_for_url(order_url,timeout=30000)
             assert api('/__qa/evidence')['counts']['Ordenes_Pedido']==1
-            page.get_by_role('link',name='Recibos de caja · consultar y registrar abonos',exact=True).click()
+            page.get_by_role('link',name='Registrar abono',exact=True).click()
             page.wait_for_url('**/abono.html?**',timeout=30000)
             expect(page.locator('#receipt-account')).to_be_visible(timeout=30000)
             expect(page.locator('#receipt-balance')).to_contain_text('3.300.000')
@@ -140,7 +140,7 @@ try:
                 page.get_by_role('button',name='Nuevo abono',exact=True).click()
                 page.wait_for_url('**/abono.html?prueba=**',timeout=30000)
                 page.goto(order_url)
-                page.get_by_role('link',name='Recibos de caja · consultar y registrar abonos',exact=True).click()
+                page.get_by_role('link',name='Registrar abono',exact=True).click()
                 expect(page.locator('#receipt-account')).to_be_visible(timeout=30000)
                 expect(page.locator('.receipt-history-row')).to_have_count(payment_index-1)
                 page.locator('#receipt-amount').fill(str(amount))

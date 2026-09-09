@@ -69,7 +69,7 @@ try:
    page.screenshot(path=str(OUT/f'expediente-{width}.png'),full_page=True)
    page.locator('[data-product-journey]').first.click()
    expect(page.get_by_role('dialog')).to_be_visible()
-   expect(page.get_by_role('dialog')).to_contain_text('Sin confirmación registrada')
+   expect(page.get_by_role('dialog')).to_contain_text('Sin confirmaciÃ³n registrada')
    page.screenshot(path=str(OUT/f'recorrido-{width}.png'))
    page.keyboard.press('Escape');expect(page.get_by_role('dialog')).to_be_hidden()
    page.get_by_text('Cliente y acuerdos',exact=True).click()
