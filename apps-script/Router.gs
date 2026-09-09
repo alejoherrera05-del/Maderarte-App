@@ -33,6 +33,14 @@ function routeAction_(action, payload, context) {
     case 'COTIZACION_PDF_LEER': return qmdReadPdf_(payload, context);
     case 'INTERNO_COTIZACION_DOCUMENTO_PREPARAR': return qmdPreparePdf_(payload, context);
     case 'INTERNO_COTIZACION_DOCUMENTO_CONFIRMAR': return qmdConfirmPdf_(payload, context);
+    case 'REMISION_CAPACIDADES': return rmCapabilities_(context);
+    case 'REMISION_CUENTA': return rmAccount_(payload, context);
+    case 'REMISION_CREAR': return rmCreate_(payload, context);
+    case 'REMISION_CREACION_ESTADO': return rmStatus_(payload, context);
+    case 'REMISION_OBTENER': return rmGet_(payload, context);
+    case 'REMISION_PDF_LEER': return rmReadPdf_(payload, context);
+    case 'INTERNO_REMISION_DOCUMENTO_PREPARAR': return rmPreparePdf_(payload, context);
+    case 'INTERNO_REMISION_DOCUMENTO_CONFIRMAR': return rmConfirmPdf_(payload, context);
     case 'RECIBO_CAPACIDADES': return rcCapabilities_(context);
     case 'RECIBO_CUENTA': return rcAccount_(payload, context);
     case 'RECIBO_CREAR': return rcCreate_(payload, context);

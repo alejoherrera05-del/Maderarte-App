@@ -24,7 +24,7 @@ const MENU_GROUPS = Object.freeze([
       { key: 'produccion', label: 'Producción', description: 'Pedidos en fabricación', icon: 'stack', permission: 'produccion.read', available: false },
       { key: 'documentos', label: 'Centro documental', description: 'PDF, recibos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
       { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false },
-      { key: 'remisiones', label: 'Remisiones', description: 'Entregas realizadas y soportes', icon: 'truck', permission: 'remisiones.read', available: false }
+      { key: 'remisiones', label: 'Remisiones', description: 'Muebles, despachos y transportadores', icon: 'truck', permission: 'remisiones.read', href: '/remision.html' }
     ]
   }
 ]);

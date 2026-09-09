@@ -22,7 +22,8 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
   activeUid = () => uid, onState = () => {}, onProgress = () => {}, scope = '', kind = 'order', finishDocuments = finishOrderDocuments }) {
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
   if (scope && !/^QA-[a-f0-9]{32}$/.test(scope)) throw fail('SANDBOX_INVALID', 'Ensayo no válido.');
-  const key = `${ORDER_SAVE_PREFIX}${kind === 'receipt' ? 'receipt.' : ''}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
+  if (!['order','receipt','remission'].includes(kind)) throw fail('SAVE_KIND_INVALID', 'Tipo de documento no válido.');
+  const key = `${ORDER_SAVE_PREFIX}${kind === 'order' ? '' : kind + '.'}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
   const progress = event => { try { onProgress(event); } catch { /* Feedback cannot interrupt a save. */ } };
   let busy = false;
   let supportsMedia = false;
@@ -170,7 +171,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     } catch (error) {
       // These contract errors are thrown BEFORE the server admits its first batch.
       // Never use a later rejection to erase a previous uncertain transmission.
-      const rejected = ['ORDER_INPUT_INVALID', 'ORDER_CONTRACT_MISMATCH', 'ORDER_PHOTOS_NOT_READY', 'COMMERCIAL_WRITES_DISABLED', 'REQUEST_ID_REQUIRED', 'RECEIPT_BALANCE_CHANGED', 'RECEIPT_EXCEEDS_BALANCE', 'RECEIPT_ORDER_INACTIVE'];
+      const rejected = ['ORDER_INPUT_INVALID', 'ORDER_CONTRACT_MISMATCH', 'ORDER_PHOTOS_NOT_READY', 'COMMERCIAL_WRITES_DISABLED', 'REQUEST_ID_REQUIRED', 'RECEIPT_BALANCE_CHANGED', 'RECEIPT_EXCEEDS_BALANCE', 'RECEIPT_ORDER_INACTIVE', 'DELIVERY_CHANGED', 'DELIVERY_EXCEEDS_PENDING', 'DELIVERY_ORDER_INACTIVE', 'DELIVERY_NOT_READY'];
       if (firstAttempt && error?.requestId === journal.requestId && rejected.includes(error.code)) {
         temporary.removeItem(key);
         durable.removeItem(key);

@@ -11,7 +11,7 @@ export function pdfOptions(document) {
     allowRequestPattern: [`^${ORIGIN.replaceAll('.', '\\.')}\/(?:documento-render\\.html|(?:assets|css|js)\/[^?#]*)(?:\\?[^#]*)?$`, '^data:image\\/(?:png|jpeg|webp);base64,'],
     rejectResourceTypes: ['xhr', 'fetch', 'websocket', 'eventsource'],
     viewport: { width: 1120, height: 1200, deviceScaleFactor: 1 },
-    pdfOptions: { ...(document.documentKind === 'receipt' ? { width: '8.5in', height: '5.5in' } : { format: 'a4' }), printBackground: true, preferCSSPageSize: true,
+    pdfOptions: { ...(['receipt','remission'].includes(document.documentKind) ? { width: '8.5in', height: '5.5in' } : { format: 'a4' }), printBackground: true, preferCSSPageSize: true,
       displayHeaderFooter: false, margin: { top: '0', right: '0', bottom: '0', left: '0' } }
   };
 }

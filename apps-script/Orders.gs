@@ -115,6 +115,7 @@ function orderRemissions_(number) {
       number: String(row.Numero_Remision || ''),
       date: valueDateIso_(row.Fecha_Remision),
       receiver: String(row.Persona_Recibe || ''),
+      dispatcher: String(row.Responsable || ''),
       notes: String(row.Observaciones || ''),
       status: normalizeCode_(row.Estado),
       pdfUrl: String(row.URL_PDF_Remision || '')
