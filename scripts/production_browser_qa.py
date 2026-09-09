@@ -15,7 +15,7 @@ try:
   except Exception:time.sleep(.1)
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),args=['--no-sandbox'])
-  for width in [1366,390,320]:
+  for width in [1916,1366,390,320]:
    context=browser.new_context(viewport={'width':width,'height':850},permissions=['clipboard-read','clipboard-write'])
    context.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));" % json.dumps(SESSION))
    actions=[];errors=[]
@@ -33,6 +33,9 @@ try:
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
    page.goto(ORIGIN+'/produccion.html?prueba='+QA)
    expect(page.locator('#production-query')).to_be_visible()
+   expect(page.locator('#production-cover')).to_be_visible()
+   page.wait_for_function('document.querySelector(".maddy-entrance-character").naturalWidth === 1086')
+   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    page.screenshot(path=str(OUT/f'entrada-{width}.png'),full_page=True)
    query=page.locator('#production-query');query.fill('nadie');query.press('Enter');expect(page.locator('#production-search-status')).to_contain_text('No encontramos')
    query.fill('fallo');query.press('Enter');expect(page.locator('#production-search-status')).to_contain_text('Vuelve a pulsar Buscar')

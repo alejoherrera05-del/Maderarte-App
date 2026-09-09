@@ -1,3 +1,4 @@
+import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { hasPermission } from '../core/permissions.js';
@@ -5,7 +6,7 @@ import { escapeHtml as esc } from '../core/format.js';
 import { sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
 import { buildProductionRequest, productionEligibility, supplierWhatsAppUrl } from '../core/production-request.js';
 const $ = id => document.getElementById('production-' + id);
-let account = null, sequence = 0;
+let account = null, sequence = 0, entrance;
 function invalidate() { $('preview').hidden = true; $('message').value = ''; $('whatsapp').removeAttribute('href'); $('copy-status').textContent = ''; }
 function selection() { return [...$('items').children].filter(row => row.querySelector('[type=checkbox]').checked).map(row => ({ id: row.dataset.id, quantity: Number(row.querySelector('[type=number]').value) })); }
 function updateSelection() {
@@ -33,7 +34,7 @@ function showAccount(data) {
     $('items').append(row);
   });
   if (!data.items.length) $('items').textContent = 'Esta orden no tiene muebles para consultar.';
-  updateSelection(); $('search').hidden = true; $('workspace').hidden = false;
+  updateSelection(); $('workspace').hidden = false; entrance.open();
   $('feedback').textContent = data.items.some(item => !productionEligibility(data.order, item)) ? '' : 'No hay muebles habilitados para preparar una solicitud en esta OP.';
   $('prepare').disabled = !data.items.some(item => !productionEligibility(data.order, item));
 }
@@ -68,7 +69,7 @@ guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   $('app').hidden = false; bindSandboxBanner($('app'));
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });
-  $('new-search').addEventListener('click', () => { sequence++; account = null; invalidate(); $('workspace').hidden = true; $('search').hidden = false; $('query').focus(); });
+  entrance = createEntrance({ cover: $('cover'), workflow: $('workflow'), input: $('query'), newSearch: $('new-search'), onReturn() { sequence++; account = null; invalidate(); $('workspace').hidden = true; } });
   $('form').addEventListener('input', invalidate);
   $('form').addEventListener('change', invalidate);
   $('form').addEventListener('submit', event => {

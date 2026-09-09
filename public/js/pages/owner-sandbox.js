@@ -26,6 +26,7 @@ guardStandalonePage({ permission:'config.read', async render({session}) {
       else fact('Cotizaciones','Ensayo anterior: requiere revisión del propietario; no se modifica ni se limpia automáticamente.');
       if(s.quoteNumber&&!s.quoteDocumentsComplete)link('Recuperar emisión de cotización',sandboxLink('/cotizacion.html',s.id));
       link(s.number?'Reabrir la orden de prueba':'Abrir formulario de prueba',sandboxLink(s.number?`/orden.html?op=${encodeURIComponent(s.number)}`:'/pedido.html',s.id));
+      if(s.number)link('Ver Producción de prueba',sandboxLink(`/produccion.html?op=${encodeURIComponent(s.number)}`,s.id));
       for(const [label,value,host] of [['Ver hoja de prueba',s.sheetUrl,'docs.google.com'],['Ver carpeta de prueba',s.folderUrl,'drive.google.com']]){
         const u=new URL(value);if(u.protocol==='https:'&&u.hostname===host)link(label,u.href,true);
       }
