@@ -1,4 +1,4 @@
-// Quantity ledger. A confirmed delivery never modifies a payment or the original PDF.
+// Dispatch quantity ledger. Loading goods does not certify receipt at destination.
 function rmEnabled_() {
   return typeof osActive_ === 'function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES
     && getConfigValue_('MODO_OPERACION','') === 'OPERACION' && optionalProperty_('REMISSION_SAVE_ENABLED','NO') === 'SI'
@@ -11,6 +11,29 @@ function rmSession_(context,write) {
   if(write)requirePermission_(s,'remisiones.create');return s;
 }
 function rmFail_(message) { throw appError_('DELIVERY_INTEGRITY',message || 'Las cantidades requieren conciliación antes de otra entrega.',409); }
+function rmPersonKey_(name) { return String(name||'').trim().replace(/\s+/g,' ').toLocaleUpperCase('es'); }
+function rmPeople_(branch,role) {
+  var catalog='REMISION_'+role+'_'+branch,seen={};
+  return listRows_('Catalogos').filter(function(r){return r.Catalogo===catalog&&r.Activo==='SI';}).map(function(r){
+    var key=rmPersonKey_(r.Valor),meta=parseJson_(r.Descripcion,null);
+    if(!key||seen[key]||!meta||typeof meta.favorite!=='boolean'||!Number.isFinite(Date.parse(meta.lastUsed)))rmFail_('El directorio de entregas requiere revisión.');
+    seen[key]=true;return {name:r.Valor,favorite:meta.favorite,lastUsed:meta.lastUsed,mode:meta.mode||''};
+  }).sort(function(a,b){return Number(b.favorite)-Number(a.favorite)||b.lastUsed.localeCompare(a.lastUsed)||a.name.localeCompare(b.name);});
+}
+function rmRemember_(branch,role,person,stamp) {
+  if(!person.name)return [];
+  var catalog='REMISION_'+role+'_'+branch,key=rmPersonKey_(person.name);
+  var matches=listRows_('Catalogos').filter(function(r){return r.Catalogo===catalog&&rmPersonKey_(r.Valor)===key;});
+  if(matches.length>1)rmFail_('El nombre está duplicado en el directorio de entregas.');
+  var value={Catalogo:catalog,Valor:person.name,Orden:0,Activo:'SI',Descripcion:JSON.stringify({favorite:person.favorite,lastUsed:stamp,mode:person.mode||''})};
+  return matches.length?orderUpdateRequests_('Catalogos',matches[0]._row,value):[orderAppendRequest_('Catalogos',[value])];
+}
+function rmHistory_(h,lines) {
+  var slot=mdUnique_(mdRows_(h.Numero_OP),'Archivo_ID',h.Numero_Remision+'-PDF-V1'),doc=slot&&parseJson_(slot.Plan_JSON,null);
+  if(!doc||doc.number!==h.Numero_Remision||doc.orderNumber!==h.Numero_OP||!doc.transporter?.name)rmFail_('Falta el detalle del despacho.');
+  return {number:h.Numero_Remision,date:valueDateIso_(h.Fecha_Remision),dispatcher:doc.dispatcher,transporter:doc.transporter,assistant:doc.assistant,
+    items:lines.filter(function(l){return l.Numero_Remision===h.Numero_Remision;}).map(function(l){return {itemId:l.Item_ID,description:l.Descripcion,quantity:Number(l.Cantidad_Entregada)};})};
+}
 function rmPosition_(row) {
   var number=row.Numero_OP,items=listRows_('Orden_Items').filter(function(i){return i.Numero_OP===number;});
   var heads=listRows_('Remisiones').filter(function(r){return r.Numero_OP===number;});
@@ -39,20 +62,19 @@ function rmPosition_(row) {
     var blocked=cancelled?'El mueble tiene un ajuste que requiere revisión.':hasProduction?'Requiere revisión de producción antes de entregar.':i.Disponibilidad!=='DISPONIBLE'?'La disponibilidad requiere revisión operativa.':'';
     return {id:i.Item_ID,description:i.Descripcion,quantity:quantity,delivered:delivered,cancelled:cancelled,pending:pending,unit:i.Unidad||'UN',blocked:blocked};
   });
-  return {items:view,history:heads.map(function(h){return {number:h.Numero_Remision,date:valueDateIso_(h.Fecha_Remision),receiver:h.Persona_Recibe,
-    items:lines.filter(function(l){return l.Numero_Remision===h.Numero_Remision;}).map(function(l){return {itemId:l.Item_ID,description:l.Descripcion,quantity:Number(l.Cantidad_Entregada)};})};}),
+  return {items:view,history:heads.map(function(h){return rmHistory_(h,lines);}),
     fingerprint:sha256_(JSON.stringify([number,row.Estado,row.Version,items.map(function(i){return [i.Item_ID,i.Cantidad,i.Cantidad_Entregada,i.Cantidad_Pendiente,i.Cantidad_Desistida,i.Version,i.Disponibilidad];}),heads,lines,production]))};
 }
 function rmAccount_(payload,context) {
   var s=rmSession_(context,false),row=rcOrder_(String(payload.number||''),s),position=rmPosition_(row);
-  return {order:normalizeOrder_(row),position:position,canDeliver:['CONFIRMADA','EN_PROCESO'].indexOf(row.Estado)!==-1};
+  return {order:normalizeOrder_(row),position:position,dispatcher:s.profile.name||'',people:{transporters:rmPeople_(row.Sede,'TRANSPORTADOR'),assistants:rmPeople_(row.Sede,'OPERARIO')},canDeliver:['CONFIRMADA','EN_PROCESO'].indexOf(row.Estado)!==-1};
 }
 function rmCapabilities_(context) {
   var s=rmSession_(context,false),ready=false;try {orderCreationSchemaReady_();mdSchema_();ready=true;}catch(e){}
   return {contractVersion:1,enabled:Boolean(ready && rmEnabled_() && hasPermission_(s.permissions,'remisiones.create')),photosReady:true,documentsReady:ready};
 }
 function rmPayload_(p) {
-  orderObject_(p,['number','fingerprint','items','receiver','notes','physicalCheck'],'remission');
+  orderObject_(p,['number','fingerprint','items','transporter','assistant','notes','physicalCheck'],'remission');
   if(!/^(MP|TP)-[A-Z0-9-]+-[0-9]+$/.test(p.number||'') || !/^[a-f0-9]{64}$/.test(p.fingerprint||''))orderInputError_('number','Actualiza la orden antes de confirmar.');
   if(p.physicalCheck!==true)orderInputError_('physicalCheck','Confirma la verificación física de esta entrega.');
   if(!Array.isArray(p.items)||!p.items.length||p.items.length>100)orderInputError_('items','Selecciona al menos un mueble.');
@@ -61,7 +83,12 @@ function rmPayload_(p) {
     if(seen[id])orderInputError_('items','No repitas un mueble.');seen[id]=true;
     return {itemId:id,quantity:orderInteger_(i.quantity,'quantity',1)};
   });
-  return {number:p.number,fingerprint:p.fingerprint,items:selected,receiver:orderText_(p.receiver,'receiver',200,true),notes:orderText_(p.notes,'notes',2000,false),physicalCheck:true};
+  orderObject_(p.transporter,['name','mode','favorite'],'transporter');orderObject_(p.assistant,['name','favorite'],'assistant');
+  if(['PIALLERO','PROPIETARIO','OTRO'].indexOf(p.transporter.mode)===-1||typeof p.transporter.favorite!=='boolean'||typeof p.assistant.favorite!=='boolean')orderInputError_('transporter','Revisa quién transporta.');
+  return {number:p.number,fingerprint:p.fingerprint,items:selected,
+    transporter:{name:orderText_(p.transporter.name,'transporter',120,true).replace(/\s+/g,' '),mode:p.transporter.mode,favorite:p.transporter.favorite},
+    assistant:{name:orderText_(p.assistant.name,'assistant',120,false).replace(/\s+/g,' '),favorite:p.assistant.favorite},
+    notes:orderText_(p.notes,'notes',2000,false),physicalCheck:true};
 }
 function rmReplay_(id,s,fingerprint) {
   var row=mdUnique_(listRows_('Idempotencia'),'Request_ID',id);if(!row)return null;
@@ -71,11 +98,11 @@ function rmReplay_(id,s,fingerprint) {
   rcOrder_(saved.result.orderNumber,s);
   if(fingerprint&&saved.fingerprint!==fingerprint)throw appError_('REQUEST_CONTENT_CHANGED','El intento original tiene otros datos.',409);return saved.result;
 }
-function rmPlan_(header,row,selected,s) {
+function rmPlan_(header,row,selected,s,draft) {
   var parent=mdUnique_(listRows_('Carpetas_Documentales'),'Clave',mdScope_()+':OP:'+row.Numero_OP+':DELIVERY');
   if(!parent)throw appError_('DOCUMENT_NOT_PLANNED','Completa primero el archivo de la OP.',409);
   var doc={documentKind:'remission',issued:true,number:header.Numero_Remision,orderNumber:row.Numero_OP,date:header.Fecha_Remision,branchCode:row.Sede,
-    advisor:s.profile.name||'',receiver:header.Persona_Recibe,notes:header.Observaciones,
+    dispatcher:s.profile.name||'',transporter:{name:draft.transporter.name,mode:draft.transporter.mode},assistant:draft.assistant.name,notes:header.Observaciones,
     client:{document:String(row.Cedula_NIT),name:row.Nombre_Cliente,phone:row.Telefono,alternatePhone:row.Telefono_Alterno,address:row.Direccion_Entrega,city:row.Ciudad},items:selected};
   if(typeof osActive_==='function'&&osActive_())doc.sandbox=OWNER_SANDBOX_CONTEXT_.id;
   var slot={Archivo_ID:header.Numero_Remision+'-PDF-V1',Numero_OP:row.Numero_OP,Tipo:'REMISION',Nombre:header.Numero_Remision+'.pdf',Mime_Type:'application/pdf',
@@ -105,21 +132,21 @@ function rmCreate_(payload,context) {
     var branch=mdUnique_(listRows_('Sedes'),'Sede_ID',row.Sede);
     if(!branch||branch.Estado!=='ACTIVA')throw appError_('BRANCH_NOT_AVAILABLE','La sede no está activa.',403);
     var next=Number(branch.Siguiente_Remision),prefix=String(branch.Prefijo_Remision||'');
-    if(!Number.isSafeInteger(next)||next<1||!new RegExp('^'+row.Sede+'-[A-Z0-9-]+$').test(prefix))throw appError_('NUMBERING_INVALID','Revisa la numeración de remisiones.',503);
+    if(!Number.isSafeInteger(next)||!Number.isSafeInteger(next+1)||next<1||!new RegExp('^'+row.Sede+'(?:-[A-Z0-9]+)+$').test(prefix))throw appError_('NUMBERING_INVALID','Revisa la numeración de remisiones.',503);
     var number=prefix+'-'+String(next).padStart(4,'0');
     if(listRows_('Registro_Numeros').some(function(n){return n.Numero===number;})||listRows_('Remisiones').some(function(n){return n.Numero_Remision===number;}))rmFail_('El número de remisión ya existe.');
     var stamp=now_().toISOString(),uid=s.profile.uid;
     var header={Numero_Remision:number,Numero_OP:row.Numero_OP,Sede:row.Sede,Cedula_NIT:row.Cedula_NIT,Nombre_Cliente:row.Nombre_Cliente,Fecha_Remision:stamp,
-      Persona_Recibe:draft.receiver,Observaciones:draft.notes,Estado:'CONFIRMADA',URL_Carpeta_Cliente:row.URL_Carpeta_Cliente,Responsable:s.profile.name||'',Fecha_Registro:stamp,Request_ID:id};
+      Persona_Recibe:'',Observaciones:draft.notes,Estado:'CONFIRMADA',URL_Carpeta_Cliente:row.URL_Carpeta_Cliente,Responsable:s.profile.name||'',Fecha_Registro:stamp,Request_ID:id};
     var result={number:number,orderNumber:row.Numero_OP,branch:row.Sede,requestId:id,quantity:selected.reduce(function(n,i){return n+i.quantity;},0)};
-    var plan=rmPlan_(header,row,selected,s);
+    var plan=rmPlan_(header,row,selected,s,draft);
     var requests=[orderAppendRequest_('Remisiones',[header]),orderAppendRequest_('Remision_Items',selected.map(function(i,index){return {Remision_Item_ID:number+'-I-'+(index+1),Numero_Remision:number,Numero_OP:row.Numero_OP,Item_ID:i.itemId,Descripcion:i.description,Cantidad_Entregada:i.quantity,Unidad:i.unit,Fecha_Registro:stamp};}))].concat(plan.requests);
     var source=listRows_('Orden_Items');selected.forEach(function(i){var stored=mdUnique_(source,'Item_ID',i.itemId);
       requests=requests.concat(orderUpdateRequests_('Orden_Items',stored._row,{Cantidad_Entregada:Number(stored.Cantidad_Entregada)+i.quantity,Cantidad_Pendiente:i.pendingAfter,Estado_Item:i.pendingAfter===0?'ENTREGADO':'ENTREGA_PARCIAL',Version:Number(stored.Version)+1,Actualizado_En:stamp}));
     });
-    requests=requests.concat(orderUpdateRequests_('Ordenes_Pedido',row._row,{Version:Number(row.Version)+1,Actualizado_Por:uid,Actualizado_En:stamp}),orderUpdateRequests_('Sedes',branch._row,{Siguiente_Remision:next+1,Actualizado_En:stamp}));
+    requests=requests.concat(orderUpdateRequests_('Ordenes_Pedido',row._row,{Version:Number(row.Version)+1,Actualizado_Por:uid,Actualizado_En:stamp}),orderUpdateRequests_('Sedes',branch._row,{Siguiente_Remision:next+1,Actualizado_En:stamp}),rmRemember_(row.Sede,'TRANSPORTADOR',draft.transporter,stamp),rmRemember_(row.Sede,'OPERARIO',draft.assistant,stamp));
     requests.push(orderAppendRequest_('Registro_Numeros',[{Registro_ID:id+'-N',Sede:row.Sede,Tipo_Documento:'REMISION',Numero:number,Estado:'CONFIRMADO',Entidad_ID:number,Reservado_En:stamp,Confirmado_En:stamp,Usuario:uid,Request_ID:id}]));
-    requests.push(orderAppendRequest_('Auditoria',[{ID:id+'-AUD',Fecha:stamp,Usuario:uid,Rol:s.profile.role,Modulo:'REMISIONES',Accion:'REMISION_CREAR',Entidad:'REMISION',Entidad_ID:number,Resumen:'Entrega confirmada con verificación física declarada por el operador.',Estado:'CONFIRMADA',Request_ID:id,Antes_JSON:JSON.stringify({fingerprint:position.fingerprint,items:position.items}),Despues_JSON:JSON.stringify({result:result,items:selected,physicalCheck:true}),Reversible:'NO',Motivo_No_Reversible:'Una devolución física requiere su propio movimiento.'}]));
+    requests.push(orderAppendRequest_('Auditoria',[{ID:id+'-AUD',Fecha:stamp,Usuario:uid,Rol:s.profile.role,Modulo:'REMISIONES',Accion:'REMISION_CREAR',Entidad:'REMISION',Entidad_ID:number,Resumen:'Salida del almacén con verificación física declarada por quien despacha.',Estado:'CONFIRMADA',Request_ID:id,Antes_JSON:JSON.stringify({fingerprint:position.fingerprint,items:position.items}),Despues_JSON:JSON.stringify({result:result,items:selected,dispatcher:header.Responsable,transporter:draft.transporter,assistant:draft.assistant,physicalCheck:true}),Reversible:'NO',Motivo_No_Reversible:'Una devolución física requiere su propio movimiento.'}]));
     requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:id,Fecha:stamp,Tipo_Operacion:'REMISION_CREAR',Entidad:'REMISION',Entidad_ID:number,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:fingerprint,result:result}),Usuario:uid}]));
     SpreadsheetApp.flush();reserveOrderFence_(id,uid,fingerprint,'REMISION_CREAR');
     try{orderAtomicBatch_(requests);}catch(e){throw appError_('REMISSION_SAVE_UNCERTAIN','Falta confirmar esta entrega. Consulta el mismo intento; no crees otra remisión.',503);}

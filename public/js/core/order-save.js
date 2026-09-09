@@ -22,7 +22,8 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
   activeUid = () => uid, onState = () => {}, onProgress = () => {}, scope = '', kind = 'order', finishDocuments = finishOrderDocuments }) {
   if (!uid) throw fail('NO_SESSION', 'Inicia sesión nuevamente.');
   if (scope && !/^QA-[a-f0-9]{32}$/.test(scope)) throw fail('SANDBOX_INVALID', 'Ensayo no válido.');
-  const key = `${ORDER_SAVE_PREFIX}${kind === 'receipt' ? 'receipt.' : ''}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
+  if (!['order','receipt','remission'].includes(kind)) throw fail('SAVE_KIND_INVALID', 'Tipo de documento no válido.');
+  const key = `${ORDER_SAVE_PREFIX}${kind === 'order' ? '' : kind + '.'}${encodeURIComponent(uid)}${scope ? '.' + scope : ''}`;
   const progress = event => { try { onProgress(event); } catch { /* Feedback cannot interrupt a save. */ } };
   let busy = false;
   let supportsMedia = false;

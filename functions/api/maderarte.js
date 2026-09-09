@@ -128,7 +128,7 @@ async function forwardToAppsScript(request, env, body, requestId, internal = fal
     upstream.data = { ...upstream.data }; delete upstream.data.sessionToken;
   }
   if (action === 'AUTH_LOGOUT' || ['NO_SESSION', 'SESSION_EXPIRED', 'SESSION_REVOKED'].includes(String(upstream?.code || ''))) headers['Set-Cookie'] = clearCookie();
-  if (['ORDEN_CAPACIDADES', 'COTIZACION_CAPACIDADES'].includes(action) && upstream.data && !browserReady(env)) {
+  if (['ORDEN_CAPACIDADES', 'COTIZACION_CAPACIDADES', 'RECIBO_CAPACIDADES', 'REMISION_CAPACIDADES'].includes(action) && upstream.data && !browserReady(env)) {
     upstream.data = { ...upstream.data, enabled: false, documentsReady: false, reason: 'PDF_ENGINE_NOT_READY' };
   }
   delete upstream.httpStatus;
@@ -175,7 +175,12 @@ export async function handleRequest(request, env = {}) {
       if (checked.status !== 'success') return jsonResponse(checked, 403);
       return jsonResponse({ status: 'success', code: 'OK', requestId, data: await generateReceiptSample(env) });
     }
-    if (action === 'RECIBO_DOCUMENTOS_FINALIZAR') return runDocumentPipeline(request, env, body, requestId, (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
+    if (action === 'REMISION_DOCUMENTOS_FINALIZAR') return await runDocumentPipeline(request, env, body, requestId, (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
+      const result = await upstream(internal.replace('INTERNO_DOCUMENTO_', 'INTERNO_REMISION_DOCUMENTO_'), payload);
+      if (internal === 'INTERNO_DOCUMENTO_PREPARAR' && !result.complete && result.document?.documentKind !== 'remission') throw Object.assign(new Error('El servidor no confirmó la remisión.'), { code: 'DOCUMENT_PLAN_INVALID', status: 503 });
+      return result;
+    }));
+    if (action === 'RECIBO_DOCUMENTOS_FINALIZAR') return await runDocumentPipeline(request, env, body, requestId, (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
       const result = await upstream(internal.replace('INTERNO_DOCUMENTO_', 'INTERNO_RECIBO_DOCUMENTO_'), payload);
       if (internal === 'INTERNO_DOCUMENTO_PREPARAR' && !result.complete && result.document?.documentKind !== 'receipt') throw Object.assign(new Error('El servidor no confirmó el recibo.'), { code: 'DOCUMENT_PLAN_INVALID', status: 503 });
       return result;
