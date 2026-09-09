@@ -35,7 +35,7 @@ body.maddy-entry-page { background:var(--bg); font-family:var(--font-sans); -web
 .maddy-entrance-art { position:relative; flex:none; min-height:280px; height:min(128.57vw,calc(100svh - 310px)); width:100%; max-width:660px; margin:auto auto 0; pointer-events:none; }
 .maddy-entrance-folio { position:absolute; inset:15% 0 0; border-radius:0 72px 0 0; background:#282624; }
 .maddy-entrance-character { position:absolute; height:100%; max-width:none; width:auto; object-fit:contain; object-position:bottom right; right:-20%; bottom:0; }
-.maddy-entrance-signature { position:absolute; z-index:1; width:clamp(170px,45vw,230px); max-width:none; left:-24px; top:67%; filter:brightness(0) invert(1); }
+.maddy-entrance-signature { position:absolute; z-index:1; width:clamp(170px,45vw,230px); max-width:none; left:-24px; top:78%; filter:brightness(0) invert(1); }
 .maddy-entrance.is-searching .maddy-entrance-art { display:none; }
 .maddy-entrance.is-searching .maddy-entrance-content { padding-top:20px; }
 .maddy-entrance.is-searching h1 { font-size:2rem; margin-bottom:20px; }
