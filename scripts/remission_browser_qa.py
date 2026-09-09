@@ -57,6 +57,9 @@ try:
     expect(page.locator('#'+input_id)).not_to_be_focused()
     assert page.evaluate("getComputedStyle(document.querySelector('.maddy-entrance')).backgroundColor==='rgb(245, 245, 244)'")
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    assert page.locator('.maddy-entrance-character').evaluate('(e)=>getComputedStyle(e).filter==="none"&&getComputedStyle(e).mixBlendMode==="normal"'), 'Mascot must retain its original colors'
+    if width>=900:
+     assert page.locator('.maddy-entrance-folio').evaluate('(e)=>e.getBoundingClientRect().left===0&&Math.abs(e.getBoundingClientRect().right-innerWidth)<=1'), 'Desktop graphite field must span the viewport'
     assert page.locator('.maddy-entrance button[type=submit]').evaluate('(e)=>Math.abs(e.getBoundingClientRect().y-e.closest("form").querySelector("input").getBoundingClientRect().y)<16'), 'Search action must stay beside the input'
     page.screenshot(path=str(OUT/f'entrada-{route_name}-{width}.png'),full_page=True)
     page.locator('#'+input_id).focus()

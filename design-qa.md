@@ -1,6 +1,8 @@
 # QA visual — telones Maddy
 
-final result: passed
+final result: blocked
+
+Actualización del propietario: revisar manchas/saturación del personaje y extender el fondo oscuro a todo el ancho en computador. Se sustituye la placa generada por el recorte transparente original sin filtros. Pendiente comparación del nuevo render; el informe siguiente corresponde a la revisión anterior y no certifica esta corrección.
 
 ## Alcance y evidencia
 
