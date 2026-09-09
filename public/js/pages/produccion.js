@@ -64,7 +64,7 @@ async function search(event) {
   } catch (error) { if (expected === sequence) $('search-status').textContent = error.message + ' Vuelve a pulsar Buscar.'; }
 }
 guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
-  if (!hasPermission(session.permissions, 'produccion.read')) { $('app').hidden = false; $('app').textContent = 'No tienes permiso para consultar Producción.'; return; }
+  if (!hasPermission(session, 'produccion.read')) { $('app').hidden = false; $('app').textContent = 'No tienes permiso para consultar Producción.'; return; }
   $('app').hidden = false; bindSandboxBanner($('app'));
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });
