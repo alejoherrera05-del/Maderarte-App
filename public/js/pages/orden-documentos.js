@@ -28,6 +28,25 @@ export async function bindOrderDocuments(root, number, request = apiRequest) {
       const details = document.createElement('details'), summary = document.createElement('summary'), grid = document.createElement('div');
       details.className = 'od-photo-details'; summary.textContent = `Referencias (${files.length})`; grid.className = 'od-photo-grid';
       details.append(summary, grid); item.querySelector('.od-item-copy').append(details);
+      item.querySelector('.ow-reference-empty')?.remove();
+      const hero = item.querySelector('[data-photo-index]');
+      const first = files.find(file => file.ready);
+      if (hero && first) {
+        const loadHero = async () => {
+          hero.textContent = 'Cargando referencia…';
+          try {
+            const photo = await request('ORDEN_FOTO_LEER', { number, id: first.id }, { timeoutMs: 90000 });
+            if (!/^data:image\/(png|jpeg|webp);base64,/.test(photo?.data?.dataUrl || '')) throw new Error();
+            const image = document.createElement('img'); image.src = photo.data.dataUrl; image.alt = first.name;
+            hero.replaceChildren(image);
+            const thumb = root.querySelector(`[data-thumbnail="${item.dataset.detailIndex}"]`);
+            if (thumb) thumb.replaceChildren(image.cloneNode());
+          } catch {
+            const retry = button('Reintentar fotografía', loadHero); hero.replaceChildren(retry);
+          }
+        };
+        void loadHero();
+      }
       let loaded = false;
       details.addEventListener('toggle', async () => {
         if (!details.open || loaded) return; loaded = true;
