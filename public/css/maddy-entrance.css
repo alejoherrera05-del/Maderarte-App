@@ -14,7 +14,7 @@ body.maddy-entry-page { background:var(--bg); font-family:var(--font-sans); -web
 .maddy-entrance h1 { margin:0 0 30px; font:650 clamp(2.55rem,10.5vw,3.75rem)/1.05 var(--font-sans); letter-spacing:-.045em; overflow-wrap:normal; }
 .maddy-entrance .receipt-search-section { padding:0; }
 .maddy-entrance .clients-search-form { width:100%; margin:0; }
-.maddy-entrance .receipt-search,.maddy-entrance .clients-search-field { display:flex; gap:8px; align-items:center; width:100%; position:relative; border:1px solid #cbcbcd; border-radius:19px; background:#fff; min-height:60px; padding:6px 7px 6px 15px; box-shadow:none; }
+.maddy-entrance .receipt-search,.maddy-entrance .clients-search-field { display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px; align-items:center; width:100%; position:relative; border:1px solid #cbcbcd; border-radius:19px; background:#fff; min-height:60px; padding:6px 7px 6px 15px; box-shadow:none; }
 .maddy-entrance .rm-search-input { display:contents; }
 .maddy-entrance .maddy-search-icon,.maddy-entrance .clients-search-field>img { position:static; flex:none; width:21px; height:21px; transform:none; opacity:.55; }
 .maddy-entrance input[type=search] { min-width:0; width:100%; min-height:44px; padding:8px 0; font:400 16px/1.4 var(--font-sans); color:#232328; background:transparent; border:0; border-radius:0; box-shadow:none; outline:none; }
@@ -32,13 +32,13 @@ body.maddy-entry-page { background:var(--bg); font-family:var(--font-sans); -web
 .maddy-entrance .clients-suggestions,.maddy-entrance .receipt-results:not(:empty) { position:relative; top:auto; max-height:none; width:100%; margin-top:14px; padding:8px; overflow:visible; border:1px solid #d8d8da; border-radius:18px; background:#fff; box-shadow:0 8px 24px #00000008; backdrop-filter:none; }
 .maddy-entrance .receipt-results button { padding:16px 10px; }
 .maddy-entrance .clients-suggestion-copy strong,.maddy-entrance .clients-suggestion-copy span { white-space:normal; overflow-wrap:anywhere; }
-.maddy-entrance-art { position:relative; flex:1; min-height:330px; width:100%; max-width:660px; margin:0 auto; pointer-events:none; }
+.maddy-entrance-art { position:relative; flex:none; min-height:280px; height:min(128.57vw,calc(100svh - 310px)); width:100%; max-width:660px; margin:auto auto 0; pointer-events:none; }
 .maddy-entrance-folio { position:absolute; inset:15% 0 0; border-radius:0 72px 0 0; background:#282624; }
 .maddy-entrance-character { position:absolute; height:100%; max-width:80%; width:auto; object-fit:contain; object-position:bottom right; right:0; bottom:0; }
 .maddy-entrance-art:has(.is-plate) { background:var(--bg); }
 .maddy-entrance-art:has(.is-plate) .maddy-entrance-folio { display:none; }
 .maddy-entrance-character.is-plate { width:100%; height:100%; max-width:none; object-fit:cover; object-position:top right; filter:brightness(1.05); mix-blend-mode:darken; }
-.maddy-entrance-signature { position:absolute; z-index:1; width:28%; max-width:155px; left:24px; top:67%; filter:brightness(0) invert(1); }
+.maddy-entrance-signature { position:absolute; z-index:1; width:clamp(170px,45vw,230px); max-width:none; left:-24px; top:67%; filter:brightness(0) invert(1); }
 .maddy-entrance.is-searching .maddy-entrance-art { display:none; }
 .maddy-entrance.is-searching .maddy-entrance-content { padding-top:20px; }
 .maddy-entrance.is-searching h1 { font-size:2rem; margin-bottom:20px; }
@@ -52,7 +52,7 @@ body.maddy-entry-page { background:var(--bg); font-family:var(--font-sans); -web
  .maddy-entrance { min-height:100svh; }
  .maddy-entrance-content { width:min(43%,550px); margin:clamp(40px,9vh,100px) auto 80px max(32px,calc((100% - 1160px)/2)); padding:0; }
  .maddy-entrance h1 { font-size:clamp(3rem,5vw,4.5rem); }
- .maddy-entrance-art { position:absolute; width:44%; max-width:620px; height:calc(100% - 145px); max-height:720px; min-height:350px; right:max(0px,calc((100% - 1280px)/2)); bottom:0; }
+ .maddy-entrance-art { position:absolute; width:44%; max-width:620px; height:min(calc(100svh - 145px),56.57vw,720px); min-height:350px; right:max(0px,calc((100% - 1280px)/2)); bottom:0; }
  .maddy-entrance.is-searching .maddy-entrance-content { padding:0; }
  .maddy-entrance.is-searching .maddy-entrance-art { display:block; }
  .maddy-entrance.is-searching h1 { font-size:clamp(3rem,5vw,4.5rem); margin-bottom:30px; }

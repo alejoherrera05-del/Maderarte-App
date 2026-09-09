@@ -17,7 +17,7 @@ try:
  with sync_playwright() as p:
   browser=p.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),args=['--no-sandbox'])
   for width in (1440,390,320):
-   context=browser.new_context(viewport={'width':width,'height':1000})
+   context=browser.new_context(viewport={'width':width,'height':800 if width<900 else 1000})
    context.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));" % json.dumps(SESSION))
    state={'creates':0,'finishes':0,'complete':False,'saved':None,'doc':None,'searches':[],'held':None};errors=[]
    orders=[{'number':n,'client':'Cliente de muestra','document':'00000001','city':'Popayán','date':'2026-09-08T18:00:00Z','description':description,'address':'Dirección de prueba'} for n,description in [(OP,'Sofá de muestra'),('MP-OP-0002','Comedor de cuatro puestos')]]
@@ -57,6 +57,7 @@ try:
     expect(page.locator('#'+input_id)).not_to_be_focused()
     assert page.evaluate("getComputedStyle(document.querySelector('.maddy-entrance')).backgroundColor==='rgb(245, 245, 244)'")
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    assert page.locator('.maddy-entrance button[type=submit]').evaluate('(e)=>Math.abs(e.getBoundingClientRect().y-e.closest("form").querySelector("input").getBoundingClientRect().y)<16'), 'Search action must stay beside the input'
     page.screenshot(path=str(OUT/f'entrada-{route_name}-{width}.png'),full_page=True)
     page.locator('#'+input_id).focus()
     if width<900:expect(page.locator('.maddy-entrance-art')).to_be_hidden()
