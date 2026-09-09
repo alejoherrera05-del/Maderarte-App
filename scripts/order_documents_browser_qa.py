@@ -99,10 +99,11 @@ try:
             page.get_by_role('button',name='Abrir pedido',exact=True).click();page.wait_for_url('**/orden.html?op=MP-QA-OP-0001')
             page.get_by_role('button',name='Abrir PDF',exact=True).wait_for()
             for i,node in enumerate(page.locator('[data-order-item]').all(),1):
-                node.locator('summary').click();img=node.locator('img');img.wait_for();page.wait_for_function('(el)=>el.complete&&el.naturalWidth>0',arg=img.element_handle())
+                node.locator('summary').click();img=node.locator('.od-photo-grid img');img.wait_for();page.wait_for_function('(el)=>el.complete&&el.naturalWidth>0',arg=img.element_handle())
                 expected=next(f for f in state['files'] if f['clientLineId']==str(i))
                 assert hashlib.sha256(base64.b64decode(img.get_attribute('src').split(',')[1])).hexdigest()==expected['sha256']
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+            page.get_by_text('Cliente y acuerdos',exact=True).click()
             assert '000000001' in page.locator('#order-app').inner_text()
             page.screenshot(path=str(out/f'expediente-con-fotos-{width}.png'),full_page=True)
             pdftext=' '.join(p.extract_text() or '' for p in PdfReader(io.BytesIO(state['pdf'])).pages)

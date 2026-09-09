@@ -34,3 +34,13 @@ Capturas de GitHub Actions 34399357072, artefacto remissions-qa, artifacts/produ
 Cinco suites aprobadas: Calidad (npm ci/npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Se verifican búsquedas vacías/fallidas/exactas, selección, restricciones por disponibilidad, aviso de separado, invalidación del borrador, copia y vuelta a otra OP. WhatsApp no se envía. Sin cambios en las escrituras comerciales.
 
 La OP demostrativa se crea mediante el formulario publicado y el espacio aislado del propietario. El control del ensayo incorpora un enlace a Producción con su OP y contexto de prueba; no se incluyen identificadores privados en el código. El ensayo nuevo permanece disponible para revisión.
+
+# QA — expediente por producto y proveedores
+
+PR #52, rama feat/order-product-journey, implementación 939bdd5; ajuste de captura 0d6bd34. Referencia HomeEasy: ventas.html en aa21decbe809a91362a2cddfd272c7c5744dfddd, panel contextual y jerarquía de detalle; capturas del propietario usadas como estado anterior, con comparación conjunta frente al expediente nuevo. Los telones no se modifican.
+
+Se revisaron expediente-1916/390, solicitud-1916 y recorrido-1916/390/320 en artefactos remissions-qa. Run final de captura 34404893364. Se corrigió la captura que fotografiaba el panel durante su animación: espera el final y verifica que el panel ocupe la parte alta del viewport. Recorrido móvil con cierre accesible y desplazamiento interno; escritorio lateral con fondo atenuado. No hay desbordamiento horizontal.
+
+Productos antes de datos; estados accionables con color y texto, documentos privados siguen cargando por API, balance separado de fabricación. Favoritos y recientes probados con selección, persistencia y separación por cuenta/ensayo. Almacenamiento por navegador, no directorio compartido en Google. El seguimiento persistente de proveedor todavía no está implementado: el recorrido dice sin registro y nunca infiere envío o fabricación desde WhatsApp. Las cantidades de despacho provienen de la OP y no certifican recepción.
+
+Cinco suites completas aprobadas en 939bdd5, incluyendo npm ci/npm test; fotografías reabiertas comparadas por SHA256. Pruebas adaptadas a la nueva acción Registrar abono y al selector específico de fotografías. Detector Impeccable sin hallazgos mecánicos. Revisión final en dominio publicado con la OP aislada existente; no se crea otra venta ni se envían mensajes.
