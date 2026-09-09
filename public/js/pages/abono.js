@@ -99,7 +99,7 @@ async function search(){
 guardStandalonePage({permission:'abonos.read',async render({session}){
   $('receipt-app').hidden=false;
   entrance=createEntrance({cover:$('receipt-cover'),workflow:$('receipt-workflow'),input:$('receipt-query'),newSearch:$('receipt-new-search'),onReturn:()=>{
-    if(locked)return false;clearTimeout(searchTimer);sequence++;account=null;$('receipt-query').value='';$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';
+    if(locked)return false;$('receipt-entry').hidden=false;$('receipt-result').hidden=true;clearTimeout(searchTimer);sequence++;account=null;$('receipt-query').value='';$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';
   }});
   $('receipt-version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   bindSandboxBanner($('receipt-app'));

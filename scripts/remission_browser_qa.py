@@ -77,7 +77,8 @@ try:
    page.get_by_role('button',name='Limpiar búsqueda').click();expect(query).to_have_value('');expect(page.locator('#remission-account')).to_be_hidden()
    query.fill('Cliente de muestra');expect(page.locator('.rm-order-option')).to_have_count(2)
    page.locator('.rm-order-option').first.click();expect(page.locator('#remission-account')).to_be_visible()
-   page.get_by_role('button',name='Limpiar búsqueda').click();count=len(state['searches'])
+   expect(page.locator('#remission-cover')).to_be_hidden()
+   page.get_by_role('button',name='Nueva búsqueda').click();count=len(state['searches'])
    query.fill('mp-op-0002');query.press('Enter');expect(page.locator('#remission-account')).to_be_visible()
    assert len(state['searches'])==count,'Exact OP must skip list search'
    expect(page.locator('#remission-order-link')).to_have_text('MP-OP-0002')
