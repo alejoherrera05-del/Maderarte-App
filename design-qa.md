@@ -22,3 +22,15 @@ Sin hallazgos P0/P1/P2 pendientes en comparación final. Las tres nuevas imágen
 ## Verificación
 
 Suites de GitHub con npm ci y npm test y flujos sintéticos existentes: Calidad, Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Comprobaciones de resolución, carga, ausencia de overflow y búsqueda. No hay cambios en reglas comerciales. Runner Chromium, no Safari físico. Verificación del dominio habitual tras merge.
+
+# QA visual — telón de Producción
+
+Implementación: 135ebfb79845a041cea24c2687fb247fb65a5457, PR #51.
+
+Se reutilizan maddy-entrance.css y createEntrance de Clientes, Abonos y Remisiones. Maddy mide una pieza de madera; fuente generada a 1086 × 1448 y WebP sin pérdida con recorte alfa autorizado. Fuente y composición sobre grafito revisadas, conservando RGB visible. La mirada y las manos siguen el objeto de trabajo.
+
+Capturas de GitHub Actions 34399357072, artefacto remissions-qa, artifacts/production: entrada, solicitud y mensaje en 1916, 1366, 390 y 320 px. Comparación conjunta con las entradas aprobadas de Clientes: mismo encabezado, búsqueda, gris, tipografía y base grafito a ancho completo. Las capturas de Producción incluyen la banda adicional del ensayo; no forma parte del telón comercial. Sin desbordamiento horizontal ni superposición del metro con la firma. Mensaje móvil visible bajo el encabezado fijo.
+
+Cinco suites aprobadas: Calidad (npm ci/npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Se verifican búsquedas vacías/fallidas/exactas, selección, restricciones por disponibilidad, aviso de separado, invalidación del borrador, copia y vuelta a otra OP. WhatsApp no se envía. Sin cambios en las escrituras comerciales.
+
+La OP demostrativa se crea mediante el formulario publicado y el espacio aislado del propietario. El control del ensayo incorpora un enlace a Producción con su OP y contexto de prueba; no se incluyen identificadores privados en el código. El ensayo nuevo permanece disponible para revisión.
