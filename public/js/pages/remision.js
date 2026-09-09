@@ -64,7 +64,7 @@ async function selectOrder(number){
     for(const r of [...data.position.history].reverse()){const row=document.createElement('article');row.className='rm-history-row';row.innerHTML=`<strong>${esc(r.number)}</strong><p>${esc(dateTime(r.date))} · Transporta ${esc(r.transporter.name)}</p><p>${esc(r.items.map(i=>i.quantity+' × '+i.description).join(' · '))}</p><a href="${esc(path(r.number))}">Ver remisión y PDF</a>`;history.append(row);}
     if(!history.children.length)history.textContent='Todavía no hay despachos de esta orden.';
     $('search-status').textContent=!data.canDeliver?'Esta orden no admite despachos.':data.position.items.every(i=>!i.pending)?'✓ Todos los muebles salieron del almacén.':'';
-    $('account').hidden=false;$('error').textContent='';renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});
+    $('account').hidden=false;$('error').textContent='';if(manager?.getState().phase==='rejected')await manager.refresh();renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});
   }catch(e){if(ticket===sequence)$('search-status').textContent=e.message;}
 }
 async function search(){

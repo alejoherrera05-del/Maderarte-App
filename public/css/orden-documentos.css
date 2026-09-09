@@ -11,3 +11,4 @@
 .od-photo-grid figcaption, .od-photo-grid label { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .od-photo-grid input { max-width: 100%; font-size: 16px; }
 @media(max-width: 500px) { .od-photo-grid { grid-template-columns: 1fr; } }
+.od-item-amount .od-dispatch-complete{color:#2673be;font-size:12px;font-weight:500}.od-item-amount .od-dispatch-partial{font-size:12px;color:#756b65}.od-item-amount .od-dispatch-complete,.od-item-amount .od-dispatch-partial{white-space:normal;max-width:170px}

@@ -171,7 +171,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     } catch (error) {
       // These contract errors are thrown BEFORE the server admits its first batch.
       // Never use a later rejection to erase a previous uncertain transmission.
-      const rejected = ['ORDER_INPUT_INVALID', 'ORDER_CONTRACT_MISMATCH', 'ORDER_PHOTOS_NOT_READY', 'COMMERCIAL_WRITES_DISABLED', 'REQUEST_ID_REQUIRED', 'RECEIPT_BALANCE_CHANGED', 'RECEIPT_EXCEEDS_BALANCE', 'RECEIPT_ORDER_INACTIVE'];
+      const rejected = ['ORDER_INPUT_INVALID', 'ORDER_CONTRACT_MISMATCH', 'ORDER_PHOTOS_NOT_READY', 'COMMERCIAL_WRITES_DISABLED', 'REQUEST_ID_REQUIRED', 'RECEIPT_BALANCE_CHANGED', 'RECEIPT_EXCEEDS_BALANCE', 'RECEIPT_ORDER_INACTIVE', 'DELIVERY_CHANGED', 'DELIVERY_EXCEEDS_PENDING', 'DELIVERY_ORDER_INACTIVE', 'DELIVERY_NOT_READY'];
       if (firstAttempt && error?.requestId === journal.requestId && rejected.includes(error.code)) {
         temporary.removeItem(key);
         durable.removeItem(key);
