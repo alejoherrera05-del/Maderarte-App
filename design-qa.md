@@ -1,26 +1,33 @@
-# QA visual — telones Maddy
+# QA visual — escritorio y Maddy exacta
 
 final result: passed
 
-## Alcance y evidencia
+## Evidencia
 
-Clientes, Remisiones y Abonos. Código verificado: `50d32424bf5f09bb35ed9f3b1ea3ddd7adcb08f9`, PR #46. La última indicación del propietario sustituye las placas generadas por Maddy original transparente sin filtros y extiende el grafito de lado a lado en escritorio.
+Implementación comprobada: `7983072ac21fa5e6405020ef8dd93ec074038467`, PR #47. Capturas: [Remisiones QA 34377825202](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34377825202), artefacto remissions-qa.
 
-Capturas del HTML ejecutado en GitHub: [Remisiones QA, ejecución 34371640704](https://github.com/alejoherrera05-del/Maderarte-App/actions/runs/34371640704), artefacto `remissions-qa`. Entradas y búsqueda de las tres secciones a 320, 390 y 1440 px. Comparación conjunta de referencia normalizada y render a 390×800; revisión adicional a 320×800 y 1440×1000, sesión autorizada, tema claro y entrada vacía.
+Se comparó la captura del propietario de Clientes a 1916×950 con el render en ese mismo tamaño y estado vacío. La referencia exacta de Maddy adjunta por el propietario se comparó con el recorte sobre gris y grafito y con las capturas de la interfaz. Verificación adicional a 1440×1000, 1366×768 con densidad 2x, 1024×768, 390×800 y 320×800.
 
-## Resultado visual
+## Hallazgos resueltos
 
-- Fondo del Inicio rgb(245,245,244), búsqueda blanca, cobre y grafito plano #282624.
-- Personaje original con transparencia real, sin filtros ni mezclas CSS. Se descartan las placas con fondos pintados. Misma pose original en las tres entradas; decisión comunicada al propietario para conservar identidad y evitar manchas.
-- Grafito a todo el ancho en escritorio, sin contenedor central ni costuras. La cabeza emerge por encima de su borde y la firma conserva espacio propio.
-- Buscadores horizontales, controles de 44 px, sin desbordamiento horizontal. Al buscar en móvil se retira la ilustración y se priorizan las coincidencias.
-- Logo, wordmark y firma originales. Títulos móviles más compactos que la maqueta para conservar una escala común en Remisiones. No hay párrafos de explicación iniciales.
-- San Francisco mediante la cadena tipográfica del sistema Apple; fallback en Windows y Linux. Las capturas de Chromium Linux no acreditan Safari físico. No se distribuyen fuentes.
+- P1, composición: el buscador quedaba aislado sobre una franja oscura que ocupaba casi media pantalla. Ahora título y búsqueda se relacionan en altura con el retrato; la base grafito ocupa aproximadamente 23% de la altura y conserva todo el ancho. Firma anclada a esa base. Columnas separadas, sin scroll inicial en los tamaños de escritorio verificados.
+- P1, identidad y resolución: se retiraron las variantes generadas rechazadas y la copia pequeña de 420×560 de estas entradas. El recurso final es exactamente la imagen adjunta del propietario a 1086×1448, con recorte técnico autorizado; solo cambia el alfa. Igualdad de todos los píxeles RGB visibles comprobada después de exportar el WebP sin pérdida. Máximo de presentación 720 px para disponer de resolución a densidad 2x.
+- P2, borde de tableta: la primera limpieza de contaminación neutra afectaba su opacidad. Se limitó la limpieza al contorno del cabello. El render final a 1916×950 confirma el borde sólido de la tableta, sin banda clara.
 
-No se identificaron problemas P0/P1/P2 pendientes en estas capturas. El recurso original de Maddy tiene resolución limitada (420×560); puede verse más suave en pantallas densas, pero no incorpora el tratamiento de color rechazado.
+## Superficies revisadas
 
-## Interacción y regresión
+Tipografía: cadena de fuentes del sistema, título 650, búsqueda 16 px. SF nativa en Apple y fallback en Windows/Linux; no se acredita Safari físico mediante Chromium Linux.
 
-Las cinco ejecuciones de GitHub para el código indicado finalizaron correctamente: Calidad (incluye npm ci y npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Se comprueban consultas, selección, retorno a búsqueda, recuperación sin duplicados, cantidades, cotización a OP, cuatro abonos y PDFs con datos sintéticos del runner. Las nuevas comprobaciones exigen ausencia de filtros en Maddy y grafito de ancho completo en escritorio.
+Espaciado: alineación común del encabezado y contenido; base más baja; firma libre; personaje proporcional; búsqueda accesible en móvil. Sin colisiones ni desplazamiento horizontal en los tamaños revisados. La composición móvil se conserva.
 
-La verificación del dominio habitual se realiza después del merge. Este informe certifica las entradas y regresiones indicadas; no declara concluida toda la aplicación.
+Colores: gris #f5f5f4 del Inicio, grafito #282624 y cobre en controles. Maddy sin filtros de color, brillo o mezcla. Se mantienen los colores exactos del archivo adjunto.
+
+Imagen: 1086×1448 con transparencia real, sin cuadriculado visible; los píxeles visibles conservan su color original. Sin interpolación ni cambios generativos del rostro. El WebP sin pérdida pesa aproximadamente 1,2 MB, compartido y cacheable entre las tres entradas; se prioriza la fidelidad solicitada.
+
+Contenido e interacción: títulos y buscador operativos, sin explicaciones iniciales. Coincidencias y selección abren el flujo existente. No hay cambios en reglas comerciales.
+
+No quedan hallazgos P0/P1/P2 pendientes en estas capturas. No se declara concluida toda la aplicación.
+
+## Regresión y publicación
+
+Las cinco suites de GitHub para 7983072 terminaron correctamente: Calidad (npm ci y npm test), Remisiones QA, Owner order sandbox QA, Order documents QA y Order progress and document family QA. Incluyen búsquedas, retorno, recuperación, cotización a OP, abonos y documentos mediante datos sintéticos del runner. El commit posterior únicamente registra este informe. La publicación se verifica en el dominio habitual después del merge.

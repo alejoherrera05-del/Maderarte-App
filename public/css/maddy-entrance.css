@@ -46,16 +46,16 @@ body.maddy-entry-page { background:var(--bg); font-family:var(--font-sans); -web
 .maddy-workflow .receipt-heading>p { font-size:14px; }
 .maddy-entry-page .owner-sandbox-banner { position:relative; z-index:5; }
 @media(min-width:900px) {
- .maddy-entrance { min-height:100svh; }
- .maddy-entrance-content { width:min(43%,550px); margin:clamp(40px,9vh,100px) auto 80px max(32px,calc((100% - 1160px)/2)); padding:0; }
- .maddy-entrance h1 { font-size:clamp(3rem,5vw,4.5rem); }
- .maddy-entrance-art { position:absolute; width:100%; max-width:none; height:min(55svh,560px); min-height:300px; right:0; bottom:0; }
- .maddy-entrance-folio { border-radius:0; }
- .maddy-entrance-character { right:max(32px,calc((100% - 1160px)/2)); }
- .maddy-entrance-signature { left:max(-20px,calc((100% - 1260px)/2)); top:67%; width:260px; }
+ .maddy-entrance { min-height:max(680px,100svh); --entrance-edge:max(40px,calc((100% - 1160px)/2)); --entrance-base:clamp(150px,23svh,230px); }
+ .maddy-entrance-content { width:min(42%,500px); margin:clamp(140px,24svh,280px) auto calc(var(--entrance-base) + 100px) var(--entrance-edge); padding:0; }
+ .maddy-entrance h1 { font-size:clamp(3rem,4.8vw,4.75rem); margin-bottom:32px; }
+ .maddy-entrance-art { position:absolute; width:100%; max-width:none; height:min(76svh,58vw,720px); min-height:440px; right:0; bottom:0; }
+ .maddy-entrance-folio { inset:auto 0 0; height:var(--entrance-base); border-radius:0; }
+ .maddy-entrance-character { right:var(--entrance-edge); }
+ .maddy-entrance-signature { left:calc(var(--entrance-edge) - 32px); top:auto; bottom:24px; width:210px; }
  .maddy-entrance.is-searching .maddy-entrance-content { padding:0; }
  .maddy-entrance.is-searching .maddy-entrance-art { display:block; }
- .maddy-entrance.is-searching h1 { font-size:clamp(3rem,5vw,4.5rem); margin-bottom:30px; }
+ .maddy-entrance.is-searching h1 { font-size:clamp(3rem,4.8vw,4.75rem); margin-bottom:32px; }
  .maddy-entrance.is-searching .maddy-entrance-eyebrow { display:block; }
 }
 @media(max-width:360px) {
