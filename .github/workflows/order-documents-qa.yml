@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.12'
       # The PDFs returned by Browser Run identify Chromium 128.
-      - run: pip install playwright==1.46.1 pypdf==5.9.0 pillow==11.3.0
+      - run: pip install playwright==1.46.0 pypdf==5.9.0 pillow==11.3.0
       - run: python -m playwright install --with-deps chromium
       - name: Firma y pie con la versión del motor publicado
         run: python scripts/order_document_render_qa.py
