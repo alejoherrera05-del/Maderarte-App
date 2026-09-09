@@ -1,3 +1,4 @@
+import { bindSupplierDirectory } from '../core/supplier-directory.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js';
 import { guardStandalonePage } from '../core/page-guard.js';
@@ -12,6 +13,7 @@ function selection() { return [...$('items').children].filter(row => row.querySe
 function updateSelection() {
   invalidate();
   const selected = new Set(selection().map(item => item.id));
+  $('selection-summary').textContent = selected.size ? `${selected.size} ${selected.size===1?'mueble seleccionado':'muebles seleccionados'}` : 'Selecciona los que vas a solicitar.';
   const separated = account.items.some(item => selected.has(item.id) && item.agreement === 'SEPARADO');
   $('notice-wrap').hidden = $('notice-help').hidden = !separated;
   $('notice').required = separated;
@@ -28,7 +30,7 @@ function showAccount(data) {
     const issue = productionEligibility(data.order, item), row = document.createElement('div');
     row.className = 'production-item' + (issue ? ' is-blocked' : ''); row.dataset.id = item.id;
     const detail = [item.fabricColor && 'Tela: ' + item.fabricColor, item.woodColor && 'Madera: ' + item.woodColor, item.measures, item.specifications].filter(Boolean).join(' · ');
-    row.innerHTML = `<input type="checkbox" id="production-select-${index}" ${issue ? 'disabled' : ''}><label for="production-select-${index}">${esc(item.description)}<small>${esc(issue || `${item.pending} pendientes${item.agreement === 'SEPARADO' ? ' · Separado' : ''}`)}</small>${detail ? `<small>${esc(detail)}</small>` : ''}</label><label class="production-quantity" for="production-qty-${index}">Cantidad<input id="production-qty-${index}" type="number" min="1" max="${Number.isSafeInteger(item.pending) ? item.pending : 0}" step="1" inputmode="numeric" disabled></label>`;
+    row.innerHTML = `<input type="checkbox" id="production-select-${index}" ${issue ? 'disabled' : ''}><label for="production-select-${index}">${esc(item.description)}<small>${esc(issue || `${item.pending} ${item.pending===1?'pendiente':'pendientes'}${item.agreement === 'SEPARADO' ? ' · Separado' : ''}`)}</small>${detail ? `<small>${esc(detail)}</small>` : ''}</label><label class="production-quantity" for="production-qty-${index}">Cantidad<input id="production-qty-${index}" type="number" min="1" max="${Number.isSafeInteger(item.pending) ? item.pending : 0}" step="1" inputmode="numeric" disabled></label>`;
     const check = row.querySelector('[type=checkbox]'), quantity = row.querySelector('[type=number]');
     check.addEventListener('change', () => { quantity.disabled = !check.checked; quantity.required = check.checked; quantity.value = check.checked ? '1' : ''; updateSelection(); });
     $('items').append(row);
@@ -67,6 +69,7 @@ async function search(event) {
 guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   if (!hasPermission(session, 'produccion.read')) { $('app').hidden = false; $('app').textContent = 'No tienes permiso para consultar Producción.'; return; }
   $('app').hidden = false; bindSandboxBanner($('app'));
+  bindSupplierDirectory({uid:session.profile.uid,root:document.getElementById('supplier-directory'),name:$('supplier'),phone:$('phone'),onSelect:invalidate});
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });
   entrance = createEntrance({ cover: $('cover'), workflow: $('workflow'), input: $('query'), newSearch: $('new-search'), onReturn() { sequence++; account = null; invalidate(); $('workspace').hidden = true; } });
