@@ -70,7 +70,10 @@ try:
                 page.get_by_role('button',name='Abrir pedido',exact=True).click()
             page.wait_for_url('**/orden.html?**',timeout=60000)
             page.get_by_role('button',name='Abrir PDF',exact=True).wait_for(timeout=30000)
-            for details in page.locator('.od-photo-details').all():details.locator('summary').click()
+            for index,details in enumerate(page.locator('.od-photo-details').all()):
+                page.locator('[data-select-item]').nth(index).click()
+                page.locator('[data-detail-index]').nth(index).get_by_role('tab',name='Referencias',exact=True).click()
+                details.locator('summary').click()
             expect(page.locator('.od-photo-grid img')).to_have_count(2,timeout=30000)
             data=api('/__qa/evidence');assert data['productionUnchanged'] and data['commercialWrites'] is False
             assert data['counts']['Ordenes_Pedido']==1 and data['counts']['Orden_Items']==2 and data['counts']['Abonos']==2

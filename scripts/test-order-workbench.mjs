@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { renderWorkbench, bindWorkbench } from '../public/js/core/order-workbench.js';
+const dom=new JSDOM('<main></main>',{url:'https://app.maderartepopayan.com/orden.html'});
+globalThis.window=dom.window;
+const root=dom.window.document.querySelector('main');
+const data={order:{number:'QA-OP',status:'CONFIRMADA'},items:[{id:'one',description:'Sofá',quantity:1,pending:1,fulfillment:'PARA_SOLICITAR'},{id:'two',description:'Mesa <script>',quantity:1,pending:1,fulfillment:'DISPONIBLE'}]};
+const session={permissions:['*']};root.innerHTML=renderWorkbench(data.items,data.order,session);bindWorkbench(root,data,session);
+assert.match(root.querySelector('.ow-primary').textContent,/Preparar solicitud/);
+root.querySelector('[data-select-item="1"]').click();assert.equal(root.querySelector('[data-detail-index="0"]').hidden,true);assert.equal(root.querySelector('[data-detail-index="1"]').hidden,false);
+assert.match(root.querySelector('.ow-primary').textContent,/Preparar remisión/);assert.equal(root.querySelector('script'),null);
+const tab=root.querySelector('[data-detail-index="1"] [data-tab="1"]');tab.click();assert.equal(tab.getAttribute('aria-selected'),'true');assert.equal(root.querySelector('#ow-panel-1-1').hidden,false);
+tab.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert.equal(root.querySelector('#ow-panel-1-2').hidden,false);
+root.innerHTML=renderWorkbench(data.items,data.order,{permissions:['ordenes.read']});bindWorkbench(root,data,{permissions:['ordenes.read']});assert.equal(root.querySelector('.ow-primary'),null);assert.equal(root.querySelector('.ow-abonar'),null);
+console.log('Order workbench: item switching, tabs, escaping and permissions verified.');
