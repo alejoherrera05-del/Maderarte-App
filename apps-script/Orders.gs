@@ -147,6 +147,7 @@ function getOrder_(payload, session) {
   if (!row) return null;
   if (!orderBranchReadable_(session, row.Sede)) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
   return {
+    productionTrackingEnabled: typeof ptEnabled_==='function' && ptEnabled_() && hasPermission_(session.permissions,'produccion.update'),
     order: normalizeOrder_(row),
     items: orderItems_(number),
     payments: orderPayments_(number),

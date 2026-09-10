@@ -7,7 +7,7 @@ ORIGIN='http://127.0.0.1:4173';QA='QA-'+'a'*32;OP='MP-QA-OP-0001'
 SESSION={'profile':{'uid':'qa-production','email':'qa@example.invalid','name':'Equipo de prueba','role':'PROPIETARIO','status':'ACTIVO','mainBranch':'MP','branches':['MP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00.000Z','persistence':'session'}
 ORDER={'number':OP,'client':'Cliente de muestra','description':'Sofá y comedor','status':'CONFIRMADA','document':'DATO PRIVADO','phone':'TEL PRIVADO','notes':'NOTA PRIVADA','total':7654321}
 BASE={'quantity':2,'delivered':0,'cancelled':0,'pending':2,'fulfillment':'PARA_SOLICITAR','agreement':'SEPARADO','unit':'UN','fabricColor':'Lino gris','woodColor':'Roble natural','measures':'200 × 90 cm','specifications':'Brazo recto'}
-ITEMS=[dict(BASE,id='i1',description='Sofá de muestra'),dict(BASE,id='i2',description='Comedor disponible',fulfillment='DISPONIBLE'),dict(BASE,id='i3',description='Mueble por definir',fulfillment='POR_DEFINIR')]
+ITEMS=[dict(BASE,id='i1',description='Sofá de muestra',category='SOFA'),dict(BASE,id='i2',category='COMEDOR',description='Comedor disponible',fulfillment='DISPONIBLE'),dict(BASE,id='i3',description='Mueble por definir',fulfillment='POR_DEFINIR')]
 server=subprocess.Popen(['node','scripts/serve.mjs'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
  for _ in range(40):
@@ -65,6 +65,9 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    assert not errors,errors
    page.goto(ORIGIN+'/orden.html?op='+OP+'&prueba='+QA)
+   if width<851:
+    page.screenshot(path=str(OUT/f'lista-muebles-{width}.png'),full_page=True)
+    page.locator('[data-select-item="0"]').click()
    expect(page.locator('[data-product-journey]').first).to_be_visible()
    page.screenshot(path=str(OUT/f'expediente-{width}.png'),full_page=True)
    page.locator('[data-product-journey]').first.click()
@@ -74,7 +77,7 @@ try:
    assert page.get_by_role('dialog').evaluate('(el)=>el.getBoundingClientRect().top < innerHeight * .2')
    page.screenshot(path=str(OUT/f'recorrido-{width}.png'))
    page.keyboard.press('Escape');expect(page.get_by_role('dialog')).to_be_hidden()
-   page.get_by_text('Cliente y acuerdos',exact=True).click()
+   page.locator('[data-order-section="1"]').click()
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    assert not errors,errors
    page.goto(ORIGIN+'/produccion.html?op='+OP+'&item=i1&from=op&prueba='+QA)

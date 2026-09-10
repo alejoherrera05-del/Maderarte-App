@@ -3,8 +3,8 @@ import { escapeHtml as esc } from './format.js';
 const stages={SOLICITADO:'Solicitud realizada',CONFIRMADO:'Confirmado por proveedor',FABRICACION:'En fabricación',LISTO:'Listo en fábrica',TRANSPORTE:'En transporte',BODEGA:'Recibido en bodega'};
 export async function bindProductionTracking(root,data,session) {
   if(!session.permissions?.some(p=>p==='*'||p==='produccion.update'))return;
-  let account;try{account=(await apiRequest('PRODUCCION_CUENTA',{number:data.order.number})).data;}catch{return;}
-  if(!account?.enabled)return;
+  if(!data.productionTrackingEnabled)return;
+  const account={items:data.items.map(i=>({id:i.id,revision:i.revision,tracking:i.tracking}))};
   const key='maddy-production:'+session.profile?.uid+':'+data.order.number;
   const button=document.createElement('button');button.type='button';button.className='ow-update-state';button.textContent='Actualizar estado';
   root.querySelector('.ow-route')?.insertBefore(button,root.querySelector('.ow-maddy'));
