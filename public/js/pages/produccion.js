@@ -74,7 +74,7 @@ guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   const supplierContacts = bindSupplierDirectory({uid:session.profile.uid,root:document.getElementById('supplier-directory'),name:$('supplier'),phone:$('phone'),onSelect:invalidate});
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });
-  entrance = createEntrance({ cover: $('cover'), workflow: $('workflow'), input: $('query'), newSearch: $('new-search'), onReturn() { sequence++; account = null; invalidate(); $('workspace').hidden = true; } });
+  entrance = createEntrance({ cover: $('cover'), workflow: $('workflow'), input: $('query'), newSearch: $('new-search'), onReturn() { flow.clear(); sequence++; account = null; invalidate(); $('workspace').hidden = true; } });
   $('form').addEventListener('input', invalidate);
   $('form').addEventListener('change', invalidate);
   $('form').addEventListener('submit', event => {

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+import { createOrderFlow, orderReturnPath } from '../public/js/core/order-flow-context.js';
+const dom=new JSDOM('<section id="cover"></section><main id="work" hidden><header><a href="/index.html">Atrás</a></header><form></form></main>',{url:'https://app.maderartepopayan.com/produccion.html?op=QA-OP&item=sofa&from=op'});
+Object.assign(globalThis,{window:dom.window,document:dom.window.document});
+const cover=document.getElementById('cover'),workflow=document.getElementById('work');
+const flow=createOrderFlow({cover,workflow,label:'Producción'});
+assert.equal(cover.hidden,true);assert.equal(workflow.hidden,false);assert(workflow.classList.contains('order-flow-loading'));
+assert.equal(orderReturnPath('QA-OP'),'/orden.html?op=QA-OP&item=sofa');assert.equal(orderReturnPath('OTHER'),'/orden.html?op=OTHER');
+flow.fail('No se pudo cargar');assert.equal(workflow.querySelector('button').hidden,false);assert.match(workflow.textContent,/No se pudo cargar/);
+flow.ready();assert(!workflow.classList.contains('order-flow-loading'));assert.equal(workflow.querySelector('.order-flow-status').hidden,true);
+flow.clear();assert.equal(workflow.querySelector('.order-flow-context').hidden,true);
+window.history.replaceState(null,'','/produccion.html');cover.hidden=false;workflow.hidden=true;createOrderFlow({cover,workflow,label:'Producción'});assert.equal(cover.hidden,false);assert.equal(workflow.hidden,true);
+console.log('Order context: direct loading, retry, return item and independent entrance verified.');

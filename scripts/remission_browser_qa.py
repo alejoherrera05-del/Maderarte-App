@@ -9,6 +9,7 @@ SESSION={'profile':{'uid':'qa-remission','email':'qa@example.invalid','name':'De
 OP='MP-QA-OP-0001';REM='MP-QA-REM-0001';QA='QA-'+'a'*32
 PEOPLE={'transporters':[{'name':'Piallero de prueba','favorite':True,'lastUsed':'2026-09-08T18:00:00Z','mode':'PIALLERO'}],'assistants':[{'name':'Operario de prueba','favorite':False,'lastUsed':'2026-09-08T18:00:00Z','mode':''}]}
 BASE={'documentKind':'remission','issued':True,'number':REM,'orderNumber':OP,'date':'2026-09-08T18:00:00Z','branchCode':'MP','dispatcher':'Despachador de prueba','transporter':{'name':'Piallero de prueba','mode':'PIALLERO'},'assistant':'Operario de prueba','sandbox':True,'client':{'name':'CLIENTE DE MUESTRA','document':'00000001','phone':'00000002','alternatePhone':'00000003','address':'Dirección de prueba, sin entrega real','city':'Popayán (prueba)'},'items':[{'itemId':OP+'-I-1','description':'Sofá de muestra','quantity':2,'pendingAfter':2,'unit':'UN'}],'notes':'SIN ENTREGA REAL. Solo verificación de formato.'}
+BASE['items'] += [{'itemId':OP+'-I-4','description':'Mesa auxiliar','quantity':1,'pendingAfter':0,'unit':'UN'},{'itemId':OP+'-I-5','description':'Silla de muestra','quantity':1,'pendingAfter':0,'unit':'UN'}]
 server=subprocess.Popen(['node','scripts/serve.mjs'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
  for _ in range(40):
@@ -35,11 +36,11 @@ try:
      matches=[] if query=='sin coincidencias' else orders
      data={'items':matches,'total':len(matches),'limit':50}
     elif a=='REMISION_CUENTA':
-     data={'order':{'number':OP,'client':BASE['client']['name'],'document':'00000001','phone':'00000002','alternatePhone':'00000003','address':BASE['client']['address'],'city':BASE['client']['city'],'notes':'Sin entrega real'},'dispatcher':BASE['dispatcher'],'people':PEOPLE,'canDeliver':True,'position':{'fingerprint':'a'*64,'history':[],'items':[{'id':OP+'-I-1','description':'Sofá de muestra','quantity':4,'delivered':0,'pending':4,'blocked':''},{'id':OP+'-I-2','description':'Mueble en fabricación','quantity':1,'delivered':0,'pending':1,'blocked':'Requiere revisión de producción antes de entregar.'},{'id':OP+'-I-3','description':'Mueble ya despachado','quantity':1,'delivered':1,'pending':0,'blocked':''}]}}
+     data={'order':{'number':OP,'client':BASE['client']['name'],'document':'00000001','phone':'00000002','alternatePhone':'00000003','address':BASE['client']['address'],'city':BASE['client']['city'],'notes':'Sin entrega real'},'dispatcher':BASE['dispatcher'],'people':PEOPLE,'canDeliver':True,'position':{'fingerprint':'a'*64,'history':[],'items':[{'id':OP+'-I-1','description':'Sofá de muestra','quantity':4,'delivered':0,'pending':4,'blocked':''},{'id':OP+'-I-2','description':'Mueble en fabricación','quantity':1,'delivered':0,'pending':1,'blocked':'Requiere revisión de producción antes de entregar.'},{'id':OP+'-I-3','description':'Mueble ya despachado','quantity':1,'delivered':1,'pending':0,'blocked':''},{'id':OP+'-I-4','description':'Mesa auxiliar','quantity':1,'delivered':0,'pending':1,'blocked':''},{'id':OP+'-I-5','description':'Silla de muestra','quantity':1,'delivered':0,'pending':1,'blocked':''}]}}
     elif a=='REMISION_CREAR':
      state['creates']+=1;assert state['creates']==1
-     cmd=req['payload'];assert cmd['items']==[{'itemId':OP+'-I-1','quantity':2}];assert cmd['transporter']=={'name':'Piallero de prueba','mode':'PIALLERO','favorite':True};assert cmd['assistant']['name']=='Operario de prueba';assert cmd['physicalCheck'] is True;assert 'receiver' not in cmd
-     state['saved']={'number':REM,'orderNumber':OP,'branch':'MP','quantity':2,'requestId':req['requestId']};state['doc']=copy.deepcopy(BASE)
+     cmd=req['payload'];assert cmd['items']==[{'itemId':OP+'-I-1','quantity':2},{'itemId':OP+'-I-4','quantity':1},{'itemId':OP+'-I-5','quantity':1}];assert cmd['transporter']=={'name':'Piallero de prueba','mode':'PIALLERO','favorite':True};assert cmd['assistant']['name']=='Operario de prueba';assert cmd['physicalCheck'] is True;assert 'receiver' not in cmd
+     state['saved']={'number':REM,'orderNumber':OP,'branch':'MP','quantity':4,'requestId':req['requestId']};state['doc']=copy.deepcopy(BASE)
      # A lost response must recover the same dispatch before sending anything again.
      r.fulfill(status=503,json={'status':'error','code':'REMISSION_SAVE_UNCERTAIN','requestId':req['requestId'],'msg':'Respuesta perdida del despacho de prueba'});return
     elif a=='REMISION_CREACION_ESTADO':data={'saved':True,'remission':state['saved']}
@@ -106,14 +107,16 @@ try:
    query.fill('mp-op-0002');query.press('Enter');expect(page.locator('#remission-account')).to_be_visible()
    assert len(state['searches'])==count,'Exact OP must skip list search'
    expect(page.locator('#remission-order-link')).to_have_text('MP-OP-0002')
-   page.goto(ORIGIN+'/remision.html?op='+OP+'&prueba='+QA)
+   page.goto(ORIGIN+'/remision.html?op='+OP+'&item='+OP+'-I-4&from=op&prueba='+QA)
+   expect(page.locator('#remission-cover')).to_be_hidden()
+   expect(page.locator('.order-flow-context')).to_contain_text(OP)
    expect(page.locator('#remission-account')).to_be_visible();expect(page.locator('#rm-select-0')).not_to_be_checked();expect(page.locator('#rm-select-1')).to_be_disabled();expect(page.locator('#rm-select-2')).to_be_disabled()
    assert page.locator('.is-complete').inner_text().find('✓ Despacho completo')>=0
    page.locator('#remission-mode-person').select_option('PROPIETARIO');expect(page.get_by_label('Nombre del propietario',exact=True)).to_be_visible()
    page.locator('#remission-transporter-people').get_by_role('button',name='Piallero de prueba').click();expect(page.locator('#remission-mode-person')).to_have_value('PIALLERO');expect(page.locator('#remission-transporter-favorite')).to_be_checked()
    page.locator('#remission-accompanied').check();page.locator('#remission-assistant-people').get_by_role('button',name='Operario de prueba').click()
    page.locator('#remission-accompanied').uncheck();expect(page.locator('#remission-assistant-section')).to_be_hidden();page.locator('#remission-accompanied').check()
-   page.locator('#rm-select-0').check();page.locator('#rm-qty-0').fill('2');page.locator('#remission-physical').check()
+   page.locator('#rm-select-0').check();page.locator('#rm-qty-0').fill('2');page.locator('#rm-select-3').check();page.locator('#rm-select-4').check();expect(page.locator('#remission-selection')).to_contain_text('4 unidades seleccionadas en 3 muebles');page.locator('#remission-physical').check()
    page.evaluate('window.scrollTo(0,0)');page.screenshot(path=str(OUT/f'remision-form-{width}.png'),full_page=True);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    page.locator('#remission-submit').click();page.get_by_role('button',name='Consultar resultado',exact=True).wait_for();page.reload();page.get_by_role('button',name='Abrir remisión',exact=True).wait_for();page.get_by_role('button',name='Abrir remisión',exact=True).click();expect(page.locator('#remission-result')).to_contain_text('Piallero de prueba');expect(page.locator('#remission-result')).to_contain_text('Operario de prueba')
    assert state['creates']==1 and state['finishes']==1;assert not errors,errors;assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1');page.screenshot(path=str(OUT/f'remision-result-{width}.png'),full_page=True);context.close()

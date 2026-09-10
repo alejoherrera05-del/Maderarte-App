@@ -129,7 +129,7 @@ async function showRemission(number){
 }
 guardStandalonePage({permission:'remisiones.read',async render({session}){
   $('app').hidden=false;
-  entrance=createEntrance({cover:$('cover'),workflow:$('workflow'),input:$('query'),newSearch:$('new-search'),onReturn:()=>{if(locked)return false;$('entry').hidden=false;$('result').hidden=true;$('query').value='';clearSearch();}});
+  entrance=createEntrance({cover:$('cover'),workflow:$('workflow'),input:$('query'),newSearch:$('new-search'),onReturn:()=>{if(locked)return false;flow.clear();$('entry').hidden=false;$('result').hidden=true;$('query').value='';clearSearch();}});
 bindSandboxBanner($('app'));$('version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   const params=new URLSearchParams(location.search),op=params.get('op'),number=params.get('remision');if(op){$('back').href=orderPath(op);$('back').setAttribute('aria-label','Volver a la orden');}
   $('search-form').addEventListener('submit',e=>{e.preventDefault();void search();});

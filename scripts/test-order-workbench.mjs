@@ -9,6 +9,8 @@ const session={permissions:['*']};root.innerHTML=renderWorkbench(data.items,data
 assert.match(root.querySelector('.ow-primary').textContent,/Preparar solicitud/);
 root.querySelector('[data-select-item="1"]').click();assert.equal(root.querySelector('[data-detail-index="0"]').hidden,true);assert.equal(root.querySelector('[data-detail-index="1"]').hidden,false);
 assert.match(root.querySelector('.ow-primary').textContent,/Preparar remisión/);assert.equal(root.querySelector('script'),null);
+assert.equal(new URL(window.location.href).searchParams.get('item'),'two');
+assert.match(root.querySelector('.ow-primary').href,/from=op&item=two/);
 const tab=root.querySelector('[data-detail-index="1"] [data-tab="1"]');tab.click();assert.equal(tab.getAttribute('aria-selected'),'true');assert.equal(root.querySelector('#ow-panel-1-1').hidden,false);
 tab.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert.equal(root.querySelector('#ow-panel-1-2').hidden,false);
 root.innerHTML=renderWorkbench(data.items,data.order,{permissions:['ordenes.read']});bindWorkbench(root,data,{permissions:['ordenes.read']});assert.equal(root.querySelector('.ow-primary'),null);assert.equal(root.querySelector('.ow-abonar'),null);

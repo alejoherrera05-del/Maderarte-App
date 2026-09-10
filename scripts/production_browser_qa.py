@@ -77,6 +77,12 @@ try:
    page.get_by_text('Cliente y acuerdos',exact=True).click()
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    assert not errors,errors
+   page.goto(ORIGIN+'/produccion.html?op='+OP+'&item=i1&from=op&prueba='+QA)
+   expect(page.locator('#production-cover')).to_be_hidden()
+   expect(page.locator('#production-workspace')).to_be_visible()
+   expect(page.locator('.order-flow-context')).to_contain_text(OP)
+   page.get_by_role('link',name='Volver a la OP',exact=True).click()
+   expect(page.locator('[data-select-item="0"]')).to_have_attribute('aria-pressed','true')
    context.close()
   browser.close()
 finally:
