@@ -1,3 +1,4 @@
+import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
 import { bindSupplierDirectory } from '../core/supplier-directory.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js';
@@ -7,6 +8,7 @@ import { escapeHtml as esc } from '../core/format.js';
 import { sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
 import { buildProductionRequest, productionEligibility, supplierWhatsAppUrl } from '../core/production-request.js';
 const $ = id => document.getElementById('production-' + id);
+const flow = createOrderFlow({cover:$('cover'),workflow:$('workflow'),label:'Producción'});
 let account = null, sequence = 0, entrance;
 function invalidate() { $('preview').hidden = true; $('message').value = ''; $('whatsapp').removeAttribute('href'); $('copy-status').textContent = ''; }
 function selection() { return [...$('items').children].filter(row => row.querySelector('[type=checkbox]').checked).map(row => ({ id: row.dataset.id, quantity: Number(row.querySelector('[type=number]').value) })); }
@@ -24,7 +26,7 @@ function showAccount(data) {
   account = data; $('form').reset(); invalidate();
   $('number').textContent = data.order.number;
   $('client').textContent = data.order.client;
-  $('dossier').href = sandboxLink('/orden.html?op=' + encodeURIComponent(data.order.number));
+  $('dossier').href = orderReturnPath(data.order.number);
   $('items').replaceChildren();
   data.items.forEach((item, index) => {
     const issue = productionEligibility(data.order, item), row = document.createElement('div');
@@ -36,7 +38,7 @@ function showAccount(data) {
     $('items').append(row);
   });
   if (!data.items.length) $('items').textContent = 'Esta orden no tiene muebles para consultar.';
-  updateSelection(); $('workspace').hidden = false; entrance.open();
+  updateSelection(); $('workspace').hidden = false; flow.ready(); entrance.open();
   $('feedback').textContent = data.items.some(item => !productionEligibility(data.order, item)) ? '' : 'No hay muebles habilitados para preparar una solicitud en esta OP.';
   $('prepare').disabled = !data.items.some(item => !productionEligibility(data.order, item));
 }
@@ -46,7 +48,7 @@ async function openOrder(number, expected = ++sequence) {
     const response = await apiRequest('ORDEN_OBTENER', { number });
     if (expected !== sequence) return;
     showAccount(response.data); $('search-status').textContent = '';
-  } catch (error) { if (expected === sequence) $('search-status').textContent = error.message; }
+  } catch (error) { if (expected === sequence) { $('search-status').textContent = error.message; flow.fail(error.message); } }
 }
 async function search(event) {
   event.preventDefault();
@@ -68,7 +70,7 @@ async function search(event) {
 }
 guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   if (!hasPermission(session, 'produccion.read')) { $('app').hidden = false; $('app').textContent = 'No tienes permiso para consultar Producción.'; return; }
-  $('app').hidden = false; bindSandboxBanner($('app'));
+  $('app').hidden = false; bindSandboxBanner($('app')); flow.sync();
   const supplierContacts = bindSupplierDirectory({uid:session.profile.uid,root:document.getElementById('supplier-directory'),name:$('supplier'),phone:$('phone'),onSelect:invalidate});
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });

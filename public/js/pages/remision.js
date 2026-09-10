@@ -1,3 +1,4 @@
+import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js?v=remission-1';
 import { guardStandalonePage } from '../core/page-guard.js';
@@ -9,7 +10,8 @@ import { createRemissionSave } from '../core/remission-save.js';
 import { currentSandboxId, sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
 const $=id=>document.getElementById('remission-'+id);
 const path=n=>sandboxLink('/remision.html?remision='+encodeURIComponent(n));
-const orderPath=n=>sandboxLink('/orden.html?op='+encodeURIComponent(n));
+const orderPath=n=>orderReturnPath(n);
+const flow=createOrderFlow({cover:$('cover'),workflow:$('workflow'),label:'Remisiones'});
 const key=n=>n.trim().replace(/\s+/g,' ').toLocaleUpperCase('es');
 const silhouette='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2a7.5 7.5 0 0 1 15 0v2"/></svg>';
 let entrance;
@@ -53,7 +55,7 @@ function renderSave(state){
     if(state.phase==='retry')button(root,'Reenviar el mismo intento',()=>manager.retry());
     if(state.phase==='documents')button(root,'Abrir despacho registrado',()=>window.location.assign(path(state.number)));
   }
-  if(state.locked){$('account').hidden=true;entrance?.open();}
+  if(state.locked){$('account').hidden=true;flow.ready();entrance?.open();}
 }
 async function selectOrder(number){
   if(locked)return;clearTimeout(searchTimer);
@@ -67,8 +69,8 @@ async function selectOrder(number){
     for(const r of [...data.position.history].reverse()){const row=document.createElement('article');row.className='rm-history-row';row.innerHTML=`<strong>${esc(r.number)}</strong><p>${esc(dateTime(r.date))} · Transporta ${esc(r.transporter.name)}</p><p>${esc(r.items.map(i=>i.quantity+' × '+i.description).join(' · '))}</p><a href="${esc(path(r.number))}">Ver remisión y PDF</a>`;history.append(row);}
     if(!history.children.length)history.textContent='Todavía no hay despachos de esta orden.';
     searchStatus(!data.canDeliver?'Esta orden no admite despachos.':data.position.items.every(i=>!i.pending)?'✓ Todos los muebles salieron del almacén.':'Orden lista. Selecciona los muebles que salen hoy.');$('clear').hidden=false;
-    $('account').hidden=false;$('error').textContent='';if(manager?.getState().phase==='rejected')await manager.refresh();renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});entrance?.open();
-  }catch(e){if(ticket===sequence)searchStatus(e.message+' Puedes revisar el número y volver a buscar.','error');}
+    $('account').hidden=false;$('error').textContent='';if(manager?.getState().phase==='rejected')await manager.refresh();renderSave(manager?.getState()||{phase:'disabled',canSave:false,locked:false});flow.ready();entrance?.open();
+  }catch(e){if(ticket===sequence){searchStatus(e.message+' Puedes revisar el número y volver a buscar.','error');flow.fail(e.message);}}
 }
 function searchStatus(message,state='idle'){
   $('search-status').textContent=message;$('search-form').dataset.state=state;
@@ -115,7 +117,7 @@ async function openPdf(number){
   }catch(e){popup?.close();$('feedback').textContent=e.message;}
 }
 async function showRemission(number){
-  entrance?.open();
+  flow.ready();entrance?.open();
   $('entry').hidden=true;$('result').hidden=false;$('result').textContent='Consultando la remisión…';
   try{const {data:r}=await apiRequest('REMISION_OBTENER',{number}),d=r.document;
     $('back').href=orderPath(r.orderNumber);$('back').setAttribute('aria-label','Volver a la orden');
