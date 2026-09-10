@@ -122,6 +122,7 @@ try:
    assert state['creates']==1 and state['finishes']==1;assert not errors,errors;assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1');page.screenshot(path=str(OUT/f'remision-result-{width}.png'),full_page=True);context.close()
   for name,many in [('remision-horizontal',False),('remision-tres-muebles',False),('remision-continuacion',True)]:
    doc=copy.deepcopy(BASE)
+   if name=='remision-horizontal':doc['items']=doc['items'][:1]
    if many:
     doc['items']=[{'itemId':f'ITEM-{i}','description':f'Mueble de control {i:02d}: '+('Descripción con medidas y acabados de ejemplo. '*5),'quantity':1,'pendingAfter':2,'unit':'UN'} for i in range(1,31)]
     doc['notes']=('Indicaciones extensas para comprobar continuidad sin perder texto. '*30)+'FIN DE INDICACIONES'
@@ -139,6 +140,8 @@ try:
    if many:
     for i in range(1,31):assert text.count(f'Mueble de control {i:02d}')==1
     assert 'FIN DE INDICACIONES' in text
+   if name=='remision-tres-muebles':
+    for item in doc['items']:assert item['description'] in text
    assert not errors,errors;renderer.close()
   browser.close()
  print('OK: despacho móvil/escritorio, favoritos, operario opcional, respuesta perdida sin duplicar y PDF horizontal con continuación.')
