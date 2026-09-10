@@ -1,4 +1,4 @@
-import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=3';
+import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=workspace-4';
 import { productState, bindProductJourney } from '../core/product-journey.js';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
@@ -54,7 +54,7 @@ function renderOrder(data, session) {
   return `<header class="od-header"><div class="od-header-inner"><a class="od-round" href="${escapeHtml(withPreview('/ordenes.html'))}" aria-label="Volver al historial"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a><div class="ow-header-brand"><img src="/assets/brand/maderarte-logo-2026.webp" alt=""><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Orden de pedido</span></div><a class="od-round" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Ir al inicio"><img src="/assets/icons/house.svg" alt="" aria-hidden="true"></a></div></header>
   <main class="od-shell">
     <section class="ow-summary od-hero"><div><span>Orden de pedido</span><strong>${escapeHtml(order.number || number)}</strong><small>${escapeHtml(order.client)}</small></div><div><span>Fecha</span><strong>${escapeHtml(date(order.date))}</strong><small>${escapeHtml(order.city || '')}</small></div><div><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong></div><div><span>Abonado</span><strong>${escapeHtml(money(order.paid))}</strong></div><div><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong></div></section>
-    ${renderWorkbench(items,order,session)}
+    <nav class="ow-order-tabs" aria-label="Secciones de la orden">${['Muebles','Cliente','Abonos','Remisiones','Documentos'].map((label,i)=>`<button type="button" data-order-section="${i}" aria-pressed="${i===0}">${label}</button>`).join('')}</nav>${renderWorkbench(items,order,session)}
     <div class="od-layout ow-support"><div class="od-stack">
     <section class="od-card"><details class="order-disclosure"><summary><span>Cliente y acuerdos</span><img src="/assets/icons/caret-down.svg" alt=""></summary><div class="od-kv">${kv('Cliente', order.client)}${kv('Cédula o NIT', order.document)}${kv('Teléfono', order.phone)}${order.alternatePhone ? kv('Segundo teléfono', order.alternatePhone) : ''}${kv('Correo', order.email)}${kv('Ciudad', order.city)}${kv('Dirección de entrega', order.address)}${kv('Responsable', order.owner)}${kv('Observaciones', order.notes)}</div></details></section>
     <section class="od-card"><details class="order-disclosure"><summary><span>Abonos <small>${payments.length}</small></span><img src="/assets/icons/caret-down.svg" alt=""></summary>${renderPayments(payments)}</details></section>
@@ -83,6 +83,16 @@ guardStandalonePage({
       bindSandboxBanner(root);
       bindProductJourney(root,response.data);
       bindWorkbench(root,response.data,session);
+      const support=root.querySelector('.ow-support'), workbench=root.querySelector('.ow-workbench');
+      support.hidden=true;
+      root.querySelectorAll('[data-order-section]').forEach(button=>button.addEventListener('click',()=>{
+        const index=Number(button.dataset.orderSection);
+        root.querySelectorAll('[data-order-section]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+        workbench.hidden=index!==0;support.hidden=index===0;
+        const sections=[...support.querySelector('.od-stack').children];
+        sections.forEach((el,i)=>{el.hidden=i!==index-1;const details=el.querySelector('details');if(details)details.open=i===index-1;});
+        support.querySelector('aside.od-stack').hidden=index!==4;
+      }));
       if (response.data.mediaWorkflow === 1) void bindOrderDocuments(root, number);
     } catch (error) {
       root.innerHTML = empty(error.message || 'No fue posible abrir el expediente.');
