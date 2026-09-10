@@ -1,4 +1,4 @@
-import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=2';
+import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=3';
 import { productState, bindProductJourney } from '../core/product-journey.js';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
