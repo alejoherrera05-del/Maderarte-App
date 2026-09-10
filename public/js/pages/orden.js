@@ -1,9 +1,9 @@
 import { bindProductionTracking } from '../core/production-tracking.js';
-import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=workspace-5';
+import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=category-images-1';
 import { productState, bindProductJourney } from '../core/product-journey.js?v=tracking-1';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
-import { bindOrderDocuments } from './orden-documentos.js?v=workspace-5';
+import { bindOrderDocuments } from './orden-documentos.js?v=category-images-1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { date, dateTime, escapeHtml, humanizeCode, money, safeExternalUrl, text } from '../core/format.js';
