@@ -120,7 +120,7 @@ try:
    page.evaluate('window.scrollTo(0,0)');page.screenshot(path=str(OUT/f'remision-form-{width}.png'),full_page=True);assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    page.locator('#remission-submit').click();page.get_by_role('button',name='Consultar resultado',exact=True).wait_for();page.reload();page.get_by_role('button',name='Abrir remisión',exact=True).wait_for();page.get_by_role('button',name='Abrir remisión',exact=True).click();expect(page.locator('#remission-result')).to_contain_text('Piallero de prueba');expect(page.locator('#remission-result')).to_contain_text('Operario de prueba')
    assert state['creates']==1 and state['finishes']==1;assert not errors,errors;assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1');page.screenshot(path=str(OUT/f'remision-result-{width}.png'),full_page=True);context.close()
-  for name,many in [('remision-horizontal',False),('remision-continuacion',True)]:
+  for name,many in [('remision-horizontal',False),('remision-tres-muebles',False),('remision-continuacion',True)]:
    doc=copy.deepcopy(BASE)
    if many:
     doc['items']=[{'itemId':f'ITEM-{i}','description':f'Mueble de control {i:02d}: '+('Descripción con medidas y acabados de ejemplo. '*5),'quantity':1,'pendingAfter':2,'unit':'UN'} for i in range(1,31)]
@@ -128,7 +128,7 @@ try:
    renderer=browser.new_page(viewport={'width':1120,'height':1200});errors=[];renderer.on('pageerror',lambda e:errors.append(str(e)))
    renderer.goto(ORIGIN+'/documento-render.html',wait_until='networkidle');renderer.evaluate('(data)=>{const s=document.createElement("script");s.id="maddy-document-data";s.type="application/json";s.textContent=JSON.stringify(data);document.body.append(s)}',doc)
    renderer.wait_for_selector('[data-document-ready="true"]',timeout=20000)
-   count=renderer.locator('.rm-document').count();assert count>1 if many else count==1
+   count=renderer.locator('.rm-document').count();assert count>1 if many else (count==1 if name=='remision-horizontal' else count>=1)
    for i,node in enumerate(renderer.locator('.rm-document').all(),1):
     assert node.evaluate('(e)=>e.scrollWidth<=e.clientWidth+1&&e.scrollHeight<=e.clientHeight+1');node.screenshot(path=str(OUT/f'{name}-{i}.png'))
    pdf=OUT/f'{name}.pdf';renderer.pdf(path=str(pdf),width='8.5in',height='5.5in',print_background=True,prefer_css_page_size=True,display_header_footer=False,margin={'top':'0','bottom':'0','left':'0','right':'0'})
