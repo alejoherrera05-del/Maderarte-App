@@ -1,3 +1,4 @@
+import { bindProductionTracking } from '../core/production-tracking.js';
 import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=workspace-4';
 import { productState, bindProductJourney } from '../core/product-journey.js';
 import { hasPermission } from '../core/permissions.js';
@@ -82,7 +83,7 @@ guardStandalonePage({
       root.innerHTML = renderOrder(response.data, session);
       bindSandboxBanner(root);
       bindProductJourney(root,response.data);
-      bindWorkbench(root,response.data,session);
+      bindWorkbench(root,response.data,session); void bindProductionTracking(root,response.data,session);
       const support=root.querySelector('.ow-support'), workbench=root.querySelector('.ow-workbench');
       support.hidden=true;
       root.querySelectorAll('[data-order-section]').forEach(button=>button.addEventListener('click',()=>{

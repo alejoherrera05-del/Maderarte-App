@@ -59,8 +59,10 @@ function rmPosition_(row) {
     if(!Number.isSafeInteger(quantity)||quantity<=0||!Number.isSafeInteger(cancelled)||cancelled<0||!Number.isSafeInteger(pending)||pending<0
       ||Number(i.Cantidad_Entregada)!==delivered||Number(i.Cantidad_Pendiente)!==pending)rmFail_();
     var hasProduction=production.some(function(p){return !p.Item_ID || p.Item_ID===i.Item_ID;});
-    var blocked=cancelled?'El mueble tiene un ajuste que requiere revisión.':hasProduction?'Requiere revisión de producción antes de entregar.':i.Disponibilidad!=='DISPONIBLE'?'La disponibilidad requiere revisión operativa.':'';
-    return {id:i.Item_ID,description:i.Descripcion,quantity:quantity,delivered:delivered,cancelled:cancelled,pending:pending,unit:i.Unidad||'UN',blocked:blocked};
+    var tracked=typeof ptView_==='function'?ptView_(i,production):null;
+    var available=tracked&&!tracked.legacy?tracked.available:(hasProduction?0:i.Disponibilidad==='DISPONIBLE'?pending:0);
+    var blocked=cancelled?'El mueble tiene un ajuste que requiere revisión.':tracked&&tracked.legacy?'Requiere revisión de producción antes de entregar.':available<1?'La disponibilidad requiere revisión operativa.':'';
+    return {id:i.Item_ID,description:i.Descripcion,quantity:quantity,delivered:delivered,cancelled:cancelled,pending:pending,available:available,unit:i.Unidad||'UN',blocked:blocked};
   });
   return {items:view,history:heads.map(function(h){return rmHistory_(h,lines);}),
     fingerprint:sha256_(JSON.stringify([number,row.Estado,row.Version,items.map(function(i){return [i.Item_ID,i.Cantidad,i.Cantidad_Entregada,i.Cantidad_Pendiente,i.Cantidad_Desistida,i.Version,i.Disponibilidad];}),heads,lines,production]))};
@@ -126,6 +128,7 @@ function rmCreate_(payload,context) {
     var selected=draft.items.map(function(x){
       var i=position.items.find(function(i){return i.id===x.itemId;});
       if(!i||x.quantity>i.pending)throw appError_('DELIVERY_EXCEEDS_PENDING','La cantidad supera lo pendiente o el mueble no pertenece a la OP.',409);
+      if(x.quantity>i.available)throw appError_('DELIVERY_NOT_READY','La cantidad supera las unidades disponibles en bodega.',409);
       if(i.blocked)throw appError_('DELIVERY_NOT_READY',i.blocked,409);
       return {itemId:i.id,description:i.description,quantity:x.quantity,unit:i.unit,pendingAfter:i.pending-x.quantity};
     });

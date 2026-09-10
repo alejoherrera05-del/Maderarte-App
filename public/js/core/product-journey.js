@@ -5,12 +5,15 @@ export function productState(item, order = {}) {
   if (item.cancelled > 0) return {label:'Revisar ajuste',tone:'amber',note:'Hay unidades desistidas. Revisa las cantidades del expediente.'};
   if (item.delivered > 0 && item.pending === 0) return {label:'Despachado',tone:'blue',note:'Salida del almacén completa. No confirma recepción del cliente.'};
   if (item.delivered > 0) return {label:'Despacho parcial',tone:'blue',note:`${item.delivered} despachadas · ${item.pending} pendientes`};
-  if (item.fulfillment === 'PARA_SOLICITAR') return {label:item.agreement === 'SEPARADO'?'Separado · requiere fábrica':'Por solicitar a fábrica',tone:'amber',note:'Solicitud y confirmación del proveedor: sin seguimiento registrado en Maddy.'};
+  if(item.tracking?.received>0) return {label:item.tracking.received<item.quantity?'En bodega · parcial':'En bodega',tone:'green',note:`${item.tracking.available} disponibles · ${item.quantity-item.tracking.received} por recibir`};
+  if(item.tracking?.stage) { const names={SOLICITADO:'Solicitado',CONFIRMADO:'Confirmado por proveedor',FABRICACION:'En fabricación',LISTO:'Listo en fábrica',TRANSPORTE:'En transporte'}; return {label:names[item.tracking.stage]||'En seguimiento',tone:'amber',note:'Movimiento registrado en el historial del mueble.'}; }
+  if (item.fulfillment === 'PARA_SOLICITAR') return {label:item.agreement === 'SEPARADO'?'Separado · requiere fábrica':'Por solicitar a fábrica',tone:'amber',note:'Solicitud aún no registrada.'};
   if (item.agreement === 'SEPARADO') return {label:'Separado',tone:'violet',note:item.fulfillment==='DISPONIBLE'?'Disponible en almacén · reservado para el cliente.':'Disponibilidad por confirmar.'};
   if (item.fulfillment === 'DISPONIBLE') return {label:'Disponible para despacho',tone:'green',note:'La entrega se registra al confirmar una remisión.'};
   return {label:'Por definir',tone:'muted',note:'Falta definir la disponibilidad del mueble.'};
 }
 export function journeySteps(item, order) {
+  if(item.tracking?.events?.length) return item.tracking.events.map(e=>({label:({SOLICITADO:'Solicitado',CONFIRMADO:'Confirmado',FABRICACION:'En fabricación',LISTO:'Listo en fábrica',TRANSPORTE:'En transporte',BODEGA:'Recibido en bodega'})[e.stage]||e.stage,detail:`${e.quantity} unidades · ${e.date} · ${e.by}${e.notes?' · '+e.notes:''}`,done:true}));
   const state=productState(item,order),factory=item.fulfillment==='PARA_SOLICITAR';
   const steps=[{label:'Registrado en la OP',detail:order.number||'',done:true}];
   if(item.agreement==='SEPARADO') steps.push({label:'Separado',detail:'El pago no autoriza fabricación. Se espera el aviso del cliente.',done:true});
