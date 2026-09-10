@@ -59,12 +59,14 @@ function listOrders_(payload, session) {
 }
 
 function orderItems_(number) {
+  var productionEvents=typeof ptEvents_==='function'?ptEvents_(number):[];
   return listRows_('Orden_Items').filter(function(row) { return String(row.Numero_OP || '') === number; }).map(function(row) {
     return {
       id: String(row.Item_ID || ''),
       position: valueNumber_(row.Posicion),
       description: String(row.Descripcion || ''),
       category: String(row.Categoria || ''),
+      tracking: typeof ptView_==='function'?ptView_(row,productionEvents):null,
       reference: String(row.Referencia || ''),
       quantity: valueNumber_(row.Cantidad),
       unit: String(row.Unidad || ''),
@@ -145,6 +147,7 @@ function getOrder_(payload, session) {
   if (!row) return null;
   if (!orderBranchReadable_(session, row.Sede)) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
   return {
+    productionTrackingEnabled: typeof ptEnabled_==='function' && ptEnabled_() && hasPermission_(session.permissions,'produccion.update'),
     order: normalizeOrder_(row),
     items: orderItems_(number),
     payments: orderPayments_(number),

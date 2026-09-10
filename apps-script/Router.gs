@@ -49,6 +49,9 @@ function routeAction_(action, payload, context) {
     case 'RECIBO_PDF_LEER': return rcReadPdf_(payload, context);
     case 'INTERNO_RECIBO_DOCUMENTO_PREPARAR': return rcPreparePdf_(payload, context);
     case 'INTERNO_RECIBO_DOCUMENTO_CONFIRMAR': return rcConfirmPdf_(payload, context);
+    case 'PRODUCCION_CUENTA': return ptAccount_(payload, context);
+    case 'PRODUCCION_REGISTRAR': return ptRecord_(payload, context);
+    case 'PRODUCCION_REGISTRO_ESTADO': return ptStatus_(payload, context);
     case 'ORDENES_LISTAR': return listOrders_(payload, context.session);
     case 'ORDEN_OBTENER': return getOrder_(payload, context.session);
     case 'ORDEN_CREAR': return createOrder_(payload, context);

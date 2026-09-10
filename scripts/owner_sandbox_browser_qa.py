@@ -69,8 +69,11 @@ try:
                 page.get_by_role('button',name='Abrir pedido',exact=True).wait_for(timeout=60000)
                 page.get_by_role('button',name='Abrir pedido',exact=True).click()
             page.wait_for_url('**/orden.html?**',timeout=60000)
+            page.locator('[data-order-section="4"]').click()
             page.get_by_role('button',name='Abrir PDF',exact=True).wait_for(timeout=30000)
+            page.locator('[data-order-section="0"]').click()
             for index,details in enumerate(page.locator('.od-photo-details').all()):
+                if page.locator('[data-list-back]').is_visible(): page.locator('[data-list-back]').click()
                 page.locator('[data-select-item]').nth(index).click()
                 page.locator('[data-detail-index]').nth(index).get_by_role('tab',name='Referencias',exact=True).click()
                 details.locator('summary').click()
@@ -82,7 +85,7 @@ try:
             number=data['orders'][0]['Numero_OP'];sid=data['state']['id'];assert '-QA-' in number
             for image in page.locator('.od-photo-grid img').all():assert image.evaluate('e=>e.complete&&e.naturalWidth>0')
             page.screenshot(path=str(OUT/f'expediente-{width}.png'),full_page=True)
-            page.reload();page.get_by_role('button',name='Abrir PDF',exact=True).wait_for();assert api('/__qa/evidence')['counts']['Ordenes_Pedido']==1
+            page.reload();page.locator('[data-order-section="4"]').click();page.get_by_role('button',name='Abrir PDF',exact=True).wait_for();assert api('/__qa/evidence')['counts']['Ordenes_Pedido']==1
             pdf=OUT/'pedido-1.pdf';reader=PdfReader(pdf);text=' '.join(pg.extract_text() or '' for pg in reader.pages)
             assert 'SECRETO INTERNO' not in text and 'Sofá QA' in text and 'Comedor QA' in text
             assert len(reader.pages)>=2

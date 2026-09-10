@@ -7,7 +7,7 @@ ORIGIN='http://127.0.0.1:4173';QA='QA-'+'a'*32;OP='MP-QA-OP-0001'
 SESSION={'profile':{'uid':'qa-production','email':'qa@example.invalid','name':'Equipo de prueba','role':'PROPIETARIO','status':'ACTIVO','mainBranch':'MP','branches':['MP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00.000Z','persistence':'session'}
 ORDER={'number':OP,'client':'Cliente de muestra','description':'Sofá y comedor','status':'CONFIRMADA','document':'DATO PRIVADO','phone':'TEL PRIVADO','notes':'NOTA PRIVADA','total':7654321}
 BASE={'quantity':2,'delivered':0,'cancelled':0,'pending':2,'fulfillment':'PARA_SOLICITAR','agreement':'SEPARADO','unit':'UN','fabricColor':'Lino gris','woodColor':'Roble natural','measures':'200 × 90 cm','specifications':'Brazo recto'}
-ITEMS=[dict(BASE,id='i1',description='Sofá de muestra'),dict(BASE,id='i2',description='Comedor disponible',fulfillment='DISPONIBLE'),dict(BASE,id='i3',description='Mueble por definir',fulfillment='POR_DEFINIR')]
+ITEMS=[dict(BASE,id='i1',description='Sofá de muestra',category='SOFA'),dict(BASE,id='i2',category='COMEDOR',description='Comedor disponible',fulfillment='DISPONIBLE'),dict(BASE,id='i3',description='Mueble por definir',fulfillment='POR_DEFINIR')]
 server=subprocess.Popen(['node','scripts/serve.mjs'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
  for _ in range(40):
@@ -18,7 +18,7 @@ try:
   for width in [1916,1366,390,320]:
    context=browser.new_context(viewport={'width':width,'height':850},permissions=['clipboard-read','clipboard-write'])
    context.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));" % json.dumps(SESSION))
-   actions=[];errors=[]
+   actions=[];errors=[];movements=[]
    def route(r):
     req=r.request.post_data_json;a=req['action'];actions.append(a)
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
@@ -27,7 +27,15 @@ try:
      if req['payload']['query']=='fallo':r.fulfill(status=500,json={'status':'error','msg':'Error de prueba'});return
      data={'items':[] if req['payload']['query']=='nadie' else [ORDER],'total':1}
     elif a=='ORDEN_OBTENER':
-     assert req.get('sandboxId')==QA;data={'order':ORDER,'items':ITEMS}
+     assert req.get('sandboxId')==QA
+     enriched=[dict(i,revision=1+len(movements),tracking={'received':len(movements) if n==0 else 0,'available':len(movements) if n==0 else 0,'events':movements if n==0 else [],'stage':'BODEGA' if movements and n==0 else ''}) for n,i in enumerate(ITEMS)]
+     data={'order':ORDER,'items':enriched,'productionTrackingEnabled':True}
+    elif a=='PRODUCCION_REGISTRAR':
+     assert req.get('sandboxId')==QA
+     command=req['payload'];assert command['itemId']=='i1' and command['stage']=='BODEGA' and command['quantity']==1 and command['verified']
+     assert not movements,'Only one movement expected'
+     movements.append({'stage':'BODEGA','quantity':1,'date':command['date'],'by':'Equipo de prueba','notes':''})
+     data={'saved':True}
     else:raise AssertionError('Unexpected action '+a)
     r.fulfill(status=200,json={'status':'success','data':data})
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
@@ -65,6 +73,9 @@ try:
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    assert not errors,errors
    page.goto(ORIGIN+'/orden.html?op='+OP+'&prueba='+QA)
+   if width<851:
+    page.screenshot(path=str(OUT/f'lista-muebles-{width}.png'),full_page=True)
+    page.locator('[data-select-item="0"]').click()
    expect(page.locator('[data-product-journey]').first).to_be_visible()
    page.screenshot(path=str(OUT/f'expediente-{width}.png'),full_page=True)
    page.locator('[data-product-journey]').first.click()
@@ -74,7 +85,7 @@ try:
    assert page.get_by_role('dialog').evaluate('(el)=>el.getBoundingClientRect().top < innerHeight * .2')
    page.screenshot(path=str(OUT/f'recorrido-{width}.png'))
    page.keyboard.press('Escape');expect(page.get_by_role('dialog')).to_be_hidden()
-   page.get_by_text('Cliente y acuerdos',exact=True).click()
+   page.locator('[data-order-section="1"]').click()
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    assert not errors,errors
    page.goto(ORIGIN+'/produccion.html?op='+OP+'&item=i1&from=op&prueba='+QA)
@@ -83,6 +94,12 @@ try:
    expect(page.locator('.order-flow-context')).to_contain_text(OP)
    page.get_by_role('link',name='Volver a la OP',exact=True).click()
    expect(page.locator('[data-select-item="0"]')).to_have_attribute('aria-pressed','true')
+   page.locator('.ow-update-state').click();expect(page.get_by_role('dialog',name='Actualizar estado del mueble')).to_be_visible()
+   page.locator('.pt-dialog select').select_option('BODEGA');page.locator('.pt-dialog input[name=verified]').check()
+   page.screenshot(path=str(OUT/f'registrar-recepcion-{width}.png'),full_page=True)
+   page.get_by_role('button',name='Guardar movimiento',exact=True).click()
+   expect(page.locator('.ow-route h2')).to_have_text('En bodega · parcial',timeout=15000)
+   assert len(movements)==1;assert not errors,errors
    context.close()
   browser.close()
 finally:
