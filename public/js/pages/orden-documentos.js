@@ -39,8 +39,6 @@ export async function bindOrderDocuments(root, number, request = apiRequest) {
             if (!/^data:image\/(png|jpeg|webp);base64,/.test(photo?.data?.dataUrl || '')) throw new Error();
             const image = document.createElement('img'); image.src = photo.data.dataUrl; image.alt = first.name;
             hero.replaceChildren(image);
-            const thumb = root.querySelector(`[data-thumbnail="${item.dataset.detailIndex}"]`);
-            if (thumb) thumb.replaceChildren(image.cloneNode());
           } catch {
             const retry = button('Reintentar fotografía', loadHero); hero.replaceChildren(retry);
           }

@@ -97,7 +97,9 @@ try:
             assert state['creates']==1 and state['uploads']==2 and state['renders']==1
             page.reload();page.get_by_role('button',name='Abrir pedido',exact=True).wait_for()
             page.get_by_role('button',name='Abrir pedido',exact=True).click();page.wait_for_url('**/orden.html?op=MP-QA-OP-0001')
+            page.locator('[data-order-section="4"]').click()
             page.get_by_role('button',name='Abrir PDF',exact=True).wait_for()
+            page.locator('[data-order-section="0"]').click()
             for i,node in enumerate(page.locator('[data-order-item]').all(),1):
                 page.locator('[data-select-item]').nth(i-1).click()
                 node.get_by_role('tab',name='Referencias',exact=True).click()
@@ -105,7 +107,7 @@ try:
                 expected=next(f for f in state['files'] if f['clientLineId']==str(i))
                 assert hashlib.sha256(base64.b64decode(img.get_attribute('src').split(',')[1])).hexdigest()==expected['sha256']
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
-            page.get_by_text('Cliente y acuerdos',exact=True).click()
+            page.locator('[data-order-section="1"]').click()
             assert '000000001' in page.locator('#order-app').inner_text()
             page.screenshot(path=str(out/f'expediente-con-fotos-{width}.png'),full_page=True)
             pdftext=' '.join(p.extract_text() or '' for p in PdfReader(io.BytesIO(state['pdf'])).pages)

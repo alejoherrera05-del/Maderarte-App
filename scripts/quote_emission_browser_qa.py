@@ -89,6 +89,7 @@ try:
             expect(page.locator('#quote-submit')).to_be_enabled()
             page.locator('#quote-submit').click()
             page.wait_for_url('**/orden.html?**',timeout=60000)
+            page.locator('[data-order-section="4"]').click()
             source_link=page.get_by_role('link',name='Cotización de origen',exact=False)
             expect(source_link).to_be_visible(timeout=30000)
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
