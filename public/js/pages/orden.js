@@ -1,6 +1,6 @@
 import { bindProductionTracking } from '../core/production-tracking.js';
 import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=workspace-4';
-import { productState, bindProductJourney } from '../core/product-journey.js';
+import { productState, bindProductJourney } from '../core/product-journey.js?v=tracking-1';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
 import { bindOrderDocuments } from './orden-documentos.js?v=family-1';

@@ -1,5 +1,5 @@
 import { furnitureIcon } from './furniture-category.js';
-import { productState, journeySteps } from './product-journey.js';
+import { productState, journeySteps } from './product-journey.js?v=tracking-1';
 import { escapeHtml as esc, money } from './format.js';
 import { sandboxLink } from './order-sandbox-context.js';
 import { hasPermission } from './permissions.js';
