@@ -36,3 +36,17 @@
 .ow-photo:has(.ow-no-photo){height:auto;min-height:88px;flex-direction:row;justify-content:flex-start;padding:20px 22px;background:#f0efeb;border-radius:12px;margin:28px 0}.ow-photo>img.ow-no-photo{width:30px;height:30px;opacity:.45}.ow-photo:has(.ow-no-photo) p{font-size:14px;color:#625e57}.ow-route .product-journey li{padding-bottom:20px}.ow-route .product-journey p{margin-top:4px}.ow-maddy{max-height:225px}.ow-character{height:220px}.ow-workbench{min-height:700px}@media(max-width:600px){.ow-photo:has(.ow-no-photo){height:auto;min-height:76px;margin:22px 0}}
 
 .ow-choice,.ow-primary,.ow-abonar{transition:background-color .16s ease,transform .16s ease}.ow-choice:hover{background:#eceae5}.ow-choice[aria-pressed=true]:hover{background:#e7e1d8}.ow-primary:hover{background:#a15823}.ow-abonar:hover{background:#eeece7}.ow-summary>div:last-child strong{color:#925324}.ow-route .ow-current{display:inline-block;padding:7px 10px;border:1px solid #655541;border-radius:8px;color:#ebc89f}.ow-tabs button:hover{color:#282624}.ow-detail [role=tabpanel]{min-height:180px}.ow-selector .ow-choice{scroll-margin-top:90px}@media(prefers-reduced-motion:reduce){.ow-choice,.ow-primary,.ow-abonar{transition:none}}
+
+/* Operational status: a symbol and text, without category pills. */
+.ow-workbench .product-status{display:inline-flex;align-items:flex-start;gap:7px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font-size:13px;font-weight:500;line-height:1.45;text-align:left;color:#625c54}
+.ow-workbench .product-status.tone-amber{color:#925324}
+.ow-workbench .product-status.tone-violet{color:#625c54}
+.ow-workbench .product-status.tone-green{color:#34634f}
+.ow-workbench .product-status.tone-blue{color:#35658a}
+.ow-workbench .product-status.tone-muted{color:#69645e}
+.ow-state-symbol{width:16px;height:18px;flex:0 0 16px}
+.ow-choice .product-status{margin-top:9px}
+.ow-detail button.product-status{min-height:44px;align-items:center;cursor:pointer}
+.ow-detail button.product-status:hover{color:#282624;text-decoration:underline;text-underline-offset:4px}
+.ow-detail button.product-status:focus-visible{outline:2px solid #925324;outline-offset:4px}
+.ow-route .ow-current{padding:0;border:0;border-radius:0;color:#ebc89f}
