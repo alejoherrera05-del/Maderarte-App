@@ -1,98 +1,83 @@
 # Imágenes de categorías de Maddy
 
-Familia aprobada por el propietario, generada con la herramienta integrada image_gen. Miniaturas de nogal, tapizado gris y luz de estudio. Se asignan por categoría persistida; las fotos reales permanecen en el detalle del pedido.
+Familia aprobada: miniaturas de nogal y tapizado gris, por categoría persistida. Las fotos reales permanecen en el detalle de la OP.
 
-Nueve WebP de 384 × 384 px, 200 KB en total. En pantalla ocupan 84 px (escritorio) y 72 px (móvil), con object-fit: contain. Sofá y alcoba usan fondo claro de estudio tras descartar resultados con cuadriculado; las otras siete preservan alfa. La base #fafaf9 armoniza el conjunto incluso en la fila seleccionada.
+## Revisión de calidad
 
-## Prompts finales y procedencia
+Se descartaron los nueve recursos iniciales. Sus recortes transparentes mostraban bordes sucios, franjas de color y sombras negras. Los recursos finales tienen fondo claro de estudio, contornos limpios y sombras suaves. Todas las imágenes son opacas; no se realiza eliminación automática del fondo.
+
+Nueve WebP de 512 × 512 px, calidad 95; presentación de 84 px en escritorio y 72 px en móvil. Generación y corrección con image_gen integrado; conversión técnica con Sharp, sin retoques de color ni recorte de objetos.
+
+## Recursos y prompts finales
 
 ### sala
 
 Archivo: public/assets/categories/furniture/sala-v1.webp
 
-Origen: exec-305980c7-e546-4585-8eaf-3fc5fa4fc4ff.png
+Origen: exec-dacda5e7-5299-420b-83a5-92efe913cf34.png
 
-Use case: product-mockup. Production category image for Maderarte app. Input reference is the approved design board; reproduce ONLY its sala furniture, matching its premium tactile miniature furniture style. Subject: grey linen three-seat sofa with walnut exposed frame and legs, cream and muted copper cushions. One isolated furniture composition centered in square canvas, complete object with 8% clear margin, same slightly elevated three-quarter camera and soft studio lighting as reference. Realistic walnut grain, restrained grey textiles, refined furniture proportions. Genuine transparent background with alpha and subtle contact shadow. No backdrop, tiles, UI, lettering, labels, borders, logos or other categories. High detail, crisp silhouette suitable for an 80px app thumbnail.
-
-Corrección final: Edit this furniture image: replace the entire checkerboard with a perfectly flat, uniform off-white background color #fafaf9, with only a very soft contact shadow beneath feet. Preserve furniture exactly. There must be NO checkerboard and NO transparency. Plain opaque #fafaf9 studio backdrop. Square output.
+Refine this exact furniture catalog image. Keep design, perspective, proportions and colors. Upholstery must be plain soft grey linen with subtle fine weave, NOT ornate swirls or embossed floral patterns, NOT gritty or oversharpened. Smooth premium natural fabric and restrained walnut grain. Clean opaque pale #fafaf9 studio background, soft pale contact shadow, crisp anti-aliased edges. Complete furniture centered square, no text or transparency.
 
 ### comedor
 
 Archivo: public/assets/categories/furniture/comedor-v1.webp
 
-Origen: exec-a0e8df81-dcd6-45cb-9786-e09c473f52b2.png
+Origen: exec-64159fbd-c1bf-48db-af45-0db6fe0e85d6.png
 
-Use case: product-mockup. Production category image for Maderarte app. Input reference is the approved design board; reproduce ONLY its comedor furniture, matching its premium tactile miniature furniture style. Subject: walnut dining table and exactly four grey upholstered dining chairs, small ceramic vase. One isolated furniture composition centered in square canvas, complete object with 8% clear margin, same slightly elevated three-quarter camera and soft studio lighting as reference. Realistic walnut grain, restrained grey textiles, refined furniture proportions. Genuine transparent background with alpha and subtle contact shadow. No backdrop, tiles, UI, lettering, labels, borders, logos or other categories. High detail, crisp silhouette suitable for an 80px app thumbnail.
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture design, proportions, walnut color and grey upholstery. Replace ALL transparency and background with smooth opaque light neutral #fafaf9 studio background. Remove dirty black blotches, red/yellow fringe, stippled pixels and heavy shadows around legs and object edges. Render clean anti-aliased contours, smooth believable wood grain, soft natural fabric without moire. Minimal pale contact shadow only. Entire furniture stays in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photo with restrained natural contrast, not oversharpened.
 
 ### silla
 
 Archivo: public/assets/categories/furniture/silla-v1.webp
 
-Origen: exec-41e878d0-df2a-4091-9706-61d51771ec4a.png
+Origen: exec-5dc70fa0-2864-4965-aed4-b3ea589e669d.png
 
-Use case: product-mockup. Production category image for Maderarte app. Input reference is the approved design board; reproduce ONLY its silla furniture, matching its premium tactile miniature furniture style. Subject: single walnut dining chair with grey upholstered seat and back. One isolated furniture composition centered in square canvas, complete object with 8% clear margin, same slightly elevated three-quarter camera and soft studio lighting as reference. Realistic walnut grain, restrained grey textiles, refined furniture proportions. Genuine transparent background with alpha and subtle contact shadow. No backdrop, tiles, UI, lettering, labels, borders, logos or other categories. High detail, crisp silhouette suitable for an 80px app thumbnail.
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture design, proportions, walnut color and grey upholstery. Replace ALL transparency and background with smooth opaque light neutral #fafaf9 studio background. Remove dirty black blotches, red/yellow fringe, stippled pixels and heavy shadows around legs and object edges. Render clean anti-aliased contours, smooth believable wood grain, soft natural fabric without moire. Minimal pale contact shadow only. Entire furniture stays in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photo with restrained natural contrast, not oversharpened.
 
 ### mesa
 
 Archivo: public/assets/categories/furniture/mesa-v1.webp
 
-Origen: exec-a80c8a40-fcda-49de-9444-658607bd6af6.png
+Origen: exec-e578e9d5-b509-4635-9712-50fe0269a36d.png
 
-Use case: product-mockup. Single production category asset for Maderarte app. Reference image is approved style board; reproduce ONLY its mesa furniture: round sculptural walnut occasional table with curved wooden supports, two books and small ceramic vase. Isolated complete furniture centered square canvas with 8 percent clear margin. Premium realistic tactile miniature catalog render, walnut grain, restrained neutral palette, matching slightly elevated three-quarter camera and soft studio lighting. Genuine transparent alpha background, never draw a checkerboard. No UI, text, labels, borders, logos or other categories. Subtle contact shadow, crisp readable silhouette at 80px.
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture design, proportions, walnut color and grey upholstery. Replace ALL transparency and background with smooth opaque light neutral #fafaf9 studio background. Remove dirty black blotches, red/yellow fringe, stippled pixels and heavy shadows around legs and object edges. Render clean anti-aliased contours, smooth believable wood grain, soft natural fabric without moire. Minimal pale contact shadow only. Entire furniture stays in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photo with restrained natural contrast, not oversharpened.
 
 ### alcoba
 
 Archivo: public/assets/categories/furniture/alcoba-v1.webp
 
-Origen: exec-e8d8810e-4f42-4f6f-bdae-8acb5d8f7b48.png
+Origen: exec-4a844c7f-be71-4802-a7ac-94690589885d.png
 
-Use case: product-mockup. Single production category asset for Maderarte app. Reference image is approved style board; reproduce ONLY its alcoba furniture: walnut double bed with grey upholstered headboard, refined grey and cream bedding. Isolated complete furniture centered square canvas with 8 percent clear margin. Premium realistic tactile miniature catalog render, walnut grain, restrained neutral palette, matching slightly elevated three-quarter camera and soft studio lighting. Genuine transparent alpha background, never draw a checkerboard. No UI, text, labels, borders, logos or other categories. Subtle contact shadow, crisp readable silhouette at 80px.
-
-Corrección final: Edit this furniture image: replace the entire checkerboard with a perfectly flat, uniform off-white background color #fafaf9, with only a very soft contact shadow beneath feet. Preserve furniture exactly. There must be NO checkerboard and NO transparency. Plain opaque #fafaf9 studio backdrop. Square output.
+Refine this exact furniture catalog image. Keep design, perspective, proportions and colors. Upholstery must be plain soft grey linen with subtle fine weave, NOT ornate swirls or embossed floral patterns, NOT gritty or oversharpened. Smooth premium natural fabric and restrained walnut grain. Clean opaque pale #fafaf9 studio background, soft pale contact shadow, crisp anti-aliased edges. Complete furniture centered square, no text or transparency.
 
 ### infantil
 
 Archivo: public/assets/categories/furniture/infantil-v1.webp
 
-Origen: exec-1fa73e0e-fe06-4b2b-b9f0-86fae033d3b3.png
+Origen: exec-39539d44-bc72-4c00-b8ee-5f43d00e1bca.png
 
-Use case: product-mockup. Single production category asset for Maderarte app. Reference image is approved style board; reproduce ONLY its infantil furniture: natural warm oak baby crib with simple safe straight rails and cream mattress. Isolated complete furniture centered square canvas with 8 percent clear margin. Premium realistic tactile miniature catalog render, walnut grain, restrained neutral palette, matching slightly elevated three-quarter camera and soft studio lighting. Genuine transparent alpha background, never draw a checkerboard. No UI, text, labels, borders, logos or other categories. Subtle contact shadow, crisp readable silhouette at 80px.
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture, proportions, wood color and upholstery. Replace ALL transparency with smooth opaque light neutral #fafaf9 studio background. Remove black blotches, colored fringe, stippled pixels and heavy shadows around legs and edges. Clean smooth anti-aliased contours and natural textures, minimal pale contact shadow only. Entire furniture in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photograph, natural contrast, no oversharpening.
 
 ### oficina
 
 Archivo: public/assets/categories/furniture/oficina-v1.webp
 
-Origen: exec-ef6e7064-9e2b-4ff3-a8ba-b6b366205d78.png
+Origen: exec-174044f7-319c-44b6-a059-477d65ec605d.png
 
-Use case: product-mockup. Single production category asset for Maderarte app. Reference is approved style board; reproduce ONLY its oficina furniture: walnut desk with graphite ergonomic swivel office chair, one closed notebook. Isolated complete furniture centered square canvas with 8 percent margin. Premium realistic tactile miniature catalog render, walnut grain, restrained grey palette, same slightly elevated three-quarter camera and soft studio lighting. Genuine transparent alpha background. Never draw checkerboard. No UI, text, labels, borders, logos or other categories. Subtle contact shadow, crisp silhouette at 80px.
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture, proportions, wood color and upholstery. Replace ALL transparency with smooth opaque light neutral #fafaf9 studio background. Remove black blotches, colored fringe, stippled pixels and heavy shadows around legs and edges. Clean smooth anti-aliased contours and natural textures, minimal pale contact shadow only. Entire furniture in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photograph, natural contrast, no oversharpening.
 
 ### complemento
 
 Archivo: public/assets/categories/furniture/complemento-v1.webp
 
-Origen: exec-cbca7577-c5d1-4ff2-8bde-872b4a7100ce.png
+Origen: exec-78c4b967-d376-4739-bf26-8c6553e4c6a4.png
 
-Use case: product-mockup. Single production category asset for Maderarte app. Reference is approved style board; reproduce ONLY its complemento furniture: refined walnut sideboard with small ceramic vase. Isolated complete furniture centered square canvas with 8 percent margin. Premium realistic tactile miniature catalog render, walnut grain, restrained grey palette, same slightly elevated three-quarter camera and soft studio lighting. Genuine transparent alpha background. Never draw checkerboard. No UI, text, labels, borders, logos or other categories. Subtle contact shadow, crisp silhouette at 80px.
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture, proportions, wood color and upholstery. Replace ALL transparency with smooth opaque light neutral #fafaf9 studio background. Remove black blotches, colored fringe, stippled pixels and heavy shadows around legs and edges. Clean smooth anti-aliased contours and natural textures, minimal pale contact shadow only. Entire furniture in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photograph, natural contrast, no oversharpening.
 
 ### otro
 
 Archivo: public/assets/categories/furniture/otro-v1.webp
 
-Origen: exec-587f562b-7bb1-4785-a919-8bf512cdc144.png
+Origen: exec-db5603db-bfe4-4e82-ba47-93f03dcee4ca.png
 
-Use case: product-mockup. Single production category asset for Maderarte app. Reference is approved style board; reproduce ONLY its otro furniture: walnut bench with grey upholstered seat. Isolated complete furniture centered square canvas with 8 percent margin. Premium realistic tactile miniature catalog render, walnut grain, restrained grey palette, same slightly elevated three-quarter camera and soft studio lighting. Genuine transparent alpha background. Never draw checkerboard. No UI, text, labels, borders, logos or other categories. Subtle contact shadow, crisp silhouette at 80px.
-
-
-
+Production cleanup of supplied furniture image for Maderarte. Preserve exact furniture, proportions, wood color and upholstery. Replace ALL transparency with smooth opaque light neutral #fafaf9 studio background. Remove black blotches, colored fringe, stippled pixels and heavy shadows around legs and edges. Clean smooth anti-aliased contours and natural textures, minimal pale contact shadow only. Entire furniture in frame, centered square. No checkerboard, no transparency, no text. Refined catalog photograph, natural contrast, no oversharpening.
