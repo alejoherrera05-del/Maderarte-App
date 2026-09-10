@@ -10,13 +10,14 @@ export function renderWorkbench(items, order, session) {
 
 export function bindWorkbench(root, data, session) {
   const items=data.items||[], order=data.order||{};
-  function select(index) {
+  function select(index, remember = true) {
     const item=items[index];if(!item)return;
     root.querySelectorAll('[data-select-item]').forEach(el=>el.setAttribute('aria-pressed',String(Number(el.dataset.selectItem)===index)));
     root.querySelectorAll('[data-detail-index]').forEach(el=>el.hidden=Number(el.dataset.detailIndex)!==index);
+    if (remember) { const url=new URL(window.location.href); url.searchParams.set('item',item.id); window.history.replaceState(null,'',url); }
     const state=productState(item,order), factory=item.fulfillment==='PARA_SOLICITAR';
     const canAct=!['Anulado','Revisar ajuste'].includes(state.label)&&item.pending>0&&hasPermission(session,factory?'produccion.read':'remisiones.read');
-    root.querySelector('[data-route-content]').innerHTML=`<h2>Recorrido del mueble</h2><p class="ow-current">${esc(state.label)}</p><ol class="product-journey">${journeySteps(item,order).map(s=>`<li class="${s.done?'is-done':s.current?'is-current':'is-future'}"><span class="journey-marker" aria-hidden="true"></span><div><strong>${esc(s.label)}</strong><p>${esc(s.done ? (s.label === 'Registrado en la OP' ? order.number : 'Registrado') : s.current ? 'Estado actual' : 'Sin registro')}</p></div></li>`).join('')}</ol>${canAct?`<a class="ow-primary" href="${esc(sandboxLink('/'+(factory?'produccion':'remision')+'.html?op='+encodeURIComponent(order.number)))}">${factory?'Preparar solicitud':'Preparar remisión'}<img src="/assets/icons/arrow-right.svg" alt=""></a>`:''}`;
+    root.querySelector('[data-route-content]').innerHTML=`<h2>Recorrido del mueble</h2><p class="ow-current">${esc(state.label)}</p><ol class="product-journey">${journeySteps(item,order).map(s=>`<li class="${s.done?'is-done':s.current?'is-current':'is-future'}"><span class="journey-marker" aria-hidden="true"></span><div><strong>${esc(s.label)}</strong><p>${esc(s.done ? (s.label === 'Registrado en la OP' ? order.number : 'Registrado') : s.current ? 'Estado actual' : 'Sin registro')}</p></div></li>`).join('')}</ol>${canAct?`<a class="ow-primary" href="${esc(sandboxLink('/'+(factory?'produccion':'remision')+'.html?op='+encodeURIComponent(order.number)+'&from=op&item='+encodeURIComponent(item.id)))}">${factory?'Preparar solicitud':'Preparar remisión'}<img src="/assets/icons/arrow-right.svg" alt=""></a>`:''}`;
   }
   root.querySelectorAll('[data-select-item]').forEach(button=>button.addEventListener('click',()=>select(Number(button.dataset.selectItem))));
   root.querySelectorAll('.ow-tabs').forEach(tabs=>{
@@ -24,6 +25,7 @@ export function bindWorkbench(root, data, session) {
     const activate=button=>{buttons.forEach(el=>{const active=el===button;el.setAttribute('aria-selected',String(active));el.tabIndex=active?0:-1;root.querySelector('#'+el.getAttribute('aria-controls')).hidden=!active;});};
     buttons.forEach((button,index)=>{button.addEventListener('click',()=>activate(button));button.addEventListener('keydown',event=>{let next;if(event.key==='ArrowRight')next=(index+1)%buttons.length;else if(event.key==='ArrowLeft')next=(index+buttons.length-1)%buttons.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=buttons.length-1;else return;event.preventDefault();activate(buttons[next]);buttons[next].focus();});});
   });
-  select(0);
+  const initial=items.findIndex(item=>item.id===new URLSearchParams(window.location.search).get('item'));
+  select(initial<0?0:initial,false);
 }
 
