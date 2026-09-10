@@ -1,0 +1,1771 @@
+  if (s.quoteSchemaVersion !== 1) osFail_('SANDBOX_QUOTE_SCHEMA_REQUIRED', 'Este ensayo anterior no está preparado para cotizaciones. Conserva sus recursos y consulta al propietario.');
+  if (draft.items.length > 3) osFail_('SANDBOX_LIMIT', 'El ensayo admite hasta tres muebles.');
+  if (s.quoteRequestId && s.quoteRequestId !== requestId || !s.quoteRequestId && countRows_('Cotizaciones')) osFail_('SANDBOX_ONE_QUOTE', 'El ensayo admite una sola cotización. Recupera el mismo intento.');
+  draft.notes = '[PRUEBA AISLADA ' + s.id + ' - SIN VALIDEZ COMERCIAL. NO COBRAR, ENTREGAR NI FABRICAR.]\n' + draft.notes;
+}
+function osReserveQuote_(requestId) {
+  if (!osActive_()) return;
+  var s = OWNER_SANDBOX_CONTEXT_;
+  if (!s.quoteRequestId) { s.quoteRequestId = requestId; osStore_(s); }
+}
+function osCleanupPlan_(s) {
+  var expected = {};
+  expected[s.containerId] = { role: 'container', parent: s.parentId };
+  expected[s.rootId] = { role: 'root', parent: s.containerId };
+  expected[s.sheetId] = { role: 'sheet', parent: s.containerId };
+  OWNER_SANDBOX_CONTEXT_ = s;
+  try {
+    assertNoUnresolvedOrderFence_();
+    var orders = listRows_('Ordenes_Pedido');
+    if (orders.length > 1 || orders.length === 1 && orders[0].Estado_Documentos !== 'COMPLETO' || !orders.length && s.requestId) {
+      osFail_('SANDBOX_DOCUMENTS_PENDING', 'Primero confirma el pedido y completa sus archivos. No se limpiará un guardado incierto.');
+    }
+    listRows_('Carpetas_Documentales').forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
+    var slots = listRows_('Archivos_Orden');
+    if (s.quoteSchemaVersion === 1) {
+      var quotes = listRows_('Cotizaciones'), quoteSlots = listRows_('Archivos_Cotizacion');
+      if (quotes.length > 1 || !quotes.length && s.quoteRequestId || quotes.length === 1 && (!quoteSlots.some(function(r) { return r.Tipo === 'COTIZACION'; }) || quoteSlots.some(function(r) { return r.Estado !== 'LISTO'; }))) {
+        osFail_('SANDBOX_DOCUMENTS_PENDING', 'Primero confirma la cotización y completa sus archivos.');
+      }
+      slots = slots.concat(quoteSlots);
+    }
+    slots.forEach(function(r) { expected[r.File_ID] = { role: 'media', parent: r.Parent_ID }; });
+    var candidates = [];
+    function visit(id, depth) {
+      if (depth > 8) osFail_('SANDBOX_LIMIT', 'La estructura del ensayo no es la esperada.');
+      var meta = osMeta_(id), spec = expected[id];
+      if (!spec) osFail_('SANDBOX_FOREIGN_FILE', 'Hay un archivo ajeno dentro del ensayo. No se eliminará automáticamente.');
+      if (spec.role === 'media') {
+        if (meta.appProperties?.maddyScope !== mdScope_() || !(meta.parents || []).includes(spec.parent)) osFail_('SANDBOX_IDENTITY_MISMATCH', 'Un archivo del ensayo cambió de identidad o ubicación.');
+      } else osExpect_(meta, s, spec.role, spec.parent);
+      if (meta.trashed) osFail_('SANDBOX_RECOVERY_REQUIRED', 'Un archivo ya estaba en la papelera antes de preparar la limpieza.');
+      if (meta.mimeType === 'application/vnd.google-apps.folder') osList_("'" + id + "' in parents and trashed = false").forEach(function(child) { visit(child.id, depth + 1); });
+      candidates.push({ id: id, parent: spec.parent, role: spec.role, folder: meta.mimeType === 'application/vnd.google-apps.folder' });
+    }
+    visit(s.containerId, 0);
+    // Uploaded resources moved out of the tree must not be silently orphaned.
+    var visitedIds = candidates.map(function(entry) { return entry.id; });
+    if (slots.some(function(slot) { return slot.Estado !== 'LISTO' || !visitedIds.includes(slot.File_ID); })) osFail_('SANDBOX_IDENTITY_MISMATCH', 'Falta un archivo confirmado dentro del ensayo. No se limpiará parcialmente.');
+    if (!candidates.some(function(x) { return x.id === s.sheetId; }) || !candidates.some(function(x) { return x.id === s.rootId; })) osFail_('SANDBOX_IDENTITY_MISMATCH', 'No se encontró el espacio completo.');
+    return candidates;
+  } finally { OWNER_SANDBOX_CONTEXT_ = null; }
+}
+function osClean_(payload, context) {
+  orderObject_(payload, ['id', 'confirm'], 'cleanup');
+  return osLock_(function() {
+    var session = osOwner_(context), s = osState_();
+    if (!s || payload.id !== s.id || s.uid !== session.profile.uid) throw appError_('SANDBOX_OWNER_ONLY', 'No se identificó tu ensayo.', 403);
+    if (payload.confirm !== 'LIMPIAR ' + s.id) osFail_('SANDBOX_CONFIRM_REQUIRED', 'Escribe la confirmación del ensayo exacto.');
+    if (s.stage === 'CERRADA') return osPublic_(s);
+    osProductionClosed_();
+    if (!s.cleanup) {
+      if (s.stage !== 'ACTIVA') osFail_('SANDBOX_NOT_READY', 'La preparación no terminó. No se limpiará a ciegas.');
+      var files = osCleanupPlan_(s);
+      s.cleanup = files; s.stage = 'LIMPIANDO'; osStore_(s); // prevents late/queued saves
+    }
+    var scope = sha256_(s.sheetId).slice(0, 32), allowed = s.cleanup.map(function(x) { return x.id; });
+    s.cleanup.forEach(function(entry) {
+      var meta = osMeta_(entry.id);
+      if (entry.id === osProperty_('SPREADSHEET_ID') || entry.id === osProperty_('DRIVE_DOCUMENTS_ROOT_ID')) osFail_('SANDBOX_IDENTITY_MISMATCH', 'No se tocará la base original.');
+      if (entry.role === 'media') {
+        if (meta.appProperties?.maddyScope !== scope || !(meta.parents || []).includes(entry.parent)) osFail_('SANDBOX_IDENTITY_MISMATCH', 'Un archivo cambió; la limpieza se detuvo.');
+      } else osExpect_(meta, s, entry.role, entry.parent);
+      if (meta.trashed) return;
+      if (entry.folder && osList_("'" + entry.id + "' in parents and trashed = false").length) osFail_('SANDBOX_FOREIGN_FILE', 'La carpeta contiene archivos no retirados. Se detuvo la limpieza.');
+      try { mdDrive_('drive/v3/files/' + encodeURIComponent(entry.id) + '?fields=id,trashed', { method: 'patch', contentType: 'application/json', payload: JSON.stringify({ trashed: true }) }); }
+      catch (ignored) { /* Readback, not another delete or another test. */ }
+      if (!osMeta_(entry.id).trashed) osFail_('SANDBOX_CLEANUP_PENDING', 'Falta confirmar la papelera. Retoma la limpieza del mismo ensayo.');
+    });
+    if (!allowed.every(function(id) { return osMeta_(id).trashed === true; })) osFail_('SANDBOX_CLEANUP_PENDING', 'La limpieza todavía no está confirmada.');
+    s.stage = 'CERRADA'; s.closedAt = now_().toISOString(); s.cleanedFiles = allowed.length; delete s.cleanup; osStore_(s);
+    return osPublic_(s);
+  });
+}
+
+// ===== FIN OrderSandbox.gs =====
+
+// ===== INICIO Orders.gs =====
+function orderBranchReadable_(session, branch) {
+  return session.permissions.indexOf('*') !== -1 || (session.profile && Array.isArray(session.profile.branches) && session.profile.branches.indexOf(normalizeCode_(branch)) !== -1);
+}
+
+function normalizeOrder_(row) {
+  return {
+    number: String(row.Numero_OP || ''),
+    date: valueDateIso_(row.Fecha),
+    branch: normalizeCode_(row.Sede),
+    document: String(row.Cedula_NIT || ''),
+    client: String(row.Nombre_Cliente || ''),
+    phone: String(row.Telefono || ''),
+    alternatePhone: String(row.Telefono_Alterno || ''),
+    email: String(row.Email || ''),
+    city: String(row.Ciudad || ''),
+    revision: valueNumber_(row.Version) || 1,
+    documentStatus: normalizeCode_(row.Estado_Documentos || 'PENDIENTE'),
+    subtotal: valueNumber_(row.Subtotal),
+    discount: valueNumber_(row.Descuento),
+    address: String(row.Direccion_Entrega || ''),
+    description: String(row.Descripcion_Detallada || ''),
+    notes: String(row.Observaciones || ''),
+    total: valueNumber_(row.Valor_Total),
+    paid: valueNumber_(row.Abonado_Total),
+    balance: valueNumber_(row.Saldo_Pendiente),
+    saleMode: normalizeCode_(row.Modalidad_Venta),
+    status: normalizeCode_(row.Estado),
+    productionStatus: normalizeCode_(row.Estado_Produccion),
+    deliveryDate: valueDateIso_(row.Fecha_Entrega_Estimada),
+    owner: String(row.Responsable || ''),
+    quoteOrigin: String(row.Cotizacion_Origen || ''),
+    pdfUrl: String(row.URL_PDF_OP || ''),
+    clientFolderUrl: String(row.URL_Carpeta_Cliente || ''),
+    orderFolderUrl: String(row.URL_Carpeta_OP || ''),
+    lastPayment: valueNumber_(row.Ultimo_Abono),
+    lastPaymentDate: valueDateIso_(row.Fecha_Ultimo_Abono),
+    paymentComments: String(row.Comentarios_Abonos || '')
+  };
+}
+
+function listOrders_(payload, session) {
+  requirePermission_(session, 'ordenes.read');
+  var query = String(payload && payload.query || '').trim().toLowerCase();
+  var branch = normalizeCode_(payload && payload.branch);
+  var status = normalizeCode_(payload && payload.status);
+  var productionStatus = normalizeCode_(payload && payload.productionStatus);
+  var limit = Math.min(MADERARTE_APP.MAX_PAGE_SIZE, Math.max(1, Number(payload && payload.limit || 50)));
+  var items = listRows_('Ordenes_Pedido').map(normalizeOrder_).filter(function(item) {
+    if (!orderBranchReadable_(session, item.branch)) return false;
+    if (branch && item.branch !== branch) return false;
+    if (status && item.status !== status) return false;
+    if (productionStatus && item.productionStatus !== productionStatus) return false;
+    if (!query) return true;
+    return [item.number, item.document, item.client, item.phone, item.description].join(' ').toLowerCase().indexOf(query) !== -1;
+  }).sort(function(a, b) {
+    return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+  });
+  return { items: items.slice(0, limit), total: items.length, limit: limit };
+}
+
+function orderItems_(number) {
+  var productionEvents=typeof ptEvents_==='function'?ptEvents_(number):[];
+  return listRows_('Orden_Items').filter(function(row) { return String(row.Numero_OP || '') === number; }).map(function(row) {
+    return {
+      id: String(row.Item_ID || ''),
+      position: valueNumber_(row.Posicion),
+      description: String(row.Descripcion || ''),
+      category: String(row.Categoria || ''),
+      tracking: typeof ptView_==='function'?ptView_(row,productionEvents):null,
+      reference: String(row.Referencia || ''),
+      quantity: valueNumber_(row.Cantidad),
+      unit: String(row.Unidad || ''),
+      unitValue: valueNumber_(row.Valor_Unitario),
+      subtotal: valueNumber_(row.Subtotal),
+      fabricColor: String(row.Color_Tela || ''),
+      woodColor: String(row.Color_Madera || ''),
+      measures: String(row.Medidas || ''),
+      specifications: String(row.Especificaciones || ''),
+      agreement: normalizeCode_(row.Acuerdo),
+      fulfillment: normalizeCode_(row.Disponibilidad),
+      discount: valueNumber_(row.Descuento),
+      net: row.Valor_Neto === undefined || row.Valor_Neto === '' ? valueNumber_(row.Subtotal) : valueNumber_(row.Valor_Neto),
+      cancelled: valueNumber_(row.Cantidad_Desistida),
+      revision: valueNumber_(row.Version) || 1,
+      delivered: valueNumber_(row.Cantidad_Entregada),
+      pending: valueNumber_(row.Cantidad_Pendiente),
+      status: normalizeCode_(row.Estado_Item),
+      photoUrl: String(row.URL_Foto || '')
+    };
+  }).sort(function(a, b) { return a.position - b.position; });
+}
+
+function orderPayments_(number) {
+  return listRows_('Abonos').filter(function(row) {
+    return String(row.Numero_OP || '') === number && normalizeCode_(row.Estado_Registro || 'ACTIVO') !== 'ANULADO';
+  }).map(function(row) {
+    return {
+      number: String(row.Numero_Recibo || ''),
+      date: valueDateIso_(row.Fecha_Pago),
+      value: valueNumber_(row.Valor_Abono),
+      method: normalizeCode_(row.Medio_Pago),
+      reference: String(row.Referencia || ''),
+      comment: String(row.Comentario || ''),
+      previousBalance: valueNumber_(row.Saldo_Anterior),
+      newBalance: valueNumber_(row.Saldo_Nuevo),
+      pdfUrl: String(row.URL_PDF_Recibo || ''),
+      supportUrl: String(row.URL_Soporte_Pago || '')
+    };
+  }).sort(function(a, b) { return new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime(); });
+}
+
+function orderRemissions_(number) {
+  return listRows_('Remisiones').filter(function(row) {
+    return String(row.Numero_OP || '') === number && normalizeCode_(row.Estado || 'EMITIDA') !== 'ANULADA';
+  }).map(function(row) {
+    return {
+      number: String(row.Numero_Remision || ''),
+      date: valueDateIso_(row.Fecha_Remision),
+      receiver: String(row.Persona_Recibe || ''),
+      dispatcher: String(row.Responsable || ''),
+      notes: String(row.Observaciones || ''),
+      status: normalizeCode_(row.Estado),
+      pdfUrl: String(row.URL_PDF_Remision || '')
+    };
+  });
+}
+
+function orderDocuments_(number) {
+  return listRows_('Documentos').filter(function(row) {
+    return String(row.Numero_Relacionado || '') === number && normalizeCode_(row.Activo || 'SI') !== 'NO';
+  }).map(function(row) {
+    return {
+      id: String(row.ID_Documento || ''),
+      type: normalizeCode_(row.Tipo_Documento),
+      name: String(row.Nombre_Archivo || ''),
+      url: String(row.URL || ''),
+      version: valueNumber_(row.Version)
+    };
+  });
+}
+
+function getOrder_(payload, session) {
+  requirePermission_(session, 'ordenes.read');
+  var number = String(payload && payload.number || '').trim();
+  if (!number) throw appError_('ORDER_NUMBER_REQUIRED', 'Falta el número de la orden.', 400);
+  var row = findRow_('Ordenes_Pedido', 'Numero_OP', number);
+  if (!row) return null;
+  if (!orderBranchReadable_(session, row.Sede)) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
+  return {
+    productionTrackingEnabled: typeof ptEnabled_==='function' && ptEnabled_() && hasPermission_(session.permissions,'produccion.update'),
+    order: normalizeOrder_(row),
+    items: orderItems_(number),
+    payments: orderPayments_(number),
+    remissions: orderRemissions_(number),
+    documents: orderDocuments_(number),
+    mediaWorkflow: typeof mdConfigured_ === 'function' && mdConfigured_() && mdRows_(number).length > 0 ? 1 : 0
+  };
+}
+
+function dashboardSummary_(session) {
+  requirePermission_(session, 'app.access');
+  var orders = listRows_('Ordenes_Pedido').map(normalizeOrder_).filter(function(item) { return orderBranchReadable_(session, item.branch); });
+  var active = orders.filter(function(item) { return ['CONFIRMADA', 'EN_PROCESO'].indexOf(item.status) !== -1; });
+  var priorities = active.filter(function(item) {
+    return item.balance > 0 || ['PENDIENTE', 'EN_PROCESO'].indexOf(item.productionStatus) !== -1;
+  }).slice(0, 8).map(function(item) {
+    return {
+      number: item.number,
+      client: item.client,
+      label: item.balance > 0 ? 'Saldo pendiente' : 'Producción pendiente'
+    };
+  });
+  return {
+    metrics: {
+      activeOrders: active.length,
+      pendingBalance: active.reduce(function(total, item) { return total + item.balance; }, 0),
+      pendingProduction: active.filter(function(item) { return ['PENDIENTE', 'EN_PROCESO'].indexOf(item.productionStatus) !== -1; }).length,
+      readyDelivery: active.filter(function(item) { return item.productionStatus === 'LISTA'; }).length
+    },
+    priorities: priorities,
+    mode: getConfigValue_('MODO_OPERACION', 'PREPARACION')
+  };
+}
+
+function systemState_(session) {
+  requirePermission_(session, 'config.read');
+  verifySchema_();
+  return {
+    appVersion: MADERARTE_APP.VERSION,
+    spreadsheetName: MADERARTE_APP.SPREADSHEET_NAME,
+    mode: getConfigValue_('MODO_OPERACION', 'PREPARACION'),
+    commercialWrites: MADERARTE_APP.COMMERCIAL_WRITES ? 'HABILITADAS' : 'DESHABILITADAS',
+    counts: {
+      clients: countRows_('Clientes'),
+      orders: countRows_('Ordenes_Pedido'),
+      payments: countRows_('Abonos'),
+      remissions: countRows_('Remisiones')
+    }
+  };
+}
+
+// ===== FIN Orders.gs =====
+
+// ===== INICIO ProductionTracking.gs =====
+// Append-only quantity events in Produccion. Observaciones contains a versioned
+// payload; existing legacy rows remain intact and block ambiguous reconciliation.
+var PT_STAGES_ = ['SOLICITADO','CONFIRMADO','FABRICACION','LISTO','TRANSPORTE','BODEGA'];
+function ptEnabled_() { return typeof osActive_==='function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES && getConfigValue_('MODO_OPERACION','')==='OPERACION' && optionalProperty_('PRODUCTION_SAVE_ENABLED','NO')==='SI'; }
+function ptSession_(context,write) {var s=validateSessionToken_(context.sessionToken,false);requirePermission_(s,'ordenes.read');requirePermission_(s,'produccion.read');if(write)requirePermission_(s,'produccion.update');return s;}
+function ptEvents_(number) {return listRows_('Produccion').filter(function(r){return r.Numero_OP===number;});}
+function ptView_(item,rows) {
+  var totals={},events=[],legacy=false;PT_STAGES_.forEach(function(k){totals[k]=0;});
+  rows.filter(function(r){return !r.Item_ID||r.Item_ID===item.Item_ID;}).forEach(function(r){
+    var p=parseJson_(r.Observaciones,null);if(!p||p.contract!==1||!PT_STAGES_.includes(r.Estado_Produccion)){legacy=true;return;}
+    if(!Number.isSafeInteger(p.quantity)||p.quantity<1)throw appError_('PRODUCTION_INTEGRITY','Hay un movimiento de producción que requiere revisión.',409);
+    totals[r.Estado_Produccion]+=p.quantity;
+    events.push({id:r.Produccion_ID,stage:r.Estado_Produccion,quantity:p.quantity,date:p.date,recordedAt:valueDateIso_(r.Actualizado_En),by:r.Responsable,provider:r.Taller_Proveedor,notes:p.notes});
+  });
+  var limit=Number(item.Cantidad)-Number(item.Cantidad_Desistida||0),received=totals.BODEGA;
+  if(PT_STAGES_.some(function(k){return totals[k]>limit;}))throw appError_('PRODUCTION_INTEGRITY','Los movimientos superan las unidades del mueble.',409);
+  var available=item.Disponibilidad==='DISPONIBLE'?Number(item.Cantidad_Pendiente):Math.max(0,received-Number(item.Cantidad_Entregada||0));
+  var stage=PT_STAGES_.filter(function(k){return totals[k]>0;}).pop()||'';
+  return {contract:1,totals:totals,received:received,available:available,stage:stage,legacy:legacy,events:events};
+}
+function ptAccount_(payload,context) {
+  var s=ptSession_(context,false),row=rcOrder_(String(payload.number||''),s),events=ptEvents_(row.Numero_OP);
+  var source=listRows_('Orden_Items').filter(function(i){return i.Numero_OP===row.Numero_OP;});
+  return {number:row.Numero_OP,enabled:ptEnabled_()&&hasPermission_(s.permissions,'produccion.update'),items:source.map(function(i){return {id:i.Item_ID,revision:Number(i.Version)||1,tracking:ptView_(i,events)};})};
+}
+function ptReplay_(id,s,hash) {
+  var r=mdUnique_(listRows_('Idempotencia'),'Request_ID',id);if(!r)return null;
+  if(r.Usuario!==s.profile.uid||r.Tipo_Operacion!=='PRODUCCION_REGISTRAR')throw appError_('REQUEST_ID_CONFLICT','El intento pertenece a otra operación.',409);
+  var p=parseJson_(r.Resultado_JSON,null);if(!p||!p.result||r.Estado!=='CONFIRMADA')throw appError_('ORDER_RECOVERY_REQUIRED','El movimiento requiere revisión.',409);
+  rcOrder_(p.result.number,s);if(hash&&hash!==p.fingerprint)throw appError_('REQUEST_CONTENT_CHANGED','Conserva los datos del intento original.',409);return p.result;
+}
+function ptStatus_(payload,context){var s=ptSession_(context,true),id=orderRequestId_(payload.requestId),result=ptReplay_(id,s,'');return result?{saved:true,result:result}:{saved:false,retrySameRequest:!readOrderFence_()};}
+function ptRecord_(payload,context) {
+  if(!ptEnabled_())throw appError_('COMMERCIAL_WRITES_DISABLED','El registro de producción está en preparación.',403);
+  orderObject_(payload,['number','itemId','revision','stage','quantity','date','provider','notes','verified'],'production');
+  var p={number:orderText_(payload.number,'number',120,true),itemId:orderText_(payload.itemId,'itemId',120,true),revision:orderInteger_(payload.revision,'revision',1),stage:String(payload.stage||''),quantity:orderInteger_(payload.quantity,'quantity',1),date:orderText_(payload.date,'date',10,true),provider:orderText_(payload.provider,'provider',120,false),notes:orderText_(payload.notes,'notes',1000,false),verified:payload.verified};
+  if(!PT_STAGES_.includes(p.stage)||p.verified!==true||!/^\d{4}-\d{2}-\d{2}$/.test(p.date)||!Number.isFinite(Date.parse(p.date))||new Date(p.date).toISOString().slice(0,10)!==p.date||p.date>now_().toISOString().slice(0,10))orderInputError_('stage','Revisa la fecha y confirma el movimiento realizado.');
+  if(['SOLICITADO','CONFIRMADO','FABRICACION','LISTO','TRANSPORTE'].includes(p.stage)&&!p.provider)orderInputError_('provider','Indica el proveedor del movimiento.');
+  var id=orderRequestId_(context.requestId),lock=osOperationLock_();if(!lock.tryLock(5000))throw appError_('ORDER_SAVE_BUSY','Hay otro movimiento guardándose. Reintenta este mismo registro.',503);
+  try {
+    var s=ptSession_(context,true),hash=sha256_(JSON.stringify(p)),replay=ptReplay_(id,s,hash);if(replay){clearConfirmedOrderFence_();return {saved:true,result:replay};}assertNoUnresolvedOrderFence_();
+    var row=rcOrder_(p.number,s),item=mdUnique_(listRows_('Orden_Items'),'Item_ID',p.itemId);
+    if(!item||item.Numero_OP!==p.number)throw appError_('ORDER_ITEM_NOT_FOUND','El mueble no pertenece a la orden.',404);
+    if(!['CONFIRMADA','EN_PROCESO'].includes(row.Estado)||item.Estado_Item==='ANULADO'||Number(item.Cantidad_Desistida||0)>0||Number(item.Cantidad_Pendiente)<=0)throw appError_('PRODUCTION_INACTIVE','El mueble no admite movimientos.',409);
+    if(Number(item.Version)!==p.revision)throw appError_('PRODUCTION_CHANGED','El mueble cambió. Actualiza la OP antes de registrar.',409);
+    var view=ptView_(item,ptEvents_(p.number));if(view.legacy)throw appError_('PRODUCTION_LEGACY','Hay registros anteriores que requieren conciliación.',409);
+    if(item.Disponibilidad==='DISPONIBLE')throw appError_('PRODUCTION_ALREADY_AVAILABLE','El mueble ya estaba disponible en almacén.',409);
+    if(view.totals[p.stage]+p.quantity>Number(item.Cantidad)-Number(item.Cantidad_Desistida||0))throw appError_('PRODUCTION_EXCEEDS_QUANTITY','La cantidad supera las unidades pendientes de este paso.',409);
+    var stamp=now_().toISOString(),uid=s.profile.uid,result={requestId:id,number:p.number,itemId:p.itemId,stage:p.stage,quantity:p.quantity};
+    var event={Produccion_ID:id,Numero_OP:p.number,Item_ID:p.itemId,Sede:row.Sede,Estado_Produccion:p.stage,Responsable:s.profile.name||uid,Taller_Proveedor:p.provider,Observaciones:JSON.stringify({contract:1,quantity:p.quantity,date:p.date,notes:p.notes}),Actualizado_Por:uid,Actualizado_En:stamp};
+    var requests=[orderAppendRequest_('Produccion',[event])].concat(orderUpdateRequests_('Orden_Items',item._row,{Version:Number(item.Version)+1,Actualizado_En:stamp}),orderUpdateRequests_('Ordenes_Pedido',row._row,{Version:Number(row.Version)+1,Actualizado_Por:uid,Actualizado_En:stamp}));
+    requests.push(orderAppendRequest_('Auditoria',[{ID:id+'-AUD',Fecha:stamp,Usuario:uid,Rol:s.profile.role,Modulo:'PRODUCCION',Accion:'PRODUCCION_REGISTRAR',Entidad:'ORDEN_ITEM',Entidad_ID:p.itemId,Resumen:p.stage+' · '+p.quantity+' unidades',Estado:'CONFIRMADA',Request_ID:id,Antes_JSON:JSON.stringify(view),Despues_JSON:JSON.stringify(result),Reversible:'NO',Motivo_No_Reversible:'El historial conserva el movimiento registrado.'}]));
+    requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:id,Fecha:stamp,Tipo_Operacion:'PRODUCCION_REGISTRAR',Entidad:'ORDEN_ITEM',Entidad_ID:p.itemId,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:hash,result:result}),Usuario:uid}]));
+    SpreadsheetApp.flush();reserveOrderFence_(id,uid,hash,'PRODUCCION_REGISTRAR');try{orderAtomicBatch_(requests);}catch(e){throw appError_('PRODUCTION_SAVE_UNCERTAIN','No se pudo confirmar el movimiento. Consulta el mismo intento antes de volver a registrar.',503);}clearConfirmedOrderFence_();return {saved:true,result:result};
+  } finally{lock.releaseLock();}
+}
+
+// ===== FIN ProductionTracking.gs =====
+
+// ===== INICIO QuoteConversion.gs =====
+// Conversion uses the existing order transaction, journal and document pipeline.
+function conversionSource_(number, session) {
+  requirePermission_(session, 'ordenes.create');
+  var data = getQuoteDetail_({ number: number }, session);
+  orderCreationAllowed_(session, data.branch);
+  var related = listRows_('Ordenes_Pedido').filter(function(row) { return String(row.Cotizacion_Origen || '') === number; });
+  if (related.length > 1 || related.length === 1 && data.convertedOrder !== related[0].Numero_OP
+    || data.convertedOrder && (related.length !== 1 || related[0].Numero_OP !== data.convertedOrder)) {
+    throw appError_('QUOTE_CONVERSION_INTEGRITY', 'El vínculo entre cotización y pedido requiere revisión.', 409);
+  }
+  if (data.convertedOrder) return { convertedOrder: data.convertedOrder, number: number };
+  if (!['ACTIVA', 'EMITIDA'].includes(data.status) || !data.documents.complete) {
+    throw appError_('QUOTE_NOT_CONVERTIBLE', 'La cotización debe estar activa y tener su PDF y referencias completos.', 409);
+  }
+  if (!data.clientDetail || !data.items.length) throw appError_('QUOTE_NOT_CONVERTIBLE', 'Faltan los datos originales de la propuesta.', 409);
+  var slots = qmdRows_(number);
+  var client = {};
+  ['document','name','phone','alternatePhone','email','address','city'].forEach(function(key) { client[key] = String(data.clientDetail[key] || ''); });
+  var items = data.items.map(function(item, index) {
+    var photos = slots.filter(function(slot) { return slot.Tipo === 'FOTO' && slot.Item_ID === item.id; })
+      .sort(function(a,b) { return Number(parseJson_(a.Plan_JSON, {}).position) - Number(parseJson_(b.Plan_JSON, {}).position); });
+    if (photos.length !== (item.photos || []).length) throw appError_('QUOTE_NOT_CONVERTIBLE', 'Las referencias no coinciden con la cotización.', 409);
+    return { clientLineId: String(index + 1), description: item.description, category: item.category || '', quantity: item.quantity,
+      unitValue: item.unitValue, fabric: item.fabric || '', wood: item.wood || '', specifications: item.specifications || '',
+      photos: photos.map(function(slot) { return { slotId: slot.Archivo_ID, name: parseJson_(slot.Plan_JSON, {}).originalName || slot.Nombre,
+        sha256: slot.Hash_SHA256, mime: slot.Mime_Type, size: Number(slot.Bytes) }; }) };
+  });
+  var source = { branch: data.branch, client: client, items: items, discount: data.discount, notes: data.observations || '' };
+  return { number: number, fingerprint: sha256_(JSON.stringify(source)), source: source };
+}
+
+function prepareQuoteOrder_(payload, session) {
+  orderObject_(payload, ['number'], 'quote');
+  var number = quoteText_(payload.number, 'number', 120, true);
+  return conversionSource_(number, session); // reads only; never reserves a number
+}
+
+function validateQuoteConversion_(draft, session) {
+  if (!draft.quoteOrigin) return null;
+  var prepared = conversionSource_(draft.quoteOrigin.number, session);
+  if (prepared.convertedOrder) throw appError_('QUOTE_ALREADY_CONVERTED', 'Esta cotización ya tiene la OP ' + prepared.convertedOrder + '. Abre el pedido existente.', 409);
+  if (prepared.fingerprint !== draft.quoteOrigin.fingerprint) throw appError_('QUOTE_SOURCE_CHANGED', 'La propuesta cambió. Vuelve a abrirla antes de preparar el pedido.', 409);
+  var source = prepared.source;
+  var stableItem = function(item) { return {
+    clientLineId: item.clientLineId, description: item.description, category: item.category, quantity: item.quantity,
+    unitValue: item.unitValue, fabric: item.fabric, wood: item.wood, specifications: item.specifications,
+    photos: (item.photos || []).map(function(photo) { return { sha256: photo.sha256, mime: photo.mime, size: photo.size }; })
+  }; };
+  if (draft.branch !== source.branch || draft.discount !== source.discount || JSON.stringify(draft.client) !== JSON.stringify(source.client)
+    || JSON.stringify(draft.items.map(stableItem)) !== JSON.stringify(source.items.map(stableItem))) {
+    throw appError_('QUOTE_SOURCE_CHANGED', 'Conserva cliente, muebles, referencias y valores de la cotización. Ajusta únicamente acuerdos, disponibilidad, pagos y observaciones.', 409);
+  }
+  return findRow_('Cotizaciones', 'Numero_Cotizacion', prepared.number);
+}
+
+function quoteConversionRequests_(draft, result, session, stamp) {
+  if (!draft.quoteOrigin) return [];
+  var row = findRow_('Cotizaciones', 'Numero_Cotizacion', draft.quoteOrigin.number);
+  return orderUpdateRequests_('Cotizaciones', row._row, { Estado: 'CONVERTIDA', Convertida_OP: result.number,
+    Actualizado_Por: session.profile.uid, Actualizado_En: stamp }).concat(orderAppendRequest_('Auditoria', [{
+    ID: result.requestId + '-COT-AUD', Fecha: stamp, Usuario: session.profile.uid, Rol: session.profile.role || '',
+    Modulo: 'COTIZACIONES', Accion: 'COTIZACION_CONVERTIR', Entidad: 'COTIZACION', Entidad_ID: draft.quoteOrigin.number,
+    Resumen: 'Cotización vinculada a ' + result.number, Estado: 'CONFIRMADA', Request_ID: result.requestId,
+    Antes_JSON: JSON.stringify({ Estado: row.Estado, Convertida_OP: row.Convertida_OP || '' }),
+    Despues_JSON: JSON.stringify({ Estado: 'CONVERTIDA', Convertida_OP: result.number }), Reversible: 'NO',
+    Motivo_No_Reversible: 'Conservar cotización y pedido; los cambios requieren movimientos posteriores.'
+  }]));
+}
+
+// ===== FIN QuoteConversion.gs =====
+
+// ===== INICIO QuoteCreation.gs =====
+// Quote creation contract v1. Mirrors the order safeguards without sharing data.
+var QUOTE_CREATION_CONTRACT_ = 1;
+
+function quoteInputError_(field, message) {
+  throw appError_('QUOTE_INPUT_INVALID', message, 400, { field: field });
+}
+
+function quoteText_(value, field, max, required) {
+  if (value === undefined && !required) return '';
+  if (typeof value !== 'string') quoteInputError_(field, 'Este dato debe conservarse como texto.');
+  var text = value.trim();
+  if ((required && !text) || text.length > max || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(text)) {
+    quoteInputError_(field, 'Completa o corrige este dato de la cotización.');
+  }
+  return text;
+}
+
+function quoteInteger_(value, field, minimum) {
+  if (!Number.isSafeInteger(value) || value < minimum) quoteInputError_(field, 'Usa un valor entero válido, sin negativos.');
+  return value;
+}
+
+function quoteObject_(value, allowed, field) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) quoteInputError_(field, 'Revisa los datos de la cotización.');
+  Object.keys(value).forEach(function(key) {
+    if (allowed.indexOf(key) === -1) quoteInputError_(field + '.' + key, 'La cotización contiene un campo no admitido.');
+  });
+  return value;
+}
+
+function normalizeQuoteCreation_(payload) {
+  quoteObject_(payload, ['schemaVersion', 'branch', 'client', 'items', 'discount', 'notes'], 'quote');
+  if (payload.schemaVersion !== QUOTE_CREATION_CONTRACT_) throw appError_('QUOTE_CONTRACT_MISMATCH', 'Actualiza la aplicación antes de emitir.', 409);
+  var branch = normalizeCode_(payload.branch);
+  if (['MP', 'TP'].indexOf(branch) === -1) quoteInputError_('branch', 'Selecciona una sede válida.');
+
+  var rawClient = quoteObject_(payload.client, ['document', 'name', 'phone', 'alternatePhone', 'email', 'address', 'city'], 'client');
+  var client = {};
+  [['document', 40], ['name', 250], ['phone', 40], ['alternatePhone', 40], ['email', 254], ['address', 500], ['city', 120]].forEach(function(spec) {
+    client[spec[0]] = quoteText_(rawClient[spec[0]], 'client.' + spec[0], spec[1], spec[0] !== 'alternatePhone');
+  });
+  if (!/^[A-Za-z0-9.-]+$/.test(client.document)) quoteInputError_('client.document', 'Revisa la identificación del cliente.');
+  if (client.email.toUpperCase() === 'N/A') client.email = 'N/A';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(client.email)) quoteInputError_('client.email', 'Escribe un correo válido o N/A.');
+
+  if (!Array.isArray(payload.items) || !payload.items.length || payload.items.length > 100) quoteInputError_('items', 'Incluye entre uno y cien muebles.');
+  var ids = {};
+  var subtotal = 0;
+  var items = payload.items.map(function(raw, index) {
+    var path = 'items.' + index;
+    quoteObject_(raw, ['clientLineId', 'description', 'category', 'quantity', 'unitValue', 'fabric', 'wood', 'specifications', 'photos'], path);
+    var clientLineId = quoteText_(raw.clientLineId, path + '.clientLineId', 64, true);
+    if (!/^[A-Za-z0-9_-]+$/.test(clientLineId) || ids[clientLineId]) quoteInputError_(path + '.clientLineId', 'El identificador del mueble es inválido o está repetido.');
+    ids[clientLineId] = true;
+    var quantity = quoteInteger_(raw.quantity, path + '.quantity', 1);
+    var unitValue = quoteInteger_(raw.unitValue, path + '.unitValue', 1);
+    var lineSubtotal = quoteInteger_(quantity * unitValue, path + '.subtotal', 1);
+    subtotal = quoteInteger_(subtotal + lineSubtotal, 'subtotal', 1);
+    var item = {
+      id: clientLineId,
+      clientLineId: clientLineId,
+      position: index + 1,
+      description: quoteText_(raw.description, path + '.description', 500, true),
+      category: quoteText_(raw.category, path + '.category', 80, false),
+      quantity: quantity,
+      unitValue: unitValue,
+      subtotal: lineSubtotal,
+      fabric: quoteText_(raw.fabric, path + '.fabric', 500, false),
+      wood: quoteText_(raw.wood, path + '.wood', 500, false),
+      specifications: quoteText_(raw.specifications, path + '.specifications', 8000, false),
+      photos: []
+    };
+    if (raw.photos !== undefined) {
+      if (!(typeof qmdConfigured_ === 'function' && qmdConfigured_())) {
+        if (Array.isArray(raw.photos) && raw.photos.length) throw appError_('QUOTE_PHOTOS_NOT_READY', 'El archivo de referencias de cotizaciones todavía no está preparado.', 409, { field: path + '.photos' });
+      } else {
+        item.photos = mdPhotoManifest_(raw.photos, path + '.photos');
+      }
+    }
+    return item;
+  });
+  var discount = quoteInteger_(payload.discount, 'discount', 0);
+  if (discount > subtotal) quoteInputError_('discount', 'El descuento supera el valor de los muebles.');
+  var total = subtotal - discount;
+  if (JSON.stringify(items).length > 45000) quoteInputError_('items', 'El detalle es demasiado extenso para guardarse íntegramente.');
+  return {
+    schemaVersion: QUOTE_CREATION_CONTRACT_,
+    branch: branch,
+    client: client,
+    items: items,
+    discount: discount,
+    subtotal: subtotal,
+    total: total,
+    notes: quoteText_(payload.notes, 'notes', 10000, false)
+  };
+}
+
+function quoteCreationAllowed_(session, branch) {
+  requirePermission_(session, 'cotizaciones.create');
+  if (!session.profile || !session.profile.uid) throw appError_('NO_SESSION', 'Inicia sesión nuevamente.', 401);
+  var branches = Array.isArray(session.profile.branches) ? session.profile.branches : [];
+  if (session.permissions.indexOf('*') === -1 && branches.indexOf(branch) === -1) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
+}
+
+function quoteWritesEnabled_() {
+  if (typeof osActive_ === 'function' && osActive_()) return true;
+  return MADERARTE_APP.COMMERCIAL_WRITES === true
+    && normalizeCode_(getConfigValue_('MODO_OPERACION', '')) === 'OPERACION'
+    && optionalProperty_('QUOTE_WRITES_ENABLED', 'NO') === 'SI';
+}
+
+function quoteCreationCapabilities_(session) {
+  requirePermission_(session, 'cotizaciones.read');
+  var canCreate = hasPermission_(session.permissions || [], 'cotizaciones.create');
+  var documentsReady = typeof qmdConfigured_ === 'function' && qmdConfigured_();
+  return {
+    contractVersion: QUOTE_CREATION_CONTRACT_,
+    enabled: canCreate && documentsReady && quoteWritesEnabled_(),
+    photosReady: documentsReady,
+    documentsReady: documentsReady,
+    previewWrites: false,
+    sandbox: typeof osActive_ === 'function' && osActive_()
+  };
+}
+
+function quoteRequestId_(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{16,120}$/.test(value)) throw appError_('REQUEST_ID_REQUIRED', 'Falta un identificador de emisión válido.', 400);
+  return value;
+}
+
+function quoteCreationReplay_(requestId, session, fingerprint) {
+  var matches = listRows_('Idempotencia').filter(function(row) { return String(row.Request_ID || '') === requestId; });
+  if (matches.length > 1) throw appError_('QUOTE_INTEGRITY_ERROR', 'El registro de emisión requiere revisión.', 409);
+  if (!matches.length) return null;
+  var row = matches[0];
+  if (String(row.Usuario || '') !== session.profile.uid || String(row.Tipo_Operacion || '') !== 'COTIZACION_CREAR') {
+    throw appError_('REQUEST_ID_CONFLICT', 'El identificador ya pertenece a otra operación.', 409);
+  }
+  var saved = parseJson_(row.Resultado_JSON, null);
+  if (!saved || row.Estado !== 'CONFIRMADA' || !saved.fingerprint || !saved.result) {
+    throw appError_('QUOTE_RECOVERY_REQUIRED', 'Esta emisión requiere revisión; no crees otra cotización.', 409);
+  }
+  quoteCreationAllowed_(session, saved.result.branch);
+  if (fingerprint && saved.fingerprint !== fingerprint) throw appError_('REQUEST_CONTENT_CHANGED', 'La cotización cambió después del intento. Recupera primero el resultado anterior.', 409);
+  return saved.result;
+}
+
+function quoteNumber_(branchRow) {
+  var prefix = String(branchRow.Prefijo_Cotizacion || '').trim().toUpperCase().replace(/-+$/, '');
+  var next = branchRow.Siguiente_Cotizacion;
+  if (typeof next === 'string' && /^\d+$/.test(next)) next = Number(next);
+  if (!Number.isSafeInteger(next) || next < 1 || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(prefix)) {
+    throw appError_('NUMBERING_NOT_READY', 'Revisa el prefijo y el consecutivo de cotizaciones de esta sede.', 503);
+  }
+  var number = prefix + '-' + String(next).padStart(4, '0');
+  var used = listRows_('Cotizaciones').some(function(row) { return String(row.Numero_Cotizacion || '') === number; })
+    || listRows_('Registro_Numeros').some(function(row) { return String(row.Numero || '') === number; });
+  if (used) throw appError_('NUMBER_ALREADY_USED', 'El consecutivo previsto ya aparece registrado. Revisa la numeración antes de continuar.', 409);
+  return { number: number, next: next };
+}
+
+function quoteClientRequests_(draft, stamp) {
+  var clients = listRows_('Clientes').filter(function(row) { return String(row.Cedula_NIT || '').trim() === draft.client.document; });
+  if (clients.length > 1) throw appError_('CLIENT_INTEGRITY_ERROR', 'La identificación está duplicada. Revisa el cliente.', 409);
+  var existing = clients[0];
+  if (existing && existing.Estado !== 'ACTIVO') throw appError_('CLIENT_INACTIVE', 'El cliente no está activo.', 409);
+  var patch = {
+    Nombre_Completo: draft.client.name,
+    Telefono: draft.client.phone,
+    Telefono_Alterno: draft.client.alternatePhone,
+    Email: draft.client.email,
+    Direccion: draft.client.address,
+    Ciudad: draft.client.city,
+    Estado: 'ACTIVO'
+  };
+  if (existing) return orderUpdateRequests_('Clientes', existing._row, patch);
+  return [orderAppendRequest_('Clientes', [{
+    Cedula_NIT: draft.client.document,
+    Tipo_Documento: draft.client.document.indexOf('-') !== -1 ? 'NIT' : 'CC',
+    Nombre_Completo: draft.client.name,
+    Telefono: draft.client.phone,
+    Telefono_Alterno: draft.client.alternatePhone,
+    Email: draft.client.email,
+    Direccion: draft.client.address,
+    Ciudad: draft.client.city,
+    Sede_Origen: draft.branch,
+    Fecha_Registro: stamp,
+    Estado: 'ACTIVO'
+  }])];
+}
+
+function createQuote_(payload, context) {
+  var session = context.session;
+  var requestId = quoteRequestId_(context.requestId);
+  var draft = normalizeQuoteCreation_(payload);
+  quoteCreationAllowed_(session, draft.branch);
+  qmdSchema_();
+  if (typeof osValidateQuote_ === 'function') osValidateQuote_(draft, requestId);
+  var fingerprint = sha256_(JSON.stringify(draft));
+  var replay = quoteCreationReplay_(requestId, session, fingerprint);
+  if (replay) return { saved: true, quote: replay };
+  if (!quoteWritesEnabled_()) throw appError_('COMMERCIAL_WRITES_DISABLED', 'La emisión de cotizaciones todavía no está habilitada.', 403);
+
+  var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw appError_('QUOTE_BUSY', 'Hay otra emisión en curso. Consulta el resultado antes de repetir.', 503);
+  try {
+    replay = quoteCreationReplay_(requestId, session, fingerprint);
+    if (replay) { clearConfirmedOrderFence_(); return { saved: true, quote: replay }; }
+    assertNoUnresolvedOrderFence_();
+    var branches = listRows_('Sedes').filter(function(row) { return row.Sede_ID === draft.branch; });
+    if (branches.length !== 1) throw appError_('BRANCH_NOT_AVAILABLE', 'La sede requiere revisión.', 409);
+    var branchRow = branches[0];
+    if (!branchRow || normalizeCode_(branchRow.Estado) !== 'ACTIVA') throw appError_('BRANCH_NOT_AVAILABLE', 'La sede seleccionada no está disponible.', 409);
+    var reserved = quoteNumber_(branchRow);
+    var stamp = now_().toISOString();
+    var result = {
+      number: reserved.number,
+      branch: draft.branch,
+      requestId: requestId,
+      createdAt: stamp,
+      documentStatus: 'PENDIENTE',
+      mediaWorkflow: 1
+    };
+    var quoteRow = {
+      Numero_Cotizacion: result.number,
+      Fecha: stamp,
+      Sede: draft.branch,
+      Cedula_NIT: draft.client.document,
+      Nombre_Cliente: draft.client.name,
+      Telefono: draft.client.phone,
+      Direccion: draft.client.address + (draft.client.city ? ' · ' + draft.client.city : ''),
+      Descripcion_Items: draft.items.map(function(item) { return item.description; }).join(' · ').slice(0, 10000),
+      Observaciones: draft.notes,
+      Subtotal: draft.subtotal,
+      Descuento: draft.discount,
+      Total_Cotizado: draft.total,
+      Estado: 'ACTIVA',
+      Items_JSON: JSON.stringify(draft.items),
+      Firma_Usuario: session.profile.name || '',
+      Creado_Por: session.profile.uid,
+      Fecha_Registro: stamp,
+      Actualizado_Por: session.profile.uid,
+      Actualizado_En: stamp
+    };
+    var idempotency = {
+      Request_ID: requestId,
+      Fecha: stamp,
+      Tipo_Operacion: 'COTIZACION_CREAR',
+      Entidad: 'Cotizaciones',
+      Entidad_ID: result.number,
+      Estado: 'CONFIRMADA',
+      Resultado_JSON: JSON.stringify({ fingerprint: fingerprint, result: result }),
+      Expira_En: new Date(new Date(stamp).getTime() + 30 * 86400000).toISOString(),
+      Usuario: session.profile.uid,
+      Dispositivo_ID: ''
+    };
+    var numberRegistry = {
+      Registro_ID: 'COT-' + sha256_(requestId).slice(0, 28),
+      Sede: draft.branch,
+      Tipo_Documento: 'COTIZACION',
+      Numero: result.number,
+      Estado: 'CONFIRMADO',
+      Entidad_ID: result.number,
+      Reservado_En: stamp,
+      Confirmado_En: stamp,
+      Usuario: session.profile.uid,
+      Request_ID: requestId
+    };
+    var requests = [];
+    var previousClient = findRow_('Clientes', 'Cedula_NIT', draft.client.document);
+    if (!previousClient) requirePermission_(session, 'clientes.create');
+    requests = requests.concat(quoteClientRequests_(draft, stamp));
+    requests.push(orderAppendRequest_('Cotizaciones', [quoteRow]));
+    requests.push(orderAppendRequest_('Registro_Numeros', [numberRegistry]));
+    requests.push(orderAppendRequest_('Idempotencia', [idempotency]));
+    requests = requests.concat(orderUpdateRequests_('Sedes', branchRow._row, { Siguiente_Cotizacion: reserved.next + 1, Actualizado_En: stamp }));
+    requests = requests.concat(qmdPlan_(draft, result, session, stamp));
+    requests.push(orderAppendRequest_('Auditoria', [{
+      ID: 'COT-' + sha256_(requestId).slice(0, 28), Fecha: stamp, Usuario: session.profile.uid,
+      Rol: session.profile.role || '', Modulo: 'COTIZACIONES', Accion: 'COTIZACION_CREAR',
+      Entidad: 'Cotizaciones', Entidad_ID: result.number, Estado: 'CONFIRMADA', Request_ID: requestId,
+      Antes_JSON: JSON.stringify(previousClient ? { client: normalizeClient_(previousClient) } : {}),
+      Despues_JSON: JSON.stringify({ number: result.number, total: draft.total, client: draft.client, fingerprint: fingerprint }),
+      Reversible: 'NO', Motivo_No_Reversible: 'La cotización emitida conserva su historial.'
+    }]));
+    SpreadsheetApp.flush();
+    if (typeof osReserveQuote_ === 'function') osReserveQuote_(requestId);
+    reserveOrderFence_(requestId, session.profile.uid, fingerprint, 'COTIZACION_CREAR');
+    orderAtomicBatch_(requests);
+    var confirmed = findRow_('Cotizaciones', 'Numero_Cotizacion', result.number);
+    var replayAfter = quoteCreationReplay_(requestId, session, fingerprint);
+    if (!confirmed || !replayAfter || replayAfter.number !== result.number) throw appError_('QUOTE_BATCH_UNCONFIRMED', 'No se pudo confirmar la emisión. Conserva el mismo intento al reintentar.', 503);
+    clearConfirmedOrderFence_();
+    return { saved: true, quote: replayAfter };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function quoteCreationStatus_(payload, context) {
+  var requestId = quoteRequestId_(payload && payload.requestId);
+  requirePermission_(context.session, 'cotizaciones.create');
+  return qmdLocked_(function() {
+    var replay = quoteCreationReplay_(requestId, context.session, '');
+    if (replay) { clearConfirmedOrderFence_(); return { saved: true, quote: replay }; }
+    var fence = readOrderFence_();
+    return { saved: false, requestId: requestId, state: fence ? 'REVISION_REQUERIDA' : 'NO_CONFIRMADO', retrySameRequest: !fence };
+  });
+}
+
+// ===== FIN QuoteCreation.gs =====
+
+// ===== INICIO QuoteMedia.gs =====
+var QUOTE_MEDIA_HEADERS_ = Object.freeze({
+  Archivos_Cotizacion: ['Archivo_ID', 'Numero_Cotizacion', 'Item_ID', 'Foto_ID', 'Tipo', 'Nombre', 'Mime_Type', 'Bytes', 'Hash_SHA256', 'File_ID', 'Parent_ID', 'Estado', 'URL', 'Version', 'Creado_Por', 'Request_ID', 'Fecha_Registro', 'Plan_JSON']
+});
+
+function qmdConfigured_() {
+  if (typeof osActive_ === 'function' && osActive_()) return OWNER_SANDBOX_CONTEXT_.quoteSchemaVersion === 1;
+  return optionalProperty_('QUOTE_DOCUMENTS_SCHEMA_VERSION', '') === '1';
+}
+function qmdSchema_() {
+  if (!qmdConfigured_()) throw appError_('QUOTE_DOCUMENT_SCHEMA_NOT_READY', 'Falta preparar el esquema documental de cotizaciones.', 503);
+  mdSchema_();
+  assertHeaders_('Archivos_Cotizacion', QUOTE_MEDIA_HEADERS_.Archivos_Cotizacion);
+}
+function qmdRows_(number) { return listRows_('Archivos_Cotizacion').filter(function(row) { return String(row.Numero_Cotizacion || '') === number; }); }
+function qmdSlot_(number, id) {
+  var slot = mdUnique_(qmdRows_(number), 'Archivo_ID', id);
+  if (!slot) throw appError_('QUOTE_MEDIA_NOT_FOUND', 'No existe esa referencia en la cotización.', 404);
+  return slot;
+}
+function qmdIsPdf_(slot) { return slot.Tipo === 'COTIZACION'; }
+function qmdMax_(slot) { return qmdIsPdf_(slot) ? ORDER_MEDIA_LIMITS_.pdfBytes : ORDER_MEDIA_LIMITS_.bytes; }
+function qmdPlanHash_(slot) { return qmdIsPdf_(slot) ? sha256_(slot.Plan_JSON) : slot.Hash_SHA256; }
+
+function qmdDownload_(slot) {
+  var meta = mdMeta_(slot.File_ID);
+  mdVerifyMeta_(meta, slot.File_ID, slot.Nombre, slot.Mime_Type, slot.Parent_ID, qmdPlanHash_(slot));
+  var max = qmdMax_(slot);
+  if (Number(meta.size) > max) throw appError_('QUOTE_MEDIA_INVALID', 'El archivo de Drive excede el límite.', 413);
+  var bytes = mdDrive_('drive/v3/files/' + encodeURIComponent(slot.File_ID) + '?alt=media').getBlob().getBytes();
+  if (bytes.length > max || !mdMagic_(bytes, slot.Mime_Type)) throw appError_('QUOTE_MEDIA_INVALID', 'El contenido de Drive no coincide con su tipo.', 409);
+  if ((qmdIsPdf_(slot) ? slot.Estado === 'LISTO' : true) && (bytes.length !== Number(slot.Bytes) || mdBytesHash_(bytes) !== slot.Hash_SHA256)) {
+    throw appError_('QUOTE_MEDIA_HASH_MISMATCH', 'El archivo cambió o quedó incompleto.', 409);
+  }
+  return bytes;
+}
+
+function qmdStore_(slot, bytes) {
+  mdEnsureFolder_(slot.Parent_ID);
+  try { return qmdDownload_(slot); }
+  catch (error) { if (error.appCode !== 'DRIVE_REQUEST_FAILED' || error.details && error.details.status !== 404) throw error; }
+  var boundary = 'maddy_quote_' + Utilities.getUuid().replace(/-/g, '');
+  var metadata = {
+    id: slot.File_ID,
+    name: slot.Nombre,
+    parents: [slot.Parent_ID],
+    mimeType: slot.Mime_Type,
+    appProperties: { maddyScope: mdScope_(), maddyPlan: qmdPlanHash_(slot) }
+  };
+  var start = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify(metadata)
+    + '\r\n--' + boundary + '\r\nContent-Type: ' + slot.Mime_Type + '\r\n\r\n';
+  var body = Utilities.newBlob(start).getBytes().concat(bytes).concat(Utilities.newBlob('\r\n--' + boundary + '--').getBytes());
+  try { mdDrive_('upload/drive/v3/files?uploadType=multipart&fields=id', { method: 'post', contentType: 'multipart/related; boundary=' + boundary, payload: body }); }
+  catch (error) { /* Exact-ID readback decides whether Drive committed. */ }
+  return qmdDownload_(slot);
+}
+
+function qmdReadyRequests_(slot, bytes) {
+  var url = mdFileUrl_(slot.File_ID);
+  var documentRow = mdUnique_(listRows_('Documentos'), 'ID_Documento', slot.Archivo_ID);
+  if (!documentRow) throw appError_('QUOTE_DOCUMENT_INTEGRITY_ERROR', 'Falta el registro reservado del documento.', 409);
+  return orderUpdateRequests_('Archivos_Cotizacion', slot._row, { Estado: 'LISTO', URL: url, Bytes: bytes.length, Hash_SHA256: mdBytesHash_(bytes) })
+    .concat(orderUpdateRequests_('Documentos', documentRow._row, { URL: url, Hash_SHA256: mdBytesHash_(bytes), Activo: 'SI', Fecha_Emision: slot.Fecha_Registro }));
+}
+
+function qmdPlan_(draft, result, session, stamp) {
+  qmdSchema_();
+  var rootId = requiredProperty_('DRIVE_DOCUMENTS_ROOT_ID');
+  var root = mdMeta_(rootId);
+  if (root.trashed || root.mimeType !== 'application/vnd.google-apps.folder' || root.name !== '02_DOCUMENTOS_CLIENTES') throw appError_('DRIVE_ROOT_MISMATCH', 'La raíz documental no corresponde a Maderarte.', 503);
+  var photoCount = draft.items.reduce(function(sum, item) { return sum + (item.photos || []).length; }, 0);
+  var photoBytes = draft.items.reduce(function(sum, item) { return sum + (item.photos || []).reduce(function(n, photo) { return n + photo.size; }, 0); }, 0);
+  if (photoCount > ORDER_MEDIA_LIMITS_.count || photoBytes > ORDER_MEDIA_LIMITS_.totalBytes) quoteInputError_('items.photos', 'Las referencias exceden el límite documental.');
+  var ids = mdIds_(photoCount + 8);
+  var folders = listRows_('Carpetas_Documentales');
+  var additions = [];
+  function folder(key, name, parent, reuseParent) {
+    var found = mdUnique_(folders.concat(additions), 'Clave', key);
+    if (found) {
+      if (!found.File_ID || (!reuseParent && found.Parent_ID !== parent)) throw appError_('QUOTE_DOCUMENT_INTEGRITY_ERROR', 'La carpeta reservada no coincide con su ubicación.', 409);
+      return found.File_ID;
+    }
+    var id = ids.shift() || mdIds_(1)[0];
+    additions.push({ Clave: key, File_ID: id, Nombre: mdFolderName_(name), Parent_ID: parent, Fecha_Registro: stamp });
+    return id;
+  }
+  var date = new Date(stamp);
+  var year = Utilities.formatDate(date, MADERARTE_APP.TIMEZONE, 'yyyy');
+  var month = Number(Utilities.formatDate(date, MADERARTE_APP.TIMEZONE, 'MM'));
+  var months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var scope = mdScope_();
+  var yearId = folder(scope + ':Y:' + year, year, rootId);
+  var monthId = folder(scope + ':M:' + year + '-' + month, ('0' + month).slice(-2) + '_' + months[month - 1], yearId);
+  var clientKey = scope + ':C:' + year + ':' + sha256_(draft.client.document).slice(0, 32);
+  var clientId = folder(clientKey, 'CC-' + draft.client.document + ' - ' + draft.client.name, monthId, true);
+  var quotesId = folder(clientKey + ':QUOTES', '00_COTIZACIONES', clientId);
+  var quoteId = folder(scope + ':QUOTE:' + result.number, result.number, quotesId);
+  var files = [];
+  draft.items.forEach(function(item) {
+    (item.photos || []).forEach(function(photo) {
+      var ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[photo.mime];
+      files.push({
+        Archivo_ID: result.number + '-I-' + item.clientLineId + '-F-' + photo.id,
+        Numero_Cotizacion: result.number,
+        Item_ID: item.clientLineId,
+        Foto_ID: photo.id,
+        Tipo: 'FOTO',
+        Nombre: result.number + '-' + item.position + '-' + photo.position + '.' + ext,
+        Mime_Type: photo.mime,
+        Bytes: photo.size,
+        Hash_SHA256: photo.sha256,
+        File_ID: ids.shift() || mdIds_(1)[0],
+        Parent_ID: quoteId,
+        Estado: 'PENDIENTE',
+        Version: 1,
+        Creado_Por: session.profile.uid,
+        Request_ID: result.requestId,
+        Fecha_Registro: stamp,
+        Plan_JSON: JSON.stringify({ originalName: photo.name, position: photo.position })
+      });
+    });
+  });
+  var publicData = {
+    documentKind: 'quote', issued: true, number: result.number, date: stamp, advisor: session.profile.name || '', branchCode: draft.branch,
+    client: draft.client, notes: draft.notes, items: draft.items, subtotal: draft.subtotal, discount: draft.discount, total: draft.total,
+    folders: { client: clientId, quote: quoteId }
+  };
+  if (typeof osActive_ === 'function' && osActive_()) publicData.sandbox = OWNER_SANDBOX_CONTEXT_.id;
+  files.push({
+    Archivo_ID: result.number + '-PDF-V1', Numero_Cotizacion: result.number, Tipo: 'COTIZACION', Nombre: result.number + '.pdf', Mime_Type: 'application/pdf',
+    File_ID: ids.shift() || mdIds_(1)[0], Parent_ID: quoteId, Estado: 'PENDIENTE', Version: 1, Creado_Por: session.profile.uid,
+    Request_ID: result.requestId, Fecha_Registro: stamp, Plan_JSON: JSON.stringify(publicData)
+  });
+  if (files.some(function(file) { return String(file.Plan_JSON || '').length > 50000; })) quoteInputError_('items', 'El documento es demasiado extenso para conservar su versión íntegra.');
+  var requests = [];
+  if (additions.length) requests.push(orderAppendRequest_('Carpetas_Documentales', additions));
+  requests.push(orderAppendRequest_('Archivos_Cotizacion', files));
+  requests.push(orderAppendRequest_('Documentos', files.map(function(file) {
+    return {
+      ID_Documento: file.Archivo_ID,
+      Tipo_Documento: file.Tipo === 'COTIZACION' ? 'COTIZACION' : 'COT_FOTO',
+      Numero_Relacionado: result.number,
+      Cedula_NIT: draft.client.document,
+      Nombre_Cliente: draft.client.name,
+      Nombre_Archivo: file.Nombre,
+      File_ID: file.File_ID,
+      Mime_Type: file.Mime_Type,
+      Version: 1,
+      Activo: 'NO',
+      Fecha_Registro: stamp,
+      Operador: session.profile.uid,
+      Request_ID: result.requestId
+    };
+  })));
+  var pdf = files[files.length - 1];
+  requests.push(orderAppendRequest_('Versiones_Documentos', [{
+    Version_ID: pdf.Archivo_ID, Tipo_Documento: 'COTIZACION', Numero_Relacionado: result.number, Version: 1, Activo: 'NO',
+    File_ID: pdf.File_ID, Nombre_Archivo: pdf.Nombre, Generado_Por: session.profile.uid, Request_ID: result.requestId
+  }]));
+  result.mediaWorkflow = 1;
+  return requests;
+}
+
+function qmdAccess_(number, context, write) {
+  var session = validateSessionToken_(context.sessionToken, false);
+  requirePermission_(session, 'cotizaciones.read');
+  var row = mdUnique_(listRows_('Cotizaciones'), 'Numero_Cotizacion', number);
+  if (!row) throw appError_('QUOTE_NOT_FOUND', 'No se encontró la cotización.', 404);
+  var all = session.permissions.indexOf('*') !== -1;
+  var branches = session.profile && session.profile.branches || [];
+  if (!all && branches.indexOf(row.Sede) === -1) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
+  if (write) {
+    requirePermission_(session, 'cotizaciones.create');
+    if (!all && row.Creado_Por !== session.profile.uid && session.permissions.indexOf('cotizaciones.update.all') === -1) throw appError_('QUOTE_DOCUMENT_FORBIDDEN', 'Solo el responsable o un administrador puede completar estos documentos.', 403);
+    if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('QUOTE_DOCUMENTS_ENABLED', 'NO') !== 'SI')) {
+      throw appError_('QUOTE_DOCUMENT_WRITES_DISABLED', 'La finalización documental de cotizaciones todavía no está habilitada.', 403);
+    }
+  }
+  qmdSchema_();
+  return { row: row, session: session };
+}
+
+function qmdLocked_(run) {
+  var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw appError_('QUOTE_DOCUMENT_BUSY', 'Hay otra operación documental en curso. Consulta su resultado.', 503);
+  try { return run(); } finally { lock.releaseLock(); }
+}
+
+function qmdStatus_(number, context) {
+  qmdAccess_(number, context, false);
+  var files = qmdRows_(number);
+  return {
+    number: number,
+    complete: files.some(function(row) { return row.Tipo === 'COTIZACION'; }) && files.every(function(row) { return row.Estado === 'LISTO' && row.URL; }),
+    files: files.map(function(row) {
+      var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
+      return {
+        id: row.Archivo_ID,
+        itemId: row.Item_ID || '',
+        photoId: row.Foto_ID || '',
+        type: row.Tipo,
+        name: plan.originalName || row.Nombre,
+        position: plan.position || 0,
+        mime: row.Mime_Type,
+        size: Number(row.Bytes) || 0,
+        sha256: row.Hash_SHA256 || '',
+        ready: row.Estado === 'LISTO',
+        url: row.Estado === 'LISTO' ? row.URL : ''
+      };
+    })
+  };
+}
+
+function qmdUploadPhoto_(payload, context) {
+  return qmdLocked_(function() {
+    qmdAccess_(payload.number, context, true);
+    var slot = qmdSlot_(payload.number, payload.id);
+    if (slot.Tipo !== 'FOTO') throw appError_('QUOTE_MEDIA_INVALID', 'Este espacio no corresponde a una fotografía.', 400);
+    var bytes = mdDecode_(payload.base64, ORDER_MEDIA_LIMITS_.bytes);
+    if (bytes.length !== Number(slot.Bytes) || mdBytesHash_(bytes) !== slot.Hash_SHA256 || !mdMagic_(bytes, slot.Mime_Type)) throw appError_('QUOTE_MEDIA_HASH_MISMATCH', 'La fotografía no coincide con la cotización confirmada.', 409);
+    var stored = qmdStore_(slot, bytes);
+    orderAtomicBatch_(qmdReadyRequests_(slot, stored));
+    return { number: payload.number, id: slot.Archivo_ID, ready: true };
+  });
+}
+
+function qmdReadPhoto_(payload, context) {
+  qmdAccess_(payload.number, context, false);
+  var slot = qmdSlot_(payload.number, payload.id);
+  if (slot.Tipo !== 'FOTO' || slot.Estado !== 'LISTO') throw appError_('QUOTE_MEDIA_NOT_READY', 'La fotografía aún no está confirmada.', 409);
+  return { id: slot.Archivo_ID, dataUrl: 'data:' + slot.Mime_Type + ';base64,' + Utilities.base64Encode(qmdDownload_(slot)) };
+}
+
+function qmdPreparePdf_(payload, context) {
+  mdInternal_(context);
+  return qmdLocked_(function() {
+    var access = qmdAccess_(payload.number, context, true);
+    var files = qmdRows_(payload.number);
+    var slot = mdUnique_(files, 'Tipo', 'COTIZACION');
+    if (!slot) throw appError_('QUOTE_DOCUMENT_NOT_PLANNED', 'Esta cotización no tiene un plan documental reservado.', 409);
+    if (slot.Estado === 'LISTO') {
+      qmdDownload_(slot);
+      return { complete: true, number: payload.number, pdfUrl: slot.URL };
+    }
+    var data = parseJson_(slot.Plan_JSON, null);
+    if (!data || data.number !== payload.number || data.total !== Number(access.row.Total_Cotizado) || data.documentKind !== 'quote') {
+      throw appError_('QUOTE_DOCUMENT_INTEGRITY_ERROR', 'El documento no coincide con la cotización confirmada.', 409);
+    }
+    mdEnsureFolder_(slot.Parent_ID);
+    data.items = data.items.map(function(item) {
+      return Object.assign({}, item, { photos: (item.photos || []).map(function(photo) {
+        var file = mdUnique_(files, 'Archivo_ID', payload.number + '-I-' + item.clientLineId + '-F-' + photo.id);
+        if (!file || file.Estado !== 'LISTO') throw appError_('QUOTE_PHOTOS_PENDING', 'Faltan fotografías por confirmar; se conserva la cotización.', 409);
+        return 'data:' + file.Mime_Type + ';base64,' + Utilities.base64Encode(qmdDownload_(file));
+      }) });
+    });
+    delete data.folders;
+    return { complete: false, number: payload.number, id: slot.Archivo_ID, planHash: sha256_(slot.Plan_JSON), document: data };
+  });
+}
+
+function qmdConfirmPdf_(payload, context) {
+  mdInternal_(context);
+  return qmdLocked_(function() {
+    var access = qmdAccess_(payload.number, context, true);
+    var slot = qmdSlot_(payload.number, payload.id);
+    if (slot.Tipo !== 'COTIZACION' || sha256_(slot.Plan_JSON) !== payload.planHash) throw appError_('QUOTE_DOCUMENT_REVISION_CHANGED', 'La versión documental no coincide.', 409);
+    var bytes = mdDecode_(payload.base64, ORDER_MEDIA_LIMITS_.pdfBytes);
+    if (!mdMagic_(bytes, 'application/pdf')) throw appError_('PDF_INVALID', 'El generador no entregó un PDF válido.', 502);
+    var stored = qmdStore_(slot, bytes);
+    var data = parseJson_(slot.Plan_JSON, null);
+    var requests = qmdReadyRequests_(slot, stored);
+    var client = mdUnique_(listRows_('Clientes'), 'Cedula_NIT', access.row.Cedula_NIT);
+    var version = mdUnique_(listRows_('Versiones_Documentos'), 'Version_ID', slot.Archivo_ID);
+    if (!client || !version) throw appError_('QUOTE_DOCUMENT_INTEGRITY_ERROR', 'Falta una referencia documental reservada.', 409);
+    requests = requests.concat(
+      orderUpdateRequests_('Cotizaciones', access.row._row, {
+        URL_PDF_Cotizacion: mdFileUrl_(slot.File_ID),
+        URL_Carpeta_Cliente: mdFolderUrl_(data.folders.client),
+        URL_Carpeta_Mes: mdFolderUrl_(data.folders.quote),
+        Actualizado_Por: access.session.profile.uid,
+        Actualizado_En: now_().toISOString()
+      }),
+      orderUpdateRequests_('Clientes', client._row, { URL_Carpeta_Cliente: mdFolderUrl_(data.folders.client) }),
+      orderUpdateRequests_('Versiones_Documentos', version._row, {
+        URL: mdFileUrl_(slot.File_ID), Hash_SHA256: mdBytesHash_(stored), Activo: 'SI', Fecha_Generacion: slot.Fecha_Registro
+      })
+    );
+    orderAtomicBatch_(requests);
+    return { complete: true, number: payload.number, pdfUrl: mdFileUrl_(slot.File_ID), folderUrl: mdFolderUrl_(data.folders.quote) };
+  });
+}
+
+function qmdReadPdf_(payload, context) {
+  qmdAccess_(payload.number, context, false);
+  var slot = mdUnique_(qmdRows_(payload.number), 'Tipo', 'COTIZACION');
+  if (!slot || slot.Estado !== 'LISTO') throw appError_('QUOTE_PDF_PENDING', 'El PDF todavía está pendiente.', 409);
+  return { name: slot.Nombre, mime: 'application/pdf', base64: Utilities.base64Encode(qmdDownload_(slot)) };
+}
+
+function getQuote_(payload, session) {
+  requirePermission_(session, 'cotizaciones.read');
+  var number = String(payload && payload.number || '').trim();
+  var row = mdUnique_(listRows_('Cotizaciones'), 'Numero_Cotizacion', number);
+  if (!row) throw appError_('QUOTE_NOT_FOUND', 'No se encontró la cotización.', 404);
+  var all = session.permissions.indexOf('*') !== -1;
+  var branches = session.profile && session.profile.branches || [];
+  if (!all && branches.indexOf(row.Sede) === -1) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
+  var result = normalizeQuote_(row);
+  result.clientDetail = normalizeClient_(findRow_('Clientes', 'Cedula_NIT', row.Cedula_NIT) || {});
+  result.documents = qmdConfigured_() ? qmdStatus_(number, { sessionToken: '', session: session, proxyMeta: {} }) : { number: number, complete: Boolean(row.URL_PDF_Cotizacion), files: [] };
+  return result;
+}
+
+function prepararDocumentosCotizaciones() {
+  return qmdLocked_(function() {
+    if (MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'La preparación exige operación comercial deshabilitada.', 403);
+    mdSchema_();
+    var ss = getSpreadsheet_();
+    var name = 'Archivos_Cotizacion';
+    var headers = QUOTE_MEDIA_HEADERS_.Archivos_Cotizacion;
+    var sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      var used = ss.getSheets().map(function(tab) { return tab.getSheetId(); });
+      var id = 2110001022;
+      while (used.indexOf(id) !== -1) id++;
+      orderAtomicBatch_([
+        { addSheet: { properties: { sheetId: id, title: name, gridProperties: { rowCount: 1000, columnCount: Math.max(headers.length, 20), frozenRowCount: 1 } } } },
+        { updateCells: { start: { sheetId: id, rowIndex: 0, columnIndex: 0 }, rows: [{ values: headers.map(orderCell_) }], fields: 'userEnteredValue' } }
+      ]);
+    } else if (JSON.stringify(getHeaders_(sheet)) !== JSON.stringify(headers)) {
+      throw appError_('SHEET_SCHEMA_MISMATCH', 'Archivos_Cotizacion no coincide con el contrato.', 409);
+    }
+    getScriptProperties_().setProperty('QUOTE_DOCUMENTS_SCHEMA_VERSION', '1');
+    qmdSchema_();
+    return { ok: true, quoteDocumentSheet: name, commercialWrites: false, enabled: false };
+  });
+}
+
+// ===== FIN QuoteMedia.gs =====
+
+// ===== INICIO QuoteRead.gs =====
+function quoteDocumentSnapshot_(number) {
+  if (!(typeof qmdConfigured_ === 'function' && qmdConfigured_())) return { number: number, complete: false, files: [] };
+  var files = qmdRows_(number);
+  return {
+    number: number,
+    complete: files.some(function(row) { return row.Tipo === 'COTIZACION'; }) && files.every(function(row) { return row.Estado === 'LISTO' && row.URL; }),
+    files: files.map(function(row) {
+      var plan = row.Tipo === 'FOTO' ? parseJson_(row.Plan_JSON, {}) : {};
+      return {
+        id: row.Archivo_ID,
+        itemId: row.Item_ID || '',
+        photoId: row.Foto_ID || '',
+        type: row.Tipo,
+        name: plan.originalName || row.Nombre,
+        position: plan.position || 0,
+        mime: row.Mime_Type,
+        ready: row.Estado === 'LISTO',
+        url: row.Estado === 'LISTO' ? row.URL : ''
+      };
+    })
+  };
+}
+
+function getQuoteDetail_(payload, session) {
+  requirePermission_(session, 'cotizaciones.read');
+  var number = String(payload && payload.number || '').trim();
+  if (!number) throw appError_('QUOTE_NUMBER_REQUIRED', 'Falta el número de cotización.', 400);
+  var rows = listRows_('Cotizaciones').filter(function(row) { return String(row.Numero_Cotizacion || '').trim() === number; });
+  if (rows.length > 1) throw appError_('QUOTE_INTEGRITY_ERROR', 'La cotización aparece repetida y requiere revisión.', 409);
+  if (!rows.length) throw appError_('QUOTE_NOT_FOUND', 'No se encontró la cotización.', 404);
+  var row = rows[0];
+  var all = session.permissions.indexOf('*') !== -1;
+  var branches = session.profile && session.profile.branches || [];
+  if (!all && branches.indexOf(normalizeCode_(row.Sede)) === -1) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
+  var result = normalizeQuote_(row);
+  var clientRow = findRow_('Clientes', 'Cedula_NIT', row.Cedula_NIT);
+  result.clientDetail = clientRow ? normalizeClient_(clientRow) : null;
+  if (typeof qmdConfigured_ === 'function' && qmdConfigured_()) {
+    var pdf = mdUnique_(qmdRows_(number), 'Tipo', 'COTIZACION');
+    var plan = pdf && parseJson_(pdf.Plan_JSON, null);
+    if (plan && plan.number === number && plan.client) result.clientDetail = plan.client;
+  }
+  result.documents = quoteDocumentSnapshot_(number);
+  return result;
+}
+
+// ===== FIN QuoteRead.gs =====
+
+// ===== INICIO Quotes.gs =====
+function quoteMeta_(payload, session) {
+  requirePermission_(session, 'cotizaciones.read');
+
+  var branch = normalizeCode_(payload && payload.branch);
+  if (!branch) throw appError_('QUOTE_BRANCH_REQUIRED', 'Selecciona la sede que emitirá la cotización.', 400);
+
+  var allowedBranches = session && session.profile && Array.isArray(session.profile.branches)
+    ? session.profile.branches.map(function(value) { return normalizeCode_(value); })
+    : [];
+  if (allowedBranches.length && allowedBranches.indexOf(branch) === -1) {
+    throw appError_('BRANCH_NOT_ALLOWED', 'Tu cuenta no tiene acceso a esa sede.', 403);
+  }
+
+  var row = findRow_('Sedes', 'Sede_ID', branch);
+  if (!row || normalizeCode_(row.Estado) !== 'ACTIVA') {
+    throw appError_('BRANCH_NOT_AVAILABLE', 'La sede seleccionada no está disponible.', 404);
+  }
+
+  var branchFallbacks = {
+    MP: {
+      name: 'Sede principal',
+      address: 'Transversal 9 # 6N-26 · Edificio Dorado · Frente al Éxito Panamericana'
+    },
+    TP: {
+      name: 'Sede norte · Terraplaza',
+      address: 'Centro Comercial Terraplaza · Local 113 · Primer piso'
+    }
+  };
+  var fallback = branchFallbacks[branch] || { name: branch, address: '' };
+  var nextNumber = Math.max(1, Math.floor(valueNumber_(row.Siguiente_Cotizacion) || 1));
+  var prefix = String(row.Prefijo_Cotizacion || '').trim().toUpperCase().replace(/-+$/, '') || 'COT';
+  var previewNumber = prefix + '-' + String(nextNumber).padStart(4, '0');
+
+  return {
+    branch: branch,
+    branchName: String(row.Nombre || fallback.name),
+    branchAddress: String(row.Direccion || fallback.address),
+    branchPhone: String(row.Telefono || getConfigValue_('EMPRESA_CELULAR', '3006478590')),
+    previewNumber: previewNumber,
+    numberStatus: 'PREVISTO',
+    issuedAt: now_().toISOString(),
+    advisor: String(session && session.profile && session.profile.name || ''),
+    company: {
+      legalName: getConfigValue_('EMPRESA_RAZON_SOCIAL', 'GRUPO EMPRESARIAL MADERARTE WILLRES SAS'),
+      nit: getConfigValue_('EMPRESA_NIT', '901188291-2'),
+      mobile: getConfigValue_('EMPRESA_CELULAR', '3006478590'),
+      whatsapp: getConfigValue_('EMPRESA_WHATSAPP', '3117476465'),
+      website: getConfigValue_('EMPRESA_WEB', 'www.maderartepopayan.com'),
+      socialHandle: getConfigValue_('EMPRESA_SOCIALES', '@maderartepopayan')
+    }
+  };
+}
+
+function normalizeQuote_(row) {
+  var parsedItems = parseJson_(row.Items_JSON, []);
+  return {
+    number: String(row.Numero_Cotizacion || ''),
+    date: valueDateIso_(row.Fecha),
+    branch: normalizeCode_(row.Sede),
+    document: String(row.Cedula_NIT || ''),
+    client: String(row.Nombre_Cliente || ''),
+    phone: String(row.Telefono || ''),
+    address: String(row.Direccion || ''),
+    description: String(row.Descripcion_Items || ''),
+    observations: String(row.Observaciones || ''),
+    subtotal: valueNumber_(row.Subtotal),
+    discount: valueNumber_(row.Descuento),
+    total: valueNumber_(row.Total_Cotizado),
+    validityDays: valueNumber_(row.Vigencia_Dias),
+    deliveryTime: String(row.Tiempo_Entrega || ''),
+    paymentTerms: String(row.Condiciones_Pago || ''),
+    status: normalizeCode_(row.Estado || 'ACTIVA'),
+    convertedOrder: String(row.Convertida_OP || ''),
+    pdfUrl: String(row.URL_PDF_Cotizacion || ''),
+    clientFolderUrl: String(row.URL_Carpeta_Cliente || ''),
+    monthFolderUrl: String(row.URL_Carpeta_Mes || ''),
+    items: Array.isArray(parsedItems) ? parsedItems : [],
+    advisor: String(row.Firma_Usuario || row.Creado_Por || ''),
+    createdBy: String(row.Creado_Por || ''),
+    createdAt: valueDateIso_(row.Fecha_Registro),
+    updatedBy: String(row.Actualizado_Por || ''),
+    updatedAt: valueDateIso_(row.Actualizado_En)
+  };
+}
+
+function quoteDateInRange_(value, from, to) {
+  if (!from && !to) return true;
+  var timestamp = new Date(value || 0).getTime();
+  if (!isFinite(timestamp)) return false;
+  if (from) {
+    var fromTime = new Date(String(from) + 'T00:00:00-05:00').getTime();
+    if (fromTime && timestamp < fromTime) return false;
+  }
+  if (to) {
+    var toTime = new Date(String(to) + 'T23:59:59.999-05:00').getTime();
+    if (toTime && timestamp > toTime) return false;
+  }
+  return true;
+}
+
+function quoteTrackingSummary_(items) {
+  var summary = { activeCount: 0, activeAmount: 0, radar: { recent: 0, attention: 0, priority: 0 } };
+  var today = Math.floor((now_().getTime() - 18000000) / 86400000);
+  items.forEach(function(item) {
+    if (String(item.convertedOrder || '').trim() || ['CONVERTIDA', 'ARCHIVADA', 'ANULADA'].indexOf(item.status) !== -1) return;
+    summary.activeCount += 1;
+    summary.activeAmount += valueNumber_(item.total);
+    var issued = new Date(item.date || 0).getTime();
+    var age = isFinite(issued) ? Math.max(0, today - Math.floor((issued - 18000000) / 86400000)) : 0;
+    summary.radar[age <= 7 ? 'recent' : age <= 15 ? 'attention' : 'priority'] += 1;
+  });
+  return summary;
+}
+
+function listQuotes_(payload, session) {
+  requirePermission_(session, 'cotizaciones.read');
+  var query = String(payload && payload.query || '').trim().toLowerCase();
+  var branch = normalizeCode_(payload && payload.branch);
+  var status = normalizeCode_(payload && payload.status);
+  var from = String(payload && payload.from || '').trim();
+  var to = String(payload && payload.to || '').trim();
+  var requestedLimit = Number(payload && payload.limit || 100);
+  var offset = Number(payload && payload.offset || 0);
+  if (!isFinite(requestedLimit) || !isFinite(offset) || offset < 0 || offset !== Math.floor(offset)) {
+    throw appError_('QUOTE_PAGE_INVALID', 'La página solicitada no es válida.', 400);
+  }
+  var limit = Math.min(MADERARTE_APP.MAX_PAGE_SIZE, Math.max(1, Math.floor(requestedLimit)));
+  [from, to].forEach(function(day) {
+    if (day && (!/^\d{4}-\d{2}-\d{2}$/.test(day) || isNaN(new Date(day).getTime()) || new Date(day).toISOString().slice(0, 10) !== day)) {
+      throw appError_('QUOTE_DATE_INVALID', 'Selecciona una fecha válida.', 400);
+    }
+  });
+  if (from && to && from > to) throw appError_('QUOTE_DATE_RANGE_INVALID', 'La fecha inicial debe ser anterior o igual a la final.', 400);
+  var allowedBranches = session && session.profile && Array.isArray(session.profile.branches)
+    ? session.profile.branches.map(function(value) { return normalizeCode_(value); }).filter(Boolean)
+    : [];
+
+  if (branch && allowedBranches.length && allowedBranches.indexOf(branch) === -1) {
+    throw appError_('BRANCH_NOT_ALLOWED', 'Tu cuenta no tiene acceso a esa sede.', 403);
+  }
+
+  var items = listRows_('Cotizaciones').map(normalizeQuote_).filter(function(item) {
+    if (allowedBranches.length && allowedBranches.indexOf(item.branch) === -1) return false;
+    if (branch && item.branch !== branch) return false;
+    if (status && item.status !== status) return false;
+    if (!quoteDateInRange_(item.date, from, to)) return false;
+    if (!query) return true;
+    return [item.number, item.document, item.client, item.phone, item.description, item.observations]
+      .join(' ')
+      .toLowerCase()
+      .indexOf(query) !== -1;
+  }).sort(function(a, b) {
+    var dateDifference = (new Date(b.date || b.createdAt || 0).getTime() || 0) - (new Date(a.date || a.createdAt || 0).getTime() || 0);
+    return dateDifference || a.number.localeCompare(b.number) || a.branch.localeCompare(b.branch);
+  });
+
+  return {
+    items: items.slice(offset, offset + limit),
+    total: items.length,
+    amount: items.reduce(function(sum, item) { return sum + valueNumber_(item.total); }, 0),
+    limit: limit,
+    offset: offset,
+    hasMore: offset + limit < items.length,
+    paginationVersion: 1,
+    summary: quoteTrackingSummary_(items)
+  };
+}
+
+// ===== FIN Quotes.gs =====
+
+// ===== INICIO Receipts.gs =====
+// Receipt transactions share the order lock, admission fence and numbering.
+function rcEnabled_() {
+  return typeof osActive_ === 'function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES
+    && getConfigValue_('MODO_OPERACION', '') === 'OPERACION' && optionalProperty_('RECEIPT_SAVE_ENABLED', 'NO') === 'SI'
+    && optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') === 'SI';
+}
+function rcGate_() { if (!rcEnabled_()) throw appError_('COMMERCIAL_WRITES_DISABLED', 'Los recibos están en preparación. El registro de pagos aún no está habilitado.', 403); }
+function rcSession_(context, write) {
+  var session = validateSessionToken_(context.sessionToken, false);
+  requirePermission_(session, 'abonos.read'); requirePermission_(session, 'ordenes.read');
+  if (write) requirePermission_(session, 'abonos.create');
+  return session;
+}
+function rcOrder_(number, session) {
+  var row = mdUnique_(listRows_('Ordenes_Pedido'), 'Numero_OP', number);
+  if (!row) throw appError_('ORDER_NOT_FOUND', 'No se encontró la orden de pedido.', 404);
+  if (!orderBranchReadable_(session, row.Sede)) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
+  return row;
+}
+function rcPosition_(row) {
+  var payments = listRows_('Abonos').filter(function(p) { return p.Numero_OP === row.Numero_OP; });
+  var active = payments.filter(function(p) { return p.Estado_Registro === 'ACTIVO' && p.Afecta_Saldo === 'SI'; });
+  var total = Number(row.Valor_Total), paid = active.reduce(function(sum,p) { return sum + Number(p.Valor_Abono); },0);
+  if (!Number.isSafeInteger(total) || !Number.isSafeInteger(paid) || total < 0 || paid < 0 || paid > total
+    || active.some(function(p) { return !Number.isSafeInteger(Number(p.Valor_Abono)) || Number(p.Valor_Abono) <= 0; })
+    || paid !== Number(row.Abonado_Total) || total - paid !== Number(row.Saldo_Pendiente)) {
+    throw appError_('RECEIPT_BALANCE_INTEGRITY', 'El historial y el saldo requieren conciliación. No se registrará otro pago.', 409);
+  }
+  return { total: total, paid: paid, balance: total-paid,
+    fingerprint: sha256_(JSON.stringify([row.Numero_OP,row.Estado,total,paid,row.Version,payments.map(function(p) { return [p.Numero_Recibo,p.Valor_Abono,p.Estado_Registro,p.Afecta_Saldo]; })])) };
+}
+function rcAccount_(payload, context) {
+  var session = rcSession_(context, false), row = rcOrder_(String(payload.number || ''),session);
+  var position = rcPosition_(row);
+  return { order: normalizeOrder_(row), payments: orderPayments_(row.Numero_OP), position: position,
+    canReceive: row.Estado === 'CONFIRMADA' || row.Estado === 'EN_PROCESO' };
+}
+function rcCapabilities_(context) {
+  var session = rcSession_(context,false), ready = false;
+  try { orderCreationSchemaReady_(); mdSchema_(); ready = true; } catch (error) {}
+  return { contractVersion:1,enabled:Boolean(ready && rcEnabled_() && (session.permissions.indexOf('*')!==-1 || session.permissions.indexOf('abonos.create')!==-1)), documentsReady:ready,photosReady:true };
+}
+function rcPayload_(p) {
+  orderObject_(p,['number','fingerprint','amount','method','concept','reference','internalNote'],'receipt');
+  if (!/^(MP|TP)-[A-Z0-9-]+-[0-9]+$/.test(p.number || '') || !/^[a-f0-9]{64}$/.test(p.fingerprint || '')) orderInputError_('number','Selecciona y actualiza la orden antes de guardar.');
+  return {number:p.number,fingerprint:p.fingerprint,amount:orderInteger_(p.amount,'amount',1),
+    method:orderEnum_(p.method,['EFECTIVO','TRANSFERENCIA','TARJETA','ADDI'],'method'),
+    concept:orderText_(p.concept,'concept',500,true),reference:orderText_(p.reference,'reference',160,false),internalNote:orderText_(p.internalNote,'internalNote',1000,false)};
+}
+function rcReplay_(id,session,fingerprint) {
+  var row=mdUnique_(listRows_('Idempotencia'),'Request_ID',id);
+  if (!row) return null;
+  if (row.Usuario!==session.profile.uid || row.Tipo_Operacion!=='RECIBO_CREAR') throw appError_('REQUEST_ID_CONFLICT','El identificador pertenece a otra operación.',409);
+  var saved=parseJson_(row.Resultado_JSON,null);
+  if (row.Estado!=='CONFIRMADA' || !saved || !saved.result || !saved.fingerprint) throw appError_('ORDER_RECOVERY_REQUIRED','Este pago requiere revisión.',409);
+  rcOrder_(saved.result.orderNumber,session);
+  if (fingerprint && saved.fingerprint!==fingerprint) throw appError_('REQUEST_CONTENT_CHANGED','El intento original tiene otros datos. Recupera su resultado.',409);
+  return saved.result;
+}
+function rcHistory_(payment,row) {
+  var ledger=listRows_('Abonos').filter(function(p){return p.Numero_OP===row.Numero_OP;}).sort(function(a,b){return a._row-b._row;});
+  var index=ledger.findIndex(function(p){return p.Numero_Recibo===payment.Numero_Recibo;});
+  ledger=index===-1?ledger.concat([payment]):ledger.slice(0,index+1);
+  var history=ledger.filter(function(p){return p.Estado_Registro==='ACTIVO' && p.Afecta_Saldo==='SI';}).map(function(p){
+    return {number:p.Numero_Recibo,date:valueDateIso_(p.Fecha_Pago),method:p.Medio_Pago,amount:Number(p.Valor_Abono),balance:Number(p.Saldo_Nuevo)};
+  });
+  var paid=history.reduce(function(sum,p){return sum+p.amount;},0);
+  if(!history.length || history[history.length-1].number!==payment.Numero_Recibo || history.some(function(p){return !Number.isSafeInteger(p.amount)||p.amount<=0;})
+    || paid!==Number(row.Valor_Total)-Number(payment.Saldo_Nuevo))throw appError_('RECEIPT_HISTORY_INTEGRITY','El historial del recibo requiere conciliación.',409);
+  return history;
+}
+function rcPlan_(payment,row,advisor) {
+  var parent=mdUnique_(listRows_('Carpetas_Documentales'),'Clave',mdScope_()+':OP:'+row.Numero_OP+':PAY');
+  if (!parent) throw appError_('DOCUMENT_NOT_PLANNED','Completa primero la documentación de la orden.',409);
+  var document={documentKind:'receipt',issued:true,number:payment.Numero_Recibo,orderNumber:row.Numero_OP,date:payment.Fecha_Pago,
+    branchCode:row.Sede,advisor:advisor,client:{document:String(row.Cedula_NIT),name:row.Nombre_Cliente,phone:row.Telefono,alternatePhone:row.Telefono_Alterno,address:row.Direccion_Entrega,city:row.Ciudad,email:row.Email},
+    amount:payment.Valor_Abono,method:payment.Medio_Pago,concept:payment.Comentario,reference:payment.Referencia,
+    previousBalance:payment.Saldo_Anterior,balance:payment.Saldo_Nuevo,total:Number(row.Valor_Total),history:rcHistory_(payment,row)};
+  if (typeof osActive_==='function' && osActive_()) document.sandbox=OWNER_SANDBOX_CONTEXT_.id;
+  var slot={Archivo_ID:payment.Numero_Recibo+'-PDF-V1',Numero_OP:row.Numero_OP,Tipo:'RECIBO',Nombre:payment.Numero_Recibo+'.pdf',Mime_Type:'application/pdf',
+    File_ID:mdIds_(1)[0],Parent_ID:parent.File_ID,Estado:'PENDIENTE',Version:1,Creado_Por:payment.Registrado_Por,Request_ID:payment.Request_ID,
+    Fecha_Registro:payment.Fecha_Pago,Plan_JSON:JSON.stringify(document)};
+  return {slot:slot,requests:[orderAppendRequest_('Archivos_Orden',[slot]),orderAppendRequest_('Documentos',[{
+    ID_Documento:slot.Archivo_ID,Tipo_Documento:'RECIBO',Numero_Relacionado:row.Numero_OP,Cedula_NIT:row.Cedula_NIT,Nombre_Cliente:row.Nombre_Cliente,
+    Nombre_Archivo:slot.Nombre,File_ID:slot.File_ID,Mime_Type:'application/pdf',Version:1,Activo:'NO',Fecha_Registro:payment.Fecha_Pago,Operador:payment.Registrado_Por,Request_ID:payment.Request_ID
+  }]),orderAppendRequest_('Versiones_Documentos',[{Version_ID:slot.Archivo_ID,Tipo_Documento:'RECIBO',Numero_Relacionado:payment.Numero_Recibo,Version:1,Activo:'NO',File_ID:slot.File_ID,Nombre_Archivo:slot.Nombre,Generado_Por:payment.Registrado_Por,Request_ID:payment.Request_ID}])]};
+}
+function rcCreate_(payload,context) {
+  rcGate_(); var draft=rcPayload_(payload),id=orderRequestId_(context.requestId);
+  var lock=typeof osOperationLock_==='function'?osOperationLock_():LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw appError_('ORDER_SAVE_BUSY','Hay otro guardado en curso. Consulta este intento.',503);
+  try {
+    rcGate_(); var session=rcSession_(context,true); orderCreationSchemaReady_(); mdSchema_();
+    var fingerprint=sha256_(JSON.stringify(draft)),replay=rcReplay_(id,session,fingerprint);
+    if(replay){clearConfirmedOrderFence_();return {saved:true,receipt:replay};}
+    assertNoUnresolvedOrderFence_();
+    var row=rcOrder_(draft.number,session),position=rcPosition_(row);
+    if (['CONFIRMADA','EN_PROCESO'].indexOf(row.Estado)===-1) throw appError_('RECEIPT_ORDER_INACTIVE','Esta orden no admite abonos.',409);
+    if(position.fingerprint!==draft.fingerprint) throw appError_('RECEIPT_BALANCE_CHANGED','El saldo cambió. Actualiza la orden y revisa el importe.',409);
+    if(draft.amount>position.balance) throw appError_('RECEIPT_EXCEEDS_BALANCE','El abono supera el saldo pendiente.',409);
+    var branch=mdUnique_(listRows_('Sedes'),'Sede_ID',row.Sede);
+    if(!branch || branch.Estado!=='ACTIVA')throw appError_('BRANCH_NOT_AVAILABLE','La sede no está disponible.',403);
+    var number=orderNextNumbers_(branch,'RECIBO',1)[0],stamp=now_().toISOString(),uid=session.profile.uid;
+    var payment={Numero_Recibo:number,Numero_OP:row.Numero_OP,Sede:row.Sede,Cedula_NIT:row.Cedula_NIT,Nombre_Cliente:row.Nombre_Cliente,
+      Fecha_Pago:stamp,Valor_Abono:draft.amount,Medio_Pago:draft.method,Referencia:draft.reference,Comentario:draft.concept,Nota_Interna:draft.internalNote,
+      Saldo_Anterior:position.balance,Saldo_Nuevo:position.balance-draft.amount,Registrado_Por:uid,Fecha_Registro:stamp,Estado_Registro:'ACTIVO',Afecta_Saldo:'SI',Request_ID:id};
+    var result={number:number,orderNumber:row.Numero_OP,branch:row.Sede,requestId:id,amount:draft.amount,balance:payment.Saldo_Nuevo};
+    var plan=rcPlan_(payment,row,session.profile.name||'');
+    var requests=[orderAppendRequest_('Abonos',[payment])].concat(orderUpdateRequests_('Ordenes_Pedido',row._row,{
+      Abonado_Total:position.paid+draft.amount,Saldo_Pendiente:payment.Saldo_Nuevo,Ultimo_Abono:draft.amount,Fecha_Ultimo_Abono:stamp,
+      Comentarios_Abonos:[row.Comentarios_Abonos,draft.concept].filter(Boolean).join(' · ').slice(-40000),Actualizado_Por:uid,Actualizado_En:stamp
+    }),orderUpdateRequests_('Sedes',branch._row,{Siguiente_Recibo:Number(branch.Siguiente_Recibo)+1,Actualizado_En:stamp}),plan.requests);
+    requests.push(orderAppendRequest_('Registro_Numeros',[{Registro_ID:id+'-N',Sede:row.Sede,Tipo_Documento:'RECIBO',Numero:number,Estado:'CONFIRMADO',Entidad_ID:number,Reservado_En:stamp,Confirmado_En:stamp,Usuario:uid,Request_ID:id}]));
+    requests.push(orderAppendRequest_('Auditoria',[{ID:id+'-AUD',Fecha:stamp,Usuario:uid,Rol:session.profile.role,Modulo:'ABONOS',Accion:'RECIBO_CREAR',Entidad:'RECIBO',Entidad_ID:number,Resumen:'Abono confirmado en la orden.',Estado:'CONFIRMADA',Request_ID:id,Antes_JSON:JSON.stringify(position),Despues_JSON:JSON.stringify(result),Reversible:'NO',Motivo_No_Reversible:'Corregir mediante movimiento posterior; nunca borrar un pago.'}]));
+    requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:id,Fecha:stamp,Tipo_Operacion:'RECIBO_CREAR',Entidad:'RECIBO',Entidad_ID:number,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:fingerprint,result:result}),Usuario:uid}]));
+    SpreadsheetApp.flush();reserveOrderFence_(id,uid,fingerprint,'RECIBO_CREAR');
+    try {orderAtomicBatch_(requests);} catch(error){throw appError_('RECEIPT_SAVE_UNCERTAIN','Falta confirmar el pago. Consulta el mismo intento antes de registrar otro.',503);}
+    clearConfirmedOrderFence_();return {saved:true,receipt:result};
+  } finally {lock.releaseLock();}
+}
+function rcStatus_(payload,context) {
+  var id=orderRequestId_(payload.requestId),session=rcSession_(context,true);
+  var result=rcReplay_(id,session,'');
+  if(result)return {saved:true,receipt:result};
+  return {saved:false,requestId:id,state:'NO_CONFIRMADO',retrySameRequest:!readOrderFence_()};
+}
+function rcAccess_(number,context,write) {
+  var session=rcSession_(context,write),payment=mdUnique_(listRows_('Abonos'),'Numero_Recibo',number);
+  if(!payment)throw appError_('RECEIPT_NOT_FOUND','No se encontró el recibo.',404);
+  var row=rcOrder_(payment.Numero_OP,session);
+  if(write){rcGate_();if(payment.Estado_Registro!=='ACTIVO')throw appError_('RECEIPT_INACTIVE','El recibo no está activo.',409);}
+  return {session:session,payment:payment,row:row,slot:mdUnique_(mdRows_(row.Numero_OP),'Archivo_ID',number+'-PDF-V1')};
+}
+function rcGet_(payload,context) {
+  var access=rcAccess_(payload.number,context,false),p=access.payment;
+  return {number:p.Numero_Recibo,orderNumber:p.Numero_OP,amount:Number(p.Valor_Abono),method:p.Medio_Pago,date:valueDateIso_(p.Fecha_Pago),concept:p.Comentario,
+    balance:Number(p.Saldo_Nuevo),client:p.Nombre_Cliente,complete:Boolean(access.slot && access.slot.Estado==='LISTO')};
+}
+function rcPreparePdf_(payload,context) {
+  mdInternal_(context);
+  return mdLocked_(function(){
+    var a=rcAccess_(payload.number,context,true);mdSchema_();
+    if(!a.slot){
+      // Initial payments already exist. Reserve ONLY their missing document.
+      var advisor=mdUnique_(listRows_('Usuarios'),'UID_Firebase',a.payment.Registrado_Por);
+      var plan=rcPlan_(a.payment,a.row,advisor && advisor.Nombre_Completo || a.row.Responsable || '');
+      var reserveId='RC-DOC-'+sha256_(payload.number).slice(0,40),fingerprint=sha256_(plan.slot.Plan_JSON),stamp=now_().toISOString(),uid=a.session.profile.uid;
+      plan.requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:reserveId,Fecha:stamp,Tipo_Operacion:'RECIBO_DOCUMENTO_RESERVAR',Entidad:'RECIBO',Entidad_ID:payload.number,Estado:'CONFIRMADA',Usuario:uid,Resultado_JSON:JSON.stringify({fingerprint:fingerprint,result:{requestId:reserveId,number:payload.number}})}]));
+      reserveOrderFence_(reserveId,uid,fingerprint,'RECIBO_DOCUMENTO_RESERVAR');
+      try {orderAtomicBatch_(plan.requests);} catch(error){throw appError_('DOCUMENT_RESERVATION_UNCERTAIN','La reserva del documento requiere confirmación. No se registró otro pago.',503);}
+      clearConfirmedOrderFence_();a.slot=mdUnique_(mdRows_(a.row.Numero_OP),'Archivo_ID',plan.slot.Archivo_ID);
+    }
+    if(a.slot.Estado==='LISTO'){mdDownload_(a.slot);return {number:payload.number,complete:true};}
+    return {number:payload.number,complete:false,id:a.slot.Archivo_ID,planHash:sha256_(a.slot.Plan_JSON),document:parseJson_(a.slot.Plan_JSON,null)};
+  });
+}
+function rcConfirmPdf_(payload,context) {
+  mdInternal_(context);
+  return mdLocked_(function(){
+    var a=rcAccess_(payload.number,context,true),slot=a.slot;
+    if(!slot || slot.Archivo_ID!==payload.id || sha256_(slot.Plan_JSON)!==payload.planHash)throw appError_('DOCUMENT_REVISION_CHANGED','El recibo no coincide con su versión.',409);
+    var bytes=mdDecode_(payload.base64,ORDER_MEDIA_LIMITS_.pdfBytes);
+    if(!mdMagic_(bytes,'application/pdf'))throw appError_('PDF_INVALID','El archivo no es un PDF.',400);
+    var stored=mdStore_(slot,bytes),url=mdFileUrl_(slot.File_ID);
+    var version=mdUnique_(listRows_('Versiones_Documentos'),'Version_ID',slot.Archivo_ID);
+    if(!version)throw appError_('DOCUMENT_INTEGRITY_ERROR','Falta la versión del recibo.',409);
+    orderAtomicBatch_(mdReadyRequests_(slot,stored).concat(orderUpdateRequests_('Abonos',a.payment._row,{URL_PDF_Recibo:url}),orderUpdateRequests_('Versiones_Documentos',version._row,{Activo:'SI',URL:url,Hash_SHA256:mdBytesHash_(stored),Fecha_Generacion:now_().toISOString()})));
+    return {number:payload.number,complete:true};
+  });
+}
+function rcReadPdf_(payload,context) {
+  var a=rcAccess_(payload.number,context,false);
+  if(!a.slot || a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF del recibo todavía está pendiente.',409);
+  return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};
+}
+
+// ===== FIN Receipts.gs =====
+
+// ===== INICIO Remissions.gs =====
+// Dispatch quantity ledger. Loading goods does not certify receipt at destination.
+function rmEnabled_() {
+  return typeof osActive_ === 'function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES
+    && getConfigValue_('MODO_OPERACION','') === 'OPERACION' && optionalProperty_('REMISSION_SAVE_ENABLED','NO') === 'SI'
+    && optionalProperty_('ORDER_DOCUMENTS_ENABLED','NO') === 'SI';
+}
+function rmGate_() { if(!rmEnabled_()) throw appError_('COMMERCIAL_WRITES_DISABLED','Las entregas están en preparación.',403); }
+function rmSession_(context,write) {
+  var s=validateSessionToken_(context.sessionToken,false);
+  requirePermission_(s,'ordenes.read');requirePermission_(s,'remisiones.read');
+  if(write)requirePermission_(s,'remisiones.create');return s;
+}
+function rmFail_(message) { throw appError_('DELIVERY_INTEGRITY',message || 'Las cantidades requieren conciliación antes de otra entrega.',409); }
+function rmPersonKey_(name) { return String(name||'').trim().replace(/\s+/g,' ').toLocaleUpperCase('es'); }
+function rmPeople_(branch,role) {
+  var catalog='REMISION_'+role+'_'+branch,seen={};
+  return listRows_('Catalogos').filter(function(r){return r.Catalogo===catalog&&r.Activo==='SI';}).map(function(r){
+    var key=rmPersonKey_(r.Valor),meta=parseJson_(r.Descripcion,null);
+    if(!key||seen[key]||!meta||typeof meta.favorite!=='boolean'||!Number.isFinite(Date.parse(meta.lastUsed)))rmFail_('El directorio de entregas requiere revisión.');
+    seen[key]=true;return {name:r.Valor,favorite:meta.favorite,lastUsed:meta.lastUsed,mode:meta.mode||''};
+  }).sort(function(a,b){return Number(b.favorite)-Number(a.favorite)||b.lastUsed.localeCompare(a.lastUsed)||a.name.localeCompare(b.name);});
+}
+function rmRemember_(branch,role,person,stamp) {
+  if(!person.name)return [];
+  var catalog='REMISION_'+role+'_'+branch,key=rmPersonKey_(person.name);
+  var matches=listRows_('Catalogos').filter(function(r){return r.Catalogo===catalog&&rmPersonKey_(r.Valor)===key;});
+  if(matches.length>1)rmFail_('El nombre está duplicado en el directorio de entregas.');
+  var value={Catalogo:catalog,Valor:person.name,Orden:0,Activo:'SI',Descripcion:JSON.stringify({favorite:person.favorite,lastUsed:stamp,mode:person.mode||''})};
+  return matches.length?orderUpdateRequests_('Catalogos',matches[0]._row,value):[orderAppendRequest_('Catalogos',[value])];
+}
+function rmHistory_(h,lines) {
+  var slot=mdUnique_(mdRows_(h.Numero_OP),'Archivo_ID',h.Numero_Remision+'-PDF-V1'),doc=slot&&parseJson_(slot.Plan_JSON,null);
+  if(!doc||doc.number!==h.Numero_Remision||doc.orderNumber!==h.Numero_OP||!doc.transporter?.name)rmFail_('Falta el detalle del despacho.');
+  return {number:h.Numero_Remision,date:valueDateIso_(h.Fecha_Remision),dispatcher:doc.dispatcher,transporter:doc.transporter,assistant:doc.assistant,
+    items:lines.filter(function(l){return l.Numero_Remision===h.Numero_Remision;}).map(function(l){return {itemId:l.Item_ID,description:l.Descripcion,quantity:Number(l.Cantidad_Entregada)};})};
+}
+function rmPosition_(row) {
+  var number=row.Numero_OP,items=listRows_('Orden_Items').filter(function(i){return i.Numero_OP===number;});
+  var heads=listRows_('Remisiones').filter(function(r){return r.Numero_OP===number;});
+  var lines=listRows_('Remision_Items').filter(function(r){return r.Numero_OP===number;});
+  var production=listRows_('Produccion').filter(function(p){return p.Numero_OP===number;});
+  var ids={},numbers={},sums={};
+  if(!items.length)rmFail_();
+  items.forEach(function(i){if(!i.Item_ID || ids[i.Item_ID])rmFail_();ids[i.Item_ID]=true;sums[i.Item_ID]=0;});
+  heads.forEach(function(h){
+    if(!h.Numero_Remision || numbers[h.Numero_Remision] || h.Estado!=='CONFIRMADA')rmFail_();
+    var commit=mdUnique_(listRows_('Idempotencia'),'Request_ID',h.Request_ID);
+    if(!commit || commit.Estado!=='CONFIRMADA' || commit.Tipo_Operacion!=='REMISION_CREAR')rmFail_();
+    numbers[h.Numero_Remision]={};
+  });
+  lines.forEach(function(l){
+    var seen=numbers[l.Numero_Remision],q=Number(l.Cantidad_Entregada);
+    if(!seen || !ids[l.Item_ID] || seen[l.Item_ID] || !Number.isSafeInteger(q) || q<=0)rmFail_();
+    seen[l.Item_ID]=true;sums[l.Item_ID]+=q;
+  });
+  if(heads.some(function(h){return !Object.keys(numbers[h.Numero_Remision]).length;}))rmFail_();
+  var view=items.map(function(i){
+    var quantity=Number(i.Cantidad),cancelled=Number(i.Cantidad_Desistida||0),delivered=sums[i.Item_ID],pending=quantity-cancelled-delivered;
+    if(!Number.isSafeInteger(quantity)||quantity<=0||!Number.isSafeInteger(cancelled)||cancelled<0||!Number.isSafeInteger(pending)||pending<0
+      ||Number(i.Cantidad_Entregada)!==delivered||Number(i.Cantidad_Pendiente)!==pending)rmFail_();
+    var hasProduction=production.some(function(p){return !p.Item_ID || p.Item_ID===i.Item_ID;});
+    var tracked=typeof ptView_==='function'?ptView_(i,production):null;
+    var available=tracked&&!tracked.legacy?tracked.available:(hasProduction?0:i.Disponibilidad==='DISPONIBLE'?pending:0);
+    var blocked=cancelled?'El mueble tiene un ajuste que requiere revisión.':tracked&&tracked.legacy?'Requiere revisión de producción antes de entregar.':available<1?'La disponibilidad requiere revisión operativa.':'';
+    return {id:i.Item_ID,description:i.Descripcion,quantity:quantity,delivered:delivered,cancelled:cancelled,pending:pending,available:available,unit:i.Unidad||'UN',blocked:blocked};
+  });
+  return {items:view,history:heads.map(function(h){return rmHistory_(h,lines);}),
+    fingerprint:sha256_(JSON.stringify([number,row.Estado,row.Version,items.map(function(i){return [i.Item_ID,i.Cantidad,i.Cantidad_Entregada,i.Cantidad_Pendiente,i.Cantidad_Desistida,i.Version,i.Disponibilidad];}),heads,lines,production]))};
+}
+function rmAccount_(payload,context) {
+  var s=rmSession_(context,false),row=rcOrder_(String(payload.number||''),s),position=rmPosition_(row);
+  return {order:normalizeOrder_(row),position:position,dispatcher:s.profile.name||'',people:{transporters:rmPeople_(row.Sede,'TRANSPORTADOR'),assistants:rmPeople_(row.Sede,'OPERARIO')},canDeliver:['CONFIRMADA','EN_PROCESO'].indexOf(row.Estado)!==-1};
+}
+function rmCapabilities_(context) {
+  var s=rmSession_(context,false),ready=false;try {orderCreationSchemaReady_();mdSchema_();ready=true;}catch(e){}
+  return {contractVersion:1,enabled:Boolean(ready && rmEnabled_() && hasPermission_(s.permissions,'remisiones.create')),photosReady:true,documentsReady:ready};
+}
+function rmPayload_(p) {
+  orderObject_(p,['number','fingerprint','items','transporter','assistant','notes','physicalCheck'],'remission');
+  if(!/^(MP|TP)-[A-Z0-9-]+-[0-9]+$/.test(p.number||'') || !/^[a-f0-9]{64}$/.test(p.fingerprint||''))orderInputError_('number','Actualiza la orden antes de confirmar.');
+  if(p.physicalCheck!==true)orderInputError_('physicalCheck','Confirma la verificación física de esta entrega.');
+  if(!Array.isArray(p.items)||!p.items.length||p.items.length>100)orderInputError_('items','Selecciona al menos un mueble.');
+  var seen={};var selected=p.items.map(function(i){
+    orderObject_(i,['itemId','quantity'],'items');var id=orderText_(i.itemId,'itemId',120,true);
+    if(seen[id])orderInputError_('items','No repitas un mueble.');seen[id]=true;
+    return {itemId:id,quantity:orderInteger_(i.quantity,'quantity',1)};
+  });
+  orderObject_(p.transporter,['name','mode','favorite'],'transporter');orderObject_(p.assistant,['name','favorite'],'assistant');
+  if(['PIALLERO','PROPIETARIO','OTRO'].indexOf(p.transporter.mode)===-1||typeof p.transporter.favorite!=='boolean'||typeof p.assistant.favorite!=='boolean')orderInputError_('transporter','Revisa quién transporta.');
+  return {number:p.number,fingerprint:p.fingerprint,items:selected,
+    transporter:{name:orderText_(p.transporter.name,'transporter',120,true).replace(/\s+/g,' '),mode:p.transporter.mode,favorite:p.transporter.favorite},
+    assistant:{name:orderText_(p.assistant.name,'assistant',120,false).replace(/\s+/g,' '),favorite:p.assistant.favorite},
+    notes:orderText_(p.notes,'notes',2000,false),physicalCheck:true};
+}
+function rmReplay_(id,s,fingerprint) {
+  var row=mdUnique_(listRows_('Idempotencia'),'Request_ID',id);if(!row)return null;
+  if(row.Usuario!==s.profile.uid||row.Tipo_Operacion!=='REMISION_CREAR')throw appError_('REQUEST_ID_CONFLICT','El intento pertenece a otra operación.',409);
+  var saved=parseJson_(row.Resultado_JSON,null);
+  if(row.Estado!=='CONFIRMADA'||!saved||!saved.result||!saved.fingerprint)throw appError_('ORDER_RECOVERY_REQUIRED','Consulta la entrega pendiente de confirmación.',409);
+  rcOrder_(saved.result.orderNumber,s);
+  if(fingerprint&&saved.fingerprint!==fingerprint)throw appError_('REQUEST_CONTENT_CHANGED','El intento original tiene otros datos.',409);return saved.result;
+}
+function rmPlan_(header,row,selected,s,draft) {
+  var parent=mdUnique_(listRows_('Carpetas_Documentales'),'Clave',mdScope_()+':OP:'+row.Numero_OP+':DELIVERY');
+  if(!parent)throw appError_('DOCUMENT_NOT_PLANNED','Completa primero el archivo de la OP.',409);
+  var doc={documentKind:'remission',issued:true,number:header.Numero_Remision,orderNumber:row.Numero_OP,date:header.Fecha_Remision,branchCode:row.Sede,
+    dispatcher:s.profile.name||'',transporter:{name:draft.transporter.name,mode:draft.transporter.mode},assistant:draft.assistant.name,notes:header.Observaciones,
+    client:{document:String(row.Cedula_NIT),name:row.Nombre_Cliente,phone:row.Telefono,alternatePhone:row.Telefono_Alterno,address:row.Direccion_Entrega,city:row.Ciudad},items:selected};
+  if(typeof osActive_==='function'&&osActive_())doc.sandbox=OWNER_SANDBOX_CONTEXT_.id;
+  var slot={Archivo_ID:header.Numero_Remision+'-PDF-V1',Numero_OP:row.Numero_OP,Tipo:'REMISION',Nombre:header.Numero_Remision+'.pdf',Mime_Type:'application/pdf',
+    File_ID:mdIds_(1)[0],Parent_ID:parent.File_ID,Estado:'PENDIENTE',Version:1,Creado_Por:s.profile.uid,Request_ID:header.Request_ID,Fecha_Registro:header.Fecha_Remision,Plan_JSON:JSON.stringify(doc)};
+  if(slot.Plan_JSON.length>45000)orderInputError_('items','La remisión es demasiado extensa. Divide la entrega en documentos.');
+  return {slot:slot,requests:[orderAppendRequest_('Archivos_Orden',[slot]),orderAppendRequest_('Documentos',[{
+    ID_Documento:slot.Archivo_ID,Tipo_Documento:'REMISION',Numero_Relacionado:row.Numero_OP,Cedula_NIT:row.Cedula_NIT,Nombre_Cliente:row.Nombre_Cliente,Nombre_Archivo:slot.Nombre,
+    File_ID:slot.File_ID,Mime_Type:slot.Mime_Type,Version:1,Activo:'NO',Fecha_Registro:header.Fecha_Remision,Operador:s.profile.uid,Request_ID:header.Request_ID}]),orderAppendRequest_('Versiones_Documentos',[{
+    Version_ID:slot.Archivo_ID,Tipo_Documento:'REMISION',Numero_Relacionado:header.Numero_Remision,Version:1,Activo:'NO',File_ID:slot.File_ID,Nombre_Archivo:slot.Nombre,Generado_Por:s.profile.uid,Request_ID:header.Request_ID}])]};
+}
+function rmCreate_(payload,context) {
+  rmGate_();var draft=rmPayload_(payload),id=orderRequestId_(context.requestId),lock=osOperationLock_();
+  if(!lock.tryLock(5000))throw appError_('ORDER_SAVE_BUSY','Hay otro guardado en curso. Consulta el mismo intento.',503);
+  try {
+    rmGate_();var s=rmSession_(context,true);orderCreationSchemaReady_();mdSchema_();
+    var fingerprint=sha256_(JSON.stringify(draft)),replay=rmReplay_(id,s,fingerprint);
+    if(replay){clearConfirmedOrderFence_();return {saved:true,remission:replay};}assertNoUnresolvedOrderFence_();
+    var row=rcOrder_(draft.number,s),position=rmPosition_(row);
+    if(['CONFIRMADA','EN_PROCESO'].indexOf(row.Estado)===-1)throw appError_('DELIVERY_ORDER_INACTIVE','La orden no admite entregas.',409);
+    if(position.fingerprint!==draft.fingerprint)throw appError_('DELIVERY_CHANGED','La orden o sus entregas cambiaron. Actualiza y revisa la selección.',409);
+    var selected=draft.items.map(function(x){
+      var i=position.items.find(function(i){return i.id===x.itemId;});
+      if(!i||x.quantity>i.pending)throw appError_('DELIVERY_EXCEEDS_PENDING','La cantidad supera lo pendiente o el mueble no pertenece a la OP.',409);
+      if(x.quantity>i.available)throw appError_('DELIVERY_NOT_READY','La cantidad supera las unidades disponibles en bodega.',409);
+      if(i.blocked)throw appError_('DELIVERY_NOT_READY',i.blocked,409);
+      return {itemId:i.id,description:i.description,quantity:x.quantity,unit:i.unit,pendingAfter:i.pending-x.quantity};
+    });
+    var branch=mdUnique_(listRows_('Sedes'),'Sede_ID',row.Sede);
+    if(!branch||branch.Estado!=='ACTIVA')throw appError_('BRANCH_NOT_AVAILABLE','La sede no está activa.',403);
+    var next=Number(branch.Siguiente_Remision),prefix=String(branch.Prefijo_Remision||'');
+    if(!Number.isSafeInteger(next)||!Number.isSafeInteger(next+1)||next<1||!new RegExp('^'+row.Sede+'(?:-[A-Z0-9]+)+$').test(prefix))throw appError_('NUMBERING_INVALID','Revisa la numeración de remisiones.',503);
+    var number=prefix+'-'+String(next).padStart(4,'0');
+    if(listRows_('Registro_Numeros').some(function(n){return n.Numero===number;})||listRows_('Remisiones').some(function(n){return n.Numero_Remision===number;}))rmFail_('El número de remisión ya existe.');
+    var stamp=now_().toISOString(),uid=s.profile.uid;
+    var header={Numero_Remision:number,Numero_OP:row.Numero_OP,Sede:row.Sede,Cedula_NIT:row.Cedula_NIT,Nombre_Cliente:row.Nombre_Cliente,Fecha_Remision:stamp,
+      Persona_Recibe:'',Observaciones:draft.notes,Estado:'CONFIRMADA',URL_Carpeta_Cliente:row.URL_Carpeta_Cliente,Responsable:s.profile.name||'',Fecha_Registro:stamp,Request_ID:id};
+    var result={number:number,orderNumber:row.Numero_OP,branch:row.Sede,requestId:id,quantity:selected.reduce(function(n,i){return n+i.quantity;},0)};
+    var plan=rmPlan_(header,row,selected,s,draft);
+    var requests=[orderAppendRequest_('Remisiones',[header]),orderAppendRequest_('Remision_Items',selected.map(function(i,index){return {Remision_Item_ID:number+'-I-'+(index+1),Numero_Remision:number,Numero_OP:row.Numero_OP,Item_ID:i.itemId,Descripcion:i.description,Cantidad_Entregada:i.quantity,Unidad:i.unit,Fecha_Registro:stamp};}))].concat(plan.requests);
+    var source=listRows_('Orden_Items');selected.forEach(function(i){var stored=mdUnique_(source,'Item_ID',i.itemId);
+      requests=requests.concat(orderUpdateRequests_('Orden_Items',stored._row,{Cantidad_Entregada:Number(stored.Cantidad_Entregada)+i.quantity,Cantidad_Pendiente:i.pendingAfter,Estado_Item:i.pendingAfter===0?'ENTREGADO':'ENTREGA_PARCIAL',Version:Number(stored.Version)+1,Actualizado_En:stamp}));
+    });
+    requests=requests.concat(orderUpdateRequests_('Ordenes_Pedido',row._row,{Version:Number(row.Version)+1,Actualizado_Por:uid,Actualizado_En:stamp}),orderUpdateRequests_('Sedes',branch._row,{Siguiente_Remision:next+1,Actualizado_En:stamp}),rmRemember_(row.Sede,'TRANSPORTADOR',draft.transporter,stamp),rmRemember_(row.Sede,'OPERARIO',draft.assistant,stamp));
+    requests.push(orderAppendRequest_('Registro_Numeros',[{Registro_ID:id+'-N',Sede:row.Sede,Tipo_Documento:'REMISION',Numero:number,Estado:'CONFIRMADO',Entidad_ID:number,Reservado_En:stamp,Confirmado_En:stamp,Usuario:uid,Request_ID:id}]));
+    requests.push(orderAppendRequest_('Auditoria',[{ID:id+'-AUD',Fecha:stamp,Usuario:uid,Rol:s.profile.role,Modulo:'REMISIONES',Accion:'REMISION_CREAR',Entidad:'REMISION',Entidad_ID:number,Resumen:'Salida del almacén con verificación física declarada por quien despacha.',Estado:'CONFIRMADA',Request_ID:id,Antes_JSON:JSON.stringify({fingerprint:position.fingerprint,items:position.items}),Despues_JSON:JSON.stringify({result:result,items:selected,dispatcher:header.Responsable,transporter:draft.transporter,assistant:draft.assistant,physicalCheck:true}),Reversible:'NO',Motivo_No_Reversible:'Una devolución física requiere su propio movimiento.'}]));
+    requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:id,Fecha:stamp,Tipo_Operacion:'REMISION_CREAR',Entidad:'REMISION',Entidad_ID:number,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:fingerprint,result:result}),Usuario:uid}]));
+    SpreadsheetApp.flush();reserveOrderFence_(id,uid,fingerprint,'REMISION_CREAR');
+    try{orderAtomicBatch_(requests);}catch(e){throw appError_('REMISSION_SAVE_UNCERTAIN','Falta confirmar esta entrega. Consulta el mismo intento; no crees otra remisión.',503);}
+    clearConfirmedOrderFence_();return {saved:true,remission:result};
+  }finally{lock.releaseLock();}
+}
+function rmStatus_(payload,context) {
+  var id=orderRequestId_(payload.requestId),s=rmSession_(context,true),result=rmReplay_(id,s,'');
+  return result?{saved:true,remission:result}:{saved:false,requestId:id,state:'NO_CONFIRMADO',retrySameRequest:!readOrderFence_()};
+}
+function rmAccess_(number,context,write) {
+  var s=rmSession_(context,write),h=mdUnique_(listRows_('Remisiones'),'Numero_Remision',number);
+  if(!h)throw appError_('REMISSION_NOT_FOUND','No se encontró la remisión.',404);
+  var row=rcOrder_(h.Numero_OP,s);if(write){rmGate_();if(h.Estado!=='CONFIRMADA')throw appError_('REMISSION_INACTIVE','La remisión no está activa.',409);}
+  var slot=mdUnique_(mdRows_(row.Numero_OP),'Archivo_ID',number+'-PDF-V1');
+  if(!slot)rmFail_('Falta la versión de la remisión.');return {header:h,row:row,slot:slot,session:s};
+}
+function rmGet_(payload,context) {var a=rmAccess_(payload.number,context,false);return {number:payload.number,orderNumber:a.row.Numero_OP,document:parseJson_(a.slot.Plan_JSON,null),complete:a.slot.Estado==='LISTO'};}
+function rmPreparePdf_(payload,context) {
+  mdInternal_(context);return mdLocked_(function(){var a=rmAccess_(payload.number,context,true);mdSchema_();
+    if(a.slot.Estado==='LISTO'){mdDownload_(a.slot);return {number:payload.number,complete:true};}
+    return {number:payload.number,complete:false,id:a.slot.Archivo_ID,planHash:sha256_(a.slot.Plan_JSON),document:parseJson_(a.slot.Plan_JSON,null)};
+  });
+}
+function rmConfirmPdf_(payload,context) {
+  mdInternal_(context);return mdLocked_(function(){var a=rmAccess_(payload.number,context,true),slot=a.slot;
+    if(slot.Archivo_ID!==payload.id||sha256_(slot.Plan_JSON)!==payload.planHash)throw appError_('DOCUMENT_REVISION_CHANGED','La remisión no coincide con su versión.',409);
+    var bytes=mdDecode_(payload.base64,ORDER_MEDIA_LIMITS_.pdfBytes);if(!mdMagic_(bytes,'application/pdf'))throw appError_('PDF_INVALID','El archivo no es un PDF.',400);
+    var stored=mdStore_(slot,bytes),url=mdFileUrl_(slot.File_ID),version=mdUnique_(listRows_('Versiones_Documentos'),'Version_ID',slot.Archivo_ID);
+    if(!version)rmFail_();orderAtomicBatch_(mdReadyRequests_(slot,stored).concat(orderUpdateRequests_('Remisiones',a.header._row,{URL_PDF_Remision:url}),orderUpdateRequests_('Versiones_Documentos',version._row,{Activo:'SI',URL:url,Hash_SHA256:mdBytesHash_(stored),Fecha_Generacion:now_().toISOString()})));
+    return {number:payload.number,complete:true};
+  });
+}
+function rmReadPdf_(payload,context) {var a=rmAccess_(payload.number,context,false);if(a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF está pendiente.',409);return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};}
+
+// ===== FIN Remissions.gs =====
+
+// ===== INICIO Router.gs =====
+var PUBLIC_ACTIONS_ = ['PING', 'AUTH_LOGIN', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR'];
+
+function doGet() {
+  return jsonOutput_(success_('APP_SCRIPT_OK', 'Maderarte Apps Script disponible.', { version: MADERARTE_APP.VERSION }, '', 200));
+}
+
+function validateProxy_(body) {
+  var expected = requiredProperty_('MADERARTE_PROXY_TOKEN');
+  if (!secureEquals_(body && body.proxyToken, expected)) throw appError_('PROXY_REJECTED', 'Solicitud no autorizada.', 403);
+}
+
+function routeAction_(action, payload, context) {
+  switch (action) {
+    case 'PING': return { version: MADERARTE_APP.VERSION, name: MADERARTE_APP.NAME };
+    case 'AUTH_LOGIN': return login_(payload, context.proxyMeta);
+    case 'AUTH_SESSION_VALIDATE': return validateSession_(context.sessionToken);
+    case 'AUTH_LOGOUT': return logout_(context.sessionToken);
+    case 'INVITACION_VALIDAR': return validateInvitation_(payload);
+    case 'INVITACION_ACTIVAR': return activateInvitation_(payload, context.proxyMeta);
+    case 'DASHBOARD_RESUMEN': return dashboardSummary_(context.session);
+    case 'CLIENTES_LISTAR': return listClients_(payload, context.session);
+    case 'CLIENTE_OBTENER': return getClient_(payload, context.session);
+    case 'COTIZACION_META': return quoteMeta_(payload, context.session);
+    case 'COTIZACION_PREPARAR_PEDIDO': return prepareQuoteOrder_(payload, context.session);
+    case 'COTIZACIONES_LISTAR': return listQuotes_(payload, context.session);
+    case 'COTIZACION_OBTENER': return getQuoteDetail_(payload, context.session);
+    case 'COTIZACION_CAPACIDADES': return quoteCreationCapabilities_(context.session);
+    case 'COTIZACION_CREAR': return createQuote_(payload, context);
+    case 'COTIZACION_CREACION_ESTADO': return quoteCreationStatus_(payload, context);
+    case 'COTIZACION_DOCUMENTOS_ESTADO': return qmdStatus_(payload.number, context);
+    case 'COTIZACION_FOTO_GUARDAR': return qmdUploadPhoto_(payload, context);
+    case 'COTIZACION_FOTO_LEER': return qmdReadPhoto_(payload, context);
+    case 'COTIZACION_PDF_LEER': return qmdReadPdf_(payload, context);
+    case 'INTERNO_COTIZACION_DOCUMENTO_PREPARAR': return qmdPreparePdf_(payload, context);
+    case 'INTERNO_COTIZACION_DOCUMENTO_CONFIRMAR': return qmdConfirmPdf_(payload, context);
+    case 'REMISION_CAPACIDADES': return rmCapabilities_(context);
+    case 'REMISION_CUENTA': return rmAccount_(payload, context);
+    case 'REMISION_CREAR': return rmCreate_(payload, context);
+    case 'REMISION_CREACION_ESTADO': return rmStatus_(payload, context);
+    case 'REMISION_OBTENER': return rmGet_(payload, context);
+    case 'REMISION_PDF_LEER': return rmReadPdf_(payload, context);
+    case 'INTERNO_REMISION_DOCUMENTO_PREPARAR': return rmPreparePdf_(payload, context);
+    case 'INTERNO_REMISION_DOCUMENTO_CONFIRMAR': return rmConfirmPdf_(payload, context);
+    case 'RECIBO_CAPACIDADES': return rcCapabilities_(context);
+    case 'RECIBO_CUENTA': return rcAccount_(payload, context);
+    case 'RECIBO_CREAR': return rcCreate_(payload, context);
+    case 'RECIBO_CREACION_ESTADO': return rcStatus_(payload, context);
+    case 'RECIBO_OBTENER': return rcGet_(payload, context);
+    case 'RECIBO_PDF_LEER': return rcReadPdf_(payload, context);
+    case 'INTERNO_RECIBO_DOCUMENTO_PREPARAR': return rcPreparePdf_(payload, context);
+    case 'INTERNO_RECIBO_DOCUMENTO_CONFIRMAR': return rcConfirmPdf_(payload, context);
+    case 'PRODUCCION_CUENTA': return ptAccount_(payload, context);
+    case 'PRODUCCION_REGISTRAR': return ptRecord_(payload, context);
+    case 'PRODUCCION_REGISTRO_ESTADO': return ptStatus_(payload, context);
+    case 'ORDENES_LISTAR': return listOrders_(payload, context.session);
+    case 'ORDEN_OBTENER': return getOrder_(payload, context.session);
+    case 'ORDEN_CREAR': return createOrder_(payload, context);
+    case 'ORDEN_CREACION_ESTADO': return orderCreationStatus_(payload, context);
+    case 'ORDEN_CAPACIDADES': return orderCreationCapabilities_(context.session);
+    case 'SISTEMA_DOCUMENTOS_DIAGNOSTICO': requirePermission_(context.session, 'config.read'); return diagnosticarDocumentosMaddy();
+    case 'ORDEN_DOCUMENTOS_ESTADO': return mdPhotoStatus_(payload.number, context);
+    case 'ORDEN_FOTO_GUARDAR': return mdUploadPhoto_(payload, context);
+    case 'ORDEN_PDF_LEER': return mdReadPdf_(payload, context);
+    case 'ORDEN_FOTO_LEER': return mdReadPhoto_(payload, context);
+    case 'INTERNO_DOCUMENTO_PREPARAR': return mdPreparePdf_(payload, context);
+    case 'INTERNO_DOCUMENTO_CONFIRMAR': return mdConfirmPdf_(payload, context);
+    case 'PRUEBA_ESTADO': return osStatus_(context);
+    case 'PRUEBA_INICIAR': return osStart_(payload, context);
+    case 'PRUEBA_LIMPIAR': return osClean_(payload, context);
+    case 'SISTEMA_ESTADO': return systemState_(context.session);
+    case 'USUARIOS_LISTAR': return listUsers_(context.session);
+    case 'INVITACION_CREAR': return createInvitation_(payload, context.session);
+    default: throw appError_('ACTION_NOT_FOUND', 'La acción solicitada no existe.', 404);
+  }
+}
+
+function doPost(event) {
+  var requestId = '';
+  try {
+    var raw = event && event.postData ? event.postData.contents : '';
+    var body = parseJson_(raw, null);
+    if (!body || typeof body !== 'object') throw appError_('INVALID_JSON', 'El cuerpo de la solicitud no es válido.', 400);
+    requestId = String(body.requestId || '').trim().slice(0, 160);
+    var action = normalizeCode_(body.action);
+    if (!action) throw appError_('ACTION_REQUIRED', 'Falta la acción solicitada.', 400);
+    validateProxy_(body);
+
+    var context = {
+      requestId: requestId,
+      sessionToken: String(body.sessionToken || ''),
+      proxyMeta: body.proxyMeta && typeof body.proxyMeta === 'object' ? body.proxyMeta : {},
+      session: null
+    };
+    if (PUBLIC_ACTIONS_.indexOf(action) === -1) context.session = validateSessionToken_(context.sessionToken, true);
+    var run = function() { return routeAction_(action, body.payload && typeof body.payload === 'object' ? body.payload : {}, context); };
+    var data = Object.prototype.hasOwnProperty.call(body, 'sandboxId') ? osAdmit_(body.sandboxId, action, context, run) : run();
+    return jsonOutput_(success_('OK', 'Operación completada.', data, requestId, 200));
+  } catch (error) {
+    return jsonOutput_(failure_(error, requestId));
+  }
+}
+
+// ===== FIN Router.gs =====
+
+// FIN DEL CEREBRO COMPLETO
