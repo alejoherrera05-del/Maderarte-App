@@ -101,9 +101,10 @@ try:
             page.get_by_role('button',name='Abrir PDF',exact=True).wait_for()
             page.locator('[data-order-section="0"]').click()
             for i,node in enumerate(page.locator('[data-order-item]').all(),1):
+                if page.locator('[data-list-back]').is_visible(): page.locator('[data-list-back]').click()
                 page.locator('[data-select-item]').nth(i-1).click()
                 node.get_by_role('tab',name='Referencias',exact=True).click()
-                node.locator('summary').click();img=node.locator('.od-photo-grid img');img.wait_for();page.wait_for_function('(el)=>el.complete&&el.naturalWidth>0',arg=img.element_handle())
+                node.locator('.od-photo-details summary').click();img=node.locator('.od-photo-grid img');img.wait_for();page.wait_for_function('(el)=>el.complete&&el.naturalWidth>0',arg=img.element_handle())
                 expected=next(f for f in state['files'] if f['clientLineId']==str(i))
                 assert hashlib.sha256(base64.b64decode(img.get_attribute('src').split(',')[1])).hexdigest()==expected['sha256']
             assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')

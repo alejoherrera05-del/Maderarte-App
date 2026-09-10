@@ -10,6 +10,8 @@ export async function bindProductionTracking(root,data,session) {
   root.querySelector('.ow-route')?.insertBefore(button,root.querySelector('.ow-maddy'));
   const dialog=document.createElement('dialog');dialog.className='pt-dialog';dialog.setAttribute('aria-label','Actualizar estado del mueble');root.append(dialog);
   let pending;try{pending=JSON.parse(sessionStorage.getItem(key)||'null');}catch{}
+  function syncAction(){const index=Number(root.querySelector('[data-select-item][aria-pressed=true]')?.dataset.selectItem||0),item=data.items[index];button.hidden=!pending&&(!item||item.fulfillment==='DISPONIBLE'||item.pending<=0||item.cancelled>0||item.status==='ANULADO'||data.order.status==='ANULADA'||item.tracking?.legacy);}
+  root.querySelectorAll('[data-select-item],[data-item-prev],[data-item-next]').forEach(el=>el.addEventListener('click',syncAction));syncAction();
   function open() {
     const index=Number(root.querySelector('[data-select-item][aria-pressed=true]')?.dataset.selectItem||0),item=data.items[index],snapshot=account.items.find(i=>i.id===item.id);
     if(!snapshot)return;

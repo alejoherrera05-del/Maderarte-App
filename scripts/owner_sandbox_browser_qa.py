@@ -73,6 +73,7 @@ try:
             page.get_by_role('button',name='Abrir PDF',exact=True).wait_for(timeout=30000)
             page.locator('[data-order-section="0"]').click()
             for index,details in enumerate(page.locator('.od-photo-details').all()):
+                if page.locator('[data-list-back]').is_visible(): page.locator('[data-list-back]').click()
                 page.locator('[data-select-item]').nth(index).click()
                 page.locator('[data-detail-index]').nth(index).get_by_role('tab',name='Referencias',exact=True).click()
                 details.locator('summary').click()
