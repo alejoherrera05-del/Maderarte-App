@@ -1,15 +1,15 @@
-# OP Maddy — revisión del modelo 3
+# OP Maddy — revisión del espacio de muebles
 
-Referencia: modelo 3 adjunto y aprobado por el propietario; excepción explícita de encabezado claro de la aplicación. Implementación 0c3a358, PR #53, rama feat/maddy-order-workbench.
+Referencia aprobada: exec-61d98a67-10b0-499a-9142-fcdb127ff9fb.png, propuesta con lista amplia de muebles, detalle individual y panel grafito de seguimiento. Se comparó junto a capturas de escritorio y móvil de GitHub Actions 34521557155 (1916, 1366, 390 y 320 px).
 
-Se abrieron juntos el modelo y las capturas de GitHub Actions 34416886414, expediente-1366 y expediente-390. La referencia tiene 1487 px de ancho; las capturas operativas tienen datos sintéticos distintos y no incluyen fotografías. Se compara composición y adaptación, no igualdad de contenido ni de píxeles.
+Se mantuvieron el encabezado oficial claro, gris #f5f5f4, grafito #282624, cobre #b6672b y tipografía del sistema. Maddy conserva el recurso aprobado, sin regeneración. Se crearon nueve SVG de categorías; Sofá/Sala comparten el icono correspondiente. La categoría guardada define el icono y las fotografías privadas se muestran en el detalle.
 
-Iteración inicial: recorrido demasiado alto y espacio vacío de fotografía excesivo. Corrección: detalle breve por etapa, explicación completa en el diálogo existente; menor altura cuando no hay referencia. Capturas posteriores confirman la reducción sin truncar contenido.
+Primera revisión: demasiado espacio en el panel de seguimiento y figura pequeña; resumen móvil demasiado alto. Se corrigieron tamaño y anclaje de Maddy, proporciones del panel y resumen móvil. Las capturas posteriores muestran separación de lista y detalle en móvil, sin desbordamiento horizontal a 320/390 px. El recorrido completo se expande a petición; no se rellenan fotografías ausentes.
 
-Selector de muebles, detalle central con pestañas y recorrido grafito conservan la dirección elegida. Encabezado claro, recursos de marca existentes y tipografía del sistema. En móvil se apilan las regiones; las suites verifican 320/390 y 1366/1916 sin desbordamiento. Las imágenes del mueble proceden exclusivamente de la API privada; no se sustituyen por fotos inventadas. Maddy usa el recurso aprobado.
+Adaptación funcional respecto a la imagen: se conservan los importes reales, las pestañas de referencias/notas, y un botón de actualización manual por cantidades. Las pestañas superiores separan cliente, abonos, remisiones y documentos. Se conservan los identificadores completos de OP y el aviso de prueba cuando corresponde. No se inventan etapas cumplidas ni fotografías.
 
-Verificación funcional: selección cambia detalle y recorrido; pestañas admiten teclado; acciones respetan permisos; referencias privadas reabiertas conservan SHA256; PDF, abonos y remisiones continúan accesibles. Las fases sin evidencia dicen «Sin registro». Despacho no implica recepción.
+La suite de remisiones y producción pasó en GitHub: entrada directa desde OP, regreso al mueble seleccionado, selección de cantidades, recorrido y recepción parcial. npm test pasó. Se actualizaron las pruebas documentales para navegar las pestañas y volver a la lista en móvil; el resultado completo está en los checks de PR #57.
 
-Limitación de contenido: la OP de revisión existente no tiene fotos; se ve el estado vacío diseñado. La prueba documental ejercita imágenes sintéticas y su integridad. No se afirma equivalencia fotográfica con el sofá ilustrativo de la propuesta.
+Límite de esta entrega: el registro conserva eventos; no permite borrar o corregir movimientos existentes. La habilitación comercial depende de los controles operativos existentes; el ensayo del propietario permite verificar la escritura sin activar ventas reales.
 
-final result: passed
+Visual result: passed — composición y adaptación responsive verificadas contra la referencia; no se afirma igualdad de píxeles con la imagen generada.
