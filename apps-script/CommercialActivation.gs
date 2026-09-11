@@ -24,8 +24,8 @@ function commercialLaunchCheck_() {
   var next = ['MP', 'TP'].map(function(id) {
     var rows = listRows_('Sedes').filter(function(r) { return r.Sede_ID === id; });
     if (rows.length !== 1) throw appError_('LAUNCH_BRANCH_INVALID', 'Hay sedes repetidas.', 409);
-    var r = rows[0], value = Number(r.Siguiente_Remision), prefix = String(r.Prefijo_Remision || '');
-    if (!Number.isSafeInteger(value) || value < 1 || !new RegExp('^' + id + '-[A-Z0-9-]+$').test(prefix)) throw appError_('NUMBERING_NOT_READY', 'Revisa el consecutivo de remisiones.', 409);
+    var r = rows[0], value = Number(r.Siguiente_Remision), prefix = String(r.Prefijo_Remision || '').trim().replace(/-+$/, '');
+    if (!Number.isSafeInteger(value) || !Number.isSafeInteger(value + 1) || value < 1 || !new RegExp('^' + id + '(?:-[A-Z0-9]+)+$').test(prefix)) throw appError_('NUMBERING_NOT_READY', 'Revisa el consecutivo de remisiones.', 409);
     var remission = prefix + '-' + String(value).padStart(4, '0');
     if (seen[remission] || listRows_('Remisiones').some(function(x) { return x.Numero_Remision === remission; })) throw appError_('NUMBER_ALREADY_USED', 'El consecutivo de remisión ya existe.', 409);
     return { branch: id, quote: quoteNumber_(r).number, order: orderNextNumbers_(r, 'OP', 1)[0], receipt: orderNextNumbers_(r, 'RECIBO', 1)[0], remission: remission };

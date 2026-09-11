@@ -134,7 +134,7 @@ function rmCreate_(payload,context) {
     });
     var branch=mdUnique_(listRows_('Sedes'),'Sede_ID',row.Sede);
     if(!branch||branch.Estado!=='ACTIVA')throw appError_('BRANCH_NOT_AVAILABLE','La sede no está activa.',403);
-    var next=Number(branch.Siguiente_Remision),prefix=String(branch.Prefijo_Remision||'');
+    var next=Number(branch.Siguiente_Remision),prefix=String(branch.Prefijo_Remision||'').trim().replace(/-+$/, '');
     if(!Number.isSafeInteger(next)||!Number.isSafeInteger(next+1)||next<1||!new RegExp('^'+row.Sede+'(?:-[A-Z0-9]+)+$').test(prefix))throw appError_('NUMBERING_INVALID','Revisa la numeración de remisiones.',503);
     var number=prefix+'-'+String(next).padStart(4,'0');
     if(listRows_('Registro_Numeros').some(function(n){return n.Numero===number;})||listRows_('Remisiones').some(function(n){return n.Numero_Remision===number;}))rmFail_('El número de remisión ya existe.');

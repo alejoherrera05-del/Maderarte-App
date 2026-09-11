@@ -11,6 +11,8 @@ function fixture() {
   const f = fixture(), before = JSON.stringify([f.production(),f.state.props]);
   assert.equal(f.c.diagnosticarOperacionComercial().enabled, false);
   assert.equal(JSON.stringify([f.production(),f.state.props]), before, 'diagnostic is read-only');
+  f.production().tables.Sedes.rows[0].Prefijo_Remision = 'MP-REM-';
+  assert.equal(f.c.diagnosticarOperacionComercial().next[0].remission, 'MP-REM-0001');
   assert.equal(f.c.activarOperacionComercial().enabled, true);
   assert.equal(f.c.rcEnabled_(), true); assert.equal(f.c.rmEnabled_(), true); assert.equal(f.c.ptEnabled_(), true);
   const session = f.c.validateSessionToken_('qa-session',false);
