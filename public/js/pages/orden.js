@@ -82,7 +82,7 @@ guardStandalonePage({
       }
       root.innerHTML = renderOrder(response.data, session);
       bindSandboxBanner(root);
-      bindProductJourney(root,response.data);
+      bindProductJourney(root,response.data,session);
       bindWorkbench(root,response.data,session); void bindProductionTracking(root,response.data,session);
       const support=root.querySelector('.ow-support'), workbench=root.querySelector('.ow-workbench');
       support.hidden=true;
