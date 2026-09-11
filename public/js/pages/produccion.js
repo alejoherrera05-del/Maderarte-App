@@ -1,3 +1,4 @@
+import { unrequestedQuantity } from '../core/production-actions.js';
 import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
 import { bindSupplierDirectory } from '../core/supplier-directory.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
@@ -6,7 +7,7 @@ import { guardStandalonePage } from '../core/page-guard.js';
 import { hasPermission } from '../core/permissions.js';
 import { escapeHtml as esc } from '../core/format.js';
 import { sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
-import { buildProductionRequest, productionEligibility, supplierWhatsAppUrl } from '../core/production-request.js';
+import { buildProductionRequest, productionEligibility, supplierWhatsAppUrl } from '../core/production-request.js?v=actions-1';
 const $ = id => document.getElementById('production-' + id);
 const flow = createOrderFlow({cover:$('cover'),workflow:$('workflow'),label:'Producción'});
 let account = null, sequence = 0, entrance;
@@ -29,12 +30,14 @@ function showAccount(data) {
   $('dossier').href = orderReturnPath(data.order.number);
   $('items').replaceChildren();
   data.items.forEach((item, index) => {
-    const issue = productionEligibility(data.order, item), row = document.createElement('div');
+    const issue = productionEligibility(data.order, item), remaining = unrequestedQuantity(item), row = document.createElement('div');
     row.className = 'production-item' + (issue ? ' is-blocked' : ''); row.dataset.id = item.id;
     const detail = [item.fabricColor && 'Tela: ' + item.fabricColor, item.woodColor && 'Madera: ' + item.woodColor, item.measures, item.specifications].filter(Boolean).join(' · ');
-    row.innerHTML = `<input type="checkbox" id="production-select-${index}" ${issue ? 'disabled' : ''}><label for="production-select-${index}">${esc(item.description)}<small>${esc(issue || `${item.pending} ${item.pending===1?'pendiente':'pendientes'}${item.agreement === 'SEPARADO' ? ' · Separado' : ''}`)}</small>${detail ? `<small>${esc(detail)}</small>` : ''}</label><label class="production-quantity" for="production-qty-${index}">Cantidad<input id="production-qty-${index}" type="number" min="1" max="${Number.isSafeInteger(item.pending) ? item.pending : 0}" step="1" inputmode="numeric" disabled></label>`;
+    row.innerHTML = `<input type="checkbox" id="production-select-${index}" ${issue ? 'disabled' : ''}><label for="production-select-${index}">${esc(item.description)}<small>${esc(issue || `${remaining} ${remaining===1?'por solicitar':'por solicitar'}${item.agreement === 'SEPARADO' ? ' · Separado' : ''}`)}</small>${detail ? `<small>${esc(detail)}</small>` : ''}</label><label class="production-quantity" for="production-qty-${index}">Cantidad<input id="production-qty-${index}" type="number" min="1" max="${Number.isSafeInteger(remaining) ? remaining : 0}" step="1" inputmode="numeric" disabled></label>`;
     const check = row.querySelector('[type=checkbox]'), quantity = row.querySelector('[type=number]');
     check.addEventListener('change', () => { quantity.disabled = !check.checked; quantity.required = check.checked; quantity.value = check.checked ? '1' : ''; updateSelection(); });
+    const contextItem = new URLSearchParams(window.location.search).get('item');
+    if (!issue && contextItem === item.id) { check.checked = true; quantity.disabled = false; quantity.required = true; quantity.value = String(remaining); }
     $('items').append(row);
   });
   if (!data.items.length) $('items').textContent = 'Esta orden no tiene muebles para consultar.';

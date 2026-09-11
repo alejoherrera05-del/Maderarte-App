@@ -1,5 +1,6 @@
+import { furnitureNextAction } from './production-actions.js';
 import { furnitureIcon } from './furniture-category.js?v=category-images-1';
-import { productState, journeySteps } from './product-journey.js?v=tracking-1';
+import { productState, journeySteps } from './product-journey.js?v=actions-1';
 import { escapeHtml as esc, money } from './format.js';
 import { sandboxLink } from './order-sandbox-context.js';
 import { hasPermission } from './permissions.js';
@@ -43,9 +44,9 @@ export function bindWorkbench(root, data, session) {
     root.querySelectorAll('[data-select-item]').forEach(el=>el.setAttribute('aria-pressed',String(Number(el.dataset.selectItem)===index)));
     root.querySelectorAll('[data-detail-index]').forEach(el=>el.hidden=Number(el.dataset.detailIndex)!==index);
     if (remember) { const url=new URL(window.location.href); url.searchParams.set('item',item.id); window.history.replaceState(null,'',url); }
-    const state=productState(item,order), factory=item.fulfillment==='PARA_SOLICITAR'&&!(item.tracking?.available>0);
-    const canAct=!['Anulado','Revisar ajuste'].includes(state.label)&&item.pending>0&&hasPermission(session,factory?'produccion.read':'remisiones.read');
-    root.querySelector('[data-route-content]').innerHTML=`<h2>${esc(state.label)}</h2><p class="ow-current">${esc(state.note)}</p><details class="ow-journey"><summary>Ver recorrido completo</summary><ol class="product-journey">${journeySteps(item,order).map(s=>`<li class="${s.done?'is-done':s.current?'is-current':'is-future'}"><span class="journey-marker" aria-hidden="true"></span><div><strong>${esc(s.label)}</strong><p>${esc(item.tracking?.events?.length?s.detail:(s.done ? (s.label === 'Registrado en la OP' ? order.number : 'Registrado') : s.current ? 'Estado actual' : 'Sin registro'))}</p></div></li>`).join('')}</ol></details>${canAct?`<a class="ow-primary" href="${esc(sandboxLink('/'+(factory?'produccion':'remision')+'.html?op='+encodeURIComponent(order.number)+'&from=op&item='+encodeURIComponent(item.id)))}">${factory?'Preparar solicitud':'Preparar remisión'}<img src="/assets/icons/arrow-right.svg" alt=""></a>`:''}`;
+    const state=productState(item,order), action=furnitureNextAction(item,order);
+    const canAct=action&&hasPermission(session,action.permission)&&(action.kind!=='tracking'||data.productionTrackingEnabled);
+    root.querySelector('[data-route-content]').innerHTML=`<h2>${esc(state.label)}</h2><p class="ow-current">${esc(state.note)}</p><details class="ow-journey"><summary>Ver recorrido completo</summary><ol class="product-journey">${journeySteps(item,order).map(s=>`<li class="${s.done?'is-done':s.current?'is-current':'is-future'}"><span class="journey-marker" aria-hidden="true"></span><div><strong>${esc(s.label)}</strong><p>${esc(item.tracking?.events?.length?s.detail:(s.done ? (s.label === 'Registrado en la OP' ? order.number : 'Registrado') : s.current ? 'Estado actual' : 'Sin registro'))}</p></div></li>`).join('')}</ol></details>${canAct?`<a class="ow-primary" href="${esc(sandboxLink('/'+(action.kind==='tracking'?'orden':action.kind)+'.html?op='+encodeURIComponent(order.number)+'&from=op&item='+encodeURIComponent(item.id)+(action.kind==='tracking'?'&track=1':'')))}">${action.label}<img src="/assets/icons/arrow-right.svg" alt=""></a>`:''}`;
   }
   root.querySelectorAll('[data-select-item]').forEach(button=>button.addEventListener('click',()=>select(Number(button.dataset.selectItem))));
   root.querySelectorAll('.ow-tabs').forEach(tabs=>{

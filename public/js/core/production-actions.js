@@ -12,4 +12,3 @@ export function furnitureNextAction(item, order = {}) {
   if (item.tracking?.stage) return {kind:'tracking',label:'Actualizar producción',permission:'produccion.update'};
   return {kind:'produccion',label:'Preparar solicitud',permission:'produccion.read'};
 }
-

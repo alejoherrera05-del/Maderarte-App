@@ -15,3 +15,15 @@ const tab=root.querySelector('[data-detail-index="1"] [data-tab="1"]');tab.click
 tab.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert.equal(root.querySelector('#ow-panel-1-2').hidden,false);
 root.innerHTML=renderWorkbench(data.items,data.order,{permissions:['ordenes.read']});bindWorkbench(root,data,{permissions:['ordenes.read']});assert.equal(root.querySelector('.ow-primary'),null);assert.equal(root.querySelector('.ow-abonar'),null);
 console.log('Order workbench: item switching, tabs, escaping and permissions verified.');
+data.items[0].tracking={stage:'FABRICACION',available:0,received:0,totals:{SOLICITADO:1,FABRICACION:1}};
+data.productionTrackingEnabled=true;
+window.history.replaceState(null,'','?op=QA-OP&item=one');
+root.innerHTML=renderWorkbench(data.items,data.order,session);bindWorkbench(root,data,session);
+assert.match(root.querySelector('.ow-primary').textContent,/Actualizar producción/);
+assert.equal(new URL(root.querySelector('.ow-primary').href).searchParams.get('track'),'1');
+data.items[0].tracking={stage:'BODEGA',available:1,received:1};
+root.innerHTML=renderWorkbench(data.items,data.order,session);bindWorkbench(root,data,session);
+assert.match(root.querySelector('.ow-primary').textContent,/Preparar remisión/);
+data.items[0].fulfillment='POR_DEFINIR';delete data.items[0].tracking;
+root.innerHTML=renderWorkbench(data.items,data.order,session);bindWorkbench(root,data,session);
+assert.equal(root.querySelector('.ow-primary'),null);
