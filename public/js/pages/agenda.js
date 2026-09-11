@@ -22,7 +22,7 @@ function calendar() {
 }
 function eventCard(event) {
   const pending=event.status==='PROGRAMADA';
-  return `<article class="ag-event"><div class="ag-event-top"><a href="${esc(orderLink(event.number))}">${esc(event.number)}</a><span>${esc(pending?dayName(event.date):event.status==='DESPACHADA'?'Despachada':'Programación cancelada')}</span></div><h2>${esc(event.client)}</h2><ul>${event.items.map(i=>`<li>${esc(i.description)} · ${i.remaining || i.quantity} ${i.quantity===1?'unidad':'unidades'}</li>`).join('')}</ul>${event.notes?`<p>${esc(event.notes)}</p>`:''}<div class="ag-actions">${pending?`<a class="ag-button ag-secondary" href="/remision.html?op=${encodeURIComponent(event.number)}&from=agenda">Preparar remisión</a>${state.enabled?`<button class="ag-button ag-secondary" data-edit="${esc(event.id)}">Reprogramar</button>`:''}`:''}<a href="${esc(orderLink(event.number))}">Ver OP</a></div></article>`;
+  return `<article class="ag-event"><div class="ag-event-top"><a href="${esc(orderLink(event.number))}">${esc(event.number)}</a><span>${esc(pending?dayName(event.date):event.status==='DESPACHADA'?'Despachada':'Programación cancelada')}</span></div><h2>${esc(event.client)}</h2><ul>${event.items.map(i=>`<li>${esc(i.description)} · ${i.remaining || i.quantity} ${i.quantity===1?'unidad':'unidades'}</li>`).join('')}</ul>${event.notes?`<p>${esc(event.notes)}</p>`:''}<div class="ag-actions">${pending?`<a class="ag-button ag-secondary" href="/remision.html?op=${encodeURIComponent(event.number)}&from=agenda&agenda=${encodeURIComponent(event.id)}">Preparar remisión</a>${state.enabled?`<button class="ag-button ag-secondary" data-edit="${esc(event.id)}">Reprogramar</button>`:''}`:''}<a href="${esc(orderLink(event.number))}">Ver OP</a></div></article>`;
 }
 function render() {
   calendar();$('ag-day').textContent=state.date===today?'Hoy, '+dayName(state.date):dayName(state.date);
@@ -54,7 +54,7 @@ function shell() {
   window.addEventListener('beforeunload',e=>{if(state.busy){e.preventDefault();e.returnValue='';}});
 }
 async function openEditor(event=null,number='') {
-  state.edit=event;state.order=null;$('ag-title').textContent=event?'Reprogramar entrega':'Programar entrega';$('ag-form').hidden=true;$('ag-search-area').hidden=!!(event||number);$('ag-results').textContent='';$('ag-query').value='';$('ag-error').textContent='';
+  state.edit=event;state.order=null;$('ag-title').textContent=event?'Reprogramar entrega':'Programar entrega';$('ag-form').hidden=true;$('ag-search-area').hidden=!!(event||number);$('ag-results').textContent='';$('ag-query').value='';$('ag-error').textContent='';$('ag-save').textContent='Guardar programación';
   if(!$('ag-editor').open)$('ag-editor').showModal();
   if(event||number)await selectOrder(event?.number||number);
 }

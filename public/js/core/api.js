@@ -23,7 +23,7 @@ function isTransientStatus(status) {
 }
 
 export function requestTimeoutMs(action, sandbox = false, override) {
-  return Math.max(1_000, Number(override || (sandbox || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS|DASHBOARD)_/.test(action) ? 120_000 : APP_CONFIG.requestTimeoutMs)));
+  return Math.max(1_000, Number(override || (sandbox || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS|DASHBOARD|AGENDA)_/.test(action) ? 120_000 : APP_CONFIG.requestTimeoutMs)));
 }
 
 export async function apiRequest(action, payload = {}, options = {}) {

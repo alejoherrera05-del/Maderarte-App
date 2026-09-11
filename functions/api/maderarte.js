@@ -5,7 +5,7 @@ const COOKIE_NAME = '__Host-maderarte_session';
 const MAX_BODY_BYTES = 1_048_576;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 export function upstreamTimeoutMs(action, extended = false) {
-  return extended || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS|DASHBOARD)_/.test(action) ? 90_000 : UPSTREAM_TIMEOUT_MS;
+  return extended || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS|DASHBOARD|AGENDA)_/.test(action) ? 90_000 : UPSTREAM_TIMEOUT_MS;
 }
 const PUBLIC_ACTIONS = new Set(['PING', 'AUTH_LOGIN', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR']);
 
