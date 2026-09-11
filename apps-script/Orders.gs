@@ -189,7 +189,7 @@ function systemState_(session) {
     appVersion: MADERARTE_APP.VERSION,
     spreadsheetName: MADERARTE_APP.SPREADSHEET_NAME,
     mode: getConfigValue_('MODO_OPERACION', 'PREPARACION'),
-    commercialWrites: MADERARTE_APP.COMMERCIAL_WRITES ? 'HABILITADAS' : 'DESHABILITADAS',
+    commercialWrites: commercialWritesEnabled_() ? 'HABILITADAS' : 'DESHABILITADAS',
     counts: {
       clients: countRows_('Clientes'),
       orders: countRows_('Ordenes_Pedido'),
@@ -198,3 +198,4 @@ function systemState_(session) {
     }
   };
 }
+

@@ -16,8 +16,9 @@ function activarEmisionCotizaciones() {
       return quoteNumber_(row).number;
     });
     getScriptProperties_().setProperties({ QUOTE_WRITES_ENABLED: 'SI', QUOTE_DOCUMENTS_ENABLED: 'SI', QUOTE_OPERATION_ACCEPTED: 'SI' });
-    var result = { ok: true, quotationsEnabled: quoteWritesEnabled_(), next: branches, otherCommercialWrites: MADERARTE_APP.COMMERCIAL_WRITES };
+    var result = { ok: true, quotationsEnabled: quoteWritesEnabled_(), next: branches, otherCommercialWrites: commercialWritesEnabled_() };
     Logger.log(JSON.stringify(result));
     return result;
   });
 }
+

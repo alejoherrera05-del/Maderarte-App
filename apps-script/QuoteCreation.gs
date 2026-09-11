@@ -108,7 +108,7 @@ function quoteWritesEnabled_() {
     return optionalProperty_('QUOTE_WRITES_ENABLED', 'NO') === 'SI'
       && optionalProperty_('QUOTE_DOCUMENTS_ENABLED', 'NO') === 'SI';
   }
-  return MADERARTE_APP.COMMERCIAL_WRITES === true
+  return commercialWritesEnabled_() === true
     && normalizeCode_(getConfigValue_('MODO_OPERACION', '')) === 'OPERACION'
     && optionalProperty_('QUOTE_WRITES_ENABLED', 'NO') === 'SI';
 }
@@ -311,3 +311,4 @@ function quoteCreationStatus_(payload, context) {
     return { saved: false, requestId: requestId, state: fence ? 'REVISION_REQUERIDA' : 'NO_CONFIRMADO', retrySameRequest: !fence };
   });
 }
+

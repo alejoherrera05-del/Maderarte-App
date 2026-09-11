@@ -1,6 +1,6 @@
 // Dispatch quantity ledger. Loading goods does not certify receipt at destination.
 function rmEnabled_() {
-  return typeof osActive_ === 'function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES
+  return typeof osActive_ === 'function' && osActive_() || commercialWritesEnabled_()
     && getConfigValue_('MODO_OPERACION','') === 'OPERACION' && optionalProperty_('REMISSION_SAVE_ENABLED','NO') === 'SI'
     && optionalProperty_('ORDER_DOCUMENTS_ENABLED','NO') === 'SI';
 }
@@ -184,3 +184,4 @@ function rmConfirmPdf_(payload,context) {
   });
 }
 function rmReadPdf_(payload,context) {var a=rmAccess_(payload.number,context,false);if(a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF está pendiente.',409);return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};}
+

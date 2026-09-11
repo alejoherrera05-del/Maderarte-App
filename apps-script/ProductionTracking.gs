@@ -1,7 +1,7 @@
 // Append-only quantity events in Produccion. Observaciones contains a versioned
 // payload; existing legacy rows remain intact and block ambiguous reconciliation.
 var PT_STAGES_ = ['SOLICITADO','CONFIRMADO','FABRICACION','LISTO','TRANSPORTE','BODEGA'];
-function ptEnabled_() { return typeof osActive_==='function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES && getConfigValue_('MODO_OPERACION','')==='OPERACION' && optionalProperty_('PRODUCTION_SAVE_ENABLED','NO')==='SI'; }
+function ptEnabled_() { return typeof osActive_==='function' && osActive_() || commercialWritesEnabled_() && getConfigValue_('MODO_OPERACION','')==='OPERACION' && optionalProperty_('PRODUCTION_SAVE_ENABLED','NO')==='SI'; }
 function ptSession_(context,write) {var s=validateSessionToken_(context.sessionToken,false);requirePermission_(s,'ordenes.read');requirePermission_(s,'produccion.read');if(write)requirePermission_(s,'produccion.update');return s;}
 function ptEvents_(number) {return listRows_('Produccion').filter(function(r){return r.Numero_OP===number;});}
 function ptView_(item,rows) {
@@ -54,3 +54,4 @@ function ptRecord_(payload,context) {
     SpreadsheetApp.flush();reserveOrderFence_(id,uid,hash,'PRODUCCION_REGISTRAR');try{orderAtomicBatch_(requests);}catch(e){throw appError_('PRODUCTION_SAVE_UNCERTAIN','No se pudo confirmar el movimiento. Consulta el mismo intento antes de volver a registrar.',503);}clearConfirmedOrderFence_();return {saved:true,result:result};
   } finally{lock.releaseLock();}
 }
+

@@ -313,7 +313,7 @@ function getQuote_(payload, session) {
 
 function prepararDocumentosCotizaciones() {
   return qmdLocked_(function() {
-    if (MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'La preparación exige operación comercial deshabilitada.', 403);
+    if (commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'La preparación exige operación comercial deshabilitada.', 403);
     mdSchema_();
     var ss = getSpreadsheet_();
     var name = 'Archivos_Cotizacion';
@@ -335,3 +335,4 @@ function prepararDocumentosCotizaciones() {
     return { ok: true, quoteDocumentSheet: name, commercialWrites: false, enabled: false };
   });
 }
+

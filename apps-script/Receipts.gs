@@ -1,6 +1,6 @@
 // Receipt transactions share the order lock, admission fence and numbering.
 function rcEnabled_() {
-  return typeof osActive_ === 'function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES
+  return typeof osActive_ === 'function' && osActive_() || commercialWritesEnabled_()
     && getConfigValue_('MODO_OPERACION', '') === 'OPERACION' && optionalProperty_('RECEIPT_SAVE_ENABLED', 'NO') === 'SI'
     && optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') === 'SI';
 }
@@ -173,3 +173,4 @@ function rcReadPdf_(payload,context) {
   if(!a.slot || a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF del recibo todavía está pendiente.',409);
   return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};
 }
+
