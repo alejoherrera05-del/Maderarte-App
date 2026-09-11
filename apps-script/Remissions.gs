@@ -1,6 +1,6 @@
 // Dispatch quantity ledger. Loading goods does not certify receipt at destination.
 function rmEnabled_() {
-  return typeof osActive_ === 'function' && osActive_() || MADERARTE_APP.COMMERCIAL_WRITES
+  return typeof osActive_ === 'function' && osActive_() || commercialWritesEnabled_()
     && getConfigValue_('MODO_OPERACION','') === 'OPERACION' && optionalProperty_('REMISSION_SAVE_ENABLED','NO') === 'SI'
     && optionalProperty_('ORDER_DOCUMENTS_ENABLED','NO') === 'SI';
 }
@@ -134,7 +134,7 @@ function rmCreate_(payload,context) {
     });
     var branch=mdUnique_(listRows_('Sedes'),'Sede_ID',row.Sede);
     if(!branch||branch.Estado!=='ACTIVA')throw appError_('BRANCH_NOT_AVAILABLE','La sede no está activa.',403);
-    var next=Number(branch.Siguiente_Remision),prefix=String(branch.Prefijo_Remision||'');
+    var next=Number(branch.Siguiente_Remision),prefix=String(branch.Prefijo_Remision||'').trim().replace(/-+$/, '');
     if(!Number.isSafeInteger(next)||!Number.isSafeInteger(next+1)||next<1||!new RegExp('^'+row.Sede+'(?:-[A-Z0-9]+)+$').test(prefix))throw appError_('NUMBERING_INVALID','Revisa la numeración de remisiones.',503);
     var number=prefix+'-'+String(next).padStart(4,'0');
     if(listRows_('Registro_Numeros').some(function(n){return n.Numero===number;})||listRows_('Remisiones').some(function(n){return n.Numero_Remision===number;}))rmFail_('El número de remisión ya existe.');
@@ -184,3 +184,4 @@ function rmConfirmPdf_(payload,context) {
   });
 }
 function rmReadPdf_(payload,context) {var a=rmAccess_(payload.number,context,false);if(a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF está pendiente.',409);return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};}
+

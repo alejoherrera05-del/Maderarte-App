@@ -134,7 +134,7 @@ function mdAccess_(number, context, write) {
   if (write) {
     requirePermission_(session, 'ordenes.create');
     if (!all && row.Creado_Por !== session.profile.uid && session.permissions.indexOf('ordenes.update.all') === -1) throw appError_('ORDER_DOCUMENT_FORBIDDEN', 'Solo el responsable o un administrador puede completar estos documentos.', 403);
-    if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') !== 'SI')) throw appError_('DOCUMENT_WRITES_DISABLED', 'La finalización documental todavía no está habilitada.', 403);
+    if (!(typeof osActive_ === 'function' && osActive_()) && (!commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') !== 'SI')) throw appError_('DOCUMENT_WRITES_DISABLED', 'La finalización documental todavía no está habilitada.', 403);
     if (row.Estado === 'ANULADA' || Number(row.Version) !== 1) throw appError_('DOCUMENT_REVISION_CHANGED', 'La orden cambió; requiere una nueva versión documental.', 409);
   }
   mdSchema_();
@@ -312,7 +312,7 @@ function mdConfirmPdf_(payload, context) {
 function prepararDocumentosOrdenes() {
   prepararEsquemaGuardadoOrdenes();
   return mdLocked_(function() {
-    if (MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'La preparación exige operación comercial deshabilitada.', 403);
+    if (commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'La preparación exige operación comercial deshabilitada.', 403);
     verifyCommercialBaseZero_();
     var ss = getSpreadsheet_();
     var requests = [];
@@ -338,7 +338,7 @@ function prepararDocumentosOrdenes() {
   });
 }
 function diagnosticarDocumentosMaddy() {
-  var result = { version: 'documentos-1', commercialWrites: MADERARTE_APP.COMMERCIAL_WRITES, mode: getConfigValue_('MODO_OPERACION', ''),
+  var result = { version: 'documentos-1', commercialWrites: commercialWritesEnabled_(), mode: getConfigValue_('MODO_OPERACION', ''),
     schema: mdConfigured_(), drive: false, documentWrites: optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO'), acceptance: optionalProperty_('ORDER_DOCUMENTS_ACCEPTED', 'NO'), errors: [] };
   try { var root = mdMeta_(requiredProperty_('DRIVE_DOCUMENTS_ROOT_ID')); result.drive = root.mimeType === 'application/vnd.google-apps.folder' && root.name === '02_DOCUMENTOS_CLIENTES' && !root.trashed; }
   catch (error) { result.errors.push({ component: 'Drive API', code: error.appCode || 'ERROR' }); }
@@ -355,3 +355,4 @@ function mdReadPdf_(payload, context) {
   if (!slot || slot.Estado !== 'LISTO') throw appError_('PDF_PENDING', 'El PDF todavía está pendiente.', 409);
   return { name: slot.Nombre, mime: 'application/pdf', base64: Utilities.base64Encode(mdDownload_(slot)) };
 }
+

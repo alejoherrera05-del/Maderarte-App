@@ -40,7 +40,7 @@ function osOwner_(context) {
   return session;
 }
 function osProductionClosed_() {
-  if (OWNER_SANDBOX_CONTEXT_ || MADERARTE_APP.COMMERCIAL_WRITES !== false || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') {
+  if (OWNER_SANDBOX_CONTEXT_ || commercialWritesEnabled_() !== false || getConfigValue_('MODO_OPERACION', '') !== 'PREPARACION') {
     osFail_('SANDBOX_PREPARATION_ONLY', 'El ensayo exige mantener la operación original en PREPARACION.');
   }
 }
@@ -371,3 +371,4 @@ function osClean_(payload, context) {
     return osPublic_(s);
   });
 }
+

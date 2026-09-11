@@ -4,6 +4,13 @@ import { pdfOptions } from '../functions/api/order-documents.js';
 function fixture(){const f=sandboxRuntime();f.start();f.command.items[0].quantity=4;f.command.items[0].photos=[];const order=f.run('ORDEN_CREAR',f.command).order;const account=f.run('REMISION_CUENTA',{number:order.number});return {...f,order,command:{number:order.number,fingerprint:account.position.fingerprint,items:[{itemId:order.number+'-I-1',quantity:2}],transporter:{name:'Piallero de prueba',mode:'PIALLERO',favorite:true},assistant:{name:'Operario de prueba',favorite:false},physicalCheck:true,notes:'SIN ENTREGA REAL'}};}
 const reject=(f,code,id='REMISSION-REJECT-01')=>assert.throws(()=>f.run('REMISION_CREAR',f.command,id),e=>e.appCode===code);
 {
+ const f=fixture(),branch=f.rows('Sedes').find(r=>r.Sede_ID==='MP');
+ branch.Prefijo_Remision += '-';
+ const result=f.run('REMISION_CREAR',f.command,'REMISSION-PREFIX-01').remission;
+ assert.equal(result.number,branch.Prefijo_Remision+'0001','installed trailing hyphen is normalized without changing the stored prefix');
+ assert.equal(result.number.includes('--'),false);
+}
+{
  const f=fixture(),prod=JSON.stringify(f.production()),op=f.rows('Ordenes_Pedido')[0],money=JSON.stringify([op.Valor_Total,op.Abonado_Total,op.Saldo_Pendiente,f.rows('Abonos')]),original=f.rows('Archivos_Orden').find(x=>x.Tipo==='OP').Plan_JSON;
  const saved=f.run('REMISION_CREAR',f.command,'REMISSION-CREATE-01').remission;
  assert.equal(saved.quantity,2);assert.equal(f.rows('Remisiones').length,1);assert.equal(f.rows('Orden_Items')[0].Cantidad_Pendiente,2);
@@ -47,3 +54,4 @@ for(const [mutate,code] of [
  const f=fixture();f.rows('Produccion').push({Numero_OP:f.order.number,Item_ID:f.order.number+'-I-1'});f.command.fingerprint=f.run('REMISION_CUENTA',{number:f.order.number}).position.fingerprint;reject(f,'DELIVERY_NOT_READY');
 }
 console.log('OK · remisiones: despacho parcial 2+1+1, responsables, favoritos persistentes, PDF inmutable, dinero intacto, permisos, concurrencia y recuperación.');
+

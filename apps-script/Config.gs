@@ -14,6 +14,12 @@ function getScriptProperties_() {
   return PropertiesService.getScriptProperties();
 }
 
+// Publishing code never enables commercial writes. The editor-only activation
+// sets this property last, after validating the installed base under ScriptLock.
+function commercialWritesEnabled_() {
+  return MADERARTE_APP.COMMERCIAL_WRITES === true || optionalProperty_('COMMERCIAL_OPERATION_ENABLED', 'NO') === 'SI';
+}
+
 function requiredProperty_(name) {
   var scoped = typeof osScopedProperty_ === 'function' ? osScopedProperty_(name) : null;
   var value = scoped === null ? String(getScriptProperties_().getProperty(name) || '').trim() : String(scoped || '');
@@ -107,3 +113,4 @@ function parseJson_(value, fallback) {
   if (value && typeof value === 'object') return value;
   try { return JSON.parse(String(value || '')); } catch (error) { return fallback; }
 }
+

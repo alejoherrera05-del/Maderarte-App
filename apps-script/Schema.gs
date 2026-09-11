@@ -128,7 +128,7 @@ function verificarBaseCero() {
     throw appError_('SPREADSHEET_NAME_MISMATCH', 'La propiedad SPREADSHEET_ID no apunta a la base oficial de Maderarte.', 503);
   }
   verifySchema_();
-  if (MADERARTE_APP.COMMERCIAL_WRITES !== false) throw appError_('COMMERCIAL_WRITES_ENABLED', 'Las escrituras comerciales deben permanecer deshabilitadas.', 503);
+  if (commercialWritesEnabled_() !== false) throw appError_('COMMERCIAL_WRITES_ENABLED', 'Las escrituras comerciales deben permanecer deshabilitadas.', 503);
   if (normalizeCode_(getConfigValue_('MODO_OPERACION', '')) !== 'PREPARACION') {
     throw appError_('OPERATION_MODE_INVALID', 'MODO_OPERACION debe permanecer en PREPARACION.', 503);
   }
@@ -155,3 +155,4 @@ function verificarBaseCero() {
   Logger.log(JSON.stringify(result));
   return result;
 }
+

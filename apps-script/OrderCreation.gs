@@ -279,7 +279,7 @@ function buildOrderCreationBatch_(draft, requestId, session, branchRow, clientRo
 
 function createOrder_(payload, context) {
   // Three closed gates. Deploying this code does NOT enable commercial writes.
-  if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI')) {
+  if (!(typeof osActive_ === 'function' && osActive_()) && (!commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI')) {
     throw appError_('COMMERCIAL_WRITES_DISABLED', 'El guardado comercial todavía no está habilitado.', 403);
   }
   var draft = normalizeOrderCreation_(payload);
@@ -287,7 +287,7 @@ function createOrder_(payload, context) {
   var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw appError_('ORDER_SAVE_BUSY', 'Hay otro guardado en curso. Reintenta con el mismo pedido.', 503);
   try {
-    if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI')) {
+    if (!(typeof osActive_ === 'function' && osActive_()) && (!commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('ORDER_SAVE_ENABLED', 'NO') !== 'SI')) {
       throw appError_('COMMERCIAL_WRITES_DISABLED', 'El guardado fue deshabilitado. Conserva el borrador.', 403);
     }
     // Revalidate AFTER obtaining the lock; never trust the browser or stale context.
@@ -351,7 +351,7 @@ function orderCreationCapabilities_(session) {
   var ready = typeof mdConfigured_ === 'function' && mdConfigured_()
     && (sandbox || optionalProperty_('ORDER_DOCUMENTS_ACCEPTED', 'NO') === 'SI');
   if (ready) { try { orderCreationSchemaReady_(); mdSchema_(); } catch (error) { ready = false; } }
-  var enabled = ready && (sandbox ? !OWNER_SANDBOX_CONTEXT_.requestId && countRows_('Ordenes_Pedido') === 0 : MADERARTE_APP.COMMERCIAL_WRITES && getConfigValue_('MODO_OPERACION', '') === 'OPERACION'
+  var enabled = ready && (sandbox ? !OWNER_SANDBOX_CONTEXT_.requestId && countRows_('Ordenes_Pedido') === 0 : commercialWritesEnabled_() && getConfigValue_('MODO_OPERACION', '') === 'OPERACION'
     && optionalProperty_('ORDER_SAVE_ENABLED', 'NO') === 'SI' && optionalProperty_('ORDER_DOCUMENTS_ENABLED', 'NO') === 'SI');
   return { contractVersion: ORDER_CREATION_CONTRACT_, enabled: Boolean(enabled), reason: enabled ? '' : 'PREPARACION',
     persistenceImplemented: true, photosReady: Boolean(ready), documentsReady: Boolean(ready), mediaWorkflow: 1 };
@@ -360,7 +360,7 @@ function orderCreationCapabilities_(session) {
 // Owner-run installation step, not routed from the browser. Only extends empty
 // commercial schemas; never imports or alters commercial records or permissions.
 function prepararEsquemaGuardadoOrdenes() {
-  if (MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'PREPARACION') {
+  if (commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'PREPARACION') {
     throw appError_('SCHEMA_SETUP_NOT_ALLOWED', 'Prepara el esquema solo con la operación comercial deshabilitada.', 403);
   }
   var lock = typeof osOperationLock_ === 'function' ? osOperationLock_() : LockService.getScriptLock();
@@ -387,3 +387,4 @@ function prepararEsquemaGuardadoOrdenes() {
     return { schemaVersion: 2, commercialWrites: false, requiresDeploymentVerification: true };
   } finally { lock.releaseLock(); }
 }
+
