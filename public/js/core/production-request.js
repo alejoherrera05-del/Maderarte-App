@@ -1,3 +1,4 @@
+import { unrequestedQuantity } from './production-actions.js';
 // Read-only preparation. This is not a production movement or supplier confirmation.
 export function productionEligibility(order, item) {
   if (!['CONFIRMADA', 'EN_PROCESO'].includes(order?.status)) return 'Esta OP no está activa.';
@@ -7,7 +8,9 @@ export function productionEligibility(order, item) {
   if (item.cancelled) return 'El mueble tiene un ajuste pendiente de revisión.';
   if (!item.pending) return 'Sin unidades pendientes.';
   if (item.fulfillment === 'DISPONIBLE') return 'Disponible en almacén.';
+  if (item.tracking?.legacy) return 'Hay movimientos anteriores que requieren revisión en la OP.';
   if (item.fulfillment !== 'PARA_SOLICITAR') return 'Primero define la disponibilidad en la OP.';
+  if (!unrequestedQuantity(item)) return 'Ya tiene producción registrada. Consulta el recorrido en la OP.';
   return '';
 }
 
@@ -22,7 +25,7 @@ export function buildProductionRequest({ order, items, selected, supplier = '', 
     if (matches.length !== 1) throw new Error('El mueble no corresponde a esta OP.');
     const item = matches[0], issue = productionEligibility(order, item);
     if (issue) throw new Error(issue);
-    if (!Number.isSafeInteger(selection.quantity) || selection.quantity < 1 || selection.quantity > item.pending) throw new Error('Revisa la cantidad que vas a solicitar.');
+    if (!Number.isSafeInteger(selection.quantity) || selection.quantity < 1 || selection.quantity > unrequestedQuantity(item)) throw new Error('Revisa la cantidad que vas a solicitar.');
     if (item.agreement === 'SEPARADO' && !customerNotice) throw new Error('Confirma que el cliente avisó para solicitar su separado.');
     return { item, quantity: selection.quantity };
   });

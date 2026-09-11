@@ -29,5 +29,5 @@ export async function bindProductionTracking(root,data,session) {
   }
   button.onclick=open;
   dialog.addEventListener('close',()=>button.focus());
-  if(pending)open();
+  if(pending||(!button.hidden&&new URLSearchParams(window.location.search).get('track')==='1')){open();const url=new URL(window.location.href);url.searchParams.delete('track');window.history.replaceState(null,'',url);}
 }

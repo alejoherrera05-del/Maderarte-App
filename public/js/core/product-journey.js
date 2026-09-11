@@ -1,3 +1,5 @@
+import { furnitureNextAction } from './production-actions.js';
+import { hasPermission } from './permissions.js';
 import { escapeHtml as esc } from './format.js';
 import { sandboxLink } from './order-sandbox-context.js';
 export function productState(item, order = {}) {
@@ -23,13 +25,14 @@ export function journeySteps(item, order) {
   if(state.label==='Anulado'||item.cancelled>0)return [{label:state.label,detail:state.note,current:true}];
   return steps;
 }
-export function bindProductJourney(root,data) {
+export function bindProductJourney(root,data,session = {permissions:[]}) {
   const dialog=document.createElement('dialog');dialog.className='product-sheet';dialog.setAttribute('aria-label','Recorrido del producto');root.append(dialog);
   let trigger;
   root.querySelectorAll('[data-product-journey]').forEach(button=>button.addEventListener('click',()=>{
     const item=data.items.find(i=>i.id===button.dataset.productJourney);if(!item)return;trigger=button;
-    const state=productState(item,data.order);
-    dialog.innerHTML=`<header class="product-sheet-head"><span>Recorrido del producto</span><button type="button" aria-label="Cerrar recorrido"><img src="/assets/icons/x.svg" alt=""></button></header><div class="product-sheet-body"><span class="product-status tone-${state.tone}">${esc(state.label)}</span><h2>${esc(item.description)}</h2><p>${esc(state.note)}</p><ol class="product-journey">${journeySteps(item,data.order).map(s=>`<li class="${s.done?'is-done':s.current?'is-current':'is-future'}"><span class="journey-marker" aria-hidden="true">${s.done?'✓':''}</span><div><strong>${esc(s.label)}</strong><p>${esc(s.detail)}</p></div></li>`).join('')}</ol><p class="journey-footnote">Cada etapa necesita su propio registro. Despachar no confirma la recepción del cliente.</p>${!['Anulado','Revisar ajuste'].includes(state.label)&&item.pending>0?`<a class="workspace-primary" href="${esc(sandboxLink('/'+(item.fulfillment==='PARA_SOLICITAR'?'produccion':'remision')+'.html?op='+encodeURIComponent(data.order.number)+'&from=op&item='+encodeURIComponent(item.id)))}">${item.fulfillment==='PARA_SOLICITAR'?'Preparar solicitud':'Preparar remisión'}<img src="/assets/icons/arrow-right.svg" alt=""></a>`:''}</div>`;
+    const state=productState(item,data.order), candidate=furnitureNextAction(item,data.order);
+    const action=candidate&&hasPermission(session,candidate.permission)&&(candidate.kind!=='tracking'||data.productionTrackingEnabled)?candidate:null;
+    dialog.innerHTML=`<header class="product-sheet-head"><span>Recorrido del producto</span><button type="button" aria-label="Cerrar recorrido"><img src="/assets/icons/x.svg" alt=""></button></header><div class="product-sheet-body"><span class="product-status tone-${state.tone}">${esc(state.label)}</span><h2>${esc(item.description)}</h2><p>${esc(state.note)}</p><ol class="product-journey">${journeySteps(item,data.order).map(s=>`<li class="${s.done?'is-done':s.current?'is-current':'is-future'}"><span class="journey-marker" aria-hidden="true">${s.done?'✓':''}</span><div><strong>${esc(s.label)}</strong><p>${esc(s.detail)}</p></div></li>`).join('')}</ol><p class="journey-footnote">Cada etapa necesita su propio registro. Despachar no confirma la recepción del cliente.</p>${action?`<a class="workspace-primary" href="${esc(sandboxLink('/'+(action.kind==='tracking'?'orden':action.kind)+'.html?op='+encodeURIComponent(data.order.number)+'&from=op&item='+encodeURIComponent(item.id)+(action.kind==='tracking'?'&track=1':'')))}">${action.label}<img src="/assets/icons/arrow-right.svg" alt=""></a>`:''}</div>`;
     dialog.querySelector('button').addEventListener('click',()=>dialog.close());dialog.showModal();
   }));
   dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});

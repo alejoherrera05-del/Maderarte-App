@@ -1,9 +1,9 @@
-import { bindProductionTracking } from '../core/production-tracking.js';
-import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=category-images-1';
-import { productState, bindProductJourney } from '../core/product-journey.js?v=tracking-1';
+import { bindProductionTracking } from '../core/production-tracking.js?v=actions-1';
+import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=production-actions-1';
+import { productState, bindProductJourney } from '../core/product-journey.js?v=actions-1';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
-import { bindOrderDocuments } from './orden-documentos.js?v=category-images-1';
+import { bindOrderDocuments } from './orden-documentos.js?v=production-actions-1';
 import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { previewApiData } from '../core/auth.js';
 import { date, dateTime, escapeHtml, humanizeCode, money, safeExternalUrl, text } from '../core/format.js';
@@ -82,7 +82,7 @@ guardStandalonePage({
       }
       root.innerHTML = renderOrder(response.data, session);
       bindSandboxBanner(root);
-      bindProductJourney(root,response.data);
+      bindProductJourney(root,response.data,session);
       bindWorkbench(root,response.data,session); void bindProductionTracking(root,response.data,session);
       const support=root.querySelector('.ow-support'), workbench=root.querySelector('.ow-workbench');
       support.hidden=true;
