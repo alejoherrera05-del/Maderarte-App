@@ -24,7 +24,7 @@ function agView_(row, lines) {
     var remaining = line ? Math.max(0, p.delivered + p.quantity - Number(line.Cantidad_Entregada || 0)) : p.quantity;
     return {id:p.id, description:p.description, quantity:p.quantity, remaining:remaining};
   });
-  return {id:row.ID, number:row.Numero_OP, client:row.Cliente, branch:row.Sede, date:String(row.Fecha).slice(0,10),
+  return {id:row.ID, number:row.Numero_OP, client:row.Cliente, branch:row.Sede, date:String(row.Fecha).slice(0,10),time:String(row.Hora||''),
     status:row.Estado === 'CANCELADA' ? 'CANCELADA' : items.every(function(i){return i.remaining === 0;}) ? 'DESPACHADA' : 'PROGRAMADA',
     revision:data.revision, notes:data.notes, items:items, by:row.Responsable};
 }
@@ -32,7 +32,7 @@ function agList_(payload, context) {
   var s = agSession_(context, false), lines = listRows_('Orden_Items');
   return {enabled:commercialWritesEnabled_() && hasPermission_(s.permissions,'agenda.update'), items:listRows_('Agenda').filter(function(r) {
     return r.Categoria === 'ENTREGA_MADDY' && orderBranchReadable_(s,r.Sede) && (!payload.number || r.Numero_OP === payload.number);
-  }).map(function(r) {return agView_(r,lines);}).sort(function(a,b) {return a.date.localeCompare(b.date);})};
+  }).map(function(r) {return agView_(r,lines);}).sort(function(a,b) {return a.date.localeCompare(b.date)||a.time.localeCompare(b.time);})};
 }
 function agReplay_(id, s, hash) {
   var row = mdUnique_(listRows_('Idempotencia'),'Request_ID',id); if (!row) return null;
@@ -49,9 +49,10 @@ function agStatus_(payload, context) {
 }
 function agSave_(payload, context) {
   if (!commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION','') !== 'OPERACION') throw appError_('COMMERCIAL_WRITES_DISABLED','La agenda aún no admite cambios.',403);
-  orderObject_(payload,['id','number','date','items','notes','revision','cancel'],'agenda');
-  var p = {id:orderText_(payload.id,'id',160,false),number:orderText_(payload.number,'number',120,true),date:agDate_(payload.date),
+  orderObject_(payload,['id','number','date','time','items','notes','revision','cancel'],'agenda');
+  var p = {id:orderText_(payload.id,'id',160,false),number:orderText_(payload.number,'number',120,true),date:agDate_(payload.date),time:String(payload.time||''),
     notes:orderText_(payload.notes,'notes',1000,false),revision:orderInteger_(payload.revision,'revision',0),cancel:payload.cancel === true,items:payload.items};
+  if ((!p.cancel || p.time) && !/^([01]\d|2[0-3]):[0-5]\d$/.test(p.time)) throw appError_('AGENDA_TIME','Selecciona una hora válida.',400);
   if (!Array.isArray(p.items) || !p.items.length || p.items.length > 100) throw appError_('AGENDA_ITEMS','Selecciona los muebles de la entrega.',400);
   var seen = {};
   p.items = p.items.map(function(i) {
@@ -78,8 +79,8 @@ function agSave_(payload, context) {
     });
     var stamp=now_().toISOString(),id=p.id||requestId,revision=p.revision+1,uid=s.profile.uid;
     var data={contract:'delivery-1',revision:revision,notes:p.notes,items:planned};
-    var row={ID:id,Fecha:p.date,Hora:'',Categoria:'ENTREGA_MADDY',Titulo:'Entrega',Cliente:order.Nombre_Cliente,Numero_OP:p.number,Sede:order.Sede,Referencia_Notas:JSON.stringify(data),Estado:p.cancel?'CANCELADA':'PROGRAMADA',Responsable:s.profile.name||uid,Fecha_Registro:old?old.Fecha_Registro:stamp};
-    var result={requestId:requestId,id:id,number:p.number,date:p.date,revision:revision,status:row.Estado};
+    var row={ID:id,Fecha:p.date,Hora:p.time,Categoria:'ENTREGA_MADDY',Titulo:'Entrega',Cliente:order.Nombre_Cliente,Numero_OP:p.number,Sede:order.Sede,Referencia_Notas:JSON.stringify(data),Estado:p.cancel?'CANCELADA':'PROGRAMADA',Responsable:s.profile.name||uid,Fecha_Registro:old?old.Fecha_Registro:stamp};
+    var result={requestId:requestId,id:id,number:p.number,date:p.date,time:p.time,revision:revision,status:row.Estado};
     var requests=old?orderUpdateRequests_('Agenda',old._row,row):[orderAppendRequest_('Agenda',[row])];
     requests.push(orderAppendRequest_('Auditoria',[{ID:requestId+'-AUD',Fecha:stamp,Usuario:uid,Rol:s.profile.role,Modulo:'AGENDA',Accion:p.cancel?'CANCELAR':old?'REPROGRAMAR':'PROGRAMAR',Entidad:'AGENDA',Entidad_ID:id,Resumen:'Programación de entrega',Estado:'CONFIRMADA',Request_ID:requestId,Antes_JSON:JSON.stringify(old||{}),Despues_JSON:JSON.stringify(row),Reversible:'NO',Motivo_No_Reversible:'Los cambios conservan auditoría.'}]));
     requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:requestId,Fecha:stamp,Tipo_Operacion:'AGENDA_GUARDAR',Entidad:'AGENDA',Entidad_ID:id,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:hash,result:result}),Usuario:uid}]));
