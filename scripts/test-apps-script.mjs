@@ -36,6 +36,7 @@ function createDiagnosticContext() {
       COMMERCIAL_WRITES: false
     }),
     Logger: { log() {} },
+    commercialWritesEnabled_: () => false,
     __state: state,
     getSpreadsheet_: () => ({ getName: () => state.spreadsheetName }),
     getDocumentsRoot_: () => ({ getName: () => state.documentsRootName }),
@@ -159,3 +160,4 @@ function createAuthorizationContext() {
 
 console.log('OK · diagnóstico base cero de Apps Script verificado');
 console.log('OK · autorización, identidad e inactividad de usuarios verificadas');
+
