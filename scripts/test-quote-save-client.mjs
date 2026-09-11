@@ -145,3 +145,18 @@ for (const failureStore of ['durable', 'temporary']) {
   equal((await m.save(body())).phase, 'blocked'); equal(h.calls.length, 0); equal(m.getState().locked, false, 'draft still editable when no pending save');
 }
 console.log(`OK · ${checks} comprobaciones del cliente: capacidades, doble clic, pestañas, recarga, respuesta perdida, repetición exacta, privacidad y fallo de almacenamiento. Sin tráfico a Google.`);
+import { waitForCommercialSession } from '../public/js/core/commercial-session.js';
+
+{
+  const target = new EventTarget();
+  let session = null;
+  let resolved = false;
+  const pending = waitForCommercialSession(() => session, target).then(value => { resolved = value.profile.uid === 'slow-session'; });
+  target.dispatchEvent(new Event('maddy:commercial-ready'));
+  await Promise.resolve();
+  if (resolved) throw new Error('Must not bind before authentication');
+  session = { profile: { uid: 'slow-session' } };
+  target.dispatchEvent(new Event('maddy:commercial-ready'));
+  await pending;
+  if (!resolved) throw new Error('Delayed authentication must enable binding');
+}

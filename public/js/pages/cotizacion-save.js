@@ -3,11 +3,11 @@ import { APP_CONFIG } from '../core/config.js';
 import { currentSandboxId } from '../core/order-sandbox-context.js';
 import { createDocumentProgress } from '../core/order-progress.js?v=quote-real-1';
 import { prepareQuoteMedia } from '../core/quote-media.js?v=quote-real-1';
-import { createQuoteSave } from '../core/quote-save.js?v=quote-real-1';
+import { createQuoteSave } from '../core/quote-save.js?v=quote-001';
 import { readSessionSnapshot } from '../core/session.js';
+import { waitForCommercialSession } from '../core/commercial-session.js';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const value = id => document.getElementById(id)?.value?.trim() || '';
 
 function sessionReady() {
@@ -15,14 +15,7 @@ function sessionReady() {
   return snapshot?.profile?.uid ? snapshot : null;
 }
 
-async function waitForSession() {
-  for (let index = 0; index < 40; index += 1) {
-    const session = sessionReady();
-    if (session) return session;
-    await sleep(100);
-  }
-  return null;
-}
+const waitForSession = () => waitForCommercialSession(sessionReady, window);
 
 function photoMap() {
   const map = new Map();
@@ -121,7 +114,7 @@ async function bind() {
     button.setAttribute('aria-busy', String(['saving','checking'].includes(state.phase)));
     note.textContent = ['ready','disabled'].includes(state.phase) ? (state.phase === 'ready' ? 'Al emitir, Maddy asignará el consecutivo real y archivará la cotización en Drive.' : defaultNote) : state.message;
     status.replaceChildren();
-    status.hidden = state.working === true || !['uncertain','retry','confirmed','documents','other-tab','blocked','rejected'].includes(state.phase);
+    status.hidden = state.working === true || !['disabled','uncertain','retry','confirmed','documents','other-tab','blocked','rejected'].includes(state.phase);
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
         action('Abrir cotización', () => openQuote(state.number));

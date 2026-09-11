@@ -5,6 +5,23 @@ import { webcrypto } from 'node:crypto';
 let checks=0;
 const eq=(a,b,label)=>{assert.deepEqual(JSON.parse(JSON.stringify(a)),JSON.parse(JSON.stringify(b)),label);checks++;};
 const bad=(run,code)=>{assert.throws(run,e=>e.appCode===code,code);checks++;};
+{
+ const f=sandboxRuntime();
+ eq(f.c.quoteWritesEnabled_(),false);
+ f.state.props.QUOTE_WRITES_ENABLED='SI';
+ f.state.props.QUOTE_DOCUMENTS_ENABLED='SI';
+ eq(f.c.quoteWritesEnabled_(),false,'ordinary flags alone do not activate preparation');
+ f.state.props.QUOTE_OPERATION_ACCEPTED='SI';
+ eq(f.c.quoteWritesEnabled_(),true,'explicit quote-only acceptance');
+ eq(f.c.MADERARTE_APP.COMMERCIAL_WRITES,false,'other commercial operations remain closed');
+ delete f.state.props.QUOTE_DOCUMENTS_ENABLED;
+ eq(f.c.quoteWritesEnabled_(),false,'document gate cannot be skipped');
+ const row=f.production().tables.Sedes.rows[0];
+ eq(f.c.quoteNumber_(row).number,'MP-COT-001');
+ f.production().tables.Registro_Numeros.rows.push({Numero:'MP-COT-001'});
+ bad(()=>f.c.quoteNumber_(row),'NUMBER_ALREADY_USED');
+ eq(row.Siguiente_Cotizacion,1,'number lookup never resets or consumes');
+}
 function fixture(){
  const f=sandboxRuntime();f.start();
  const {payments,noPayment,...command}=structuredClone(f.command);

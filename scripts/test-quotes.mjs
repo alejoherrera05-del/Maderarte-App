@@ -39,13 +39,13 @@ assert.match(quotes, /Prefijo_Cotizacion/);
 // A configured prefix may already end in a separator. Reading metadata must
 // produce the same number on every call without consuming the next sequence.
 for (const [prefix, next, expected] of [
-  ['MP-COT-', 1, 'MP-COT-0001'],
-  ['MP-COT', 1, 'MP-COT-0001'],
-  [' tp-cot- ', 27, 'TP-COT-0027'],
-  ['MP-COT--', 42, 'MP-COT-0042'],
+  ['MP-COT-', 1, 'MP-COT-001'],
+  ['MP-COT', 1, 'MP-COT-001'],
+  [' tp-cot- ', 27, 'TP-COT-027'],
+  ['MP-COT--', 42, 'MP-COT-042'],
   ['MP-COT-', 10000, 'MP-COT-10000'],
-  ['', 1, 'COT-0001'],
-  ['   ', 1, 'COT-0001']
+  ['', 1, 'COT-001'],
+  ['   ', 1, 'COT-001']
 ]) {
   const backend = quoteContext([]);
   const row = Object.freeze({ Sede_ID: 'MP', Estado: 'ACTIVA', Prefijo_Cotizacion: prefix, Siguiente_Cotizacion: next });
