@@ -31,4 +31,12 @@ assert.equal(values.get(key),'other-tab-copy');p.dom.window.close();
 values.clear();p=page();await p.draft.ready;p.draft.changed();p.draft.complete();
 window.dispatchEvent(new window.Event('pagehide'));assert.equal(values.get(key),undefined);
 p.dom.window.close();delete globalThis.window;delete globalThis.document;
+// Confirmation can arrive while branch metadata is still restoring.
+let resume;
+values.set(key,last);
+p=page(()=>new Promise(resolve=>{resume=resolve;}));
+document.getElementById('quote-form').dataset.quoteConfirmed='true';
+resume();await p.draft.ready;
+assert.equal(values.get(key),undefined);
+p.dom.window.close();delete globalThis.window;delete globalThis.document;
 console.log('OK · device drafts: tab closure, age, photos, quota, recovery failure, competing tab and completion');

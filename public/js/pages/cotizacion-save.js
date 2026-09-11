@@ -107,7 +107,10 @@ async function bind() {
   const openQuote = number => window.location.assign(`/cotizacion-ver.html?cot=${encodeURIComponent(number)}${currentSandboxId() ? `&prueba=${encodeURIComponent(currentSandboxId())}` : ''}`);
 
   function render(state) {
-    if (state.phase === 'confirmed' && state.ownsDraft) window.dispatchEvent(new window.Event('maddy:quote-confirmed'));
+    if (state.phase === 'confirmed' && state.ownsDraft) {
+      form.dataset.quoteConfirmed = 'true';
+      window.dispatchEvent(new window.Event('maddy:quote-confirmed'));
+    }
     disableForm(Boolean(state.locked));
     progress.sync(state);
     button.disabled = !state.canSave;

@@ -24,6 +24,15 @@ export function bindFormDraft({ session, type, capture, restore, root = document
   let completed = false;
   let blocked = false;
   let expected = null;
+  const isQuote = type === 'quote' || type.startsWith('quote:');
+  function complete() {
+    completed = true; locked = true; dirty = false;
+    try {
+      if (storage.getItem(key) === expected) storage.removeItem(key);
+      legacyStorage.removeItem(key);
+    } catch { /* The save journal still prevents another submission. */ }
+    status?.replaceChildren();
+  }
   const tell = message => {
     if (!status) return;
     const copy = root.createElement('span');
@@ -88,7 +97,11 @@ export function bindFormDraft({ session, type, capture, restore, root = document
     } catch {
       blocked = true; safe = false;
       tell('No pudimos recuperar el borrador completo. La copia sigue guardada y no será sobrescrita. Mantén esta pestaña abierta para revisarlo.');
-    } finally { recovering = false; if (dirty && !blocked) save(); }
+    } finally {
+      recovering = false;
+      if (isQuote && root.getElementById('quote-form')?.dataset.quoteConfirmed === 'true') complete();
+      else if (dirty && !blocked) save();
+    }
   })();
   function changed() { if (!locked && !completed) { dirty = true; save(); } }
   root.getElementById('quote-form')?.addEventListener('input', changed);
@@ -102,15 +115,7 @@ export function bindFormDraft({ session, type, capture, restore, root = document
   });
   const api = { ready, changed, save,
     setLocked(value) { locked = Boolean(value); },
-    complete() {
-      // Prevent pagehide from resurrecting an already confirmed order as a draft.
-      completed = true; locked = true; dirty = false;
-      try {
-        if (storage.getItem(key) === expected) storage.removeItem(key);
-        legacyStorage.removeItem(key);
-      } catch { /* The save journal still prevents another submission. */ }
-      status?.replaceChildren();
-    }
+    complete
   };
   window.addEventListener('maddy:quote-confirmed', () => { if (type === 'quote' || type.startsWith('quote:')) api.complete(); });
   return api;
