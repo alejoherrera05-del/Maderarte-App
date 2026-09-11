@@ -86,6 +86,8 @@ Antes de activar escrituras: persistir acuerdo y disponibilidad en cada `Orden_I
 
 ## Recuperación temporal
 
+Actualización del 11 de septiembre de 2026: por petición del propietario, los borradores de Cotización y Pedido se conservan en el dispositivo (localStorage), por usuario y tipo de documento. Sobreviven al cierre normal de la pestaña y no se eliminan automáticamente a las ocho horas. Se migra el borrador anterior de sessionStorage únicamente después de confirmar el guardado persistente. No se sincronizan con Google ni consumen consecutivos. El descarte explícito, la emisión confirmada del documento correspondiente y cerrar sesión eliminan el borrador. Las fallas de cuota o recuperación conservan la última copia y muestran un aviso; no se afirma que los cambios recientes estén guardados. Borrar los datos del navegador, navegación privada o las políticas de almacenamiento del dispositivo pueden eliminar la copia. Estos criterios sustituyen las reglas temporales siguientes.
+
 - Copia temporal de la captura en `sessionStorage`, por usuario y tipo de documento, en la misma pestaña. Caduca a las ocho horas; se descarta al cerrar sesión o desde el propio formulario.
 - Recupera cliente, líneas, acuerdos, pagos, notas y fotografías compatibles. No constituye escritura comercial, respaldo oficial ni sincronización entre dispositivos.
 - Si el almacenamiento falla, se informa y se advierte al salir. No mostrar un borrador antiguo como si fuera el actual después de un fallo.

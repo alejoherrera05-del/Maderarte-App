@@ -193,14 +193,14 @@ try {
     assert.equal($('#quote-client-name').value, 'Cliente sintético');
     assert.equal($('#quote-submit').disabled, true);
     assert.equal($('#quote-form').dispatchEvent(new window.Event('submit', { cancelable: true })), false);
-    const stored = Object.keys(window.sessionStorage).find(key => key.startsWith('maderarte.form-draft.'));
-    const draft = JSON.parse(window.sessionStorage.getItem(stored));
+    const stored = Object.keys(window.localStorage).find(key => key.startsWith('maderarte.form-draft.'));
+    const draft = JSON.parse(window.localStorage.getItem(stored));
     assert.equal(draft.uid, 'qa-order');
     assert.deepEqual(draft.data.agreementModes, {'1':'custom'});
     assert.equal(draft.data.removedItems[0].id, 2);
     assert.deepEqual(draft.data.itemIds, [1]);
     assert.equal(draft.data.fields.find(field => field.id === 'quote-client-alternatePhone').value, '0000000002');
-    assert.match($('#quote-draft-status').textContent, /pestaña/);
+    assert.match($('#quote-draft-status').textContent, /dispositivo/);
   }
   assert.equal(apiCalls, 0, 'No crea clientes, consecutivos, OP ni abonos');
   console.log(`OK · ${denied ? 'permiso de OP independiente' : 'venta mixta, separado por mueble, abonos libres y distribución opcional, números inválidos, borrador y privacidad'}`);
