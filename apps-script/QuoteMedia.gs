@@ -171,7 +171,7 @@ function qmdAccess_(number, context, write) {
   if (write) {
     requirePermission_(session, 'cotizaciones.create');
     if (!all && row.Creado_Por !== session.profile.uid && session.permissions.indexOf('cotizaciones.update.all') === -1) throw appError_('QUOTE_DOCUMENT_FORBIDDEN', 'Solo el responsable o un administrador puede completar estos documentos.', 403);
-    if (!(typeof osActive_ === 'function' && osActive_()) && (!MADERARTE_APP.COMMERCIAL_WRITES || getConfigValue_('MODO_OPERACION', 'PREPARACION') !== 'OPERACION' || optionalProperty_('QUOTE_DOCUMENTS_ENABLED', 'NO') !== 'SI')) {
+    if (!(typeof osActive_ === 'function' && osActive_()) && (!quoteWritesEnabled_() || optionalProperty_('QUOTE_DOCUMENTS_ENABLED', 'NO') !== 'SI')) {
       throw appError_('QUOTE_DOCUMENT_WRITES_DISABLED', 'La finalización documental de cotizaciones todavía no está habilitada.', 403);
     }
   }

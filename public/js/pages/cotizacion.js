@@ -3,7 +3,7 @@ import { apiRequest } from '../core/api.js?v=sandbox-1';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
-import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=compact-1';
+import { openDocumentPreview, closeDocumentPreview } from './cotizacion-document-polish.js?v=quote-001';
 import { previewApiData } from '../core/auth.js';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';

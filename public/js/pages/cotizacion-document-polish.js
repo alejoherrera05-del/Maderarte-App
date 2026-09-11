@@ -555,7 +555,7 @@ export async function renderConfirmedOrder(snapshot, target) {
 // Quotation emission uses the approved preview markup and measured paginator.
 export async function renderConfirmedQuote(snapshot, target) {
   if (COMMERCIAL_DOCUMENT.isOrder || !target || snapshot?.issued !== true || snapshot.documentKind !== 'quote'
-    || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{4,}$/.test(snapshot.number || '')
+    || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{3,}$/.test(snapshot.number || '')
     || !['MP','TP'].includes(snapshot.branchCode) || !Array.isArray(snapshot.items) || !snapshot.items.length || snapshot.items.length > 100
     || !Number.isSafeInteger(snapshot.subtotal) || !Number.isSafeInteger(snapshot.discount) || snapshot.discount < 0
     || !Number.isSafeInteger(snapshot.total) || snapshot.total < 0 || snapshot.total !== snapshot.subtotal - snapshot.discount) throw new Error('Cotización confirmada inválida.');

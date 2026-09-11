@@ -104,6 +104,10 @@ function quoteCreationAllowed_(session, branch) {
 
 function quoteWritesEnabled_() {
   if (typeof osActive_ === 'function' && osActive_()) return true;
+  if (optionalProperty_('QUOTE_OPERATION_ACCEPTED', 'NO') === 'SI') {
+    return optionalProperty_('QUOTE_WRITES_ENABLED', 'NO') === 'SI'
+      && optionalProperty_('QUOTE_DOCUMENTS_ENABLED', 'NO') === 'SI';
+  }
   return MADERARTE_APP.COMMERCIAL_WRITES === true
     && normalizeCode_(getConfigValue_('MODO_OPERACION', '')) === 'OPERACION'
     && optionalProperty_('QUOTE_WRITES_ENABLED', 'NO') === 'SI';
@@ -152,7 +156,7 @@ function quoteNumber_(branchRow) {
   if (!Number.isSafeInteger(next) || next < 1 || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(prefix)) {
     throw appError_('NUMBERING_NOT_READY', 'Revisa el prefijo y el consecutivo de cotizaciones de esta sede.', 503);
   }
-  var number = prefix + '-' + String(next).padStart(4, '0');
+  var number = prefix + '-' + String(next).padStart(typeof osActive_ === 'function' && osActive_() ? 4 : 3, '0');
   var used = listRows_('Cotizaciones').some(function(row) { return String(row.Numero_Cotizacion || '') === number; })
     || listRows_('Registro_Numeros').some(function(row) { return String(row.Numero || '') === number; });
   if (used) throw appError_('NUMBER_ALREADY_USED', 'El consecutivo previsto ya aparece registrado. Revisa la numeración antes de continuar.', 409);

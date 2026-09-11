@@ -31,7 +31,7 @@ function quotePdfOptions(document, origin = ORIGIN) {
 }
 
 export async function finalizeQuoteDocuments(number, env, upstream) {
-  if (typeof number !== 'string' || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{4,}$/.test(number)) {
+  if (typeof number !== 'string' || !/^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{3,}$/.test(number)) {
     throw fail('QUOTE_NUMBER_INVALID', 'Selecciona una cotización válida.', 400);
   }
   if (!browserReady(env)) throw fail('PDF_ENGINE_NOT_READY', 'Falta comprobar el motor de PDF. La cotización se conserva sin duplicarse.');

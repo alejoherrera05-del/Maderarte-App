@@ -2,7 +2,7 @@ import { finishQuoteDocuments } from './quote-media.js?v=quote-real-1';
 
 export const QUOTE_SAVE_PREFIX = 'maderarte.quote-save.v1.';
 const ID = /^[A-Za-z0-9_-]{16,120}$/;
-const NUMBER = /^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{4,}$/;
+const NUMBER = /^[A-Z0-9]+(?:-[A-Z0-9]+)*-[0-9]{3,}$/;
 const copy = value => JSON.parse(JSON.stringify(value));
 const fail = (code, message) => Object.assign(new Error(message), { code });
 

@@ -1,5 +1,11 @@
 # Emisión real de cotizaciones — contrato v1
 
+## Activación específica solicitada el 11 de septiembre de 2026
+
+El propietario solicita emitir cotizaciones reales y su PDF desde el primer número 001. La base real fue comprobada vacía con verificarBaseCero. La nueva activación manual exige base cero, esquema documental y ambos consecutivos en 1; no resetea números ni elimina documentos. QUOTE_OPERATION_ACCEPTED=SI, QUOTE_WRITES_ENABLED=SI y QUOTE_DOCUMENTS_ENABLED=SI habilitan únicamente cotizaciones. COMMERCIAL_WRITES permanece false y las demás operaciones conservan sus puertas. Publicar código no ejecuta la activación.
+
+Los números nuevos usan MP-COT-001 / TP-COT-001. La lectura y recuperación siguen aceptando números anteriores de cuatro o más dígitos; el sandbox conserva cuatro dígitos. Se debe verificar la emisión y reapertura del PDF en el dominio habitual antes de declarar resuelto el incidente. No consumir 001 con datos de prueba.
+
 ## Objetivo
 Cerrar la cotización como operación comercial real sin cambiar el formulario ni el documento ya aprobados. La vista previa nunca consume consecutivo ni escribe en Sheets/Drive.
 

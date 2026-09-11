@@ -1,4 +1,4 @@
-import { renderConfirmedQuote } from './cotizacion-document-polish.js?v=family-1';
+import { renderConfirmedQuote } from './cotizacion-document-polish.js?v=quote-001';
 let started = false;
 async function consume() {
   const node = document.getElementById('maddy-document-data');
