@@ -65,6 +65,19 @@ async function selectOrder(number){
     for(const [label,prop] of [['total','quantity'],['dispatched','delivered'],['pending','pending']])$(label).textContent=data.position.items.reduce((n,i)=>n+i[prop],0);
     $('notes').value=data.order.notes||'';$('assistant-section').hidden=true;$('assistant').required=false;
     renderItems();labelTransporter();renderPeople('transporter');renderPeople('assistant');
+    const agendaId=new URLSearchParams(location.search).get('agenda');
+    if(agendaId){
+      const agenda=await apiRequest('AGENDA_LISTAR',{number});if(ticket!==sequence)return;
+      const planned=agenda.data.items.find(e=>e.id===agendaId&&e.status==='PROGRAMADA');
+      if(planned){
+        for(const row of $('items').querySelectorAll('.rm-item')){
+          const item=planned.items.find(i=>i.id===row.dataset.itemId),check=row.querySelector('[type=checkbox]'),qty=row.querySelector('[type=number]');
+          if(item?.remaining>0&&!check.disabled){check.checked=true;qty.disabled=false;qty.required=true;qty.value=String(Math.min(item.remaining,Number(qty.max)));}
+        }
+        if(planned.notes)$('notes').value=planned.notes;calculate();
+        $('back').href='/agenda.html';$('back').setAttribute('aria-label','Volver a la agenda');
+      }
+    }
     const history=$('history');history.replaceChildren();
     for(const r of [...data.position.history].reverse()){const row=document.createElement('article');row.className='rm-history-row';row.innerHTML=`<strong>${esc(r.number)}</strong><p>${esc(dateTime(r.date))} · Transporta ${esc(r.transporter.name)}</p><p>${esc(r.items.map(i=>i.quantity+' × '+i.description).join(' · '))}</p><a href="${esc(path(r.number))}">Ver remisión y PDF</a>`;history.append(row);}
     if(!history.children.length)history.textContent='Todavía no hay despachos de esta orden.';
@@ -152,4 +165,5 @@ bindSandboxBanner($('app'));$('version').textContent=`Maderarte · Sistema Maddy
     if(result.phase==='confirmed')window.location.assign(path(result.number));
   });
 }});
+
 

@@ -23,7 +23,7 @@ const MENU_GROUPS = Object.freeze([
       { key: 'clientes', label: 'Consultar cliente', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
       { key: 'produccion', label: 'Producción', description: 'Preparar solicitudes a fábrica', icon: 'stack', permission: 'produccion.read', href: '/produccion.html' },
       { key: 'documentos', label: 'Centro documental', description: 'PDF, recibos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
-      { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', available: false }
+      { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', href: '/agenda.html' }
     ]
   }
 ]);
@@ -182,3 +182,4 @@ guardPage({
     bindDashboardInteractions(session);
   }
 });
+

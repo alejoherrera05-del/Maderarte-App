@@ -18,6 +18,9 @@ function routeAction_(action, payload, context) {
     case 'INVITACION_VALIDAR': return validateInvitation_(payload);
     case 'INVITACION_ACTIVAR': return activateInvitation_(payload, context.proxyMeta);
     case 'DASHBOARD_RESUMEN': return dashboardSummary_(context.session);
+    case 'AGENDA_LISTAR': return agList_(payload, context);
+    case 'AGENDA_GUARDAR': return agSave_(payload, context);
+    case 'AGENDA_GUARDADO_ESTADO': return agStatus_(payload, context);
     case 'CLIENTES_LISTAR': return listClients_(payload, context.session);
     case 'CLIENTE_OBTENER': return getClient_(payload, context.session);
     case 'COTIZACION_META': return quoteMeta_(payload, context.session);
@@ -99,3 +102,4 @@ function doPost(event) {
     return jsonOutput_(failure_(error, requestId));
   }
 }
+
