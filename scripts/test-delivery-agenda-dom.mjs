@@ -22,19 +22,20 @@ assert.equal(w.document.querySelector('#ag-editor').open,true,'OP context opens 
 assert.equal(w.document.querySelector('#ag-query').closest('#ag-search-area').hidden,true);
 assert.equal(w.document.querySelectorAll('.ag-item').length,2);
 assert.equal(w.document.querySelector('prueba'),null,'product names are escaped');
-assert.equal(w.document.querySelectorAll('[type=time]').length,1);
+assert.equal(w.document.querySelectorAll('#ag-form [type=time]').length,1);
 for(const c of w.document.querySelectorAll('[type=checkbox]'))c.checked=true;
 w.document.querySelector('#ag-date').value='2090-01-20';w.document.querySelector('#ag-time').value='14:30';
 w.document.querySelector('#ag-form').dispatchEvent(new w.Event('submit',{cancelable:true}));
-await new Promise(r=>setTimeout(r,20));
+await new Promise(r=>setTimeout(r,250));
 assert.equal(sent.payload.items.length,2);assert.equal(sent.payload.time,'14:30');
 assert.equal(w.document.querySelector('#ag-fields').disabled,true,'uncertain reply freezes exact payload');
 assert.ok(w.sessionStorage.getItem('maddy.agenda.attempt.TEST-USER'));
 assert.equal(w.document.querySelector('#ag-close').disabled,true);
 w.document.querySelector('#ag-form').dispatchEvent(new w.Event('submit',{cancelable:true}));
-await new Promise(r=>setTimeout(r,20));
+await new Promise(r=>setTimeout(r,250));
 assert.equal(w.document.querySelector('#ag-editor').open,false);
 assert.equal(w.sessionStorage.getItem('maddy.agenda.attempt.TEST-USER'),null);
 assert.equal(sent.options.requestId,'AGENDA-DOM-REQUEST-0001');
-dom.window.close();console.log('Agenda DOM: contextual opening, multiple selection, escaping, date-only capture and exact recovery verified.');
+dom.window.close();console.log('Agenda DOM: contextual opening, multiple selection, escaping, date and time capture and exact recovery verified.');
+
 

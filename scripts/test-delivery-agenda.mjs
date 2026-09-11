@@ -30,10 +30,15 @@ assert.throws(()=>call('AGENDA_GUARDAR',edit,'AGENDA-STALE-00001'),e=>e.appCode=
 call('AGENDA_GUARDAR',{...edit,revision:2,cancel:true},'AGENDA-CANCEL-00001');
 assert.equal(call('AGENDA_LISTAR').items[0].status,'CANCELADA');
 assert.equal(JSON.stringify([f.production().tables.Orden_Items,f.production().tables.Ordenes_Pedido,f.production().tables.Abonos,f.production().tables.Remisiones,f.production().tables.Registro_Numeros]),before,'Planning never changes dispatched quantities, money, documents or numbers');
+call('AGENDA_GUARDAR',{...edit,revision:3,restore:true},'AGENDA-RESTORE-01');
+assert.equal(call('AGENDA_LISTAR').items[0].status,'PROGRAMADA');
+call('AGENDA_GUARDAR',{...edit,revision:4,cancel:true},'AGENDA-CANCEL-02');
 call('AGENDA_GUARDAR',payload,'AGENDA-SECOND-01');
+assert.throws(()=>call('AGENDA_GUARDAR',{...edit,revision:5,restore:true},'AGENDA-CONFLICT-RESTORE'),e=>e.appCode==='AGENDA_ALREADY_PLANNED');
 f.production().tables.Orden_Items.rows.forEach(i=>i.Cantidad_Entregada=1);
 assert.equal(call('AGENDA_LISTAR').items.find(e=>e.id==='AGENDA-SECOND-01').status,'DESPACHADA');
 const roles=f.production().tables.Roles.rows;roles[0].Permisos_JSON='["ordenes.read","agenda.read"]';
 assert.throws(()=>call('AGENDA_GUARDAR',payload,'AGENDA-DENIED-00001'),e=>e.appCode==='PERMISSION_DENIED');
 console.log('Agenda: multiple furniture items, lost replies, deduplication, date validation, revision conflicts, cancellation and unchanged commercial ledgers verified.');
+
 
