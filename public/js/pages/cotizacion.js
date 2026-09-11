@@ -13,7 +13,7 @@ import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/ord
 
 import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
 import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
-import { bindFormDraft } from '../core/form-draft.js?v=save-1';
+import { bindFormDraft } from '../core/form-draft.js?v=device-1';
 import { bindOrderSave } from './pedido-save.js?v=compact-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 import { conversionNumber, loadQuoteOrder, lockQuoteSource } from '../core/quote-to-order.js';
