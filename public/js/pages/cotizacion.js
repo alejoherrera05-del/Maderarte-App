@@ -642,7 +642,7 @@ guardStandalonePage({
   permission: COMMERCIAL_DOCUMENT.permission,
   async render({ session }) {
     state.session = session;
-    window.dispatchEvent(new Event('maddy:commercial-ready'));
+    window.dispatchEvent(new window.Event('maddy:commercial-ready'));
     const app = document.getElementById('quote-app');
     if (app) app.hidden = false;
     const back = document.querySelector('.quote-header a');
