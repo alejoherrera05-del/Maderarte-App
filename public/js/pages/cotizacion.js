@@ -1,5 +1,5 @@
 import { sandboxDraftType, bindSandboxBanner } from '../core/order-sandbox-context.js';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { COMPANY_PROFILE, companyBranch } from '../core/company-profile.js';
 import { COMMERCIAL_DOCUMENT } from '../core/commercial-document.js?v=agreements-1';
@@ -684,3 +684,4 @@ guardStandalonePage({
     });
   }
 });
+

@@ -1,6 +1,6 @@
 import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
-import { apiRequest } from '../core/api.js?v=remission-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { readSessionSnapshot } from '../core/session.js';
 import { hasPermission } from '../core/permissions.js';
@@ -152,3 +152,4 @@ bindSandboxBanner($('app'));$('version').textContent=`Maderarte · Sistema Maddy
     if(result.phase==='confirmed')window.location.assign(path(result.number));
   });
 }});
+

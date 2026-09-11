@@ -22,11 +22,15 @@ function isTransientStatus(status) {
   return status === 0 || status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
+export function requestTimeoutMs(action, sandbox = false, override) {
+  return Math.max(1_000, Number(override || (sandbox || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS|DASHBOARD)_/.test(action) ? 120_000 : APP_CONFIG.requestTimeoutMs)));
+}
+
 export async function apiRequest(action, payload = {}, options = {}) {
   const sandbox = sandboxRequestContext(action);
   const requestId = options.requestId || createRequestId(action.replace(/[^A-Z0-9]/gi, '').slice(0, 10).toUpperCase() || 'WEB');
   const controller = new AbortController();
-  const timeoutMs = Math.max(1_000, Number(options.timeoutMs || (sandbox.sandboxId ? 120000 : APP_CONFIG.requestTimeoutMs)));
+  const timeoutMs = requestTimeoutMs(action, Boolean(sandbox.sandboxId), options.timeoutMs);
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
@@ -75,3 +79,4 @@ export async function apiRequest(action, payload = {}, options = {}) {
     window.clearTimeout(timer);
   }
 }
+

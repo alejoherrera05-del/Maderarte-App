@@ -1,5 +1,5 @@
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { readSessionSnapshot } from '../core/session.js';
 import { hasPermission } from '../core/permissions.js';
@@ -125,3 +125,4 @@ guardStandalonePage({permission:'abonos.read',async render({session}){
     if(result.phase==='confirmed')window.location.assign(receiptPath(result.number));
   });
 }});
+

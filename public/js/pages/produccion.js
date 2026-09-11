@@ -2,7 +2,7 @@ import { unrequestedQuantity } from '../core/production-actions.js';
 import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
 import { bindSupplierDirectory } from '../core/supplier-directory.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
-import { apiRequest } from '../core/api.js';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { hasPermission } from '../core/permissions.js';
 import { escapeHtml as esc } from '../core/format.js';
@@ -96,3 +96,4 @@ guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   const number = new URL(window.location.href).searchParams.get('op');
   if (number) await openOrder(number);
 } });
+

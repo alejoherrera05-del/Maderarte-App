@@ -1,4 +1,4 @@
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { APP_CONFIG } from '../core/config.js';
 import { currentSandboxId } from '../core/order-sandbox-context.js';
 import { createDocumentProgress } from '../core/order-progress.js?v=quote-real-1';
@@ -178,3 +178,4 @@ async function bind() {
 }
 
 void bind();
+

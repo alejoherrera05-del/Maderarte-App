@@ -1,10 +1,10 @@
-import { bindProductionTracking } from '../core/production-tracking.js?v=actions-1';
+import { bindProductionTracking } from '../core/production-tracking.js?v=runtime-1';
 import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=production-actions-1';
 import { productState, bindProductJourney } from '../core/product-journey.js?v=actions-1';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
 import { bindOrderDocuments } from './orden-documentos.js?v=production-actions-1';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { previewApiData } from '../core/auth.js';
 import { date, dateTime, escapeHtml, humanizeCode, money, safeExternalUrl, text } from '../core/format.js';
 import { withPreview } from '../core/config.js';
@@ -100,3 +100,4 @@ guardStandalonePage({
     }
   }
 });
+

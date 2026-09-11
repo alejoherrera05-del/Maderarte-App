@@ -1,5 +1,5 @@
 import { guardStandalonePage } from '../core/page-guard.js';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { SANDBOX_ID, sandboxLink } from '../core/order-sandbox-context.js';
 
 guardStandalonePage({ permission:'config.read', async render({session}) {
@@ -64,3 +64,4 @@ guardStandalonePage({ permission:'config.read', async render({session}) {
   document.getElementById('sandbox-cancel').addEventListener('click',()=>{cleanup.hidden=true;});
   await run('PRUEBA_ESTADO');
 } });
+

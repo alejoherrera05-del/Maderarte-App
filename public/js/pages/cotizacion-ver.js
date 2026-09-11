@@ -1,5 +1,5 @@
 import { sandboxLink, bindSandboxBanner } from '../core/order-sandbox-context.js';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml } from '../core/format.js';
 import { hasPermission } from '../core/permissions.js';
@@ -61,3 +61,4 @@ guardStandalonePage({permission:'cotizaciones.read',async render({session}){
   if(!number){renderError(new Error('Falta el número de cotización.'));return;}
   try{const response=await apiRequest('COTIZACION_OBTENER',{number});render(response.data,session);}catch(error){renderError(error);}
 }});
+
