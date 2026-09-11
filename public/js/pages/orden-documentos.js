@@ -1,5 +1,5 @@
 import { createOrderProgress } from '../core/order-progress.js?v=compact-1';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { photoReference, finishOrderDocuments } from '../core/order-media.js?v=progress-1';
 // Photos and PDFs are read through the authenticated app. Drive files stay private.
 export async function bindOrderDocuments(root, number, request = apiRequest) {
@@ -105,3 +105,4 @@ export async function bindOrderDocuments(root, number, request = apiRequest) {
     }
   } catch (error) { message.textContent = error.message || 'No se pudo comprobar la documentación. No se modificó la orden.'; }
 }
+

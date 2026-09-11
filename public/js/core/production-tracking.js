@@ -1,4 +1,4 @@
-import { apiRequest, createRequestId } from './api.js?v=tracking-1';
+import { apiRequest, createRequestId } from './api.js?v=runtime-1';
 import { escapeHtml as esc } from './format.js';
 const stages={SOLICITADO:'Solicitud realizada',CONFIRMADO:'Confirmado por proveedor',FABRICACION:'En fabricación',LISTO:'Listo en fábrica',TRANSPORTE:'En transporte',BODEGA:'Recibido en bodega'};
 export async function bindProductionTracking(root,data,session) {
@@ -31,3 +31,4 @@ export async function bindProductionTracking(root,data,session) {
   dialog.addEventListener('close',()=>button.focus());
   if(pending||(!button.hidden&&new URLSearchParams(window.location.search).get('track')==='1')){open();const url=new URL(window.location.href);url.searchParams.delete('track');window.history.replaceState(null,'',url);}
 }
+

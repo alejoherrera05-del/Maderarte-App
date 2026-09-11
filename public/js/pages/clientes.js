@@ -1,6 +1,6 @@
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { sandboxLink } from '../core/order-sandbox-context.js';
-import { apiRequest } from '../core/api.js?v=sandbox-1';
+import { apiRequest } from '../core/api.js?v=runtime-1';
 import { previewApiData } from '../core/auth.js';
 import { withPreview } from '../core/config.js';
 import { guardStandalonePage } from '../core/page-guard.js';
@@ -408,3 +408,4 @@ guardStandalonePage({
     }
   }
 });
+

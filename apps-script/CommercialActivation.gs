@@ -52,7 +52,11 @@ function activarOperacionComercial() {
     // Fail closed if any subsequent administrative write fails.
     props.setProperty('COMMERCIAL_OPERATION_ENABLED', 'NO');
     var mode = findRow_('Configuracion', 'Clave', 'MODO_OPERACION');
-    orderAtomicBatch_(orderUpdateRequests_('Configuracion', mode._row, { Valor: 'OPERACION' }).concat([orderAppendRequest_('Auditoria', [{ ID: Utilities.getUuid(), Fecha: now_().toISOString(), Usuario: 'EDITOR_APPS_SCRIPT', Modulo: 'CONFIGURACION', Accion: 'ACTIVACION_COMERCIAL_PREPARADA', Entidad: 'Configuracion', Entidad_ID: 'MODO_OPERACION', Estado: 'CONFIRMADA', Resumen: 'Configuración preparada; requiere confirmación de la compuerta privada.', Antes_JSON: JSON.stringify({ mode: mode.Valor }), Despues_JSON: JSON.stringify({ mode: 'OPERACION' }) }])]));
+    // Use the same Sheets service for this setting's write and readback. A REST
+    // batch does not invalidate SpreadsheetApp's read cache in this execution.
+    updateObject_('Configuracion', mode._row, { Valor: 'OPERACION' });
+    SpreadsheetApp.flush();
+    orderAtomicBatch_([orderAppendRequest_('Auditoria', [{ ID: Utilities.getUuid(), Fecha: now_().toISOString(), Usuario: 'EDITOR_APPS_SCRIPT', Modulo: 'CONFIGURACION', Accion: 'ACTIVACION_COMERCIAL_PREPARADA', Entidad: 'Configuracion', Entidad_ID: 'MODO_OPERACION', Estado: 'CONFIRMADA', Resumen: 'Configuración preparada; requiere confirmación de la compuerta privada.', Antes_JSON: JSON.stringify({ mode: mode.Valor }), Despues_JSON: JSON.stringify({ mode: 'OPERACION' }) }])]);
     if (getConfigValue_('MODO_OPERACION', '') !== 'OPERACION') throw appError_('LAUNCH_UNCONFIRMED', 'No se confirmó el modo. Las ventas siguen cerradas.', 503);
     ['ORDER_SAVE_ENABLED', 'ORDER_DOCUMENTS_ENABLED', 'ORDER_DOCUMENTS_ACCEPTED', 'RECEIPT_SAVE_ENABLED', 'REMISSION_SAVE_ENABLED', 'PRODUCTION_SAVE_ENABLED', 'QUOTE_WRITES_ENABLED', 'QUOTE_DOCUMENTS_ENABLED', 'QUOTE_OPERATION_ACCEPTED'].forEach(function(key) {
       props.setProperty(key, 'SI');
@@ -76,4 +80,5 @@ function pausarOperacionComercial() {
     Logger.log(JSON.stringify(result)); return result;
   });
 }
+
 

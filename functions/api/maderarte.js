@@ -4,6 +4,9 @@ import { generateReceiptSample } from './receipt-sample.js';
 const COOKIE_NAME = '__Host-maderarte_session';
 const MAX_BODY_BYTES = 1_048_576;
 const UPSTREAM_TIMEOUT_MS = 20_000;
+export function upstreamTimeoutMs(action, extended = false) {
+  return extended || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS|DASHBOARD)_/.test(action) ? 90_000 : UPSTREAM_TIMEOUT_MS;
+}
 const PUBLIC_ACTIONS = new Set(['PING', 'AUTH_LOGIN', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR']);
 
 function jsonResponse(body, status = 200, headers = {}) {
@@ -105,7 +108,7 @@ async function forwardToAppsScript(request, env, body, requestId, internal = fal
   };
   const longAction = internal || body?.sandboxId || action.startsWith('PRUEBA_') || action === 'ORDEN_FOTO_GUARDAR' || action === 'COTIZACION_FOTO_GUARDAR';
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), longAction ? 90000 : UPSTREAM_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), upstreamTimeoutMs(action, Boolean(longAction)));
   let response;
   try {
     response = await fetch(upstreamUrl, {
@@ -194,3 +197,4 @@ export async function handleRequest(request, env = {}) {
 }
 
 export async function onRequest(context) { return handleRequest(context.request, context.env); }
+
