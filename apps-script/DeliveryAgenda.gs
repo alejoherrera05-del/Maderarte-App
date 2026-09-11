@@ -31,7 +31,7 @@ function agView_(row, lines) {
 function agList_(payload, context) {
   var s = agSession_(context, false), lines = listRows_('Orden_Items');
   return {enabled:commercialWritesEnabled_() && hasPermission_(s.permissions,'agenda.update'), items:listRows_('Agenda').filter(function(r) {
-    return ['ENTREGA_MADDY','COMPROMISO_MADDY'].includes(r.Categoria) && orderBranchReadable_(s,r.Sede) && (!payload.number || r.Numero_OP === payload.number);
+    return ['ENTREGA_MADDY','COMPROMISO_MADDY'].includes(r.Categoria) && (r.Categoria!=='ENTREGA_MADDY' || hasPermission_(s.permissions,'ordenes.read')) && orderBranchReadable_(s,r.Sede) && (!payload.number || r.Numero_OP === payload.number);
   }).map(function(r) {return r.Categoria==='ENTREGA_MADDY'?agView_(r,lines):agTaskView_(r);}).sort(function(a,b) {return a.date.localeCompare(b.date)||a.time.localeCompare(b.time);})};
 }
 function agReplay_(id, s, hash) {
