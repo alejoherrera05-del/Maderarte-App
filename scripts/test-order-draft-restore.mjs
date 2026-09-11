@@ -38,7 +38,7 @@ try {
   assert.equal(readOrderEntry(3500000).allocationError,'');
   assert.deepEqual(readOrderEntry(3500000).allocation.map(part=>part.balance),[0,1400000]);
   assert.doesNotMatch(JSON.stringify(readOrderEntry(3500000)),/INTERNA/);
-  assert.equal(window.sessionStorage.getItem('maderarte.form-draft.v1.other.order'),null);
+  assert.notEqual(window.sessionStorage.getItem('maderarte.form-draft.v1.other.order'),null);
   const change = (id,value) => {const el=document.getElementById(id);el.value=value;el.dispatchEvent(new window.Event('change',{bubbles:true}));};
   change('order-common-agreement','ENTREGA_POSTERIOR');
   assert.equal(document.getElementById('order-item-1-agreement').value, commonMode ? 'ENTREGA_POSTERIOR' : 'ENTREGA_HOY', 'Borradores anteriores conservan acuerdos individuales');
@@ -55,16 +55,16 @@ try {
     assert.equal(document.getElementById('order-item-9-agreement').value,'ENTREGA_HOY');
     assert.equal(document.getElementById('order-payment-4-amount').value,'2100000');
   }
-  assert.equal(JSON.parse(window.sessionStorage.getItem(key)).data.itemIds.length,commonMode ? 4 : 3);
+  assert.equal(JSON.parse(window.localStorage.getItem(key)).data.itemIds.length,commonMode ? 4 : 3);
   document.getElementById('order-add-payment').click();
   assert.equal(document.querySelectorAll('[data-payment-row]')[1].dataset.paymentRow,'5');
-  assert.equal(JSON.parse(window.sessionStorage.getItem(key)).data.paymentIds.length,2);
+  assert.equal(JSON.parse(window.localStorage.getItem(key)).data.paymentIds.length,2);
   const {bindFormDraft,clearFormDrafts}=await import('../public/js/core/form-draft.js?v=agreements-1');
   let deleted=false;
   const failingStorage={getItem:()=>null,setItem:()=>{throw new Error('quota');},removeItem:()=>{deleted=true;}};
   const failed=bindFormDraft({session,type:'order',capture:()=>({}),restore:()=>{},storage:failingStorage});
   await failed.ready; failed.changed();
-  assert.ok(deleted);
+  assert.equal(deleted,false);
   assert.match(document.getElementById('quote-draft-status').textContent,/No pudimos conservar/);
   const event=new window.Event('beforeunload',{cancelable:true});
   window.dispatchEvent(event);

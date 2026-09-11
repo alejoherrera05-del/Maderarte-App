@@ -1,15 +1,18 @@
 import { clearOrderSaveSnapshots } from './order-save.js?v=save-1';
 
 const PREFIX = 'maderarte.form-draft.v1.';
-const MAX_AGE = 8 * 60 * 60 * 1000;
 
 export function clearFormDrafts(storage = window.sessionStorage) {
   clearOrderSaveSnapshots(storage);
   for (const key of Object.keys(storage)) if (key.startsWith(PREFIX)) storage.removeItem(key);
+  if (storage === window.sessionStorage) {
+    for (const key of Object.keys(window.localStorage)) if (key.startsWith(PREFIX)) window.localStorage.removeItem(key);
+    window.dispatchEvent(new window.Event('maddy:drafts-cleared'));
+  }
 }
 
-// A tab-scoped recovery copy, isolated by account and document type. Never an OP.
-export function bindFormDraft({ session, type, capture, restore, root = document, storage = window.sessionStorage }) {
+// Device recovery, isolated by account and document type. Never a commercial record.
+export function bindFormDraft({ session, type, capture, restore, root = document, storage = window.localStorage, legacyStorage = window.sessionStorage }) {
   const uid = session?.profile?.uid;
   if (!uid) return null;
   const key = `${PREFIX}${uid}.${type}`;
@@ -19,6 +22,17 @@ export function bindFormDraft({ session, type, capture, restore, root = document
   let safe = true;
   let locked = false;
   let completed = false;
+  let blocked = false;
+  let expected = null;
+  const isQuote = type === 'quote' || type.startsWith('quote:');
+  function complete() {
+    completed = true; locked = true; dirty = false;
+    try {
+      if (storage.getItem(key) === expected) storage.removeItem(key);
+      legacyStorage.removeItem(key);
+    } catch { /* The save journal still prevents another submission. */ }
+    status?.replaceChildren();
+  }
   const tell = message => {
     if (!status) return;
     const copy = root.createElement('span');
@@ -29,60 +43,80 @@ export function bindFormDraft({ session, type, capture, restore, root = document
     discard.addEventListener('click', () => {
       if (locked || completed) return;
       if (!window.confirm('¿Descartar este borrador y empezar uno nuevo? Se borrarán los datos escritos en este formulario.')) return;
-      try { storage.removeItem(key); } catch { /* A failed draft remains only in memory. */ }
+      try {
+        if (storage.getItem(key) !== expected) throw new Error('Otra pestaña cambió el borrador');
+        storage.removeItem(key);
+        legacyStorage.removeItem(key);
+      } catch { tell('No se pudo descartar el borrador. La copia sigue guardada.'); return; }
+      completed = true;
       dirty = false;
       window.location.reload();
     });
     status.replaceChildren(copy, discard);
   };
   function save() {
-    if (recovering || !dirty || locked || completed) return;
+    if (recovering || !dirty || locked || completed || blocked) return;
     try {
+      if (storage.getItem(key) !== expected) {
+        blocked = true; safe = false;
+        tell('El borrador cambió en otra pestaña. Estos cambios no se han guardado; mantén esta pestaña abierta para revisarlos.');
+        return;
+      }
       const data = capture();
-      storage.setItem(key, JSON.stringify({ version: 1, uid, type, savedAt: Date.now(), data }));
+      const savedAt = Date.now();
+      const raw = JSON.stringify({ version: 1, uid, type, savedAt, data });
+      storage.setItem(key, raw);
+      if (storage.getItem(key) !== raw) throw new Error('Guardado no confirmado');
+      expected = raw;
       safe = true;
-      tell('Borrador temporal en esta pestaña. Aún no es un pedido ni un pago registrado.');
+      try { if (legacyStorage !== storage) legacyStorage.removeItem(key); } catch { /* Durable copy confirmed. */ }
+      tell(`Guardado en este dispositivo · ${new Date(savedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`);
     } catch {
       safe = false;
-      // An old copy must not masquerade as the current one after a quota failure.
-      try { storage.removeItem(key); } catch { /* Storage itself may be blocked. */ }
-      tell('No pudimos conservar el borrador temporal. Mantén esta pestaña abierta para no perder lo escrito.');
+      // setItem is atomic: preserve the last confirmed copy on quota failures.
+      tell('No pudimos conservar los últimos cambios. Mantén esta pestaña abierta. La última copia guardada no se ha borrado.');
     }
   }
   const ready = (async () => {
     try {
-      for (const storedKey of Object.keys(storage)) {
-        if (!storedKey.startsWith(PREFIX)) continue;
-        let entry;
-        try { entry = JSON.parse(storage.getItem(storedKey)); } catch { /* Discard malformed recovery data. */ }
-        if (!entry || entry.uid !== uid || entry.version !== 1 || Date.now() - entry.savedAt > MAX_AGE || entry.savedAt > Date.now()) storage.removeItem(storedKey);
-      }
-      const draft = JSON.parse(storage.getItem(key) || 'null');
-      if (draft?.type === type) {
+      expected = storage.getItem(key);
+      const parse = raw => {
+        if (!raw) return null;
+        const entry = JSON.parse(raw);
+        if (entry?.version !== 1 || entry.uid !== uid || entry.type !== type || !entry.data || !Number.isFinite(entry.savedAt)) throw new Error('Borrador incompatible');
+        return entry;
+      };
+      const durable = parse(expected);
+      const legacy = parse(legacyStorage === storage ? null : legacyStorage.getItem(key));
+      const draft = legacy && (!durable || legacy.savedAt > durable.savedAt) ? legacy : durable;
+      if (draft) {
         await restore(draft.data);
         dirty = true;
-        tell('Recuperamos tu borrador de esta pestaña. Revísalo antes de continuar.');
+        tell('Recuperamos tu borrador de este dispositivo. Revísalo antes de continuar.');
       }
     } catch {
-      try { storage.removeItem(key); } catch { /* Storage unavailable. */ }
-      tell('No fue posible recuperar el borrador anterior. Revisa los datos del formulario.');
-    } finally { recovering = false; }
+      blocked = true; safe = false;
+      tell('No pudimos recuperar el borrador completo. La copia sigue guardada y no será sobrescrita. Mantén esta pestaña abierta para revisarlo.');
+    } finally {
+      recovering = false;
+      if (isQuote && root.getElementById('quote-form')?.dataset.quoteConfirmed === 'true') complete();
+      else if (dirty && !blocked) save();
+    }
   })();
-  function changed() { if (!recovering && !locked && !completed) { dirty = true; save(); } }
+  function changed() { if (!locked && !completed) { dirty = true; save(); } }
   root.getElementById('quote-form')?.addEventListener('input', changed);
   root.getElementById('quote-form')?.addEventListener('change', changed);
   window.addEventListener('pagehide', save);
+  root.addEventListener('visibilitychange', () => { if (root.visibilityState === 'hidden') save(); });
+  window.addEventListener('maddy:drafts-cleared', () => { completed = true; locked = true; });
   window.addEventListener('beforeunload', event => {
     save();
     if (dirty && !safe) { event.preventDefault(); event.returnValue = ''; }
   });
-  return { ready, changed, save,
+  const api = { ready, changed, save,
     setLocked(value) { locked = Boolean(value); },
-    complete() {
-      // Prevent pagehide from resurrecting an already confirmed order as a draft.
-      completed = true; locked = true; dirty = false;
-      try { storage.removeItem(key); } catch { /* The save journal still prevents another submission. */ }
-      status?.replaceChildren();
-    }
+    complete
   };
+  window.addEventListener('maddy:quote-confirmed', () => { if (type === 'quote' || type.startsWith('quote:')) api.complete(); });
+  return api;
 }
