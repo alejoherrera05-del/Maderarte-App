@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {sandboxRuntime} from './fixtures/owner-sandbox-runtime.mjs';
+const f=sandboxRuntime();f.start();f.command.items.forEach(i=>i.photos=[]);f.command.payments=[{clientPaymentId:'1',method:'EFECTIVO',amount:2100000,internalNote:''}];
+const source=f.run('ORDEN_CREAR',f.command,'QA-ADJUST-SOURCE-0001').order.number;
+const targetDraft=structuredClone(f.command);targetDraft.payments=[];targetDraft.noPayment=true;
+// This in-memory multi-order fixture uses only synthetic records; the live owner sandbox stays single-order.
+f.c.osValidateDraft_=()=>{};
+const target=f.run('ORDEN_CREAR',targetDraft,'QA-ADJUST-TARGET-0001').order.number;
+f.rows('Ordenes_Pedido').find(r=>r.Numero_OP===target).Nombre_Cliente='OTRO CLIENTE DE PRUEBA';
+f.rows('Ordenes_Pedido').find(r=>r.Numero_OP===target).Cedula_NIT='0000000002';
+const account=n=>f.run('AJUSTE_CUENTA',{number:n});
+let a=account(source);const originalPayments=JSON.stringify(f.rows('Abonos'));
+let payload={number:source,fingerprint:a.position.fingerprint,type:'DESISTIR',items:[{itemId:a.items[0].id,quantity:1}],reason:'Solicitud de cliente de prueba',reference:''};
+const preview=f.run('AJUSTE_PREVISUALIZAR',payload);assert.ok(preview.after.credit>0);assert.equal(JSON.stringify(f.rows('Abonos')),originalPayments);
+const saved=f.run('AJUSTE_CONFIRMAR',payload,'QA-ADJUST-CANCEL-0001');assert.equal(saved.saved,true);
+assert.equal(f.run('AJUSTE_CONFIRMAR',payload,'QA-ADJUST-CANCEL-0001').result.id,saved.result.id);assert.equal(f.rows('Anulaciones').length,1);
+assert.throws(()=>f.run('AJUSTE_CONFIRMAR',{...payload,reason:'Otro motivo'},'QA-ADJUST-CANCEL-0001'),e=>e.appCode==='REQUEST_CONTENT_CHANGED');
+assert.throws(()=>f.run('AJUSTE_CONFIRMAR',payload,'QA-ADJUST-CANCEL-0002'),e=>e.appCode==='ADJUSTMENT_CHANGED');
+a=account(source);assert.equal(a.position.credit,preview.after.credit);assert.equal(a.items[0].cancelled,1);assert.equal(a.items[0].pending,0);
+assert.equal(JSON.stringify(f.rows('Abonos')),originalPayments,'A cancellation must not edit receipts');
+assert.ok(f.rows('Archivos_Orden').some(s=>s.Tipo==='RECIBO'),'Freeze initial receipt plans before changing the order');
+const targetBefore=account(target);payload={number:source,fingerprint:a.position.fingerprint,type:'TRANSFERIR',amount:100000,target,targetFingerprint:targetBefore.position.fingerprint,reason:'Cliente autoriza traslado a familiar',reference:'Autorización de prueba'};
+f.state.loseBatch=true;
+assert.throws(()=>f.run('AJUSTE_CONFIRMAR',payload,'QA-ADJUST-TRANSFER-0001'),e=>e.appCode==='ADJUSTMENT_UNCERTAIN');
+assert.equal(f.run('AJUSTE_ESTADO',{requestId:'QA-ADJUST-TRANSFER-0001'}).saved,true);
+f.run('AJUSTE_CONFIRMAR',payload,'QA-ADJUST-TRANSFER-0001');
+assert.equal(account(target).position.paid,100000);assert.equal(account(source).position.credit,a.position.credit-100000);
+assert.equal(JSON.stringify(f.rows('Abonos')),originalPayments,'Transfer must not create a new cash receipt');
+a=account(source);payload={number:source,fingerprint:a.position.fingerprint,type:'DEVOLVER',amount:50000,reason:'Devolución parcial solicitada',reference:'Soporte de prueba'};
+f.run('AJUSTE_CONFIRMAR',payload,'QA-ADJUST-REFUND-0001');assert.equal(account(source).position.credit,a.position.credit-50000);
+a=account(source);assert.throws(()=>f.run('AJUSTE_CONFIRMAR',{...payload,fingerprint:a.position.fingerprint,amount:a.position.credit+1},'QA-ADJUST-EXCESS-0001'),e=>e.appCode==='ADJUSTMENT_EXCEEDS_CREDIT');
+assert.equal(f.rows('Anulaciones').length,3);assert.equal(f.rows('Auditoria').filter(r=>r.Modulo==='AJUSTES').length,3);
+const destination=account(target);const receipt=f.run('RECIBO_CREAR',{number:target,fingerprint:destination.position.fingerprint,amount:100000,method:'EFECTIVO',concept:'Abono posterior al traslado',reference:'',internalNote:''},'QA-ADJUST-RECEIPT-0001');assert.equal(receipt.saved,true);assert.equal(account(target).position.paid,200000);
+const receiptPlan=JSON.parse(f.rows('Archivos_Orden').find(s=>s.Archivo_ID===receipt.receipt.number+'-PDF-V1').Plan_JSON);assert.equal(receiptPlan.history.reduce((n,h)=>n+h.amount,0),200000);assert.ok(receiptPlan.history.some(h=>h.method==='SALDO RECIBIDO'));
+f.c.validateSessionToken_=()=>({permissions:['ordenes.read','abonos.read'],profile:{uid:'restricted',branches:['MP']}});assert.throws(()=>f.c.ajConfirm_(payload,{requestId:'QA-ADJUST-DENIED-0001'}));
+console.log('Order adjustments: cancellation, retained receipts, partial credit, cross-client transfer, refund, lost response recovery, duplicate rejection and permission checks passed.');
+

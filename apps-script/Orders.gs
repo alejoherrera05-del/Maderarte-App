@@ -23,6 +23,7 @@ function normalizeOrder_(row) {
     total: valueNumber_(row.Valor_Total),
     paid: valueNumber_(row.Abonado_Total),
     balance: valueNumber_(row.Saldo_Pendiente),
+    credit: Math.max(0,valueNumber_(row.Abonado_Total)-valueNumber_(row.Valor_Total)),
     saleMode: normalizeCode_(row.Modalidad_Venta),
     status: normalizeCode_(row.Estado),
     productionStatus: normalizeCode_(row.Estado_Produccion),
@@ -198,4 +199,5 @@ function systemState_(session) {
     }
   };
 }
+
 

@@ -18,6 +18,7 @@ function rcOrder_(number, session) {
   return row;
 }
 function rcPosition_(row) {
+  if(typeof ajEvents_==='function'){var adjustments=ajEvents_(row.Numero_OP);if(adjustments.length)return ajPosition_(row,adjustments);}
   var payments = listRows_('Abonos').filter(function(p) { return p.Numero_OP === row.Numero_OP; });
   var active = payments.filter(function(p) { return p.Estado_Registro === 'ACTIVO' && p.Afecta_Saldo === 'SI'; });
   var total = Number(row.Valor_Total), paid = active.reduce(function(sum,p) { return sum + Number(p.Valor_Abono); },0);
@@ -58,6 +59,7 @@ function rcReplay_(id,session,fingerprint) {
   return saved.result;
 }
 function rcHistory_(payment,row) {
+  if(typeof ajEvents_==='function' && ajEvents_(row.Numero_OP).length)return ajReceiptHistory_(payment,row);
   var ledger=listRows_('Abonos').filter(function(p){return p.Numero_OP===row.Numero_OP;}).sort(function(a,b){return a._row-b._row;});
   var index=ledger.findIndex(function(p){return p.Numero_Recibo===payment.Numero_Recibo;});
   ledger=index===-1?ledger.concat([payment]):ledger.slice(0,index+1);
@@ -173,4 +175,5 @@ function rcReadPdf_(payload,context) {
   if(!a.slot || a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF del recibo todavía está pendiente.',409);
   return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};
 }
+
 

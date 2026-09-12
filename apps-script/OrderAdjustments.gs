@@ -76,6 +76,8 @@ function ajConfirm_(payload,context){
     var plan=ajPlan_(p,s),stamp=now_().toISOString(),uid=s.profile.uid,event={contract:1,type:p.type,amount:plan.amount,target:p.type==='TRANSFERIR'?p.target:'',reference:p.reference,items:plan.items.map(function(i){return {itemId:i.itemId,description:i.description,quantity:i.quantity,reduction:i.reduction};}),before:plan.before,after:plan.after,targetBefore:plan.targetBefore,targetAfter:plan.targetAfter};
     var result={id:id,number:p.number,target:event.target,type:p.type,amount:plan.amount,after:plan.after,requestId:id};
     var requests=[orderAppendRequest_('Anulaciones',[{Anulacion_ID:id,Fecha:stamp,Tipo_Entidad:'AJUSTE_OP',Entidad_ID:p.number,Motivo:p.reason,Solicitada_Por:uid,Aprobada_Por:uid,Estado:'CONFIRMADA',Antes_JSON:JSON.stringify(plan.before),Consecuencias_JSON:JSON.stringify(event),Reversible:'NO',Request_ID:id}])];
+    // Freeze any missing initial receipt plans against the pre-adjustment account.
+    [plan.row,plan.target].filter(Boolean).forEach(function(row){var slots=mdRows_(row.Numero_OP);listRows_('Abonos').filter(function(a){return a.Numero_OP===row.Numero_OP&&a.Estado_Registro==='ACTIVO';}).forEach(function(a){if(!slots.some(function(slot){return slot.Archivo_ID===a.Numero_Recibo+'-PDF-V1';}))requests=requests.concat(rcPlan_(a,row,row.Responsable||'').requests);});});
     function update(row,after){requests=requests.concat(orderUpdateRequests_('Ordenes_Pedido',row._row,{Valor_Total:after.total,Abonado_Total:after.paid,Saldo_Pendiente:after.balance,Version:Number(row.Version)+1,Actualizado_Por:uid,Actualizado_En:stamp}));}
     update(plan.row,plan.after);if(plan.target)update(plan.target,plan.targetAfter);
     plan.items.forEach(function(i){var row=i.row,c=Number(row.Cantidad_Desistida||0)+i.quantity,pending=Number(row.Cantidad_Pendiente)-i.quantity;requests=requests.concat(orderUpdateRequests_('Orden_Items',row._row,{Cantidad_Desistida:c,Cantidad_Pendiente:pending,Estado_Item:pending===0?'DESISTIDO':row.Estado_Item,Version:Number(row.Version)+1,Actualizado_En:stamp}));});
@@ -83,5 +85,13 @@ function ajConfirm_(payload,context){
     requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:id,Fecha:stamp,Tipo_Operacion:'AJUSTE_CONFIRMAR',Entidad:'OP',Entidad_ID:p.number,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:hash,result:result}),Usuario:uid}]));
     SpreadsheetApp.flush();reserveOrderFence_(id,uid,hash,'AJUSTE_CONFIRMAR');try{orderAtomicBatch_(requests);}catch(e){throw appError_('ADJUSTMENT_UNCERTAIN','Falta confirmar el resultado. Consulta este mismo intento.',503);}clearConfirmedOrderFence_();return {saved:true,result:result};
   }finally{lock.releaseLock();}
+}
+function ajReceiptHistory_(payment,row){
+  var date=valueDateIso_(payment.Fecha_Pago),history=listRows_('Abonos').filter(function(p){return p.Numero_OP===row.Numero_OP&&p.Estado_Registro==='ACTIVO'&&p.Afecta_Saldo==='SI'&&valueDateIso_(p.Fecha_Pago)<=date;}).map(function(p){return {number:p.Numero_Recibo,date:valueDateIso_(p.Fecha_Pago),method:p.Medio_Pago,amount:Number(p.Valor_Abono),balance:Number(p.Saldo_Nuevo)};});
+  if(!history.some(function(p){return p.number===payment.Numero_Recibo;}))history.push({number:payment.Numero_Recibo,date:date,method:payment.Medio_Pago,amount:Number(payment.Valor_Abono),balance:Number(payment.Saldo_Nuevo)});
+  ajEvents_(row.Numero_OP).filter(function(e){return e.date<=date;}).forEach(function(e){var incoming=e.target===row.Numero_OP;history.push({number:e.id,date:e.date,method:e.type==='DESISTIR'?'AJUSTE DE PEDIDO':e.type==='DEVOLVER'?'DEVOLUCIÓN':incoming?'SALDO RECIBIDO':'SALDO TRASLADADO',amount:e.type==='DESISTIR'?0:incoming?e.amount:-e.amount,balance:(incoming?e.targetAfter:e.after).balance});});
+  history.sort(function(a,b){return a.date.localeCompare(b.date)||(a.number===payment.Numero_Recibo?1:b.number===payment.Numero_Recibo?-1:0);});
+  var paid=history.reduce(function(n,h){return n+h.amount;},0);if(!Number.isSafeInteger(paid)||paid!==Number(row.Valor_Total)-Number(payment.Saldo_Nuevo))ajFail_('El historial del recibo requiere conciliación.');
+  return history;
 }
 
