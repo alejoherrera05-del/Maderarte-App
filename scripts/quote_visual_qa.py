@@ -152,7 +152,8 @@ def check_editor_and_home():
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
             menu.click()
             wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.dashboard-sheet-overlay.active')))
-            assert driver.find_element(By.ID, 'dashboard-dialog-title').text == 'Cotizaciones'
+            wait.until(lambda d: d.find_element(By.ID, 'dashboard-dialog-title').text == 'Cotizaciones')
+            wait.until(lambda d: d.execute_script("const panel=document.querySelector('.dashboard-sheet-content');const css=getComputedStyle(panel);return css.opacity==='1'&&Math.abs(new DOMMatrixReadOnly(css.transform).m42)<.5;"))
             assert driver.find_element(By.CSS_SELECTOR, '.dashboard-dialog-option').size['height'] >= 60
             driver.save_screenshot(str(PNG.with_name('inicio-opciones-mobile.png')))
         results.append({'editor': editor, 'home': home})
