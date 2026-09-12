@@ -52,7 +52,7 @@ function renderOrder(data, session) {
   const documents = Array.isArray(data.documents) ? data.documents : [];
   const primaryLinks = [link(order.pdfUrl, 'Orden de pedido'), link(order.clientFolderUrl, 'Carpeta del cliente'), link(order.orderFolderUrl, 'Carpeta de la OP')].filter(Boolean).join('');
   const quoteLink = order.quoteOrigin ? `<a class="od-link" href="${escapeHtml(sandboxLink('/cotizacion-ver.html?cot=' + encodeURIComponent(order.quoteOrigin)))}"><span><strong>Cotización de origen ${escapeHtml(order.quoteOrigin)}</strong><span>Abrir propuesta</span></span><span class="od-link-arrow">↗</span></a>` : '';
-  return `<header class="od-header"><div class="od-header-inner"><a class="od-round" href="${escapeHtml(withPreview('/ordenes.html'))}" aria-label="Volver al historial"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a><div class="ow-header-brand"><img src="/assets/brand/maderarte-logo-2026.webp" alt=""><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Orden de pedido</span></div><a class="od-round" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Ir al inicio"><img src="/assets/icons/house.svg" alt="" aria-hidden="true"></a></div></header>
+  return `<header class="od-header"><div class="od-header-inner"><a class="od-round" href="${escapeHtml(new URLSearchParams(window.location.search).get('from') === 'produccion' ? sandboxLink('/produccion.html') : withPreview('/ordenes.html'))}" aria-label="Volver al listado"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a><div class="ow-header-brand"><img src="/assets/brand/maderarte-logo-2026.webp" alt=""><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Orden de pedido</span></div><a class="od-round" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Ir al inicio"><img src="/assets/icons/house.svg" alt="" aria-hidden="true"></a></div></header>
   <main class="od-shell">
     <section class="ow-summary od-hero"><div><span>Orden de pedido</span><strong>${escapeHtml(order.number || number)}</strong><small>${escapeHtml(order.client)}</small></div><div><span>Fecha</span><strong>${escapeHtml(date(order.date))}</strong><small>${escapeHtml(order.city || '')}</small></div><div><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong></div><div><span>Abonado</span><strong>${escapeHtml(money(order.paid))}</strong></div><div><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong></div></section>
     <nav class="ow-order-tabs" aria-label="Secciones de la orden">${['Muebles','Cliente','Abonos','Remisiones','Documentos'].map((label,i)=>`<button type="button" data-order-section="${i}" aria-pressed="${i===0}">${label}</button>`).join('')}</nav>${renderWorkbench(items,order,session)}
@@ -100,5 +100,6 @@ guardStandalonePage({
     }
   }
 });
+
 
 

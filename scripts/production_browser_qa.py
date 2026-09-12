@@ -40,7 +40,7 @@ try:
     else:raise AssertionError('Unexpected action '+a)
     r.fulfill(status=200,json={'status':'success','data':data})
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
-   page.goto(ORIGIN+'/produccion.html?prueba='+QA)
+   page.goto(ORIGIN+'/produccion.html?buscar=1&prueba='+QA)
    expect(page.locator('#production-query')).to_be_visible()
    expect(page.locator('#production-cover')).to_be_visible()
    page.wait_for_function('document.querySelector(".maddy-entrance-character").naturalWidth === 1086')
@@ -108,3 +108,4 @@ try:
   browser.close()
 finally:
  server.terminate();server.wait(timeout=10)
+

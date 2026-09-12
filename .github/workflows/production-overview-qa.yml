@@ -1,0 +1,28 @@
+name: Production overview QA
+on:
+  pull_request:
+    paths: ['public/**', 'apps-script/**', 'scripts/**', '.github/workflows/production-overview-qa.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: node scripts/test-production-overview.mjs
+      - run: pip install playwright==1.55.0
+      - run: python scripts/production_overview_browser_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-overview-qa
+          path: artifacts/production-overview/
+
