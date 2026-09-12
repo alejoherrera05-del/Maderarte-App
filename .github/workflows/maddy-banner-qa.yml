@@ -1,0 +1,31 @@
+name: Maddy banner QA
+on:
+  pull_request:
+    paths:
+      - 'public/assets/banners/**'
+      - 'public/js/core/home-moment.js'
+      - 'public/js/pages/dashboard.js'
+      - 'public/css/dashboard-home.css'
+      - 'scripts/maddy_banner_visual_qa.py'
+      - 'scripts/test-home-moment.mjs'
+      - '.github/workflows/maddy-banner-qa.yml'
+jobs:
+  banners:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node scripts/test-home-moment.mjs
+      - run: pip install selenium==4.35.0 pillow==11.3.0
+      - run: python scripts/maddy_banner_visual_qa.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maddy-banners-qa
+          path: artifacts/maddy-banners/
+          if-no-files-found: error

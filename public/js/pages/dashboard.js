@@ -2,6 +2,7 @@ import { APP_CONFIG, withPreview } from '../core/config.js';
 import { escapeHtml } from '../core/format.js';
 import { guardPage } from '../core/page-guard.js';
 import { mountToday } from '../core/dashboard-today.js?v=home-12';
+import { getHomeMoment } from '../core/home-moment.js?v=maddy-1';
 import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
@@ -28,18 +29,6 @@ const MENU_GROUPS = Object.freeze([
     ]
   }
 ]);
-
-function dayPart(date = new Date()) {
-  const hour = date.getHours();
-  if (hour < 12) return { key: 'morning', greeting: 'Buenos días' };
-  if (hour < 18) return { key: 'afternoon', greeting: 'Buenas tardes' };
-  return { key: 'night', greeting: 'Buenas noches' };
-}
-
-function formattedDate(date = new Date()) {
-  const value = new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
 
 function firstName(profile) {
   const value = String(profile?.name || '').trim().split(/\s+/)[0];
@@ -178,13 +167,13 @@ guardPage({
   activeKey: 'inicio',
   title: 'Maddy',
   async render({ session, content }) {
-    const moment = dayPart();
+    const moment = getHomeMoment();
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
       <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-signature.svg" alt="Maddy" width="120" height="62"><img class="home-endorsement" src="/assets/brand/maddy-endorsement.svg" alt="by Maderarte" width="190" height="28"></header>
-      <section class="home-hero" aria-labelledby="dashboard-greeting">
-        <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting"><span class="home-greeting-welcome">${escapeHtml(moment.greeting)},</span><span>${escapeHtml(firstName(session.profile))}.</span></h1></div>
-        <img class="home-interior" src="/assets/interiors/living-room-morning.webp" alt="Sala de Maderarte" fetchpriority="high">
+      <section class="home-hero" data-moment="${moment.key}" aria-labelledby="dashboard-greeting">
+        <div class="home-greeting"><p>${escapeHtml(moment.dateLabel)}</p><h1 id="dashboard-greeting"><span class="home-greeting-welcome">${escapeHtml(moment.greeting)},</span><span>${escapeHtml(firstName(session.profile))}.</span></h1></div>
+        <img class="home-interior" src="${moment.image}" alt="${moment.alt}" width="2172" height="724" fetchpriority="high" decoding="async">
       </section>
       <div class="dashboard-groups">${menuGroup(MENU_GROUPS[0],0)}</div>
       <section class="home-today" id="home-today" aria-label="Agenda de hoy"></section>
@@ -205,6 +194,20 @@ guardPage({
     // Agenda already owns reminders on this home; do not duplicate it with a bell.
     document.getElementById('dashboard-notifications-button')?.remove();
     document.getElementById('dashboard-notifications-popover')?.remove();
+    const refreshMoment = () => {
+      const next = getHomeMoment();
+      const hero = content.querySelector('.home-hero');
+      content.querySelector('.home-greeting > p').textContent = next.dateLabel;
+      content.querySelector('.home-greeting-welcome').textContent = next.greeting + ',';
+      if (hero.dataset.moment !== next.key) {
+        const art = hero.querySelector('.home-interior');
+        art.src = next.image;
+        art.alt = next.alt;
+        hero.dataset.moment = next.key;
+      }
+    };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshMoment(); });
+    window.setInterval(() => { if (!document.hidden) refreshMoment(); }, 60000);
     bindDashboardInteractions(session);
     mountToday(document.getElementById('home-today'),session);
   }
