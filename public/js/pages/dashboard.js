@@ -112,8 +112,9 @@ function bindDashboardInteractions(session) {
     panel.style.left=Math.max(16,Math.min(rect.left,window.innerWidth-width-16))+'px';
     panel.style.top=Math.max(16,Math.min(rect.bottom+8,window.innerHeight-panel.offsetHeight-16))+'px';
   };
-  const openSheet = (item, button) => {
+  const openSheet = (item, button, keyboard = false) => {
     if (!sheet || !sheetTitle || !sheetOptions) return;
+    sheet.classList.toggle('keyboard-open', keyboard);
     trigger=button;sheetTitle.textContent=item.label;sheetDescription.textContent='';
     sheetOptions.innerHTML=(item.options || []).map(optionMarkup).join('');
     filterByPermission(sheetOptions.querySelectorAll('[data-permission]'),session);
@@ -140,7 +141,7 @@ function bindDashboardInteractions(session) {
     if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
   });
   document.querySelectorAll('button.dashboard-menu-item').forEach(button => {
-    button.addEventListener('click', () => { const item=findMenuItem(button.dataset.menuKey);if(item)openSheet(item,button); });
+    button.addEventListener('click', event => { const item=findMenuItem(button.dataset.menuKey);if(item)openSheet(item,button,event.detail===0); });
   });
 
   document.querySelectorAll('.dashboard-group-toggle').forEach(toggle => {
@@ -175,12 +176,12 @@ function bindDashboardInteractions(session) {
 guardPage({
   permission: 'app.access',
   activeKey: 'inicio',
-  title: 'Centro operativo',
+  title: 'Maddy',
   async render({ session, content }) {
     const moment = dayPart();
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
-      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-by-maderarte-header.svg" alt="Maddy by Maderarte" width="148" height="94"></header>
+      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-signature.svg" alt="Maddy" width="120" height="62"><span class="home-endorsement">by <strong>Maderarte</strong></span></header>
       <section class="home-hero" aria-labelledby="dashboard-greeting">
         <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)},<br>${escapeHtml(firstName(session.profile))}.</h1></div>
         <img class="home-interior" src="/assets/interiors/living-room-morning.webp" alt="Sala de Maderarte" fetchpriority="high">
@@ -191,7 +192,7 @@ guardPage({
     </section>
     <footer class="dashboard-footer" aria-label="Información de Maderarte">
       <img class="dashboard-footer-seal" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
-      <p class="dashboard-footer-title">Maderarte · Centro operativo</p>
+      <p class="dashboard-footer-title">Maddy · by Maderarte</p>
       <span class="dashboard-footer-version">VERSIÓN ${escapeHtml(APP_CONFIG.version)} &copy; ${year}</span>
     </footer>
     <div class="dashboard-sheet-overlay" id="dashboard-menu-sheet" aria-hidden="true">
