@@ -96,6 +96,8 @@ def audit_home_states(width):
         setTimeout(()=>done({state:root.dataset.state, rows:root.querySelectorAll('.home-pending-row').length,
           checks:root.querySelectorAll('[data-complete]').length,more:root.querySelector('.home-more')?.textContent,
           height:root.getBoundingClientRect().height,
+          moreInside:root.querySelector('.home-more').getBoundingClientRect().bottom<=root.getBoundingClientRect().bottom,
+          toolsAligned:Math.abs(document.querySelector('.home-tools').getBoundingClientRect().width-root.getBoundingClientRect().width)<1,
           overlap:document.querySelector('.home-tools').getBoundingClientRect().top<root.getBoundingClientRect().bottom,
           overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,
           clipped:[...root.querySelectorAll('.home-event strong,.home-event small')].some(e=>e.scrollWidth>e.clientWidth+1)}),50);
@@ -103,7 +105,7 @@ def audit_home_states(width):
     """)
     assert ready.get('state') == 'ready' and ready['rows'] == 3 and ready['checks'] == 2, ready
     assert '4 pendientes' in ready['more'] and ready['height'] > empty['agenda'], ready
-    assert not ready['overflow'] and not ready['clipped'] and not ready['overlap'], ready
+    assert not ready['overflow'] and not ready['clipped'] and not ready['overlap'] and ready['moreInside'] and ready['toolsAligned'], ready
     driver.save_screenshot(str(PNG.with_name(f'inicio-compromisos-{width}.png')))
     return {'empty':empty,'ready':ready}
 
