@@ -1,6 +1,7 @@
 import { apiRequest, createRequestId } from './api.js?v=agenda-1';
 import { escapeHtml as esc } from './format.js';
 import { hasPermission } from './permissions.js';
+import { APP_CONFIG } from './config.js';
 
 export const bogotaDay = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Bogota' }).format(new Date());
 export function pendingToday(items, day) {
@@ -15,7 +16,7 @@ export function mountToday(root, session) {
   const canRead = hasPermission(session, 'agenda.read');
   const key = 'maddy.agenda.attempt.' + session.profile.uid;
   let items = [], enabled = false, busy = false, loaded = false, error = '', undo = null, attempt = null;
-  const api = async (action, payload, options) => (await apiRequest(action, payload, options)).data;
+  const api = async (action, payload, options) => APP_CONFIG.preview.enabled && action==='AGENDA_LISTAR' ? {items:[],enabled:false} : (await apiRequest(action, payload, options)).data;
   const render = () => {
     const day = bogotaDay(), date = new Date(day + 'T12:00:00Z');
     const pending = pendingToday(items, day);

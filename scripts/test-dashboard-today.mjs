@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import { hasPermission } from '../public/js/core/permissions.js';
 const dom = new JSDOM('<div id="root"></div>',{url:'https://example.invalid/index.html',runScripts:'outside-only',pretendToBeVisual:true});
 const w=dom.window, root=w.document.getElementById('root');
+w.APP_CONFIG={preview:{enabled:false}};
 w.hasPermission=hasPermission;w.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');w.matchMedia=()=>({matches:true});
 let sequence=0, calls=[], lose=false, events=[], saved=new Map();w.createRequestId=()=>`TEST-${++sequence}`;
 const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Bogota'}).format(new Date());

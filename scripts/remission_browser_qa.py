@@ -28,6 +28,7 @@ try:
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
     elif a=='RECIBO_CAPACIDADES':data={'enabled':False}
     elif a=='REMISION_CAPACIDADES':data={'contractVersion':1,'enabled':req.get('sandboxId')==QA,'photosReady':True,'documentsReady':True}
+    elif a=='AGENDA_LISTAR':data={'items':[],'enabled':False}
     elif a=='ORDENES_LISTAR':
      assert req.get('sandboxId')==QA
      query=req['payload']['query'];state['searches'].append(query)
