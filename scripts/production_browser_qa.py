@@ -22,6 +22,7 @@ try:
    def route(r):
     req=r.request.post_data_json;a=req['action'];actions.append(a)
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
+    elif a=='AGENDA_LISTAR':data={'items':[],'enabled':False}
     elif a=='ORDENES_LISTAR':
      assert req.get('sandboxId')==QA
      if req['payload']['query']=='fallo':r.fulfill(status=500,json={'status':'error','msg':'Error de prueba'});return

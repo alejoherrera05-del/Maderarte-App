@@ -1,18 +1,19 @@
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { escapeHtml } from '../core/format.js';
 import { guardPage } from '../core/page-guard.js';
+import { mountToday } from '../core/dashboard-today.js?v=home-1';
 import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
   {
     key: 'diario', label: 'Día a día', tone: 'orange', primary: true, items: [
       { key: 'ventas', label: 'Ventas', description: 'Crear una OP o consultar tus ventas', icon: 'clipboard-text', permission: 'ordenes.read', options: [
-        { label: 'Nueva orden de pedido', description: 'Registrar una venta y sus muebles', href: '/pedido.html' },
-        { label: 'Historial de ventas', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' }
+        { permission: 'ordenes.create', label: 'Nueva orden', description: 'Registrar una venta y sus muebles', href: '/pedido.html' },
+        { label: 'Ver órdenes', description: 'Consultar OP, pagos y saldos', href: '/ordenes.html' }
       ] },
       { key: 'cotizaciones', label: 'Cotizaciones', description: 'Crear propuestas y hacer seguimiento', icon: 'file-text', permission: 'cotizaciones.read', options: [
-        { label: 'Formulario', description: 'Crear una propuesta con items y referencias', href: '/cotizacion.html' },
-        { label: 'Seguimiento', description: 'Radar comercial por antigüedad y valor', href: '/cotizaciones.html' }
+        { permission: 'cotizaciones.create', label: 'Nueva cotización', description: 'Crear una propuesta con items y referencias', href: '/cotizacion.html' },
+        { label: 'Ver cotizaciones', description: 'Radar comercial por antigüedad y valor', href: '/cotizaciones.html' }
       ] },
       { key: 'abonos', label: 'Abonos', description: 'Registrar pagos y emitir recibos de caja', icon: 'wallet', permission: 'abonos.read', href: '/abono.html' },
       { key: 'remisiones', label: 'Remisiones', description: 'Buscar una OP y preparar la entrega', icon: 'truck', permission: 'remisiones.read', href: '/remision.html' }
@@ -20,10 +21,10 @@ const MENU_GROUPS = Object.freeze([
   },
   {
     key: 'operacion', label: 'Más herramientas', tone: 'gold', items: [
-      { key: 'clientes', label: 'Consultar cliente', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
+      { key: 'clientes', label: 'Clientes', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
       { key: 'produccion', label: 'Producción', description: 'Preparar solicitudes a fábrica', icon: 'stack', permission: 'produccion.read', href: '/produccion.html' },
-      { key: 'documentos', label: 'Centro documental', description: 'PDF, recibos y soportes', icon: 'folder-open', permission: 'documentos.read', available: false },
-      { key: 'agenda', label: 'Agenda y calendario', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', href: '/agenda.html' }
+      
+      { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', href: '/agenda.html' }
     ]
   }
 ]);
@@ -55,10 +56,10 @@ function menuItem(item, tone) {
   }
 
   if (item.href) {
-    return `<a class="dashboard-menu-item" href="${escapeHtml(withPreview(item.href))}"${permission}>${core}<img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true"></a>`;
+    return `<a class="dashboard-menu-item" data-menu-key="${escapeHtml(item.key)}" href="${escapeHtml(withPreview(item.href))}"${permission}>${core}<img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true"></a>`;
   }
 
-  return `<button class="dashboard-menu-item" type="button" data-menu-key="${escapeHtml(item.key)}" data-tone="${escapeHtml(tone)}"${permission}>
+  return `<button class="dashboard-menu-item" type="button" data-menu-key="${escapeHtml(item.key)}" data-tone="${escapeHtml(tone)}" aria-haspopup="dialog" aria-expanded="false" aria-controls="dashboard-menu-sheet"${permission}>
     ${core}<img class="dashboard-menu-caret" src="/assets/icons/caret-right.svg" alt="" aria-hidden="true">
   </button>`;
 }
@@ -85,7 +86,7 @@ function findMenuItem(key) {
 
 function optionMarkup(option) {
   if (option.disabled) return `<button class="dashboard-dialog-option" type="button" disabled><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><span class="status-badge">No disponible</span></button>`;
-  return `<a class="dashboard-dialog-option" href="${escapeHtml(withPreview(option.href))}"><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><img src="/assets/icons/arrow-right.svg" alt="" aria-hidden="true"></a>`;
+  return `<a class="dashboard-dialog-option" href="${escapeHtml(withPreview(option.href))}"${option.permission ? ` data-permission="${escapeHtml(option.permission)}"` : ''}><span><strong>${escapeHtml(option.label)}</strong><small>${escapeHtml(option.description)}</small></span><img src="/assets/icons/arrow-right.svg" alt="" aria-hidden="true"></a>`;
 }
 
 function bindDashboardInteractions(session) {
@@ -95,30 +96,41 @@ function bindDashboardInteractions(session) {
   const sheetOptions = document.getElementById('dashboard-dialog-options');
   const sheetClose = document.getElementById('dashboard-sheet-close');
 
+  let trigger = null;
+  const panel = sheet?.querySelector('[role="dialog"]');
   const closeSheet = () => {
     if (!sheet) return;
-    sheet.classList.remove('active');
-    sheet.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
+    sheet.classList.remove('active'); sheet.setAttribute('aria-hidden', 'true'); sheet.inert = true;
+    document.body.style.overflow = ''; trigger?.setAttribute('aria-expanded','false'); trigger?.focus();
   };
-
-  const openSheet = item => {
-    if (!sheet || !sheetTitle || !sheetDescription || !sheetOptions) return;
-    sheet.dataset.tone = item.tone;
-    sheetTitle.textContent = item.label;
-    sheetDescription.textContent = item.description;
-    sheetOptions.innerHTML = (item.options || []).map(optionMarkup).join('');
-    sheet.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => sheet.classList.add('active'));
-    window.setTimeout(() => sheetClose?.focus(), 220);
+  const positionSheet = () => {
+    if(!trigger || !panel || !sheet.classList.contains('active')) return;
+    const mobile=window.matchMedia('(max-width: 760px)').matches;
+    if(mobile){panel.style.left='';panel.style.top='';return;}
+    const rect=trigger.getBoundingClientRect(), width=Math.min(360,window.innerWidth-32);
+    panel.style.left=Math.max(16,Math.min(rect.left,window.innerWidth-width-16))+'px';
+    panel.style.top=Math.max(16,Math.min(rect.bottom+8,window.innerHeight-panel.offsetHeight-16))+'px';
   };
-
+  const openSheet = (item, button) => {
+    if (!sheet || !sheetTitle || !sheetOptions) return;
+    trigger=button;sheetTitle.textContent=item.label;sheetDescription.textContent='';
+    sheetOptions.innerHTML=(item.options || []).map(optionMarkup).join('');
+    filterByPermission(sheetOptions.querySelectorAll('[data-permission]'),session);
+    sheet.inert=false;sheet.setAttribute('aria-hidden','false');sheet.classList.add('active');
+    button.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';positionSheet();
+    (sheetOptions.querySelector('a:not([hidden])') || sheetClose)?.focus();
+  };
+  window.addEventListener('resize',positionSheet);
+  sheet.inert=true;
+  sheet.addEventListener('keydown',event=>{
+    if(event.key!=='Tab')return;
+    const nodes=[...panel.querySelectorAll('button:not([hidden]), a:not([hidden])')];
+    const first=nodes[0],last=nodes.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+    if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  });
   document.querySelectorAll('button.dashboard-menu-item').forEach(button => {
-    button.addEventListener('click', () => {
-      const item = findMenuItem(button.dataset.menuKey);
-      if (item) openSheet(item);
-    });
+    button.addEventListener('click', () => { const item=findMenuItem(button.dataset.menuKey);if(item)openSheet(item,button); });
   });
 
   document.querySelectorAll('.dashboard-group-toggle').forEach(toggle => {
@@ -158,14 +170,14 @@ guardPage({
     const moment = dayPart();
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
-      <section class="dashboard-hero" data-day-part="${escapeHtml(moment.key)}" aria-labelledby="dashboard-greeting">
-        <div class="dashboard-hero-brand" aria-label="Maderarte">
-          <img class="dashboard-hero-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte">
-          <img class="dashboard-hero-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE">
-        </div>
-        <div class="dashboard-hero-copy"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)}, ${escapeHtml(firstName(session.profile))}</h1></div>
+      <header class="home-brand" aria-label="Maderarte"><img src="/assets/brand/maderarte-logo-2026.webp" alt=""><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"></header>
+      <section class="home-hero" aria-labelledby="dashboard-greeting">
+        <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)},<br>${escapeHtml(firstName(session.profile))}.</h1></div>
+        <img class="home-interior" src="/assets/interiors/living-room-morning.webp" alt="Sala de Maderarte" fetchpriority="high">
       </section>
-      <div class="dashboard-groups">${MENU_GROUPS.map(menuGroup).join('')}</div>
+      <div class="dashboard-groups">${menuGroup(MENU_GROUPS[0],0)}</div>
+      <section class="home-today" id="home-today" aria-label="Agenda de hoy"></section>
+      <nav class="home-tools" aria-label="Más herramientas">${MENU_GROUPS[1].items.map(item=>menuItem(item,'quiet')).join('')}</nav>
     </section>
     <footer class="dashboard-footer" aria-label="Información de Maderarte">
       <img class="dashboard-footer-seal" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">
@@ -180,6 +192,7 @@ guardPage({
       </section>
     </div>`;
     bindDashboardInteractions(session);
+    mountToday(document.getElementById('home-today'),session);
   }
 });
 

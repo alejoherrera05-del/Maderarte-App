@@ -28,6 +28,7 @@ try:
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
     elif a=='RECIBO_CAPACIDADES':data={'enabled':False}
     elif a=='REMISION_CAPACIDADES':data={'contractVersion':1,'enabled':req.get('sandboxId')==QA,'photosReady':True,'documentsReady':True}
+    elif a=='AGENDA_LISTAR':data={'items':[],'enabled':False}
     elif a=='ORDENES_LISTAR':
      assert req.get('sandboxId')==QA
      query=req['payload']['query'];state['searches'].append(query)
@@ -75,13 +76,13 @@ try:
     continue
    page.goto(ORIGIN+'/index.html')
    expect(page.locator('#dashboard-group-diario .dashboard-menu-copy strong')).to_have_text(['Ventas','Cotizaciones','Abonos','Remisiones'])
-   assert page.evaluate("document.querySelectorAll('.dashboard-menu-group')[1].getBoundingClientRect().top>=document.querySelector('.dashboard-menu-group').getBoundingClientRect().bottom"),'Secondary tools must be below all daily actions'
+   assert page.evaluate("document.querySelector('.home-tools').getBoundingClientRect().top>=document.querySelector('.dashboard-menu-group').getBoundingClientRect().bottom"),'Secondary tools must be below all daily actions'
    if width<=760:
-    page.get_by_role('button',name='Más herramientas').click()
+    expect(page.get_by_role('navigation',name='Más herramientas')).to_be_visible()
     for item in page.locator('#dashboard-group-diario .dashboard-menu-item').all():expect(item).to_be_visible()
    page.screenshot(path=str(OUT/f'inicio-diario-{width}.png'),full_page=True)
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
-   page.get_by_role('link',name='Remisiones Buscar una OP y preparar la entrega').click()
+   page.get_by_role('link',name='Remisiones',exact=True).click()
    expect(page).to_have_url(ORIGIN+'/remision.html');expect(page.locator('#remission-query')).to_be_visible()
    page.goto(ORIGIN+'/remision.html?prueba='+QA)
    query=page.locator('#remission-query');query.fill('00000001')

@@ -94,8 +94,8 @@ def check_editor_and_home():
           return {width:innerWidth, overflow:document.documentElement.scrollWidth>innerWidth+1,
             rowHeight:row.getBoundingClientRect().height,
             titleSize:parseFloat(getComputedStyle(row.querySelector('strong')).fontSize),
-            descriptionSize:parseFloat(getComputedStyle(row.querySelector('.dashboard-menu-copy > span')).fontSize)};''')
-        assert not home['overflow'] and home['rowHeight'] >= 94 and home['titleSize'] >= 18 and home['descriptionSize'] >= 15
+            descriptionHidden:getComputedStyle(row.querySelector('.dashboard-menu-copy > span')).display === 'none', iconBackground:getComputedStyle(row.querySelector('.dashboard-menu-icon')).backgroundImage, shortcuts:document.querySelectorAll('.dashboard-groups .dashboard-menu-item').length};''')
+        assert not home['overflow'] and home['rowHeight'] >= 72 and home['titleSize'] >= 14 and home['descriptionHidden'] and home['iconBackground'] == 'none' and home['shortcuts'] == 4, home
         driver.save_screenshot(str(PNG.with_name(f'inicio-{width}.png')))
         if width == 390:
             menu = driver.find_element(By.CSS_SELECTOR, '[data-menu-key="cotizaciones"]')
@@ -103,7 +103,7 @@ def check_editor_and_home():
             menu.click()
             wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, '.dashboard-sheet-overlay.active')))
             assert driver.find_element(By.ID, 'dashboard-dialog-title').text == 'Cotizaciones'
-            assert driver.find_element(By.CSS_SELECTOR, '.dashboard-dialog-option').size['height'] >= 88
+            assert driver.find_element(By.CSS_SELECTOR, '.dashboard-dialog-option').size['height'] >= 60
             driver.save_screenshot(str(PNG.with_name('inicio-opciones-mobile.png')))
         results.append({'editor': editor, 'home': home})
     print('EDITOR_HOME_QA=' + json.dumps(results, ensure_ascii=False))

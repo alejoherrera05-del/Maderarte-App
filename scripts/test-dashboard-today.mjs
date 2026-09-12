@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { JSDOM } from 'jsdom';
+import { hasPermission } from '../public/js/core/permissions.js';
+const dom = new JSDOM('<div id="root"></div>',{url:'https://example.invalid/index.html',runScripts:'outside-only',pretendToBeVisual:true});
+const w=dom.window, root=w.document.getElementById('root');
+w.APP_CONFIG={preview:{enabled:false}};
+w.hasPermission=hasPermission;w.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');w.matchMedia=()=>({matches:true});
+let sequence=0, calls=[], lose=false, events=[], saved=new Map();w.createRequestId=()=>`TEST-${++sequence}`;
+const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Bogota'}).format(new Date());
+w.apiRequest=async(action,p,options)=>{
+ calls.push(action);
+ if(action==='AGENDA_LISTAR')return {data:{items:events,enabled:true}};
+ if(action==='AGENDA_GUARDADO_ESTADO')return {data:{saved:saved.has(p.requestId),result:saved.get(p.requestId)}};
+ if(action==='AGENDA_GUARDAR'){
+  const e=events.find(e=>e.id===p.id);assert.equal(p.revision,e.revision);
+  const result={id:e.id,revision:e.revision+1};e.revision++;e.status=p.operation==='complete'?'COMPLETADA':'PROGRAMADA';saved.set(options.requestId,result);
+  if(lose)throw Object.assign(Error('Conexión perdida'),{status:503});return {data:{result}};
+ }throw Error(action);
+};
+w.eval(readFileSync('public/js/core/dashboard-today.js','utf8').replace(/^import .*;\r?\n/gm,'').replaceAll('export ',''));
+const session={profile:{uid:'TEST'},permissions:['*']};
+events=[{id:'delivery',kind:'ENTREGA',client:'Ensayo',number:'TEST-OP',date:today,time:'09:00',status:'PROGRAMADA',revision:1},{id:'task',kind:'PROVEEDOR',title:'Ensayo <script>',contact:'Taller',date:today,time:'10:00',status:'PROGRAMADA',revision:1},{id:'future',kind:'SERVICIO',title:'Futuro',date:'2099-01-01',time:'10:00',status:'PROGRAMADA',revision:1}];
+const settle=()=>new Promise(r=>setTimeout(r,25));
+w.mountToday(root,session);await settle();
+assert.equal(root.querySelectorAll('.home-pending-row').length,2);assert.equal(root.querySelectorAll('[data-complete]').length,1,'delivery cannot be marked dispatched');
+assert.equal(root.querySelector('.home-event').getAttribute('href'),'/agenda.html?event=delivery&from=inicio');assert(!root.querySelector('script'));
+root.querySelector('[data-complete]').click();await settle();assert.equal(events[1].status,'COMPLETADA');assert(root.querySelector('[data-undo]'));assert.equal(w.sessionStorage.length,0);
+root.querySelector('[data-undo]').click();await settle();assert.equal(events[1].status,'PROGRAMADA');assert(root.querySelector('[data-complete]'));
+lose=true;root.querySelector('[data-complete]').click();await settle();assert(w.sessionStorage.getItem('maddy.agenda.attempt.TEST'));assert(root.querySelector('.home-feedback a'));assert(root.querySelector('[data-complete]').disabled);
+calls=[];root.innerHTML='';w.mountToday(root,{profile:{uid:'DENIED'},permissions:['app.access']});await settle();assert.equal(calls.length,0);assert(!root.querySelector('[data-complete]'));
+console.log('Dashboard today: dates, deep links, permissions, completion, undo and uncertain-save recovery passed.');

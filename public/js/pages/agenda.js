@@ -26,7 +26,7 @@ function calendar(){
   $('ag-days').innerHTML=Array.from({length:offset},(_,i)=>`<span class="${Math.floor(i/7)!==week?'ag-other-week':''}"></span>`).join('')+Array.from({length:count},(_,n)=>{
     const date=state.month+'-'+String(n+1).padStart(2,'0');return `<button type="button" class="${Math.floor((offset+n)/7)!==week?'ag-other-week':''}" data-date="${date}" aria-label="${esc(dayName(date))}" aria-pressed="${date===state.date}" data-events="${state.events.some(e=>e.date===date&&pending(e))}">${n+1}</button>`;
   }).join('');
-  $('ag-days').querySelectorAll('button').forEach(b=>b.onclick=()=>{state.date=b.dataset.date;render();});
+  $('ag-days').querySelectorAll('button').forEach(b=>b.onclick=()=>{state.allPending=false;state.date=b.dataset.date;render();});
   $('ag-calendar').classList.toggle('ag-expanded',state.expanded);$('ag-expand').textContent=state.expanded?'Ver semana':'Ver mes completo';$('ag-expand').setAttribute('aria-expanded',state.expanded);
 }
 function eventCard(e){
@@ -45,12 +45,12 @@ function bindCards(){
 }
 function render(){
   disposeSwipes.forEach(dispose=>dispose());disposeSwipes=[];
-  calendar();$('ag-day').textContent=state.query?'Resultados':state.date===today?'Hoy, '+dayName(state.date):dayName(state.date);
+  calendar();$('ag-day').textContent=state.query?'Resultados':state.allPending?'Pendientes hasta hoy':state.date===today?'Hoy, '+dayName(state.date):dayName(state.date);
   const matches=e=>(!state.filter||type(e)===state.filter)&&(!state.query||[e.title,e.client,e.contact,e.number,e.notes].join(' ').toLocaleLowerCase('es').includes(state.query));
-  const selected=state.events.filter(e=>matches(e)&&(state.query||e.date===state.date)&&(state.archive||pending(e)));
+  const selected=state.events.filter(e=>matches(e)&&(state.query||state.allPending&&e.date<=today||e.date===state.date)&&(state.archive||pending(e)));
   $('ag-list').innerHTML=!state.loaded?'<div class="ag-empty"><h2>Cargando compromisos…</h2></div>':selected.length?selected.map(eventCard).join(''):`<div class="ag-empty">${icon('calendar-dots')}<h2>${state.query?'Sin coincidencias':'Sin compromisos pendientes'}</h2><p>${state.query?'Prueba con otro nombre o referencia.':'Este día está libre.'}</p></div>`;
   const overdue=state.events.filter(e=>pending(e)&&e.date<today&&matches(e));
-  $('ag-overdue').innerHTML=!state.query&&overdue.length?`<details><summary>${overdue.length} pendientes anteriores ${icon('caret-down')}</summary>${overdue.map(eventCard).join('')}</details>`:'';
+  $('ag-overdue').innerHTML=!state.query&&!state.allPending&&overdue.length?`<details><summary>${overdue.length} pendientes anteriores ${icon('caret-down')}</summary>${overdue.map(eventCard).join('')}</details>`:'';
   const count=state.events.filter(e=>pending(e)&&e.date===state.date).length;$('ag-count').textContent=count?`${count} ${count===1?'compromiso':'compromisos'}`:'Agenda del almacén';
   $('ag-new').disabled=!state.enabled;$('ag-archive').setAttribute('aria-pressed',state.archive);
   document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.filter===state.filter));bindCards();
@@ -74,7 +74,7 @@ function shell(){
   $('ag-close').onclick=()=>{if(!state.busy&&!state.attempt)closeDialog('ag-editor');};
   $('ag-detail-close').onclick=()=>closeDialog('ag-detail');
   for(const id of ['ag-editor','ag-detail']){$(id).addEventListener('cancel',e=>{e.preventDefault();if(!state.busy&&!state.attempt)closeDialog(id);});$(id).addEventListener('click',e=>{if(e.target!==$(id)||state.busy||state.attempt)return;const r=$(id).getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog(id);});}
-  $('ag-today').onclick=()=>{state.date=today;state.month=today.slice(0,7);render();};$('ag-expand').onclick=()=>{state.expanded=!state.expanded;calendar();};
+  $('ag-today').onclick=()=>{state.allPending=false;state.date=today;state.month=today.slice(0,7);render();};$('ag-expand').onclick=()=>{state.expanded=!state.expanded;calendar();};
   function monthMove(delta){const [y,m]=state.month.split('-').map(Number);state.month=new Date(Date.UTC(y,m-1+delta,1)).toISOString().slice(0,7);state.date=state.month+'-01';render();}
   $('ag-prev').onclick=()=>monthMove(-1);$('ag-next').onclick=()=>monthMove(1);
   let sx=0,sy=0;$('ag-calendar').addEventListener('touchstart',e=>{sx=e.changedTouches[0].screenX;sy=e.changedTouches[0].screenY;},{passive:true});$('ag-calendar').addEventListener('touchend',e=>{const dx=e.changedTouches[0].screenX-sx,dy=e.changedTouches[0].screenY-sy;if(Math.abs(dx)>70&&Math.abs(dy)<40)monthMove(dx<0?1:-1);},{passive:true});
@@ -179,7 +179,9 @@ await guardStandalonePage({permission:'agenda.read',render:async({session})=>{
   state.session=session;state.key='maddy.agenda.attempt.'+session.profile.uid;shell();render();await load();
   try{state.attempt=JSON.parse(sessionStorage.getItem(state.key)||'null');}catch{$('ag-notice').textContent='No se pudo recuperar el intento anterior. Revisa la agenda antes de repetirlo.';}
   if(state.attempt){$('ag-editor').showModal();$('ag-types').hidden=true;$('ag-form').hidden=false;frozen(true);$('ag-error').textContent='Hay un guardado por confirmar. Comprueba el intento antes de repetirlo.';$('ag-recover').hidden=false;return;}
+  const context=new URLSearchParams(location.search);
+  if(context.get('pending')==='1'){state.allPending=true;render();}
+  const eventId=context.get('event');if(eventId){const selected=state.events.find(e=>e.id===eventId);if(selected){state.date=selected.date;state.month=selected.date.slice(0,7);render();openDetail(selected);}else{$('ag-notice').textContent='Este compromiso ya no está disponible. Puedes buscarlo en la agenda.';}}
   const number=new URLSearchParams(location.search).get('op');if(number){$('ag-back').href=orderLink(number);$('ag-back').setAttribute('aria-label','Volver a la OP');if(state.enabled&&canOrders())await openEditor(null,number);}
 }});
-
 
