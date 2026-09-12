@@ -127,7 +127,7 @@ html:has(.dashboard-app-shell){min-width:0}
  .dashboard-menu-item{grid-template-columns:minmax(0,1fr);align-content:center;gap:14px;min-height:132px;padding:18px;border-radius:20px}
  .dashboard-menu-icon{width:44px;height:44px}.dashboard-menu-icon img{width:25px;height:25px}.dashboard-menu-copy strong{font-size:18px}.dashboard-menu-caret{display:none}
  .home-today{padding:16px;border-radius:20px}.home-today-heading{gap:6px;margin-bottom:8px}
- .home-today-heading h2{font-size:20px}.home-today-heading>a{font-size:15px;gap:5px;padding-inline:8px}.home-today-heading>a img{width:14px;height:14px}
+ .home-today-heading h2{font-size:20px}.home-today-heading>a{font-size:0;gap:0;width:44px;padding:0;justify-content:center}.home-today-heading>a img{width:20px;height:20px}
  .home-today-body{display:block}.home-pending{min-height:0}.home-empty{min-height:60px}
  .home-empty strong{font-size:18px}.home-empty p{font-size:16px}
  .home-empty:has(>img){grid-template-columns:28px minmax(0,1fr);gap:4px 12px}
@@ -145,8 +145,8 @@ html:has(.dashboard-app-shell){min-width:0}
  .dashboard-page{padding-inline:14px}.dashboard-floating-actions{right:14px}
  .home-brand{gap:8px}.home-brand .home-maddy-logo{width:76px;height:42px}.home-endorsement{width:140px;height:21px}
  .home-greeting{padding:24px 20px}
- .dashboard-menu-item{padding:16px 12px}
- .home-today-heading{flex-wrap:wrap}.home-today-heading>a{padding-inline:8px}
+ .dashboard-menu-list{grid-template-columns:minmax(0,1fr)}.dashboard-groups .dashboard-menu-item{grid-template-columns:44px minmax(0,1fr);gap:16px;padding:18px 20px;min-height:92px}.dashboard-groups .dashboard-menu-copy strong{font-size:20px}
+ 
  
 }
 .dashboard-sheet-overlay.keyboard-open,.keyboard-open .dashboard-sheet-content{transition:none}

@@ -38,6 +38,7 @@ try:
             assert data['key']==key and data['src'].endswith(key+'-v1.png'),data
             assert data['density']>=2 and not data['overflow'] and not data['overlap'],data
             if width<=390:assert data['height']>=350 and data['imageHeight']>=220,data
+            driver.execute_async_script("const done=arguments[0];document.querySelector('.home-interior').decode().then(()=>requestAnimationFrame(()=>requestAnimationFrame(done)))")
             driver.save_screenshot(str(out/(key+'-'+str(width)+'-2x.png')))
             records.append(data)
     driver.execute_script("""
