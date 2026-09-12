@@ -1,6 +1,7 @@
 .aj-entry{display:block;margin:0 0 20px auto;padding:13px 20px;border:1px solid #d9d9de;border-radius:15px;background:#fff;color:#252423;font:inherit;font-size:16px;font-weight:500;cursor:pointer;box-shadow:0 4px 16px #24232108}
 .aj-dialog{padding:0;width:min(740px,calc(100% - 40px));max-height:90dvh;border:1px solid #fff9;border-radius:28px;background:#f8f8fa;color:#242323;box-shadow:0 28px 100px #0003;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;font-size:16px;line-height:1.5}
 .aj-dialog::backdrop{background:#1614125c;backdrop-filter:blur(8px)}
+.aj-dialog :is(strong,dd,dt,button,input,textarea){font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif!important}
 .aj-dialog[open]{animation:aj-enter .3s cubic-bezier(.2,.8,.2,1)}
 .aj-dialog header{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;position:sticky;top:0;background:#f8f8faed;backdrop-filter:blur(20px);z-index:2;border-bottom:1px solid #e4e4e7}
 .aj-dialog header span,.aj-dialog small{color:#62626a;font-size:14px}.aj-dialog h2{font-size:27px;line-height:1.15;letter-spacing:-.6px;margin:6px 0;font-weight:600}.aj-dialog h3{font-size:18px;font-weight:600;margin:12px 0}.aj-dialog p{margin:12px 0}.aj-dialog header button{width:46px;height:46px;border-radius:50%;font-size:27px;background:#eaeaec;border:0;flex-shrink:0}

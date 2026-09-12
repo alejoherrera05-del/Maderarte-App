@@ -32,6 +32,22 @@ a=account(source);assert.throws(()=>f.run('AJUSTE_CONFIRMAR',{...payload,fingerp
 assert.equal(f.rows('Anulaciones').length,3);assert.equal(f.rows('Auditoria').filter(r=>r.Modulo==='AJUSTES').length,3);
 const destination=account(target);const receipt=f.run('RECIBO_CREAR',{number:target,fingerprint:destination.position.fingerprint,amount:100000,method:'EFECTIVO',concept:'Abono posterior al traslado',reference:'',internalNote:''},'QA-ADJUST-RECEIPT-0001');assert.equal(receipt.saved,true);assert.equal(account(target).position.paid,200000);
 const receiptPlan=JSON.parse(f.rows('Archivos_Orden').find(s=>s.Archivo_ID===receipt.receipt.number+'-PDF-V1').Plan_JSON);assert.equal(receiptPlan.history.reduce((n,h)=>n+h.amount,0),200000);assert.ok(receiptPlan.history.some(h=>h.method==='SALDO RECIBIDO'));
+const transferNumber=f.rows('Anulaciones')[1].Anulacion_ID;
+const document=f.run('INTERNO_AJUSTE_DOCUMENTO_PREPARAR',{number:transferNumber});assert.equal(document.document.documentKind,'adjustment');assert.equal(document.document.target.number,target);
+f.run('INTERNO_AJUSTE_DOCUMENTO_CONFIRMAR',{number:transferNumber,id:document.id,planHash:document.planHash,base64:Buffer.from('%PDF-1.4\nsynthetic fixture\n%%EOF').toString('base64')});
+assert.equal(f.run('INTERNO_AJUSTE_DOCUMENTO_PREPARAR',{number:transferNumber}).complete,true);assert.equal(f.run('AJUSTE_PDF_LEER',{number:transferNumber}).mime,'application/pdf');
+assert.equal(f.rows('Documentos').filter(d=>d.File_ID===f.rows('Archivos_Orden').find(s=>s.Archivo_ID===document.id).File_ID&&d.Activo==='SI').length,2,'Same certificate linked to source and destination');
+assert.equal(f.rows('Anulaciones').length,3,'Generating or retrying a PDF does not repeat a movement');
+const f2=sandboxRuntime();f2.start();f2.command.items.forEach(i=>i.photos=[]);f2.command.items[0].quantity=3;f2.command.items[0].unitValue=100001;f2.command.discount=0;f2.command.payments=[];f2.command.noPayment=true;
+const n2=f2.run('ORDEN_CREAR',f2.command,'QA-PARTIAL-ORDER-0001').order.number;
+let a2=f2.run('AJUSTE_CUENTA',{number:n2});let p2={number:n2,fingerprint:a2.position.fingerprint,type:'DESISTIR',items:[{itemId:a2.items[0].id,quantity:1}],reason:'Retiro parcial de prueba',reference:''};
+f2.run('AJUSTE_CONFIRMAR',p2,'QA-PARTIAL-CANCEL-0001');a2=f2.run('AJUSTE_CUENTA',{number:n2});assert.equal(a2.items[0].adjustmentVerified,true);assert.equal(a2.items[0].pending,2);
+const rm=f2.run('REMISION_CUENTA',{number:n2});assert.equal(rm.position.items[0].blocked,'');assert.equal(rm.position.items[0].available,2);
+const global=f2.run('PRODUCCION_LISTAR',{});assert.equal(global.items.find(i=>i.item.id===a2.items[0].id).item.adjustmentVerified,true);
+const factory=a2.items[1];f2.run('PRODUCCION_REGISTRAR',{number:n2,itemId:factory.id,revision:factory.revision,stage:'SOLICITADO',quantity:1,date:new Date().toISOString().slice(0,10),provider:'Proveedor de prueba',notes:'',verified:true},'QA-PARTIAL-FACTORY-0001');a2=f2.run('AJUSTE_CUENTA',{number:n2});
+assert.throws(()=>f2.run('AJUSTE_PREVISUALIZAR',{...p2,fingerprint:a2.position.fingerprint,items:[{itemId:factory.id,quantity:1}]}),e=>e.appCode==='ADJUSTMENT_FACTORY_REVIEW');
+assert.throws(()=>f2.run('AJUSTE_PREVISUALIZAR',{...p2,fingerprint:a2.position.fingerprint,items:[{itemId:a2.items[0].id,quantity:3}]}),e=>e.appCode==='ADJUSTMENT_QUANTITY');
+f2.state.busy=true;assert.throws(()=>f2.run('AJUSTE_CONFIRMAR',p2,'QA-PARTIAL-BUSY-0001'));f2.state.busy=false;
 f.c.validateSessionToken_=()=>({permissions:['ordenes.read','abonos.read'],profile:{uid:'restricted',branches:['MP']}});assert.throws(()=>f.c.ajConfirm_(payload,{requestId:'QA-ADJUST-DENIED-0001'}));
 console.log('Order adjustments: cancellation, retained receipts, partial credit, cross-client transfer, refund, lost response recovery, duplicate rejection and permission checks passed.');
 

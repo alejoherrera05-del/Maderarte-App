@@ -29,7 +29,7 @@ function ajPosition_(row,events){
   if(!items.length)ajFail_();
   items.forEach(function(i){var n=Number(i.Cantidad),net=Number(i.Valor_Neto),d=Number(i.Cantidad_Entregada||0),c=Number(i.Cantidad_Desistida||0),p=Number(i.Cantidad_Pendiente);
     if(![n,net,d,c,p].every(Number.isSafeInteger)||n<1||net<0||d<0||c<0||p<0||p!==n-d-c||c!==(cancelled[i.Item_ID]||0))ajFail_();original+=net;
-    if(cancelled[i.Item_ID]&&!events.some(function(e){return e.type==='DESISTIR'&&e.items.some(function(x){return x.itemId===i.Item_ID;});}))ajFail_();
+    if(c&&!ajCancellationVerified_(i,events))ajFail_();
   });
   var total=original-reduction,paid=received+incoming-outgoing,balance=Math.max(0,total-paid),credit=Math.max(0,paid-total);
   if(![original,reduction,received,incoming,outgoing,total,paid,balance,credit].every(Number.isSafeInteger)||total<0||paid<0||Number(row.Valor_Total)!==total||Number(row.Abonado_Total)!==paid||Number(row.Saldo_Pendiente)!==balance)ajFail_();

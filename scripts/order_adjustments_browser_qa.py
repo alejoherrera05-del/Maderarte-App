@@ -44,7 +44,7 @@ try:
   context=browser.new_context();page=context.new_page();page.goto(ORIGIN+'/documento-render.html')
   doc={'documentKind':'adjustment','issued':True,'number':'MP-AJ-0002','orderNumber':ORDER['number'],'branchCode':'MP','date':'2026-09-12T12:00:00Z','advisor':'Asesor de muestra','client':{'name':'Cliente de muestra','document':'000000001'},'type':'TRANSFERIR','amount':100000,'reason':'Autorización para trasladar saldo a un familiar.','reference':'Soporte de muestra','before':POSITION,'after':dict(POSITION,paid=2000000,credit=500000),'items':[],'target':{'number':TARGET['number'],'client':TARGET['client'],'document':'000000002','before':TPOS,'after':dict(TPOS,paid=100000,balance=1900000)},'sandbox':True}
   page.evaluate("d=>{const n=document.createElement('script');n.type='application/json';n.id='maddy-document-data';n.textContent=JSON.stringify(d);document.body.append(n);}",doc)
-  page.wait_for_selector('[data-document-ready=true]');assert page.locator('.aj-document').count()>=1
+  page.wait_for_selector('[data-document-ready=true]');assert page.locator('.aj-document').count()==1
   page.pdf(path=str(OUT/'transfer-sample.pdf'),print_background=True,prefer_css_page_size=True);page.screenshot(path=str(OUT/'document.png'),full_page=True)
   context.close();browser.close()
  print('Adjustment sheet: desktop/mobile, destination search, before/after, one confirmed request and PDF rendering passed.')
