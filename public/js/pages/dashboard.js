@@ -1,7 +1,7 @@
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { escapeHtml } from '../core/format.js';
 import { guardPage } from '../core/page-guard.js';
-import { mountToday } from '../core/dashboard-today.js?v=home-1';
+import { mountToday } from '../core/dashboard-today.js?v=home-4';
 import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
