@@ -1,3 +1,4 @@
+import { bindOrderAdjustments } from '../core/order-adjustments.js?v=1';
 import { bindProductionTracking } from '../core/production-tracking.js?v=runtime-1';
 import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=agenda-1';
 import { productState, bindProductJourney } from '../core/product-journey.js?v=actions-1';
@@ -81,7 +82,7 @@ guardStandalonePage({
         return;
       }
       root.innerHTML = renderOrder(response.data, session);
-      bindSandboxBanner(root);
+      bindSandboxBanner(root); bindOrderAdjustments(root,response.data,session);
       bindProductJourney(root,response.data,session);
       bindWorkbench(root,response.data,session); void bindProductionTracking(root,response.data,session);
       const support=root.querySelector('.ow-support'), workbench=root.querySelector('.ow-workbench');
@@ -100,6 +101,7 @@ guardStandalonePage({
     }
   }
 });
+
 
 
 
