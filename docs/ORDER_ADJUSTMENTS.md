@@ -9,7 +9,7 @@ El siguiente incremento mantiene la OP como expediente. Las líneas emitidas, co
 ## Dependencias comprobadas en el código
 
 - `Receipts.gs:rcPosition_` rechaza abonado mayor que total. Reducir una OP sin adaptar esta lectura bloquearía sus recibos. `rcHistory_` también usa el total de la OP para conciliar el PDF: debe conservar el contexto histórico de cada recibo.
-- `OrderMedia.gs:mdDocumentAccess_` y el flujo de medios tienen restricciones de versión inicial. Una corrección necesita un documento nuevo ligado al anterior, sin sustituir el PDF emitido.
+- `OrderMedia.gs:mdAccess_` y el flujo de medios tienen restricciones de versión inicial. Una corrección necesita un documento nuevo ligado al anterior, sin sustituir el PDF emitido.
 - `Remissions.gs` bloquea líneas con cantidad desistida. Después de un ajuste válido debe permitir solo cantidades todavía pendientes y disponibles, conciliadas desde los movimientos.
 - `ProductionOverview.gs` lleva cualquier línea desistida a revisión. Debe distinguir un ajuste confirmado de un dato inconsistente, sin dar por cancelada una solicitud al proveedor.
 - `order-lifecycle.js` calcula reducción parcial y saldo a favor, pero no implementa una transacción ni autoriza escritura. No se puede presentar ese cálculo como un ajuste guardado.
