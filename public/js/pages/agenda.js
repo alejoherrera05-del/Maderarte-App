@@ -2,6 +2,7 @@ import { apiRequest, createRequestId } from '../core/api.js?v=agenda-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml as esc } from '../core/format.js';
 import { APP_CONFIG } from '../core/config.js';
+import { attachAgendaSwipe } from '../core/agenda-swipe.js?v=agenda-6';
 
 const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Bogota'}).format(new Date());
 const kinds={ENTREGA:{label:'Entregas',single:'Entrega',icon:'truck'},PROVEEDOR:{label:'Proveedores',single:'Pago a proveedor',icon:'wallet'},IMPUESTO:{label:'Impuestos',single:'Impuesto',icon:'file-text'},SERVICIO:{label:'Servicios',single:'Servicio',icon:'house'},GARANTIA:{label:'Garantías',single:'Garantía',icon:'clipboard-text'}};
@@ -16,6 +17,7 @@ const type=e=>e.kind||'ENTREGA';
 const pending=e=>e.status==='PROGRAMADA';
 const canOrders=()=>state.session.permissions.includes('*')||state.session.permissions.includes('ordenes.read');
 const reduced=()=>window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+let disposeSwipes=[],inlineId='';
 async function closeDialog(id){const d=$(id);if(!d.open)return;if(!reduced()){d.classList.add('ag-closing');await new Promise(r=>setTimeout(r,180));}d.close();d.classList.remove('ag-closing');}
 function calendar(){
   const [y,m]=state.month.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),offset=(first.getUTCDay()+6)%7,count=new Date(Date.UTC(y,m,0)).getUTCDate();
@@ -31,19 +33,18 @@ function eventCard(e){
   const k=kinds[type(e)]||kinds.ENTREGA,closed=!pending(e),title=type(e)==='ENTREGA'?e.client:e.title;
   const subtitle=type(e)==='ENTREGA'?`${e.number} · ${e.items.length} ${e.items.length===1?'mueble':'muebles'}`:e.contact||e.client||'';
   const status=e.status==='CANCELADA'?'Cancelado':e.status==='COMPLETADA'?'Realizado':e.status==='DESPACHADA'?'Despachada':'';
-  return `<article class="ag-swipe ${closed?'ag-settled':''}" data-id="${esc(e.id)}"><div class="ag-swipe-action" aria-hidden="true">Cancelar</div><button class="ag-event" data-open="${esc(e.id)}" type="button"><time>${esc(hourName(e.time))}<small>${esc(dayName(e.date))}</small></time><span class="ag-event-icon ag-${type(e).toLowerCase()}">${icon(k.icon)}</span><span class="ag-event-copy"><span class="ag-event-type">${esc(k.single)}${status?' · '+status:''}</span><strong>${esc(title)}</strong>${subtitle?`<span>${esc(subtitle)}</span>`:''}</span>${icon('caret-right')}</button></article>`;
+  const task=type(e)!=='ENTREGA',done=e.status==='COMPLETADA',mutable=state.enabled&&!state.busy&&!state.attempt;
+  return `<article class="ag-swipe ${closed?'ag-settled':''} ${done?'ag-done':''}" data-id="${esc(e.id)}" aria-label="${esc(title)}">${pending(e)&&state.enabled?`<button class="ag-swipe-action" data-delete="${esc(e.id)}" aria-label="Eliminar ${esc(title)}" tabindex="-1" aria-hidden="true">${icon('trash')}<span>Eliminar</span></button>`:''}<div class="ag-event-surface">${task&&e.status!=='CANCELADA'?`<button type="button" class="ag-check" data-complete="${esc(e.id)}" role="checkbox" aria-checked="${done}" aria-label="${done?'Volver a pendiente':'Marcar realizado'}: ${esc(title)}" ${!mutable?'disabled':''}><span>${icon('check')}</span></button>`:`<span class="ag-row-kind">${icon(k.icon)}</span>`}<button class="ag-event" data-open="${esc(e.id)}" type="button"><span class="ag-event-copy"><strong>${esc(title)}</strong><span class="ag-event-meta"><span class="ag-category-dot ag-${type(e).toLowerCase()}"></span>${esc(k.single)}${status?' · '+status:''}${e.series?`<span class="ag-series" aria-label="Serie mensual">↻</span>`:''}</span>${subtitle?`<span class="ag-subtitle">${esc(subtitle)}</span>`:''}</span><time datetime="${esc(e.date)}T${esc(e.time||'00:00')}">${esc(hourName(e.time))}<small>${esc(dayName(e.date))}</small>${icon('caret-right')}</button>${pending(e)&&state.enabled?`<button class="ag-row-delete" data-delete="${esc(e.id)}" aria-label="Eliminar ${esc(title)}" ${!mutable?'disabled':''}>${icon('trash')}</button>`:''}</div></article>`;
 }
 function bindCards(){
-  document.querySelectorAll('[data-open]').forEach(b=>{
-    b.onclick=()=>openDetail(state.events.find(e=>e.id===b.dataset.open));
-    let x=0,y=0,dx=0,drag=false;
-    b.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch'||!state.enabled)return;x=e.clientX;y=e.clientY;dx=0;drag=true;});
-    b.addEventListener('pointermove',e=>{if(!drag)return;if(Math.abs(e.clientY-y)>20&&Math.abs(dx)<15){drag=false;return;}dx=Math.min(0,e.clientX-x);if(dx<-15){b.style.transition='none';b.style.transform=`translateX(${Math.max(-100,dx)}px)`;}});
-    const end=()=>{if(!drag)return;drag=false;b.style.transition='';b.style.transform='';if(dx<-65){const event=state.events.find(e=>e.id===b.dataset.open);openDetail(event);$('ag-detail-notice').textContent=pending(event)?'Puedes cancelar este compromiso aquí.':'Este compromiso ya está cerrado.';}};
-    b.addEventListener('pointerup',end);b.addEventListener('pointercancel',()=>{drag=false;b.style.transition='';b.style.transform='';});
-  });
+  const find=id=>state.events.find(e=>e.id===id);
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openDetail(find(b.dataset.open)));
+  document.querySelectorAll('[data-complete]').forEach(b=>b.onclick=()=>{const e=find(b.dataset.complete);changeStatus(e,e.status==='COMPLETADA'?'reopen':'complete',true);});
+  document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>changeStatus(find(b.dataset.delete),'cancel',true));
+  document.querySelectorAll('.ag-swipe').forEach(row=>disposeSwipes.push(attachAgendaSwipe(row,{enabled:()=>state.enabled&&!state.busy&&!state.attempt&&pending(find(row.dataset.id)),remove:()=>changeStatus(find(row.dataset.id),'cancel',true),reduced})));
 }
 function render(){
+  disposeSwipes.forEach(dispose=>dispose());disposeSwipes=[];
   calendar();$('ag-day').textContent=state.query?'Resultados':state.date===today?'Hoy, '+dayName(state.date):dayName(state.date);
   const matches=e=>(!state.filter||type(e)===state.filter)&&(!state.query||[e.title,e.client,e.contact,e.number,e.notes].join(' ').toLocaleLowerCase('es').includes(state.query));
   const selected=state.events.filter(e=>matches(e)&&(state.query||e.date===state.date)&&(state.archive||pending(e)));
@@ -62,7 +63,7 @@ async function load(){
 function shell(){
   $('agenda-app').innerHTML=`<header class="ag-header"><a class="ag-round" id="ag-back" href="/index.html" aria-label="Volver al inicio">${icon('arrow-left')}</a><div class="ag-brand"><img class="ag-seal" src="/assets/brand/maderarte-logo-2026.webp" alt=""><img class="ag-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Agenda</span></div><button class="ag-round" id="ag-refresh" aria-label="Actualizar agenda">${icon('arrow-clockwise')}</button></header>
   <main class="ag-layout"><aside class="ag-calendar" id="ag-calendar" aria-label="Calendario"><div class="ag-month"><button class="ag-round" id="ag-prev" aria-label="Mes anterior">${icon('arrow-left')}</button><strong id="ag-month"></strong><button class="ag-round" id="ag-next" aria-label="Mes siguiente">${icon('arrow-right')}</button></div><div class="ag-week" aria-hidden="true">${['L','M','M','J','V','S','D'].map(d=>`<span>${d}</span>`).join('')}</div><div class="ag-days" id="ag-days"></div><div class="ag-calendar-actions"><button id="ag-today">Hoy</button><button id="ag-expand" aria-expanded="false">Ver mes completo</button></div><div class="ag-calendar-signature"><img src="/assets/brand/maderarte-wordmark-algerian.png" alt=""><span>Agenda del almacén</span></div></aside>
-  <section class="ag-content"><div class="ag-heading"><div><span class="ag-eyebrow" id="ag-count"></span><h1 id="ag-day"></h1></div><button class="ag-button" id="ag-new" disabled>Nuevo compromiso</button></div><div class="ag-toolbar"><label class="ag-find">${icon('magnifying-glass')}<input type="search" id="ag-find" placeholder="Buscar en la agenda" aria-label="Buscar en toda la agenda"></label><button id="ag-archive" class="ag-quiet" aria-pressed="false">Ver cerrados</button></div><nav class="ag-filters" aria-label="Tipo de compromiso"><button data-filter="" aria-pressed="true">Todo</button>${Object.entries(kinds).map(([id,k])=>`<button data-filter="${id}" aria-pressed="false">${k.label}</button>`).join('')}</nav><p id="ag-notice" class="ag-notice" role="status"></p><div id="ag-overdue" class="ag-overdue"></div><div id="ag-list"></div><footer class="ag-footer">Maderarte · Maddy · v${esc(APP_CONFIG.version)} · ${new Date().getFullYear()}</footer></section></main>
+  <section class="ag-content"><div class="ag-heading"><div><span class="ag-eyebrow" id="ag-count"></span><h1 id="ag-day"></h1></div><button class="ag-button" id="ag-new" disabled>Nuevo compromiso</button></div><div class="ag-toolbar"><label class="ag-find">${icon('magnifying-glass')}<input type="search" id="ag-find" placeholder="Buscar en la agenda" aria-label="Buscar en toda la agenda"></label><button id="ag-archive" class="ag-quiet" aria-pressed="false">Ver cerrados</button></div><nav class="ag-filters" aria-label="Tipo de compromiso"><button data-filter="" aria-pressed="true">Todo</button>${Object.entries(kinds).map(([id,k])=>`<button data-filter="${id}" aria-pressed="false">${k.label}</button>`).join('')}</nav><p id="ag-notice" class="ag-notice" role="status"></p><button id="ag-list-recover" class="ag-button" hidden>Comprobar guardado</button><div id="ag-overdue" class="ag-overdue"></div><div id="ag-list"></div><footer class="ag-footer">Maderarte · Maddy · v${esc(APP_CONFIG.version)} · ${new Date().getFullYear()}</footer></section></main>
   <div class="ag-toast" id="ag-toast" hidden role="status"><span id="ag-toast-text"></span><button id="ag-undo">Deshacer</button><button id="ag-toast-close" aria-label="Cerrar aviso">${icon('x')}</button></div>
   <dialog class="ag-dialog" id="ag-editor" aria-labelledby="ag-title"><div class="ag-dialog-head"><h2 id="ag-title">Nuevo compromiso</h2><button class="ag-round" id="ag-close" aria-label="Cerrar">${icon('x')}</button></div><div id="ag-types" class="ag-types">${Object.entries(kinds).map(([id,k])=>`<button type="button" data-kind="${id}"><span class="ag-event-icon ag-${id.toLowerCase()}">${icon(k.icon)}</span><span>${k.single}</span>${icon('caret-right')}</button>`).join('')}</div>
   <div id="ag-search-area" hidden><form class="ag-search" id="ag-search-form"><input id="ag-query" type="search" placeholder="Nombre, cédula o número de OP" aria-label="Buscar orden" required><button class="ag-button">Buscar</button></form><div class="ag-results" id="ag-results"></div></div>
@@ -83,7 +84,7 @@ function shell(){
   $('ag-search-form').onsubmit=async e=>{e.preventDefault();const button=e.submitter||$('ag-search-form').querySelector('button');button.disabled=true;$('ag-results').textContent='Buscando…';try{const d=await api('ORDENES_LISTAR',{query:$('ag-query').value,limit:30});$('ag-results').innerHTML=d.items.length?d.items.map(o=>`<button type="button" data-op="${esc(o.number)}">${esc(o.client)}<small>${esc(o.number)}</small></button>`).join(''):'No hay órdenes coincidentes.';$('ag-results').querySelectorAll('button').forEach(b=>b.onclick=()=>selectOrder(b.dataset.op));}catch(error){$('ag-results').textContent=error.message;}finally{button.disabled=false;}};
   $('ag-form').onsubmit=e=>{e.preventDefault();saveDelivery(false);};$('ag-cancel').onclick=()=>saveDelivery(true);
   $('ag-task-form').onsubmit=e=>{e.preventDefault();saveTask();};$('ag-repeat').onchange=()=>{$('ag-repeat-note').hidden=$('ag-repeat').value==='1';};
-  $('ag-recover').onclick=()=>commit();$('ag-detail-recover').onclick=()=>commit();$('ag-undo').onclick=()=>{if(state.undo)changeStatus(state.undo,'restore');};$('ag-toast-close').onclick=()=>{$('ag-toast').hidden=true;state.undo=null;};
+  $('ag-list-recover').onclick=()=>commit();$('ag-recover').onclick=()=>commit();$('ag-detail-recover').onclick=()=>commit();$('ag-undo').onclick=()=>{if(state.undo)changeStatus(state.undo,state.undo.status==='COMPLETADA'?'reopen':'restore',true);};$('ag-toast-close').onclick=()=>{$('ag-toast').hidden=true;state.undo=null;};
   window.addEventListener('beforeunload',e=>{if(state.busy){e.preventDefault();e.returnValue='';}});
 }
 async function openEditor(event=null,number=''){
@@ -133,17 +134,20 @@ function openDetail(e){
   for(const [id,op] of [['ag-cancel-event','cancel'],['ag-complete-event','complete'],['ag-restore-event','restore'],['ag-reopen-event','reopen']])if($(id))$(id).onclick=()=>changeStatus(e,op);
   if(!$('ag-detail').open)$('ag-detail').showModal();
 }
-async function changeStatus(e,operation){
-  if(state.busy||state.attempt)return;if(!$('ag-detail').open)openDetail(e);state.busy=true;frozen(true);$('ag-detail-notice').textContent='Preparando cambio…';
+async function changeStatus(e,operation,direct=false){
+  if(!e||!state.enabled||state.busy||state.attempt)return;inlineId=direct?e.id:'';if(!direct&&!$('ag-detail').open)openDetail(e);state.busy=true;frozen(true);const notice=direct?$('ag-notice'):$('ag-detail-notice');notice.textContent='Preparando cambio…';
   try{
     let payload={kind:type(e),id:e.id,revision:e.revision,operation};
     if(type(e)==='ENTREGA'){
       const d=await api('ORDEN_OBTENER',{number:e.number});payload={id:e.id,number:e.number,revision:e.revision,date:e.date,time:e.time,notes:e.notes,cancel:operation==='cancel',items:e.items.map(i=>({id:i.id,quantity:operation==='restore'?i.quantity:i.remaining||i.quantity,revision:d.items.find(a=>a.id===i.id)?.revision||1}))};if(operation==='restore')payload.restore=true;
     }
     state.busy=false;await commit(payload);
-  }catch(error){$('ag-detail-notice').textContent=error.message;state.busy=false;frozen(false);}
+  }catch(error){notice.textContent=error.message;state.busy=false;frozen(false);inlineId='';}
 }
 function frozen(on){
+  document.querySelectorAll('.ag-swipe').forEach(row=>{row.classList.toggle('ag-saving',on&&row.dataset.id===inlineId);row.setAttribute('aria-busy',String(on&&row.dataset.id===inlineId));row.querySelectorAll('button').forEach(b=>b.disabled=on||!state.enabled);});
+  for(const id of ['ag-new','ag-refresh','ag-prev','ag-next','ag-today','ag-expand','ag-archive','ag-find'])$(id).disabled=on||(id==='ag-new'&&!state.enabled);
+  document.querySelectorAll('[data-date],[data-filter]').forEach(b=>b.disabled=on);
   $('ag-fields').disabled=on;$('ag-task-fields').disabled=on;for(const id of ['ag-save','ag-task-save','ag-cancel','ag-close','ag-detail-close'])$(id).disabled=on;
   $('ag-detail-body').querySelectorAll('button').forEach(b=>b.disabled=on);
 }
@@ -154,21 +158,22 @@ async function animateAgendaItem(id,enter=false){
 }
 async function commit(payload){
   if(state.busy)return;
-  const inDetail=$('ag-detail').open,notice=inDetail?$('ag-detail-notice'):$('ag-error'),retry=inDetail?$('ag-detail-recover'):$('ag-recover');
-  if(!state.attempt){if(!payload)return;const attempt={requestId:createRequestId('AGENDA'),payload};try{sessionStorage.setItem(state.key,JSON.stringify(attempt));}catch{notice.textContent='No se pudo conservar el intento en el dispositivo. Libera espacio antes de guardar.';return;}state.attempt=attempt;}
+  const inList=!!inlineId,inDetail=$('ag-detail').open,notice=inList?$('ag-notice'):inDetail?$('ag-detail-notice'):$('ag-error'),retry=inList?$('ag-list-recover'):inDetail?$('ag-detail-recover'):$('ag-recover');
+  if(!state.attempt){if(!payload)return;const attempt={requestId:createRequestId('AGENDA'),payload};try{sessionStorage.setItem(state.key,JSON.stringify(attempt));}catch{notice.textContent='No se pudo conservar el intento en el dispositivo. Libera espacio antes de guardar.';frozen(false);inlineId='';return;}state.attempt=attempt;}
   const attempt=state.attempt;state.busy=true;frozen(true);retry.hidden=true;notice.textContent='Guardando cambio…';
   try{
     const status=await api('AGENDA_GUARDADO_ESTADO',{requestId:attempt.requestId});const response=status.saved?{result:status.result}:await api('AGENDA_GUARDAR',attempt.payload,{requestId:attempt.requestId});
-    sessionStorage.removeItem(state.key);state.attempt=null;await closeDialog(inDetail?'ag-detail':'ag-editor');
+    sessionStorage.removeItem(state.key);state.attempt=null;if(!inList)await closeDialog(inDetail?'ag-detail':'ag-editor');
+    if(attempt.payload.operation==='complete')document.querySelectorAll('[data-complete]').forEach(b=>{if(b.dataset.complete===attempt.payload.id)b.setAttribute('aria-checked','true');});
     if(attempt.payload.cancel||['cancel','complete'].includes(attempt.payload.operation))await animateAgendaItem(attempt.payload.id);
     state.date=response.result?.date||attempt.payload.date||state.date;state.month=state.date.slice(0,7);await load();
     if(attempt.payload.restore||['restore','reopen'].includes(attempt.payload.operation))await animateAgendaItem(attempt.payload.id,true);
-    const cancelled=attempt.payload.cancel||attempt.payload.operation==='cancel';state.undo=cancelled?state.events.find(e=>e.id===attempt.payload.id):null;
-    $('ag-toast-text').textContent=cancelled?'Compromiso cancelado':response.result?.count>1?`${response.result.count} fechas guardadas`:'Cambio guardado';$('ag-undo').hidden=!state.undo;$('ag-toast').hidden=false;
+    const cancelled=attempt.payload.cancel||attempt.payload.operation==='cancel',completed=attempt.payload.operation==='complete';state.undo=cancelled||completed?state.events.find(e=>e.id===attempt.payload.id):null;
+    $('ag-toast-text').textContent=cancelled?'Compromiso eliminado':completed?'Compromiso realizado':response.result?.count>1?`${response.result.count} fechas guardadas`:'Cambio guardado';$('ag-undo').hidden=!state.undo;$('ag-toast').hidden=false;
   }catch(e){
     if(e.status>=400&&e.status<500&&e.status!==408&&e.code!=='ORDER_RECOVERY_REQUIRED'){sessionStorage.removeItem(state.key);state.attempt=null;frozen(false);}
     notice.textContent=e.message;retry.hidden=!state.attempt;$('ag-save').textContent=state.attempt?'Comprobar y reintentar':'Guardar programación';
-  }finally{state.busy=false;if(!state.attempt)frozen(false);else{$('ag-save').disabled=false;retry.disabled=false;}}
+  }finally{state.busy=false;if(!state.attempt){frozen(false);inlineId='';}else{$('ag-save').disabled=false;retry.disabled=false;}}
 }
 await guardStandalonePage({permission:'agenda.read',render:async({session})=>{
   state.session=session;state.key='maddy.agenda.attempt.'+session.profile.uid;shell();render();await load();
