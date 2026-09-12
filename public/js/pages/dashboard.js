@@ -1,7 +1,7 @@
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { escapeHtml } from '../core/format.js';
 import { guardPage } from '../core/page-guard.js';
-import { mountToday } from '../core/dashboard-today.js?v=home-1';
+import { mountToday } from '../core/dashboard-today.js?v=home-4';
 import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
@@ -180,7 +180,7 @@ guardPage({
     const moment = dayPart();
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
-      <header class="home-brand" aria-label="Maderarte"><img src="/assets/brand/maderarte-logo-2026.webp" alt=""><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"></header>
+      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-by-maderarte-header.svg" alt="Maddy by Maderarte" width="148" height="94"></header>
       <section class="home-hero" aria-labelledby="dashboard-greeting">
         <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)},<br>${escapeHtml(firstName(session.profile))}.</h1></div>
         <img class="home-interior" src="/assets/interiors/living-room-morning.webp" alt="Sala de Maderarte" fetchpriority="high">
@@ -201,6 +201,9 @@ guardPage({
         <div class="dashboard-dialog-options" id="dashboard-dialog-options"></div>
       </section>
     </div>`;
+    // Agenda already owns reminders on this home; do not duplicate it with a bell.
+    document.getElementById('dashboard-notifications-button')?.remove();
+    document.getElementById('dashboard-notifications-popover')?.remove();
     bindDashboardInteractions(session);
     mountToday(document.getElementById('home-today'),session);
   }
