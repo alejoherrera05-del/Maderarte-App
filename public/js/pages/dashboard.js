@@ -97,11 +97,12 @@ function bindDashboardInteractions(session) {
   const sheetClose = document.getElementById('dashboard-sheet-close');
 
   let trigger = null;
+  const background = [...document.querySelectorAll('.dashboard-page,.dashboard-footer,.dashboard-floating-actions')];
   const panel = sheet?.querySelector('[role="dialog"]');
   const closeSheet = () => {
     if (!sheet) return;
     sheet.classList.remove('active'); sheet.setAttribute('aria-hidden', 'true'); sheet.inert = true;
-    document.body.style.overflow = ''; trigger?.setAttribute('aria-expanded','false'); trigger?.focus();
+    document.body.style.overflow = ''; background.forEach(node=>node.inert=false); trigger?.setAttribute('aria-expanded','false'); trigger?.focus();
   };
   const positionSheet = () => {
     if(!trigger || !panel || !sheet.classList.contains('active')) return;
@@ -118,7 +119,8 @@ function bindDashboardInteractions(session) {
     filterByPermission(sheetOptions.querySelectorAll('[data-permission]'),session);
     sheet.inert=false;sheet.setAttribute('aria-hidden','false');sheet.classList.add('active');
     button.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';positionSheet();
-    (sheetOptions.querySelector('a:not([hidden])') || sheetClose)?.focus();
+    background.forEach(node=>node.inert=true);
+    requestAnimationFrame(()=>{if(sheet.classList.contains('active'))(sheetOptions.querySelector('a:not([hidden])') || sheetClose)?.focus();});
   };
   window.addEventListener('resize',positionSheet);
   sheet.inert=true;
@@ -126,6 +128,7 @@ function bindDashboardInteractions(session) {
     if(event.key!=='Tab')return;
     const nodes=[...panel.querySelectorAll('button:not([hidden]), a:not([hidden])')];
     const first=nodes[0],last=nodes.at(-1);
+    if(!panel.contains(document.activeElement)){event.preventDefault();(event.shiftKey?last:first)?.focus();return;}
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
     if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
   });
