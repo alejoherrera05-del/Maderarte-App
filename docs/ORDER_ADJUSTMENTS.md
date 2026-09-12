@@ -15,9 +15,9 @@ El siguiente incremento mantiene la OP como expediente. Las líneas emitidas, co
 - `order-lifecycle.js` calcula reducción parcial y saldo a favor, pero no implementa una transacción ni autoriza escritura. No se puede presentar ese cálculo como un ajuste guardado.
 - `Anulaciones`, `Auditoria`, `Versiones_Documentos` e `Idempotencia` existen. No hay todavía movimientos persistidos de devolución de dinero ni aplicación de crédito a otra OP.
 
-## Decisión comercial pendiente
+## Política confirmada por el propietario
 
-El propietario debe definir qué ocurre con el dinero cuando un cliente desiste: saldo a favor, devolución o resolución caso por caso, y si existe una penalidad. No asumir porcentajes, retenciones, devolución automática ni transferencia a otra OP. Mientras esta decisión esté pendiente no activar escrituras de desistimiento o devolución.
+El crédito puede usarse en otra compra, devolverse o trasladarse a otra OP, incluso de otra persona. Se admiten importes parciales. No se aplica penalidad automática. Una transferencia no cuenta como ingreso nuevo: conserva origen, destino y responsable en un único movimiento. Registrar una devolución documenta una operación realizada; la app no ejecuta pagos bancarios.
 
 ## Implementación conjunta
 
@@ -33,3 +33,4 @@ El propietario debe definir qué ocurre con el dinero cuando un cliente desiste:
 Doble clic; reintento tras timeout; contenido diferente con igual Request_ID; revisión desactualizada; permisos y sede; cantidades entregadas; pedido a fábrica; descuentos con residuos en pesos; saldo a favor; asignaciones previas; fallo de PDF y recuperación; documentos históricos; navegación y revisión móvil.
 
 La referencia vigente `Homeeasy/main/ventas.html` se revisó para el listado y drawer de expediente. Ese archivo no aporta un flujo de desistimiento que pueda trasladarse directamente. Para la interacción nueva se conserva el expediente Maddy aprobado y sus controles compartidos.
+
