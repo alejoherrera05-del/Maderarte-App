@@ -120,7 +120,14 @@ function bindDashboardInteractions(session) {
     sheet.inert=false;sheet.setAttribute('aria-hidden','false');sheet.classList.add('active');
     button.setAttribute('aria-expanded','true');document.body.style.overflow='hidden';positionSheet();
     background.forEach(node=>node.inert=true);
-    requestAnimationFrame(()=>{if(sheet.classList.contains('active'))(sheetOptions.querySelector('a:not([hidden])') || sheetClose)?.focus();});
+    const focusOptions = () => {
+      if (sheet.classList.contains('active') && !panel.contains(document.activeElement)) {
+        (sheetOptions.querySelector('a:not([hidden])') || sheetClose)?.focus({ preventScroll: true });
+      }
+    };
+    requestAnimationFrame(focusOptions);
+    // Visibility transitions can defer focusability until the opening motion ends.
+    setTimeout(focusOptions, 220);
   };
   window.addEventListener('resize',positionSheet);
   sheet.inert=true;
