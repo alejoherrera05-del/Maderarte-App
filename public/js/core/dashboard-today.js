@@ -18,12 +18,11 @@ export function mountToday(root, session) {
   let items = [], enabled = false, busy = false, loaded = false, error = '', undo = null, attempt = null;
   const api = async (action, payload, options) => APP_CONFIG.preview.enabled && action==='AGENDA_LISTAR' ? {items:[],enabled:false} : (await apiRequest(action, payload, options)).data;
   const render = () => {
-    const day = bogotaDay(), date = new Date(day + 'T12:00:00Z');
+    const day = bogotaDay();
     const pending = pendingToday(items, day);
-    const notifications=document.getElementById('dashboard-notifications-popover');
-    if(notifications&&canRead)notifications.innerHTML=`<strong>Agenda</strong><p>${loaded?pending.length?`${pending.length} ${pending.length===1?'compromiso pendiente':'compromisos pendientes'} hasta hoy.`:'Sin compromisos pendientes para hoy.':error?'No se pudo consultar la agenda.':'Consultando agenda…'}</p><a href="/agenda.html?pending=1&from=inicio">Abrir agenda</a>`;
+    root.dataset.state = !canRead ? 'restricted' : !loaded ? (error ? 'error' : 'loading') : pending.length ? 'ready' : 'empty';
     root.innerHTML = `<header class="home-today-heading"><h2>Hoy en Maderarte</h2>${canRead?'<a href="/agenda.html">Ver agenda '+icon('arrow-right')+'</a>':''}</header>
-      <div class="home-today-body"><time class="home-date" datetime="${day}"><span>${esc(new Intl.DateTimeFormat('es-CO',{weekday:'short',timeZone:'UTC'}).format(date))}</span><strong>${date.getUTCDate()}</strong><span>${esc(new Intl.DateTimeFormat('es-CO',{month:'long',timeZone:'UTC'}).format(date))}</span></time>
+      <div class="home-today-body">
       <div class="home-pending" aria-busy="${busy}">${!canRead?'<div class="home-empty"><strong>Tu espacio de trabajo</strong><p>Los accesos disponibles están arriba.</p></div>':!loaded?'<div class="home-empty" role="status"><strong>'+ (error?'No pudimos cargar la agenda':'Consultando agenda…') +'</strong></div>':pending.length?pending.slice(0,3).map(e=>{
         const task=e.kind && e.kind!=='ENTREGA', title=task?e.title:'Entrega · '+e.client;
         const when=e.date<day?new Intl.DateTimeFormat('es-CO',{day:'numeric',month:'short',timeZone:'UTC'}).format(new Date(e.date+'T12:00:00Z')):e.time?new Intl.DateTimeFormat('es-CO',{hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date('2000-01-01T'+e.time+':00Z')):'Hoy';
