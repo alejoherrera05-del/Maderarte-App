@@ -68,7 +68,7 @@ function shell(){
   <div id="ag-search-area" hidden><form class="ag-search" id="ag-search-form"><input id="ag-query" type="search" placeholder="Nombre, cédula o número de OP" aria-label="Buscar orden" required><button class="ag-button">Buscar</button></form><div class="ag-results" id="ag-results"></div></div>
   <form id="ag-form" hidden><fieldset id="ag-fields"><p id="ag-client" class="ag-context"></p><div class="ag-two"><div><label for="ag-date">Fecha de entrega</label><input type="date" id="ag-date" required></div><div><label for="ag-time">Hora</label><input type="time" id="ag-time" required></div></div><fieldset><legend>Muebles de esta entrega</legend><div id="ag-items"></div></fieldset><label for="ag-notes">Indicaciones</label><textarea id="ag-notes" maxlength="1000"></textarea></fieldset><div class="ag-actions"><button class="ag-button" id="ag-save">Guardar programación</button><button type="button" class="ag-quiet" id="ag-cancel" hidden>Cancelar programación</button></div></form>
   <form id="ag-task-form" hidden><fieldset id="ag-task-fields"><label for="ag-task-title">Asunto</label><input id="ag-task-title" required maxlength="160" placeholder="¿Qué hay que hacer?"><div class="ag-two"><div><label id="ag-contact-label" for="ag-contact">Proveedor o entidad</label><input id="ag-contact" maxlength="160"></div><div><label for="ag-branch">Sede</label><select id="ag-branch" required></select></div></div><div class="ag-two"><div><label for="ag-task-date">Fecha</label><input id="ag-task-date" type="date" required></div><div><label for="ag-task-time">Hora</label><input id="ag-task-time" type="time" required></div></div><div class="ag-two"><div id="ag-amount-wrap"><label for="ag-amount">Valor · opcional</label><input id="ag-amount" type="number" min="1" step="1" inputmode="numeric" placeholder="$"></div><div><label for="ag-assignee">Responsable · opcional</label><input id="ag-assignee" maxlength="120"></div></div><div id="ag-op-wrap"><label for="ag-op">OP relacionada · opcional</label><input id="ag-op" maxlength="120" placeholder="Número de orden"></div><div id="ag-repeat-wrap"><label for="ag-repeat">Repetir</label><select id="ag-repeat"><option value="1">Una sola vez</option><option value="3">Cada mes · 3 fechas</option><option value="6">Cada mes · 6 fechas</option><option value="12">Cada mes · 12 fechas</option></select><small id="ag-repeat-note" hidden>Se crean fechas independientes. Si el día no existe, se usa el último del mes.</small></div><label for="ag-task-notes">Notas · opcional</label><textarea id="ag-task-notes" maxlength="1000"></textarea></fieldset><p class="ag-footnote" id="ag-task-help"></p><button class="ag-button" id="ag-task-save">Guardar compromiso</button></form><p id="ag-error" class="ag-notice" role="status"></p><button id="ag-recover" class="ag-button" hidden>Comprobar y reintentar</button></dialog>
-  <dialog class="ag-dialog ag-detail" id="ag-detail" aria-labelledby="ag-detail-title"><div class="ag-dialog-head"><h2 id="ag-detail-title">Compromiso</h2><button class="ag-round" id="ag-detail-close" aria-label="Cerrar detalle">${icon('x')}</button></div><div id="ag-detail-body"></div><p id="ag-detail-notice" class="ag-notice" role="status"></p></dialog>`;
+  <dialog class="ag-dialog ag-detail" id="ag-detail" aria-labelledby="ag-detail-title"><div class="ag-dialog-head"><h2 id="ag-detail-title">Compromiso</h2><button class="ag-round" id="ag-detail-close" aria-label="Cerrar detalle">${icon('x')}</button></div><div id="ag-detail-body"></div><p id="ag-detail-notice" class="ag-notice" role="status"></p><button id="ag-detail-recover" class="ag-button" hidden>Comprobar y reintentar</button></dialog>`;
   $('agenda-app').hidden=false;$('ag-refresh').onclick=load;$('ag-new').onclick=()=>openEditor();
   $('ag-close').onclick=()=>{if(!state.busy&&!state.attempt)closeDialog('ag-editor');};
   $('ag-detail-close').onclick=()=>closeDialog('ag-detail');
@@ -83,7 +83,7 @@ function shell(){
   $('ag-search-form').onsubmit=async e=>{e.preventDefault();const button=e.submitter||$('ag-search-form').querySelector('button');button.disabled=true;$('ag-results').textContent='Buscando…';try{const d=await api('ORDENES_LISTAR',{query:$('ag-query').value,limit:30});$('ag-results').innerHTML=d.items.length?d.items.map(o=>`<button type="button" data-op="${esc(o.number)}">${esc(o.client)}<small>${esc(o.number)}</small></button>`).join(''):'No hay órdenes coincidentes.';$('ag-results').querySelectorAll('button').forEach(b=>b.onclick=()=>selectOrder(b.dataset.op));}catch(error){$('ag-results').textContent=error.message;}finally{button.disabled=false;}};
   $('ag-form').onsubmit=e=>{e.preventDefault();saveDelivery(false);};$('ag-cancel').onclick=()=>saveDelivery(true);
   $('ag-task-form').onsubmit=e=>{e.preventDefault();saveTask();};$('ag-repeat').onchange=()=>{$('ag-repeat-note').hidden=$('ag-repeat').value==='1';};
-  $('ag-recover').onclick=()=>commit();$('ag-undo').onclick=()=>{if(state.undo)changeStatus(state.undo,'restore');};$('ag-toast-close').onclick=()=>{$('ag-toast').hidden=true;state.undo=null;};
+  $('ag-recover').onclick=()=>commit();$('ag-detail-recover').onclick=()=>commit();$('ag-undo').onclick=()=>{if(state.undo)changeStatus(state.undo,'restore');};$('ag-toast-close').onclick=()=>{$('ag-toast').hidden=true;state.undo=null;};
   window.addEventListener('beforeunload',e=>{if(state.busy){e.preventDefault();e.returnValue='';}});
 }
 async function openEditor(event=null,number=''){
@@ -126,7 +126,7 @@ function saveTask(){
   return commit({kind:state.kind,id:state.edit?.id||'',revision:state.edit?.revision||0,operation:'save',title:value('ag-task-title'),contact:value('ag-contact'),assignee:value('ag-assignee'),branch:value('ag-branch'),number:state.kind==='GARANTIA'?value('ag-op'):'',date:value('ag-task-date'),time:value('ag-task-time'),amount:state.kind==='GARANTIA'||!value('ag-amount')?null:Number(value('ag-amount')),repeat:Number(value('ag-repeat')),notes:value('ag-task-notes')});
 }
 function openDetail(e){
-  if(!e)return;const k=kinds[type(e)];$('ag-detail-title').textContent=k.single;$('ag-detail-notice').textContent='';
+  if(!e||state.busy||state.attempt)return;const k=kinds[type(e)];$('ag-detail-title').textContent=k.single;$('ag-detail-notice').textContent='';
   const money=e.amount?new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(e.amount):'';
   $('ag-detail-body').innerHTML=`<p class="ag-detail-when">${esc(dayName(e.date))} · ${esc(hourName(e.time))}</p><h3>${esc(type(e)==='ENTREGA'?e.client:e.title)}</h3>${e.contact?`<p>${esc(e.contact)}</p>`:''}${money?`<p class="ag-detail-value">${esc(money)}</p>`:''}${e.assignee?`<p>Responsable: ${esc(e.assignee)}</p>`:''}${e.number?`<a href="${esc(orderLink(e.number))}" class="ag-context">${esc(e.number)} ${icon('arrow-right')}</a>`:''}${e.items.length?`<ul class="ag-detail-items">${e.items.map(i=>`<li>${esc(i.description)}<span>${i.quantity} un.</span></li>`).join('')}</ul>`:''}${e.notes?`<p class="ag-detail-note">${esc(e.notes)}</p>`:''}${e.series?'<p class="ag-footnote">Esta fecha pertenece a una serie mensual. Los cambios afectan solo este compromiso.</p>':''}<div class="ag-actions">${pending(e)&&state.enabled?'<button class="ag-button" id="ag-edit-event">Editar</button><button class="ag-quiet ag-danger" id="ag-cancel-event">Cancelar compromiso</button>':''}${pending(e)&&type(e)!=='ENTREGA'&&state.enabled?'<button class="ag-button ag-secondary" id="ag-complete-event">Marcar realizado</button>':''}${pending(e)&&type(e)==='ENTREGA'?`<a class="ag-button ag-secondary" href="/remision.html?op=${encodeURIComponent(e.number)}&from=agenda&agenda=${encodeURIComponent(e.id)}">Preparar remisión</a>`:''}${e.status==='CANCELADA'&&state.enabled?'<button class="ag-button" id="ag-restore-event">Restaurar compromiso</button>':''}${e.status==='COMPLETADA'&&state.enabled?'<button class="ag-button" id="ag-reopen-event">Volver a pendiente</button>':''}</div>`;
   if($('ag-edit-event'))$('ag-edit-event').onclick=async()=>{await closeDialog('ag-detail');openEditor(e);};
@@ -134,32 +134,41 @@ function openDetail(e){
   if(!$('ag-detail').open)$('ag-detail').showModal();
 }
 async function changeStatus(e,operation){
-  if(state.busy||state.attempt)return;state.busy=true;$('ag-detail-notice').textContent='Preparando cambio…';
+  if(state.busy||state.attempt)return;if(!$('ag-detail').open)openDetail(e);state.busy=true;frozen(true);$('ag-detail-notice').textContent='Preparando cambio…';
   try{
     let payload={kind:type(e),id:e.id,revision:e.revision,operation};
     if(type(e)==='ENTREGA'){
       const d=await api('ORDEN_OBTENER',{number:e.number});payload={id:e.id,number:e.number,revision:e.revision,date:e.date,time:e.time,notes:e.notes,cancel:operation==='cancel',items:e.items.map(i=>({id:i.id,quantity:operation==='restore'?i.quantity:i.remaining||i.quantity,revision:d.items.find(a=>a.id===i.id)?.revision||1}))};if(operation==='restore')payload.restore=true;
     }
-    state.busy=false;await closeDialog('ag-detail');await openEditor();$('ag-types').hidden=true;await commit(payload);
-  }catch(error){$('ag-detail-notice').textContent=error.message;state.busy=false;}
+    state.busy=false;await commit(payload);
+  }catch(error){$('ag-detail-notice').textContent=error.message;state.busy=false;frozen(false);}
 }
 function frozen(on){
-  $('ag-fields').disabled=on;$('ag-task-fields').disabled=on;for(const id of ['ag-save','ag-task-save','ag-cancel','ag-close'])$(id).disabled=on;
+  $('ag-fields').disabled=on;$('ag-task-fields').disabled=on;for(const id of ['ag-save','ag-task-save','ag-cancel','ag-close','ag-detail-close'])$(id).disabled=on;
+  $('ag-detail-body').querySelectorAll('button').forEach(b=>b.disabled=on);
+}
+async function animateAgendaItem(id,enter=false){
+  if(!id||reduced())return;
+  const rows=[...document.querySelectorAll('.ag-swipe')].filter(r=>r.dataset.id===id);
+  await Promise.all(rows.map(async row=>{if(!row.animate)return;const frames=enter?[{opacity:0,transform:'translateX(16px)'},{opacity:1,transform:'translateX(0)'}]:[{opacity:1,transform:'translateX(0)'},{opacity:0,transform:'translateX(-24px)'}];const motion=row.animate(frames,{duration:enter?220:180,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});try{await motion.finished;}catch{}if(enter)motion.cancel();}));
 }
 async function commit(payload){
   if(state.busy)return;
-  if(!state.attempt){if(!payload)return;const attempt={requestId:createRequestId('AGENDA'),payload};try{sessionStorage.setItem(state.key,JSON.stringify(attempt));}catch{$('ag-error').textContent='No se pudo conservar el intento en el dispositivo. Libera espacio antes de guardar.';return;}state.attempt=attempt;}
-  const attempt=state.attempt;state.busy=true;frozen(true);$('ag-recover').hidden=true;$('ag-error').textContent='Guardando compromiso…';
+  const inDetail=$('ag-detail').open,notice=inDetail?$('ag-detail-notice'):$('ag-error'),retry=inDetail?$('ag-detail-recover'):$('ag-recover');
+  if(!state.attempt){if(!payload)return;const attempt={requestId:createRequestId('AGENDA'),payload};try{sessionStorage.setItem(state.key,JSON.stringify(attempt));}catch{notice.textContent='No se pudo conservar el intento en el dispositivo. Libera espacio antes de guardar.';return;}state.attempt=attempt;}
+  const attempt=state.attempt;state.busy=true;frozen(true);retry.hidden=true;notice.textContent='Guardando cambio…';
   try{
     const status=await api('AGENDA_GUARDADO_ESTADO',{requestId:attempt.requestId});const response=status.saved?{result:status.result}:await api('AGENDA_GUARDAR',attempt.payload,{requestId:attempt.requestId});
-    sessionStorage.removeItem(state.key);state.attempt=null;await closeDialog('ag-editor');
+    sessionStorage.removeItem(state.key);state.attempt=null;await closeDialog(inDetail?'ag-detail':'ag-editor');
+    if(attempt.payload.cancel||['cancel','complete'].includes(attempt.payload.operation))await animateAgendaItem(attempt.payload.id);
     state.date=response.result?.date||attempt.payload.date||state.date;state.month=state.date.slice(0,7);await load();
+    if(attempt.payload.restore||['restore','reopen'].includes(attempt.payload.operation))await animateAgendaItem(attempt.payload.id,true);
     const cancelled=attempt.payload.cancel||attempt.payload.operation==='cancel';state.undo=cancelled?state.events.find(e=>e.id===attempt.payload.id):null;
     $('ag-toast-text').textContent=cancelled?'Compromiso cancelado':response.result?.count>1?`${response.result.count} fechas guardadas`:'Cambio guardado';$('ag-undo').hidden=!state.undo;$('ag-toast').hidden=false;
   }catch(e){
     if(e.status>=400&&e.status<500&&e.status!==408&&e.code!=='ORDER_RECOVERY_REQUIRED'){sessionStorage.removeItem(state.key);state.attempt=null;frozen(false);}
-    $('ag-error').textContent=e.message;$('ag-recover').hidden=!state.attempt;$('ag-save').textContent=state.attempt?'Comprobar y reintentar':'Guardar programación';
-  }finally{state.busy=false;if(!state.attempt)frozen(false);else{$('ag-save').disabled=false;$('ag-recover').disabled=false;}}
+    notice.textContent=e.message;retry.hidden=!state.attempt;$('ag-save').textContent=state.attempt?'Comprobar y reintentar':'Guardar programación';
+  }finally{state.busy=false;if(!state.attempt)frozen(false);else{$('ag-save').disabled=false;retry.disabled=false;}}
 }
 await guardStandalonePage({permission:'agenda.read',render:async({session})=>{
   state.session=session;state.key='maddy.agenda.attempt.'+session.profile.uid;shell();render();await load();
@@ -167,4 +176,5 @@ await guardStandalonePage({permission:'agenda.read',render:async({session})=>{
   if(state.attempt){$('ag-editor').showModal();$('ag-types').hidden=true;$('ag-form').hidden=false;frozen(true);$('ag-error').textContent='Hay un guardado por confirmar. Comprueba el intento antes de repetirlo.';$('ag-recover').hidden=false;return;}
   const number=new URLSearchParams(location.search).get('op');if(number){$('ag-back').href=orderLink(number);$('ag-back').setAttribute('aria-label','Volver a la OP');if(state.enabled&&canOrders())await openEditor(null,number);}
 }});
+
 
