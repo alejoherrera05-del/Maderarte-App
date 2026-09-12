@@ -1,4 +1,18 @@
 /* Approved Inicio composition: flat copper/ink, official assets and system type. */
+.dashboard-menu-group{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+.dashboard-menu-list{margin:0}
+.dashboard-menu-item{box-shadow:none!important}
+.dashboard-menu-item:hover{transform:none}
+.dashboard-menu-group[data-tone="orange"] .dashboard-menu-icon{background:#b9632d}
+.dashboard-menu-group[data-tone="orange"] .dashboard-menu-item[data-menu-key="cotizaciones"] .dashboard-menu-icon,.dashboard-menu-group[data-tone="orange"] .dashboard-menu-item[data-menu-key="remisiones"] .dashboard-menu-icon{background:#252525}
+.dashboard-sheet-overlay{backdrop-filter:none;-webkit-backdrop-filter:none}
+.dashboard-sheet-content .dashboard-dialog-header{padding:0;margin-bottom:8px}
+.dashboard-sheet-content .dashboard-dialog-header h2{font-size:1.125rem;margin:0}
+.dashboard-sheet-content .dashboard-dialog-options{gap:0}
+.dashboard-sheet-content .dashboard-dialog-option{border:0;border-bottom:1px solid #e7e7eb;border-radius:0;background:#fff;min-height:60px;padding:16px 2px}
+.dashboard-sheet-content .dashboard-dialog-option:last-child{border:0}
+.dashboard-footer{min-height:0;border:0;background:transparent;text-align:left}
+.dashboard-footer p,.dashboard-footer span{font-size:.75rem;color:#73737d}
 .dashboard-app-shell,.dashboard-shell{padding:0;background:#f5f5f7;color:#222;min-height:100vh}
 .dashboard-shell{position:relative;--home-copper:#b9632d;--home-line:#e7e7eb}
 .dashboard-page{max-width:1440px;margin:auto;padding:0 36px}
