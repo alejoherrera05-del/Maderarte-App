@@ -148,7 +148,7 @@ html:has(.dashboard-app-shell){min-width:0}
  .dashboard-page{padding-inline:14px}.dashboard-floating-actions{right:14px}
  .home-brand{gap:7px}.home-brand .home-maddy-logo{width:94px;height:50px}.home-endorsement{font-size:11px}
  .home-greeting{padding:18px}.home-greeting h1{font-size:29px}
- .dashboard-menu-item{grid-template-columns:30px minmax(0,1fr);gap:7px;padding:10px;min-height:76px}.dashboard-menu-icon{width:30px;height:30px}.dashboard-menu-copy strong{font-size:14px}
+ .dashboard-menu-item{grid-template-columns:26px minmax(0,1fr);gap:6px;padding:8px;min-height:76px}.dashboard-menu-icon{width:26px;height:26px}.dashboard-menu-copy strong{font-size:14px}
  .home-today-heading h2{font-size:16px}.home-today-heading>a{font-size:12px;padding-inline:6px}
  .home-tools .dashboard-menu-copy strong{font-size:13px}
 }
