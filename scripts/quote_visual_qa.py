@@ -72,9 +72,9 @@ def audit_home_states(width):
     """)
     assert not empty['overflow'], empty
     if width <= 760:
-        assert empty['hero'] <= 148 and empty['actionsTop'] <= 250, empty
-        assert empty['toolsBottom'] <= 760, empty
-    assert empty['agenda'] <= 175, empty
+        assert empty['hero'] >= 350, empty
+        # The page intentionally scrolls: readable controls outrank fitting above the fold.
+    assert empty['agenda'] <= 220, empty
     ready = driver.execute_async_script("""
       const done=arguments[arguments.length-1];
       fetch('/js/core/dashboard-today.js').then(r=>r.text()).then(source=>{

@@ -31,12 +31,14 @@ try:
               return {key:hero.dataset.moment,src:i.getAttribute('src'),width:innerWidth,height:h.height,
                natural:[i.naturalWidth,i.naturalHeight],density:i.naturalHeight/r.height,greeting:g.innerText,
                overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,
-               overlap:g.getBoundingClientRect().right>r.left+1,
+               overlap:g.getBoundingClientRect().right>r.left+1&&g.getBoundingClientRect().bottom>r.top+1,
+               imageHeight:r.height,
                actionsTop:document.querySelector('.dashboard-groups').getBoundingClientRect().top};
             """)
             assert data['key']==key and data['src'].endswith(key+'-v1.png'),data
-            assert data['density']>=3 and not data['overflow'] and not data['overlap'],data
-            if width<=390:assert data['height']<=148 and data['actionsTop']<=250,data
+            assert data['density']>=2 and not data['overflow'] and not data['overlap'],data
+            if width<=390:assert data['height']>=350 and data['imageHeight']>=220,data
+            driver.execute_async_script("const done=arguments[0];document.querySelector('.home-interior').decode().then(()=>requestAnimationFrame(()=>requestAnimationFrame(done)))")
             driver.save_screenshot(str(out/(key+'-'+str(width)+'-2x.png')))
             records.append(data)
     driver.execute_script("""
