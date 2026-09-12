@@ -1,3 +1,4 @@
+import { mountProductionOverview } from '../core/production-overview.js?v=1';
 import { unrequestedQuantity } from '../core/production-actions.js';
 import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
 import { bindSupplierDirectory } from '../core/supplier-directory.js';
@@ -74,6 +75,12 @@ async function search(event) {
 guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   if (!hasPermission(session, 'produccion.read')) { $('app').hidden = false; $('app').textContent = 'No tienes permiso para consultar Producción.'; return; }
   $('app').hidden = false; bindSandboxBanner($('app')); flow.sync();
+  const route = new URLSearchParams(window.location.search);
+  if (!route.get('op') && route.get('buscar') !== '1') {
+    $('cover').hidden = true;
+    const overview = document.createElement('div'); $('app').append(overview);
+    await mountProductionOverview(overview, session); return;
+  }
   const supplierContacts = bindSupplierDirectory({uid:session.profile.uid,root:document.getElementById('supplier-directory'),name:$('supplier'),phone:$('phone'),onSelect:invalidate});
   $('search-form').addEventListener('submit', event => void search(event));
   $('query').addEventListener('input', () => { sequence++; $('results').replaceChildren(); $('search-status').textContent = ''; });
@@ -96,4 +103,5 @@ guardStandalonePage({ permission: 'ordenes.read', async render({ session }) {
   const number = new URL(window.location.href).searchParams.get('op');
   if (number) await openOrder(number);
 } });
+
 
