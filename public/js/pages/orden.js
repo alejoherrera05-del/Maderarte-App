@@ -1,3 +1,4 @@
+import { bindOrderAdjustments } from '../core/order-adjustments.js?v=1';
 import { bindProductionTracking } from '../core/production-tracking.js?v=runtime-1';
 import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=agenda-1';
 import { productState, bindProductJourney } from '../core/product-journey.js?v=actions-1';
@@ -50,17 +51,17 @@ function renderOrder(data, session) {
   const payments = Array.isArray(data.payments) ? data.payments : [];
   const remissions = Array.isArray(data.remissions) ? data.remissions : [];
   const documents = Array.isArray(data.documents) ? data.documents : [];
-  const primaryLinks = [link(order.pdfUrl, 'Orden de pedido'), link(order.clientFolderUrl, 'Carpeta del cliente'), link(order.orderFolderUrl, 'Carpeta de la OP')].filter(Boolean).join('');
+  const primaryLinks = [link(order.pdfUrl, data.adjustments?.length ? 'OP original · consultar ajustes' : 'Orden de pedido'), link(order.clientFolderUrl, 'Carpeta del cliente'), link(order.orderFolderUrl, 'Carpeta de la OP')].filter(Boolean).join('');
   const quoteLink = order.quoteOrigin ? `<a class="od-link" href="${escapeHtml(sandboxLink('/cotizacion-ver.html?cot=' + encodeURIComponent(order.quoteOrigin)))}"><span><strong>Cotización de origen ${escapeHtml(order.quoteOrigin)}</strong><span>Abrir propuesta</span></span><span class="od-link-arrow">↗</span></a>` : '';
   return `<header class="od-header"><div class="od-header-inner"><a class="od-round" href="${escapeHtml(new URLSearchParams(window.location.search).get('from') === 'produccion' ? sandboxLink('/produccion.html') : withPreview('/ordenes.html'))}" aria-label="Volver al listado"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a><div class="ow-header-brand"><img src="/assets/brand/maderarte-logo-2026.webp" alt=""><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Orden de pedido</span></div><a class="od-round" href="${escapeHtml(withPreview('/index.html'))}" aria-label="Ir al inicio"><img src="/assets/icons/house.svg" alt="" aria-hidden="true"></a></div></header>
   <main class="od-shell">
-    <section class="ow-summary od-hero"><div><span>Orden de pedido</span><strong>${escapeHtml(order.number || number)}</strong><small>${escapeHtml(order.client)}</small></div><div><span>Fecha</span><strong>${escapeHtml(date(order.date))}</strong><small>${escapeHtml(order.city || '')}</small></div><div><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong></div><div><span>Abonado</span><strong>${escapeHtml(money(order.paid))}</strong></div><div><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong></div></section>
+    <section class="ow-summary od-hero"><div><span>Orden de pedido</span><strong>${escapeHtml(order.number || number)}</strong><small>${escapeHtml(order.client)}</small></div><div><span>Fecha</span><strong>${escapeHtml(date(order.date))}</strong><small>${escapeHtml(order.city || '')}</small></div><div><span>Valor total</span><strong>${escapeHtml(money(order.total))}</strong></div><div><span>Abonado</span><strong>${escapeHtml(money(order.paid))}</strong></div><div><span>${order.credit>0?'Saldo a favor':'Saldo pendiente'}</span><strong>${escapeHtml(money(order.credit>0?order.credit:order.balance))}</strong></div></section>
     <nav class="ow-order-tabs" aria-label="Secciones de la orden">${['Muebles','Cliente','Abonos','Remisiones','Documentos'].map((label,i)=>`<button type="button" data-order-section="${i}" aria-pressed="${i===0}">${label}</button>`).join('')}</nav>${renderWorkbench(items,order,session)}
     <div class="od-layout ow-support"><div class="od-stack">
     <section class="od-card"><details class="order-disclosure"><summary><span>Cliente y acuerdos</span><img src="/assets/icons/caret-down.svg" alt=""></summary><div class="od-kv">${kv('Cliente', order.client)}${kv('Cédula o NIT', order.document)}${kv('Teléfono', order.phone)}${order.alternatePhone ? kv('Segundo teléfono', order.alternatePhone) : ''}${kv('Correo', order.email)}${kv('Ciudad', order.city)}${kv('Dirección de entrega', order.address)}${kv('Responsable', order.owner)}${kv('Observaciones', order.notes)}</div></details></section>
     <section class="od-card"><details class="order-disclosure"><summary><span>Abonos <small>${payments.length}</small></span><img src="/assets/icons/caret-down.svg" alt=""></summary>${renderPayments(payments)}</details></section>
     <section class="od-card"><details class="order-disclosure"><summary><span>Remisiones <small>${remissions.length}</small></span><img src="/assets/icons/caret-down.svg" alt=""></summary>${renderRemissions(remissions)}</details></section></div>
-    <aside class="od-stack"><section class="od-card order-balance"><span>Saldo pendiente</span><strong>${escapeHtml(money(order.balance))}</strong><dl><div><dt>Valor total</dt><dd>${escapeHtml(money(order.total))}</dd></div><div><dt>Abonado</dt><dd>${escapeHtml(money(order.paid))}</dd></div><div><dt>Entrega estimada</dt><dd>${escapeHtml(date(order.deliveryDate))}</dd></div></dl></section><section class="od-card"><div class="od-card-head"><h2>Archivo de la orden</h2></div>${quoteLink}${primaryLinks||'<div class="od-empty">Sin archivos todavía.</div>'}<details class="order-disclosure order-other-docs"><summary>Otros documentos</summary>${renderDocuments(documents)}</details></section><div class="order-brand-signature"><img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte"></div></aside></div>
+    <aside class="od-stack"><section class="od-card order-balance"><span>${order.credit>0?'Saldo a favor':'Saldo pendiente'}</span><strong>${escapeHtml(money(order.credit>0?order.credit:order.balance))}</strong><dl><div><dt>Valor total</dt><dd>${escapeHtml(money(order.total))}</dd></div><div><dt>Abonado</dt><dd>${escapeHtml(money(order.paid))}</dd></div><div><dt>Entrega estimada</dt><dd>${escapeHtml(date(order.deliveryDate))}</dd></div></dl></section><section class="od-card"><div class="od-card-head"><h2>Archivo de la orden</h2></div>${quoteLink}${primaryLinks||'<div class="od-empty">Sin archivos todavía.</div>'}<details class="order-disclosure order-other-docs"><summary>Otros documentos</summary>${renderDocuments(documents)}</details></section><div class="order-brand-signature"><img src="/assets/brand/maddy-by-maderarte.svg" alt="Maddy by Maderarte"></div></aside></div>
   </main>`;
 }
 
@@ -81,7 +82,7 @@ guardStandalonePage({
         return;
       }
       root.innerHTML = renderOrder(response.data, session);
-      bindSandboxBanner(root);
+      bindSandboxBanner(root); bindOrderAdjustments(root,response.data,session);
       bindProductJourney(root,response.data,session);
       bindWorkbench(root,response.data,session); void bindProductionTracking(root,response.data,session);
       const support=root.querySelector('.ow-support'), workbench=root.querySelector('.ow-workbench');
@@ -100,6 +101,7 @@ guardStandalonePage({
     }
   }
 });
+
 
 
 

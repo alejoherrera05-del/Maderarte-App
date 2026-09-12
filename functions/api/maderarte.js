@@ -183,6 +183,12 @@ export async function handleRequest(request, env = {}) {
       if (internal === 'INTERNO_DOCUMENTO_PREPARAR' && !result.complete && result.document?.documentKind !== 'remission') throw Object.assign(new Error('El servidor no confirmó la remisión.'), { code: 'DOCUMENT_PLAN_INVALID', status: 503 });
       return result;
     }));
+    if (action === 'AJUSTE_DOCUMENTOS_FINALIZAR') return await runDocumentPipeline(request, env, body, requestId,
+      (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
+        const result = await upstream(internal.replace('INTERNO_DOCUMENTO_', 'INTERNO_AJUSTE_DOCUMENTO_'), payload);
+        if (internal === 'INTERNO_DOCUMENTO_PREPARAR' && !result.complete && result.document?.documentKind !== 'adjustment') throw Object.assign(new Error('El servidor no confirmó el ajuste.'), { code: 'DOCUMENT_PLAN_INVALID', status: 503 });
+        return result;
+      }));
     if (action === 'RECIBO_DOCUMENTOS_FINALIZAR') return await runDocumentPipeline(request, env, body, requestId, (number, bindings, upstream) => finalizeOrderDocuments(number, bindings, async (internal, payload) => {
       const result = await upstream(internal.replace('INTERNO_DOCUMENTO_', 'INTERNO_RECIBO_DOCUMENTO_'), payload);
       if (internal === 'INTERNO_DOCUMENTO_PREPARAR' && !result.complete && result.document?.documentKind !== 'receipt') throw Object.assign(new Error('El servidor no confirmó el recibo.'), { code: 'DOCUMENT_PLAN_INVALID', status: 503 });
@@ -197,5 +203,6 @@ export async function handleRequest(request, env = {}) {
 }
 
 export async function onRequest(context) { return handleRequest(context.request, context.env); }
+
 
 

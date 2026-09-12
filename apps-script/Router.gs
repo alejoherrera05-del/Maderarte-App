@@ -44,6 +44,13 @@ function routeAction_(action, payload, context) {
     case 'REMISION_PDF_LEER': return rmReadPdf_(payload, context);
     case 'INTERNO_REMISION_DOCUMENTO_PREPARAR': return rmPreparePdf_(payload, context);
     case 'INTERNO_REMISION_DOCUMENTO_CONFIRMAR': return rmConfirmPdf_(payload, context);
+    case 'AJUSTE_PDF_LEER': return ajReadPdf_(payload, context);
+    case 'INTERNO_AJUSTE_DOCUMENTO_PREPARAR': return ajPreparePdf_(payload, context);
+    case 'INTERNO_AJUSTE_DOCUMENTO_CONFIRMAR': return ajConfirmPdf_(payload, context);
+    case 'AJUSTE_CUENTA': return ajAccount_(payload, context);
+    case 'AJUSTE_PREVISUALIZAR': return ajPreview_(payload, context);
+    case 'AJUSTE_CONFIRMAR': return ajConfirm_(payload, context);
+    case 'AJUSTE_ESTADO': return ajStatus_(payload, context);
     case 'RECIBO_CAPACIDADES': return rcCapabilities_(context);
     case 'RECIBO_CUENTA': return rcAccount_(payload, context);
     case 'RECIBO_CREAR': return rcCreate_(payload, context);
@@ -103,5 +110,6 @@ function doPost(event) {
     return jsonOutput_(failure_(error, requestId));
   }
 }
+
 
 

@@ -41,7 +41,7 @@ function ptRecord_(payload,context) {
     var s=ptSession_(context,true),hash=sha256_(JSON.stringify(p)),replay=ptReplay_(id,s,hash);if(replay){clearConfirmedOrderFence_();return {saved:true,result:replay};}assertNoUnresolvedOrderFence_();
     var row=rcOrder_(p.number,s),item=mdUnique_(listRows_('Orden_Items'),'Item_ID',p.itemId);
     if(!item||item.Numero_OP!==p.number)throw appError_('ORDER_ITEM_NOT_FOUND','El mueble no pertenece a la orden.',404);
-    if(!['CONFIRMADA','EN_PROCESO'].includes(row.Estado)||item.Estado_Item==='ANULADO'||Number(item.Cantidad_Desistida||0)>0||Number(item.Cantidad_Pendiente)<=0)throw appError_('PRODUCTION_INACTIVE','El mueble no admite movimientos.',409);
+    if(!['CONFIRMADA','EN_PROCESO'].includes(row.Estado)||item.Estado_Item==='ANULADO'||(Number(item.Cantidad_Desistida||0)>0&&!(typeof ajCancellationVerified_==='function'&&ajCancellationVerified_(item,ajEvents_(p.number))))||Number(item.Cantidad_Pendiente)<=0)throw appError_('PRODUCTION_INACTIVE','El mueble no admite movimientos.',409);
     if(Number(item.Version)!==p.revision)throw appError_('PRODUCTION_CHANGED','El mueble cambió. Actualiza la OP antes de registrar.',409);
     var view=ptView_(item,ptEvents_(p.number));if(view.legacy)throw appError_('PRODUCTION_LEGACY','Hay registros anteriores que requieren conciliación.',409);
     if(item.Disponibilidad==='DISPONIBLE')throw appError_('PRODUCTION_ALREADY_AVAILABLE','El mueble ya estaba disponible en almacén.',409);
@@ -54,4 +54,5 @@ function ptRecord_(payload,context) {
     SpreadsheetApp.flush();reserveOrderFence_(id,uid,hash,'PRODUCCION_REGISTRAR');try{orderAtomicBatch_(requests);}catch(e){throw appError_('PRODUCTION_SAVE_UNCERTAIN','No se pudo confirmar el movimiento. Consulta el mismo intento antes de volver a registrar.',503);}clearConfirmedOrderFence_();return {saved:true,result:result};
   } finally{lock.releaseLock();}
 }
+
 
