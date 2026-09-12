@@ -6,7 +6,7 @@ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialog
 const motions=[];w.Element.prototype.animate=function(frames,options){motions.push({frames,options});return {finished:Promise.resolve(),cancel(){}};};w.matchMedia=()=>({matches:false});w.APP_CONFIG={version:'0.2.0'};w.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');let seq=0;
 w.createRequestId=()=>`AGENDA-DOM-${++seq}`;
 w.guardStandalonePage=async({render})=>render({session:{profile:{uid:'TEST',branches:['MP'],mainBranch:'MP'},permissions:['agenda.read','agenda.update']}});
-let events=[],saved=new Map(),sent=[],lose=true;
+let events=[],saved=new Map(),sent=[],lose=true,loseCancel=true;
 w.apiRequest=async(action,p,options)=>{
  if(action==='AGENDA_LISTAR')return {data:{items:events,enabled:true}};
  if(action==='AGENDA_GUARDADO_ESTADO')return {data:{saved:saved.has(p.requestId),result:saved.get(p.requestId)}};
@@ -14,7 +14,7 @@ w.apiRequest=async(action,p,options)=>{
    sent.push(p);if(p.operation==='cancel')await new Promise(r=>setTimeout(r,80));const result={id:p.id||options.requestId,date:p.date||events[0].date,time:p.time||'10:00',revision:(p.revision||0)+1,count:1};
    if(p.operation==='save')events=[{...p,...result,status:'PROGRAMADA',items:[],number:'',client:p.contact}];
    else events[0]={...events[0],revision:result.revision,status:p.operation==='cancel'?'CANCELADA':'PROGRAMADA'};
-   saved.set(options.requestId,result);if(lose){lose=false;throw Object.assign(Error('Respuesta perdida'),{status:503});}return {data:{saved:true,result}};
+   saved.set(options.requestId,result);if(p.operation==='cancel'&&loseCancel){loseCancel=false;throw Object.assign(Error('Respuesta de cancelación perdida'),{status:503});}if(lose){lose=false;throw Object.assign(Error('Respuesta perdida'),{status:503});}return {data:{saved:true,result}};
  }
  throw Error(action);
 };
@@ -26,7 +26,7 @@ $('ag-task-title').value='Servicio <prueba>'; $('ag-contact').value='Entidad';$(
 $('ag-task-form').dispatchEvent(new w.Event('submit',{cancelable:true}));await wait();assert.equal(sent.length,1);assert.equal(sent[0].kind,'SERVICIO');assert.equal(sent[0].repeat,3);assert.equal($('ag-task-fields').disabled,true);assert.equal($('ag-recover').hidden,false);
 $('ag-recover').click();await wait();assert.equal(sent.length,1,'Recovery consults result without repeating write');assert.equal($('ag-editor').open,false);assert.equal(w.document.querySelector('prueba'),null);
 $('ag-find').value='Servicio';$('ag-find').dispatchEvent(new w.Event('input'));w.document.querySelector('[data-open]').click();$('ag-edit-event').click();await wait();assert.equal($('ag-task-title').value,'Servicio <prueba>');assert.equal($('ag-repeat-wrap').hidden,true);assert.equal($('ag-repeat').value,'1');$('ag-close').click();await wait();
-w.document.querySelector('[data-open]').click();$('ag-cancel-event').click();await new Promise(r=>setTimeout(r,30));assert.equal($('ag-detail').open,true,'Cancellation keeps the existing detail during confirmation');assert.equal($('ag-editor').open,false,'No unrelated creation dialog');assert.equal($('ag-detail-close').disabled,true);await wait();assert.equal(events[0].status,'CANCELADA');assert.equal($('ag-undo').hidden,false);$('ag-undo').click();await wait();assert.equal(events[0].status,'PROGRAMADA');assert.equal(sent.at(-1).operation,'restore');
+w.document.querySelector('[data-open]').click();$('ag-cancel-event').click();await new Promise(r=>setTimeout(r,30));assert.equal($('ag-detail').open,true,'Cancellation keeps the existing detail during confirmation');assert.equal($('ag-editor').open,false,'No unrelated creation dialog');assert.equal($('ag-detail-close').disabled,true);await wait();assert.equal($('ag-detail').open,true);assert.equal($('ag-detail-recover').hidden,false);const writes=sent.length;$('ag-detail-recover').click();await wait();assert.equal(sent.length,writes,'Status recovery never duplicates cancellation');assert.equal(events[0].status,'CANCELADA');assert.equal($('ag-undo').hidden,false);$('ag-undo').click();await wait();assert.equal(events[0].status,'PROGRAMADA');assert.equal(sent.at(-1).operation,'restore');
 assert.ok(motions.some(m=>m.frames.at(-1).opacity===0),'Confirmed cancellation animates removal');assert.ok(motions.some(m=>m.frames[0].opacity===0),'Restoration animates arrival');assert.ok(motions.every(m=>m.options.duration<=220&&m.frames.every(frame=>Object.keys(frame).every(k=>['opacity','transform'].includes(k)))));
 assert.equal(w.sessionStorage.getItem('maddy.agenda.attempt.TEST'),null);dom.window.close();console.log('General agenda DOM: permission-aware categories, save/recovery, edit prefilling, search, cancellation and undo verified.');
 
