@@ -5,8 +5,7 @@ html:has(.dashboard-app-shell){min-width:0}
 .dashboard-page{max-width:1280px;margin:auto;padding:0 32px}
 .home-brand{height:92px;display:flex;align-items:center;gap:16px;padding-right:72px}
 .home-brand .home-maddy-logo{display:block;width:120px;height:62px;object-fit:contain}
-.home-endorsement{font-size:14px;color:#6b6b74;letter-spacing:.015em;white-space:nowrap}
-.home-endorsement strong{font-weight:600;color:#343438}
+.home-endorsement{display:block;width:174px;height:26px;object-fit:contain;flex-shrink:0}
 .dashboard-floating-actions{position:absolute;z-index:30;right:max(32px,calc((100% - 1216px)/2));top:24px;display:flex;align-items:center;gap:10px}
 .dashboard-circle-action{display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid #ffffffb3;border-radius:50%;background:#fff;box-shadow:0 2px 6px #18181c0a;transition:transform .15s ease,box-shadow .15s ease}
 .dashboard-profile-initials{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#252525;color:white;font-size:14px;font-weight:600}
@@ -121,7 +120,7 @@ html:has(.dashboard-app-shell){min-width:0}
 }
 @media(max-width:760px){
  .dashboard-page{padding:0 20px}.home-brand{height:82px;gap:10px;padding-right:50px}
- .home-brand .home-maddy-logo{width:104px;height:54px}.home-endorsement{font-size:12px}
+ .home-brand .home-maddy-logo{width:104px;height:54px}.home-endorsement{width:128px;height:20px}
  .dashboard-floating-actions{right:20px;top:21px}.dashboard-circle-action,.dashboard-profile-initials{width:40px;height:40px}
  .home-hero{display:flex;flex-direction:column;align-items:stretch;border-radius:22px;margin-bottom:18px}
  .home-interior{order:-1;height:160px}.home-greeting{padding:20px}
@@ -146,7 +145,7 @@ html:has(.dashboard-app-shell){min-width:0}
 }
 @media(max-width:374px){
  .dashboard-page{padding-inline:14px}.dashboard-floating-actions{right:14px}
- .home-brand{gap:7px}.home-brand .home-maddy-logo{width:94px;height:50px}.home-endorsement{font-size:11px}
+ .home-brand{gap:7px}.home-brand .home-maddy-logo{width:94px;height:50px}.home-endorsement{width:118px;height:19px}
  .home-greeting{padding:18px}.home-greeting h1{font-size:29px}
  .dashboard-menu-item{grid-template-columns:26px minmax(0,1fr);gap:6px;padding:8px;min-height:76px}.dashboard-menu-icon{width:26px;height:26px}.dashboard-menu-copy strong{font-size:14px}
  .home-today-heading h2{font-size:16px}.home-today-heading>a{font-size:12px;padding-inline:6px}

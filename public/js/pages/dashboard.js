@@ -181,7 +181,7 @@ guardPage({
     const moment = dayPart();
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
-      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-signature.svg" alt="Maddy" width="120" height="62"><span class="home-endorsement">by <strong>Maderarte</strong></span></header>
+      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-signature.svg" alt="Maddy" width="120" height="62"><img class="home-endorsement" src="/assets/brand/maddy-endorsement.svg" alt="by Maderarte" width="174" height="26"></header>
       <section class="home-hero" aria-labelledby="dashboard-greeting">
         <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)},<br>${escapeHtml(firstName(session.profile))}.</h1></div>
         <img class="home-interior" src="/assets/interiors/living-room-morning.webp" alt="Sala de Maderarte" fetchpriority="high">
