@@ -61,10 +61,57 @@ def metric(selector):
       return {height:Math.round(r.height),width:Math.round(r.width),fontSize:parseFloat(s.fontSize)||0,
               text:n.textContent.trim(),overflowY:n.scrollHeight>n.clientHeight+2};''', selector)
 
+
+def audit_home_states(width):
+    wait.until(lambda d: d.execute_script("return document.getElementById('home-today')?.dataset.state==='empty'"))
+    empty = driver.execute_script("""
+      const r=s=>document.querySelector(s).getBoundingClientRect();
+      return {viewport:innerWidth, overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,
+        hero:r('.home-hero').height, actionsTop:r('.dashboard-groups').top,
+        agenda:r('.home-today').height, toolsBottom:r('.home-tools').bottom};
+    """)
+    assert not empty['overflow'], empty
+    if width <= 760:
+        assert empty['hero'] <= 148 and empty['actionsTop'] <= 250, empty
+        assert empty['toolsBottom'] <= 760, empty
+    assert empty['agenda'] <= 175, empty
+    ready = driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      fetch('/js/core/dashboard-today.js').then(r=>r.text()).then(source=>{
+        const day=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Bogota'}).format(new Date());
+        const items=[
+          {id:'QA-PROVEEDOR',kind:'PROVEEDOR',title:'Confirmar anticipo del proveedor para el comedor de seis puestos y revisar los acabados pendientes',contact:'Proveedor de muestra',date:day,time:'08:00',status:'PROGRAMADA'},
+          {id:'QA-ENTREGA',kind:'ENTREGA',client:'Cliente de muestra con dirección de entrega por confirmar',number:'QA-OP',date:day,time:'09:00',status:'PROGRAMADA'},
+          {id:'QA-GARANTIA',kind:'GARANTIA',title:'Revisar ajuste de tapizado y coordinar visita de garantía con el operario',contact:'Contacto de muestra',date:day,time:'10:00',status:'PROGRAMADA'},
+          {id:'QA-IMPUESTO',kind:'IMPUESTO',title:'Vencimiento de impuesto de muestra',date:day,time:'11:00',status:'PROGRAMADA'},
+          {id:'QA-FUTURO',kind:'SERVICIO',title:'No debe aparecer hoy',date:'2099-01-01',time:'12:00',status:'PROGRAMADA'}
+        ];
+        const old=document.getElementById('home-today'),root=old.cloneNode(false);old.replaceWith(root);
+        const factory=new Function('apiRequest','createRequestId','esc','hasPermission','APP_CONFIG',
+          source.replace(/^import .*;\\r?\\n/gm,'').replaceAll('export ','')+';return mountToday;');
+        const render=factory(async action=>{if(action!=='AGENDA_LISTAR')throw Error('QA does not write');return {data:{items,enabled:true}}},
+          ()=>{throw Error('QA does not write')},value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),
+          ()=>true,{preview:{enabled:false}});
+        render(root,{profile:{uid:'VISUAL-QA'},permissions:['*']});
+        setTimeout(()=>done({state:root.dataset.state, rows:root.querySelectorAll('.home-pending-row').length,
+          checks:root.querySelectorAll('[data-complete]').length,more:root.querySelector('.home-more')?.textContent,
+          height:root.getBoundingClientRect().height,
+          overlap:document.querySelector('.home-tools').getBoundingClientRect().top<root.getBoundingClientRect().bottom,
+          overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,
+          clipped:[...root.querySelectorAll('.home-event strong,.home-event small')].some(e=>e.scrollWidth>e.clientWidth+1)}),50);
+      }).catch(e=>done({error:String(e)}));
+    """)
+    assert ready.get('state') == 'ready' and ready['rows'] == 3 and ready['checks'] == 2, ready
+    assert '4 pendientes' in ready['more'] and ready['height'] > empty['agenda'], ready
+    assert not ready['overflow'] and not ready['clipped'] and not ready['overlap'], ready
+    driver.save_screenshot(str(PNG.with_name(f'inicio-compromisos-{width}.png')))
+    return {'empty':empty,'ready':ready}
+
 def check_editor_and_home():
     results = []
     for width in (1440, 768, 390, 320):
         driver.set_window_size(width, 1000)
+        driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {'width':width,'height':1000,'deviceScaleFactor':1,'mobile':False})
         driver.get(URL)
         wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '[data-quote-branch="MP"]'))).click()
         wait.until(EC.visibility_of_element_located((By.ID, 'quote-workspace')))
@@ -97,6 +144,7 @@ def check_editor_and_home():
             descriptionHidden:getComputedStyle(row.querySelector('.dashboard-menu-copy > span')).display === 'none', iconBackground:getComputedStyle(row.querySelector('.dashboard-menu-icon')).backgroundImage, shortcuts:document.querySelectorAll('.dashboard-groups .dashboard-menu-item').length};''')
         assert not home['overflow'] and home['rowHeight'] >= 72 and home['titleSize'] >= 14 and home['descriptionHidden'] and home['iconBackground'] == 'none' and home['shortcuts'] == 4, home
         driver.save_screenshot(str(PNG.with_name(f'inicio-{width}.png')))
+        home['states'] = audit_home_states(width)
         if width == 390:
             menu = driver.find_element(By.CSS_SELECTOR, '[data-menu-key="cotizaciones"]')
             driver.execute_script("arguments[0].scrollIntoView({block:'center'});", menu)
@@ -107,6 +155,7 @@ def check_editor_and_home():
             driver.save_screenshot(str(PNG.with_name('inicio-opciones-mobile.png')))
         results.append({'editor': editor, 'home': home})
     print('EDITOR_HOME_QA=' + json.dumps(results, ensure_ascii=False))
+    driver.execute_cdp_cmd('Emulation.clearDeviceMetricsOverride', {})
     driver.set_window_size(1680, 2200)
 
 def check_order():
