@@ -39,6 +39,15 @@ try:
             if width<=390:assert data['height']<=148 and data['actionsTop']<=250,data
             driver.save_screenshot(str(out/(key+'-'+str(width)+'-2x.png')))
             records.append(data)
+    driver.execute_script("""
+      const PreviousDate=Date,instant=PreviousDate.parse('2026-09-13T12:00:00-05:00');
+      window.Date=class extends PreviousDate {constructor(...args){super(...(args.length?args:[instant]))}static now(){return instant}};
+      document.dispatchEvent(new Event('visibilitychange'));
+    """)
+    wait.until(lambda d:d.execute_script("const h=document.querySelector('.home-hero'),i=h.querySelector('img');return h.dataset.moment==='afternoon'&&i.complete&&i.naturalWidth>0"))
+    assert '13 de septiembre' in driver.find_element('css selector','.home-greeting > p').text
+    assert 'Buenas tardes' in driver.find_element('css selector','.home-greeting-welcome').text
+    print('RETURN_TO_APP_QA=scene, greeting and date refreshed without reload')
     errors=[e['message'] for e in driver.get_log('browser') if e['level']=='SEVERE' and 'favicon' not in e['message']]
     assert not errors,errors
     (out/'metrics.json').write_text(json.dumps(records,ensure_ascii=False,indent=2),encoding='utf-8')
