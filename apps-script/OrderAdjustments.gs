@@ -6,11 +6,16 @@ function ajEvents_(number) {
     if(!e||e.contract!==1||!['DESISTIR','TRANSFERIR','DEVOLVER'].includes(e.type)||!Number.isSafeInteger(e.amount)||e.amount<0)throw appError_('ADJUSTMENT_INTEGRITY','Hay un ajuste que requiere conciliación.',409);
     e.id=r.Anulacion_ID;e.source=r.Entidad_ID;e.date=valueDateIso_(r.Fecha);e.by=r.Aprobada_Por;e.reason=r.Motivo;
     return e;
-  }).filter(function(e){return e.source===number||e.target===number;});
+  }).filter(function(e){return !number||e.source===number||e.target===number;});
 }
 function ajSession_(context,write){var s=validateSessionToken_(context.sessionToken,false);requirePermission_(s,'ordenes.read');requirePermission_(s,'abonos.read');if(write)requirePermission_(s,'ajustes.create');return s;}
 function ajEnabled_(){return typeof osActive_==='function'&&osActive_()||commercialWritesEnabled_()&&getConfigValue_('MODO_OPERACION','')==='OPERACION'&&optionalProperty_('ORDER_ADJUSTMENTS_ENABLED','NO')==='SI';}
 function ajFail_(message){throw appError_('ADJUSTMENT_INTEGRITY',message||'Los movimientos de esta OP requieren conciliación.',409);}
+function ajCancellationVerified_(item,events){
+  var cancelled=Number(item.Cantidad_Desistida||0);if(!cancelled)return false;var count=0,amount=0;
+  events.filter(function(e){return e.source===item.Numero_OP&&e.type==='DESISTIR';}).forEach(function(e){e.items.forEach(function(i){if(i.itemId===item.Item_ID){count+=i.quantity;amount+=i.reduction;}});});
+  var n=Number(item.Cantidad),net=Number(item.Valor_Neto);return Number.isSafeInteger(n)&&n>0&&Number.isSafeInteger(net)&&net>=0&&Number.isSafeInteger(cancelled)&&cancelled>0&&cancelled<=n&&count===cancelled&&amount===Number(BigInt(net)*BigInt(cancelled)/BigInt(n));
+}
 function ajPosition_(row,events){
   events=events||ajEvents_(row.Numero_OP);
   var payments=listRows_('Abonos').filter(function(p){return p.Numero_OP===row.Numero_OP&&p.Estado_Registro==='ACTIVO'&&p.Afecta_Saldo==='SI';});
@@ -24,13 +29,14 @@ function ajPosition_(row,events){
   if(!items.length)ajFail_();
   items.forEach(function(i){var n=Number(i.Cantidad),net=Number(i.Valor_Neto),d=Number(i.Cantidad_Entregada||0),c=Number(i.Cantidad_Desistida||0),p=Number(i.Cantidad_Pendiente);
     if(![n,net,d,c,p].every(Number.isSafeInteger)||n<1||net<0||d<0||c<0||p<0||p!==n-d-c||c!==(cancelled[i.Item_ID]||0))ajFail_();original+=net;
+    if(cancelled[i.Item_ID]&&!events.some(function(e){return e.type==='DESISTIR'&&e.items.some(function(x){return x.itemId===i.Item_ID;});}))ajFail_();
   });
   var total=original-reduction,paid=received+incoming-outgoing,balance=Math.max(0,total-paid),credit=Math.max(0,paid-total);
   if(![original,reduction,received,incoming,outgoing,total,paid,balance,credit].every(Number.isSafeInteger)||total<0||paid<0||Number(row.Valor_Total)!==total||Number(row.Abonado_Total)!==paid||Number(row.Saldo_Pendiente)!==balance)ajFail_();
   return {total:total,paid:paid,balance:balance,credit:credit,received:received,incoming:incoming,outgoing:outgoing,original:original,
     fingerprint:sha256_(JSON.stringify([row.Numero_OP,row.Estado,row.Version,total,paid,items,payments,events]))};
 }
-function ajAccount_(payload,context){var s=ajSession_(context,false),row=rcOrder_(String(payload.number||''),s),events=ajEvents_(row.Numero_OP);return {order:normalizeOrder_(row),position:ajPosition_(row,events),items:orderItems_(row.Numero_OP),events:events,enabled:ajEnabled_()&&hasPermission_(s.permissions,'ajustes.create')};}
+function ajAccount_(payload,context){var s=ajSession_(context,false),row=rcOrder_(String(payload.number||''),s),events=ajEvents_(row.Numero_OP);return {order:normalizeOrder_(row),position:ajPosition_(row,events),items:orderItems_(row.Numero_OP),events:events.map(function(e){return {id:e.id,type:e.type,amount:e.amount,source:e.source,target:e.target,date:e.date,reason:e.reason,reference:e.reference};}),enabled:ajEnabled_()&&hasPermission_(s.permissions,'ajustes.create')};}
 function ajPayload_(p){
   orderObject_(p,['number','fingerprint','type','items','amount','target','targetFingerprint','reason','reference'],'adjustment');
   var result={number:orderText_(p.number,'number',120,true),fingerprint:orderText_(p.fingerprint,'fingerprint',64,true),type:orderEnum_(p.type,['DESISTIR','TRANSFERIR','DEVOLVER'],'type'),reason:orderText_(p.reason,'reason',1000,true),reference:orderText_(p.reference,'reference',240,false),target:String(p.target||''),targetFingerprint:String(p.targetFingerprint||''),amount:p.amount===undefined?0:orderInteger_(p.amount,'amount',0),items:[]};
@@ -74,8 +80,11 @@ function ajConfirm_(payload,context){
   var p=ajPayload_(payload),id=orderRequestId_(context.requestId),lock=osOperationLock_();if(!lock.tryLock(5000))throw appError_('ORDER_SAVE_BUSY','Hay otro movimiento guardándose. Reintenta el mismo registro.',503);
   try{var s=ajSession_(context,true),hash=sha256_(JSON.stringify(p)),replay=ajReplay_(id,s,hash);if(replay){clearConfirmedOrderFence_();return {saved:true,result:replay};}assertNoUnresolvedOrderFence_();
     var plan=ajPlan_(p,s),stamp=now_().toISOString(),uid=s.profile.uid,event={contract:1,type:p.type,amount:plan.amount,target:p.type==='TRANSFERIR'?p.target:'',reference:p.reference,items:plan.items.map(function(i){return {itemId:i.itemId,description:i.description,quantity:i.quantity,reduction:i.reduction};}),before:plan.before,after:plan.after,targetBefore:plan.targetBefore,targetAfter:plan.targetAfter};
-    var result={id:id,number:p.number,target:event.target,type:p.type,amount:plan.amount,after:plan.after,requestId:id};
-    var requests=[orderAppendRequest_('Anulaciones',[{Anulacion_ID:id,Fecha:stamp,Tipo_Entidad:'AJUSTE_OP',Entidad_ID:p.number,Motivo:p.reason,Solicitada_Por:uid,Aprobada_Por:uid,Estado:'CONFIRMADA',Antes_JSON:JSON.stringify(plan.before),Consecuencias_JSON:JSON.stringify(event),Reversible:'NO',Request_ID:id}])];
+    var prefix=plan.row.Sede+'-AJ-',sequence=listRows_('Anulaciones').filter(function(r){return String(r.Anulacion_ID).indexOf(prefix)===0;}).length+1,documentNumber=prefix+String(sequence).padStart(4,'0');
+    if(mdUnique_(listRows_('Anulaciones'),'Anulacion_ID',documentNumber))ajFail_('El consecutivo del ajuste requiere revisión.');
+    var result={id:documentNumber,number:p.number,target:event.target,type:p.type,amount:plan.amount,after:plan.after,requestId:id};
+    var requests=[orderAppendRequest_('Anulaciones',[{Anulacion_ID:documentNumber,Fecha:stamp,Tipo_Entidad:'AJUSTE_OP',Entidad_ID:p.number,Motivo:p.reason,Solicitada_Por:uid,Aprobada_Por:uid,Estado:'CONFIRMADA',Antes_JSON:JSON.stringify(plan.before),Consecuencias_JSON:JSON.stringify(event),Reversible:'NO',Request_ID:id}])];
+    requests=requests.concat(ajDocumentPlan_(documentNumber,p,plan,event,stamp,s,id));
     // Freeze any missing initial receipt plans against the pre-adjustment account.
     [plan.row,plan.target].filter(Boolean).forEach(function(row){var slots=mdRows_(row.Numero_OP);listRows_('Abonos').filter(function(a){return a.Numero_OP===row.Numero_OP&&a.Estado_Registro==='ACTIVO';}).forEach(function(a){if(!slots.some(function(slot){return slot.Archivo_ID===a.Numero_Recibo+'-PDF-V1';}))requests=requests.concat(rcPlan_(a,row,row.Responsable||'').requests);});});
     function update(row,after){requests=requests.concat(orderUpdateRequests_('Ordenes_Pedido',row._row,{Valor_Total:after.total,Abonado_Total:after.paid,Saldo_Pendiente:after.balance,Version:Number(row.Version)+1,Actualizado_Por:uid,Actualizado_En:stamp}));}

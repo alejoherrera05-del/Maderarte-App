@@ -11,7 +11,7 @@ export const normalizeSearch=value=>String(value||'').normalize('NFD').replace(/
 // Subtract the largest later milestone; never sum those milestones together.
 export function productionBuckets(item) {
   const n=item.quantity, delivered=item.delivered, cancelled=item.cancelled, pending=item.pending;
-  if(![n,delivered,cancelled,pending].every(Number.isSafeInteger)||n<1||delivered<0||cancelled<0||pending<0||pending!==n-delivered-cancelled||item.issue||item.tracking?.legacy||cancelled>0) return [{stage:'REVIEW',quantity:Math.max(0,pending||0)}];
+  if(![n,delivered,cancelled,pending].every(Number.isSafeInteger)||n<1||delivered<0||cancelled<0||pending<0||pending!==n-delivered-cancelled||item.issue||item.tracking?.legacy||(cancelled>0&&!item.adjustmentVerified)) return [{stage:'REVIEW',quantity:Math.max(0,pending||0)}];
   if(!pending)return [];
   if(item.fulfillment==='DISPONIBLE')return [{stage:item.agreement==='SEPARADO'?'SEPARADO':'BODEGA',quantity:pending}];
   if(item.fulfillment!=='PARA_SOLICITAR'||!item.tracking)return [{stage:'REVIEW',quantity:pending}];
@@ -19,7 +19,7 @@ export function productionBuckets(item) {
   if(totals.some(v=>!Number.isSafeInteger(v)||v<0||v>n-cancelled))return [{stage:'REVIEW',quantity:pending}];
   const buckets=[];let covered=delivered;
   for(let i=sequence.length-1;i>=0;i--){const quantity=Math.max(0,totals[i]-covered);if(quantity)buckets.unshift({stage:sequence[i],quantity});covered=Math.max(covered,totals[i]);}
-  if(n-covered>0)buckets.unshift({stage:item.agreement==='SEPARADO'?'SEPARADO':'PENDING',quantity:n-covered});
+  if(n-cancelled-covered>0)buckets.unshift({stage:item.agreement==='SEPARADO'?'SEPARADO':'PENDING',quantity:n-cancelled-covered});
   return buckets;
 }
 
@@ -45,4 +45,5 @@ export async function loadProductionOverview(request,onProgress=()=>{}) {
   if(entries.size!==total)throw new Error('Los pedidos cambiaron durante la consulta. Actualiza para ver el listado completo.');
   return {entries:[...entries.values()],enabled};
 }
+
 

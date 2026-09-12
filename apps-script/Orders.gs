@@ -60,7 +60,7 @@ function listOrders_(payload, session) {
 }
 
 function orderItems_(number) {
-  var productionEvents=typeof ptEvents_==='function'?ptEvents_(number):[];
+  var productionEvents=typeof ptEvents_==='function'?ptEvents_(number):[],adjustments=typeof ajEvents_==='function'?ajEvents_(number):[];
   return listRows_('Orden_Items').filter(function(row) { return String(row.Numero_OP || '') === number; }).map(function(row) {
     return {
       id: String(row.Item_ID || ''),
@@ -82,6 +82,7 @@ function orderItems_(number) {
       discount: valueNumber_(row.Descuento),
       net: row.Valor_Neto === undefined || row.Valor_Neto === '' ? valueNumber_(row.Subtotal) : valueNumber_(row.Valor_Neto),
       cancelled: valueNumber_(row.Cantidad_Desistida),
+      adjustmentVerified: typeof ajCancellationVerified_==='function'&&ajCancellationVerified_(row,adjustments),
       revision: valueNumber_(row.Version) || 1,
       delivered: valueNumber_(row.Cantidad_Entregada),
       pending: valueNumber_(row.Cantidad_Pendiente),
@@ -149,6 +150,7 @@ function getOrder_(payload, session) {
   if (!orderBranchReadable_(session, row.Sede)) throw appError_('BRANCH_NOT_ALLOWED', 'No tienes acceso a esta sede.', 403);
   return {
     productionTrackingEnabled: typeof ptEnabled_==='function' && ptEnabled_() && hasPermission_(session.permissions,'produccion.update'),
+    adjustments: typeof ajEvents_==='function'?ajEvents_(number).map(function(e){return {id:e.id,type:e.type,amount:e.amount};}):[],
     order: normalizeOrder_(row),
     items: orderItems_(number),
     payments: orderPayments_(number),

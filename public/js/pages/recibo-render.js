@@ -5,7 +5,7 @@ import { escapeHtml as esc, money, date, humanizeCode } from '../core/format.js'
 const field=(label,value,extra='')=>value?`<div class="receipt-document-field ${extra}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`:'';
 const historyDate=new Intl.DateTimeFormat('es-CO',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Bogota'});
 const historyRow=(p,current)=>`<tr${p.number===current?' class="receipt-history-current"':''}><td>${esc(historyDate.format(new Date(p.date)))}</td><td>${esc(p.number)}</td><td>${esc(humanizeCode(p.method))}</td><td>${esc(money(p.amount))}</td></tr>`;
-const historyTable=(rows,current)=>`<section class="receipt-document-history"><h2>Historial de abonos</h2><table><thead><tr><th>Fecha</th><th>Recibo</th><th>Medio</th><th>Valor</th></tr></thead><tbody>${rows.map(p=>historyRow(p,current)).join('')}</tbody></table></section>`;
+const historyTable=(rows,current)=>`<section class="receipt-document-history"><h2>${rows.some(p=>p.amount<=0||String(p.method).startsWith('SALDO'))?'Historial de cuenta':'Historial de abonos'}</h2><table><thead><tr><th>Fecha</th><th>Recibo</th><th>Medio</th><th>Valor</th></tr></thead><tbody>${rows.map(p=>historyRow(p,current)).join('')}</tbody></table></section>`;
 export async function renderReceipt(snapshot, target) {
   if (snapshot?.documentKind !== 'receipt' || snapshot.issued !== true || !snapshot.number || !snapshot.orderNumber
     || !Number.isSafeInteger(snapshot.amount) || snapshot.amount <= 0 || snapshot.previousBalance - snapshot.amount !== snapshot.balance || snapshot.balance < 0) throw Error('Recibo incompleto');
@@ -43,3 +43,4 @@ export async function renderReceipt(snapshot, target) {
   if(pages.length>1&&body?.children.length)page.querySelector('.receipt-document-history h2').textContent='Historial de abonos · continúa';
   return {pages:pages.length};
 }
+

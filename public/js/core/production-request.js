@@ -5,7 +5,7 @@ export function productionEligibility(order, item) {
   if (!item?.id || !Number.isSafeInteger(item.quantity) || item.quantity <= 0) return 'Revisa los datos del mueble.';
   if (![item.delivered, item.cancelled, item.pending].every(n => Number.isSafeInteger(n) && n >= 0)
     || item.pending !== item.quantity - item.delivered - item.cancelled) return 'Las cantidades requieren revisión.';
-  if (item.cancelled) return 'El mueble tiene un ajuste pendiente de revisión.';
+  if (item.cancelled && !item.adjustmentVerified) return 'El mueble tiene un ajuste pendiente de revisión.';
   if (!item.pending) return 'Sin unidades pendientes.';
   if (item.fulfillment === 'DISPONIBLE') return 'Disponible en almacén.';
   if (item.tracking?.legacy) return 'Hay movimientos anteriores que requieren revisión en la OP.';
@@ -49,3 +49,4 @@ export function supplierWhatsAppUrl(phone, message) {
   if (digits.length === 10) digits = '57' + digits;
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
+

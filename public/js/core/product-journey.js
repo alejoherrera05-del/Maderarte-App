@@ -4,7 +4,8 @@ import { escapeHtml as esc } from './format.js';
 import { sandboxLink } from './order-sandbox-context.js';
 export function productState(item, order = {}) {
   if (order.status === 'ANULADA' || item.status === 'ANULADO') return {label:'Anulado',tone:'muted',note:'Este producto no tiene acciones de entrega.'};
-  if (item.cancelled > 0) return {label:'Revisar ajuste',tone:'amber',note:'Hay unidades desistidas. Revisa las cantidades del expediente.'};
+  if(item.cancelled===item.quantity&&item.adjustmentVerified)return {label:'Desistido',tone:'muted',note:'Retirado del pedido mediante ajuste registrado.'};
+  if (item.cancelled > 0 && !item.adjustmentVerified) return {label:'Revisar ajuste',tone:'amber',note:'Hay unidades desistidas. Revisa las cantidades del expediente.'};
   if (item.delivered > 0 && item.pending === 0) return {label:'Despachado',tone:'blue',note:'Salida del almacén completa. No confirma recepción del cliente.'};
   if (item.delivered > 0) return {label:'Despacho parcial',tone:'blue',note:`${item.delivered} despachadas · ${item.pending} pendientes`};
   if(item.tracking?.received>0) return {label:item.tracking.received<item.quantity?'En bodega · parcial':'En bodega',tone:'green',note:`${item.tracking.available} disponibles · ${item.quantity-item.tracking.received} por recibir`};
@@ -38,3 +39,4 @@ export function bindProductJourney(root,data,session = {permissions:[]}) {
   dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
   dialog.addEventListener('close',()=>trigger?.focus());
 }
+

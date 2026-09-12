@@ -54,6 +54,7 @@ function rmPosition_(row) {
     seen[l.Item_ID]=true;sums[l.Item_ID]+=q;
   });
   if(heads.some(function(h){return !Object.keys(numbers[h.Numero_Remision]).length;}))rmFail_();
+  var adjustments=typeof ajEvents_==='function'?ajEvents_(number):[];
   var view=items.map(function(i){
     var quantity=Number(i.Cantidad),cancelled=Number(i.Cantidad_Desistida||0),delivered=sums[i.Item_ID],pending=quantity-cancelled-delivered;
     if(!Number.isSafeInteger(quantity)||quantity<=0||!Number.isSafeInteger(cancelled)||cancelled<0||!Number.isSafeInteger(pending)||pending<0
@@ -61,7 +62,7 @@ function rmPosition_(row) {
     var hasProduction=production.some(function(p){return !p.Item_ID || p.Item_ID===i.Item_ID;});
     var tracked=typeof ptView_==='function'?ptView_(i,production):null;
     var available=tracked&&!tracked.legacy?tracked.available:(hasProduction?0:i.Disponibilidad==='DISPONIBLE'?pending:0);
-    var blocked=cancelled?'El mueble tiene un ajuste que requiere revisión.':tracked&&tracked.legacy?'Requiere revisión de producción antes de entregar.':available<1?'La disponibilidad requiere revisión operativa.':'';
+    var blocked=cancelled&&!(typeof ajCancellationVerified_==='function'&&ajCancellationVerified_(i,adjustments))?'El mueble tiene un ajuste que requiere revisión.':tracked&&tracked.legacy?'Requiere revisión de producción antes de entregar.':available<1?'La disponibilidad requiere revisión operativa.':'';
     return {id:i.Item_ID,description:i.Descripcion,quantity:quantity,delivered:delivered,cancelled:cancelled,pending:pending,available:available,unit:i.Unidad||'UN',blocked:blocked};
   });
   return {items:view,history:heads.map(function(h){return rmHistory_(h,lines);}),
@@ -184,4 +185,5 @@ function rmConfirmPdf_(payload,context) {
   });
 }
 function rmReadPdf_(payload,context) {var a=rmAccess_(payload.number,context,false);if(a.slot.Estado!=='LISTO')throw appError_('PDF_PENDING','El PDF está pendiente.',409);return {name:a.slot.Nombre,mime:'application/pdf',base64:Utilities.base64Encode(mdDownload_(a.slot))};}
+
 
