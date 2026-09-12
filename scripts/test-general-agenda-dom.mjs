@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
-const dom=new JSDOM('<div id="agenda-app" hidden></div>',{url:'https://example.invalid/agenda.html',runScripts:'outside-only'}),w=dom.window;
+const dom=new JSDOM('<div id="agenda-app" hidden></div>',{url:'https://example.invalid/agenda.html',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};
 const motions=[];w.Element.prototype.animate=function(frames,options){motions.push({frames,options});return {finished:Promise.resolve(),cancel(){}};};w.matchMedia=()=>({matches:false});w.APP_CONFIG={version:'0.2.0'};w.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');let seq=0;
 w.createRequestId=()=>`AGENDA-DOM-${++seq}`;
@@ -13,12 +13,12 @@ w.apiRequest=async(action,p,options)=>{
  if(action==='AGENDA_GUARDAR'){
    sent.push(p);if(p.operation==='cancel')await new Promise(r=>setTimeout(r,80));const result={id:p.id||options.requestId,date:p.date||events[0].date,time:p.time||'10:00',revision:(p.revision||0)+1,count:1};
    if(p.operation==='save')events=[{...p,...result,status:'PROGRAMADA',items:[],number:'',client:p.contact}];
-   else events[0]={...events[0],revision:result.revision,status:p.operation==='cancel'?'CANCELADA':'PROGRAMADA'};
+   else events[0]={...events[0],revision:result.revision,status:p.operation==='cancel'?'CANCELADA':p.operation==='complete'?'COMPLETADA':'PROGRAMADA'};
    saved.set(options.requestId,result);if(p.operation==='cancel'&&loseCancel){loseCancel=false;throw Object.assign(Error('Respuesta de cancelación perdida'),{status:503});}if(lose){lose=false;throw Object.assign(Error('Respuesta perdida'),{status:503});}return {data:{saved:true,result}};
  }
  throw Error(action);
 };
-const code=readFileSync('public/js/pages/agenda.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('await guardStandalonePage(','globalThis.finished=guardStandalonePage(');w.eval(code);await w.finished;
+const code=readFileSync('public/js/pages/agenda.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('await guardStandalonePage(','globalThis.finished=guardStandalonePage(');w.eval(readFileSync('public/js/core/agenda-swipe.js','utf8').replace('export function','function')+'\n'+code);await w.finished;
 const $=id=>w.document.getElementById(id),wait=()=>new Promise(r=>setTimeout(r,300));
 $('ag-new').click();assert.equal(w.document.querySelector('[data-kind="ENTREGA"]').disabled,true,'No order permission cannot open delivery');
 w.document.querySelector('[data-kind="SERVICIO"]').click();assert.equal($('ag-task-form').hidden,false);assert.equal($('ag-search-area').hidden,true,'No OP required for service');
@@ -28,6 +28,17 @@ $('ag-recover').click();await wait();assert.equal(sent.length,1,'Recovery consul
 $('ag-find').value='Servicio';$('ag-find').dispatchEvent(new w.Event('input'));w.document.querySelector('[data-open]').click();$('ag-edit-event').click();await wait();assert.equal($('ag-task-title').value,'Servicio <prueba>');assert.equal($('ag-repeat-wrap').hidden,true);assert.equal($('ag-repeat').value,'1');$('ag-close').click();await wait();
 w.document.querySelector('[data-open]').click();$('ag-cancel-event').click();await new Promise(r=>setTimeout(r,30));assert.equal($('ag-detail').open,true,'Cancellation keeps the existing detail during confirmation');assert.equal($('ag-editor').open,false,'No unrelated creation dialog');assert.equal($('ag-detail-close').disabled,true);await wait();assert.equal($('ag-detail').open,true);assert.equal($('ag-detail-recover').hidden,false);const writes=sent.length;$('ag-detail-recover').click();await wait();assert.equal(sent.length,writes,'Status recovery never duplicates cancellation');assert.equal(events[0].status,'CANCELADA');assert.equal($('ag-undo').hidden,false);$('ag-undo').click();await wait();assert.equal(events[0].status,'PROGRAMADA');assert.equal(sent.at(-1).operation,'restore');
 assert.ok(motions.some(m=>m.frames.at(-1).opacity===0),'Confirmed cancellation animates removal');assert.ok(motions.some(m=>m.frames[0].opacity===0),'Restoration animates arrival');assert.ok(motions.every(m=>m.options.duration<=220&&m.frames.every(frame=>Object.keys(frame).every(k=>['opacity','transform'].includes(k)))));
+
+// Completing directly must not open a detail or editor, and must be reversible.
+const check=w.document.querySelector('[data-complete]');check.click();check.click();await wait();
+assert.equal(events[0].status,'COMPLETADA');assert.equal($('ag-detail').open,false);assert.equal($('ag-editor').open,false);
+assert.equal(sent.filter(p=>p.operation==='complete').length,1,'Rapid repeat does not duplicate completion');
+assert.equal($('ag-undo').hidden,false);$('ag-undo').click();await wait();assert.equal(events[0].status,'PROGRAMADA');assert.equal(sent.at(-1).operation,'reopen');
+// A lost reply from a direct deletion recovers in the list, not a modal.
+loseCancel=true;w.document.querySelector('.ag-row-delete').click();await wait();
+assert.equal($('ag-detail').open,false);assert.equal($('ag-editor').open,false);assert.equal($('ag-list-recover').hidden,false);
+const directWrites=sent.length;$('ag-list-recover').click();await wait();assert.equal(sent.length,directWrites);assert.equal(events[0].status,'CANCELADA');
+$('ag-undo').click();await wait();assert.equal(events[0].status,'PROGRAMADA');
 assert.equal(w.sessionStorage.getItem('maddy.agenda.attempt.TEST'),null);dom.window.close();console.log('General agenda DOM: permission-aware categories, save/recovery, edit prefilling, search, cancellation and undo verified.');
 
 

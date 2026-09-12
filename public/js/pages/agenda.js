@@ -146,7 +146,7 @@ async function changeStatus(e,operation,direct=false){
 }
 function frozen(on){
   document.querySelectorAll('.ag-swipe').forEach(row=>{row.classList.toggle('ag-saving',on&&row.dataset.id===inlineId);row.setAttribute('aria-busy',String(on&&row.dataset.id===inlineId));row.querySelectorAll('button').forEach(b=>b.disabled=on||!state.enabled);});
-  for(const id of ['ag-new','ag-refresh','ag-prev','ag-next','ag-today','ag-expand','ag-archive','ag-find'])$(id).disabled=on;
+  for(const id of ['ag-new','ag-refresh','ag-prev','ag-next','ag-today','ag-expand','ag-archive','ag-find'])$(id).disabled=on||(id==='ag-new'&&!state.enabled);
   document.querySelectorAll('[data-date],[data-filter]').forEach(b=>b.disabled=on);
   $('ag-fields').disabled=on;$('ag-task-fields').disabled=on;for(const id of ['ag-save','ag-task-save','ag-cancel','ag-close','ag-detail-close'])$(id).disabled=on;
   $('ag-detail-body').querySelectorAll('button').forEach(b=>b.disabled=on);
@@ -159,11 +159,12 @@ async function animateAgendaItem(id,enter=false){
 async function commit(payload){
   if(state.busy)return;
   const inList=!!inlineId,inDetail=$('ag-detail').open,notice=inList?$('ag-notice'):inDetail?$('ag-detail-notice'):$('ag-error'),retry=inList?$('ag-list-recover'):inDetail?$('ag-detail-recover'):$('ag-recover');
-  if(!state.attempt){if(!payload)return;const attempt={requestId:createRequestId('AGENDA'),payload};try{sessionStorage.setItem(state.key,JSON.stringify(attempt));}catch{notice.textContent='No se pudo conservar el intento en el dispositivo. Libera espacio antes de guardar.';return;}state.attempt=attempt;}
+  if(!state.attempt){if(!payload)return;const attempt={requestId:createRequestId('AGENDA'),payload};try{sessionStorage.setItem(state.key,JSON.stringify(attempt));}catch{notice.textContent='No se pudo conservar el intento en el dispositivo. Libera espacio antes de guardar.';frozen(false);inlineId='';return;}state.attempt=attempt;}
   const attempt=state.attempt;state.busy=true;frozen(true);retry.hidden=true;notice.textContent='Guardando cambio…';
   try{
     const status=await api('AGENDA_GUARDADO_ESTADO',{requestId:attempt.requestId});const response=status.saved?{result:status.result}:await api('AGENDA_GUARDAR',attempt.payload,{requestId:attempt.requestId});
     sessionStorage.removeItem(state.key);state.attempt=null;if(!inList)await closeDialog(inDetail?'ag-detail':'ag-editor');
+    if(attempt.payload.operation==='complete')document.querySelectorAll('[data-complete]').forEach(b=>{if(b.dataset.complete===attempt.payload.id)b.setAttribute('aria-checked','true');});
     if(attempt.payload.cancel||['cancel','complete'].includes(attempt.payload.operation))await animateAgendaItem(attempt.payload.id);
     state.date=response.result?.date||attempt.payload.date||state.date;state.month=state.date.slice(0,7);await load();
     if(attempt.payload.restore||['restore','reopen'].includes(attempt.payload.operation))await animateAgendaItem(attempt.payload.id,true);

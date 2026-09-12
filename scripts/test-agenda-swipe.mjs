@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {JSDOM} from 'jsdom';
+const dom=new JSDOM('<article><button data-delete>Eliminar</button><div class="ag-event-surface"><button data-open>Abrir</button><button class="ag-check">Completar</button></div></article>',{runScripts:'outside-only',pretendToBeVisual:true});
+const w=dom.window,row=w.document.querySelector('article'),front=row.querySelector('.ag-event-surface'),action=row.querySelector('[data-delete]');
+w.eval(readFileSync('public/js/core/agenda-swipe.js','utf8').replace('export function','function'));
+row.getBoundingClientRect=()=>({width:360});let removes=0,allowed=true,reduced=false,opens=0;
+const dispose=w.attachAgendaSwipe(row,{enabled:()=>allowed,remove:()=>removes++,reduced:()=>reduced});
+front.querySelector('[data-open]').onclick=()=>opens++;
+function pointer(name,x,y=100,id=1,target=front){const e=new w.Event(name,{bubbles:true,cancelable:true});Object.assign(e,{pointerType:'touch',pointerId:id,isPrimary:true,clientX:x,clientY:y});target.dispatchEvent(e);}
+const settle=()=>new Promise(r=>setTimeout(r,600));
+pointer('pointerdown',300);pointer('pointermove',220);assert.match(front.style.transform,/-80px/,'Tracks the finger before release');pointer('pointerup',220);await settle();assert.equal(action.tabIndex,0);assert.equal(removes,0,'Short swipe only reveals');
+front.querySelector('[data-open]').dispatchEvent(new w.MouseEvent('click',{bubbles:true,detail:1}));assert.equal(opens,0,'Synthetic post-swipe click must not open details');
+pointer('pointerdown',220);pointer('pointermove',320);pointer('pointerup',320);await settle();assert.equal(action.tabIndex,-1,'Reverse closes');
+pointer('pointerdown',300);pointer('pointermove',50);pointer('pointerup',50);assert.equal(removes,1,'Long deliberate swipe deletes');
+pointer('pointerdown',300);pointer('pointermove',290,180);pointer('pointerup',290,180);await settle();assert.equal(removes,1,'Vertical scroll cannot delete');
+pointer('pointerdown',300);pointer('pointermove',220);pointer('pointercancel',220);await settle();assert.equal(action.tabIndex,-1,'Canceled pointer resets');
+pointer('pointerdown',10);pointer('pointermove',-280);pointer('pointerup',-280);assert.equal(removes,1,'Browser back edge is reserved');
+allowed=false;pointer('pointerdown',300);pointer('pointermove',40);pointer('pointerup',40);assert.equal(removes,1,'Read-only and in-flight locks forbid mutation');allowed=true;
+pointer('pointerdown',300);pointer('pointermove',40,100,2);pointer('pointerup',40,100,2);assert.equal(removes,1,'Second pointer cannot hijack gesture');pointer('pointercancel',300);
+reduced=true;pointer('pointerdown',300);pointer('pointermove',220);pointer('pointerup',220);assert.equal(front.style.transform,'translateX(-88px)');
+row.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(front.style.transform,'translateX(0px)');
+dispose();dom.window.close();console.log('Agenda swipe: tracking, reveal, reverse, full swipe, vertical scroll, cancel, edge, lock, multi-pointer and reduced motion passed.');
