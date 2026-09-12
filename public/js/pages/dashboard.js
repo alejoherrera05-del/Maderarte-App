@@ -1,7 +1,7 @@
 import { APP_CONFIG, withPreview } from '../core/config.js';
 import { escapeHtml } from '../core/format.js';
 import { guardPage } from '../core/page-guard.js';
-import { mountToday } from '../core/dashboard-today.js?v=home-4';
+import { mountToday } from '../core/dashboard-today.js?v=home-12';
 import { filterByPermission } from '../core/permissions.js';
 
 const MENU_GROUPS = Object.freeze([
@@ -181,9 +181,9 @@ guardPage({
     const moment = dayPart();
     const year = new Date().getFullYear();
     content.innerHTML = `<section class="dashboard-page">
-      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-signature.svg" alt="Maddy" width="120" height="62"><img class="home-endorsement" src="/assets/brand/maddy-endorsement.svg" alt="by Maderarte" width="174" height="26"></header>
+      <header class="home-brand" aria-label="Maddy by Maderarte"><img class="home-maddy-logo" src="/assets/brand/maddy-signature.svg" alt="Maddy" width="120" height="62"><img class="home-endorsement" src="/assets/brand/maddy-endorsement.svg" alt="by Maderarte" width="190" height="28"></header>
       <section class="home-hero" aria-labelledby="dashboard-greeting">
-        <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting">${escapeHtml(moment.greeting)},<br>${escapeHtml(firstName(session.profile))}.</h1></div>
+        <div class="home-greeting"><p>${escapeHtml(formattedDate())}</p><h1 id="dashboard-greeting"><span class="home-greeting-welcome">${escapeHtml(moment.greeting)},</span><span>${escapeHtml(firstName(session.profile))}.</span></h1></div>
         <img class="home-interior" src="/assets/interiors/living-room-morning.webp" alt="Sala de Maderarte" fetchpriority="high">
       </section>
       <div class="dashboard-groups">${menuGroup(MENU_GROUPS[0],0)}</div>
