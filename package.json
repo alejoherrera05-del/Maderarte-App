@@ -11,7 +11,7 @@
     "test:worker": "node scripts/test-worker.mjs",
     "test:brain": "node scripts/test-apps-script.mjs",
     "test:clients": "node scripts/test-clients.mjs && node scripts/test-client-lookup.mjs",
-    "test:commercial-rules": "node scripts/test-commercial-rules.mjs && node scripts/test-order-lifecycle.mjs && node scripts/test-order-creation.mjs && node scripts/test-production-request.mjs && node scripts/test-product-journey.mjs && node scripts/test-order-workbench.mjs && node scripts/test-order-flow-context.mjs && node scripts/test-production-tracking.mjs && node scripts/test-commercial-launch.mjs && node scripts/test-commercial-timeouts.mjs && node scripts/test-delivery-agenda.mjs && node scripts/test-delivery-agenda-dom.mjs && node scripts/test-general-agenda.mjs && node scripts/test-general-agenda-dom.mjs && node scripts/test-agenda-swipe.mjs",
+    "test:commercial-rules": "node scripts/test-commercial-rules.mjs && node scripts/test-order-lifecycle.mjs && node scripts/test-order-creation.mjs && node scripts/test-production-request.mjs && node scripts/test-product-journey.mjs && node scripts/test-order-workbench.mjs && node scripts/test-order-flow-context.mjs && node scripts/test-production-tracking.mjs && node scripts/test-commercial-launch.mjs && node scripts/test-commercial-timeouts.mjs && node scripts/test-delivery-agenda.mjs && node scripts/test-delivery-agenda-dom.mjs && node scripts/test-general-agenda.mjs && node scripts/test-general-agenda-dom.mjs && node scripts/test-agenda-swipe.mjs && node scripts/test-dashboard-today.mjs",
     "test:quotes": "node scripts/test-quotes.mjs && node scripts/test-quote-save-client.mjs && node scripts/test-quote-progress.mjs && node scripts/test-quote-emission.mjs && node scripts/test-quote-document-edge.mjs && node scripts/test-quote-conversion.mjs && node scripts/test-receipts.mjs && node scripts/test-remissions.mjs",
     "test": "npm run check && npm run test:brain && npm run test:clients && npm run test:commercial-rules && npm run test:quotes && npm run test:edge && npm run test:worker && npm run test:identity && npm run test:tracking && npm run test:documents && npm run test:sandbox",
     "test:identity": "node scripts/test-module-identity.mjs",
@@ -26,4 +26,3 @@
     "jsdom": "26.1.0"
   }
 }
-
