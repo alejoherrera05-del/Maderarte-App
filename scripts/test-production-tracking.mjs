@@ -23,3 +23,54 @@ assert.equal(f.run('PRODUCCION_CUENTA',{number}).items[0].tracking.received,4);
 assert.equal(JSON.stringify([f.rows('Abonos'),f.rows('Remisiones'),f.rows('Ordenes_Pedido')[0].Saldo_Pendiente]),before);
 assert.equal(f.rows('Produccion').length,2);
 console.log('Production: partial receipts, durable retries, revision conflicts, limits and unchanged money verified.');
+
+// Withdraw in the same atomic adjustment, with immutable factory events.
+const history=JSON.stringify(f.rows('Produccion'));
+let adjustment=f.run('AJUSTE_CUENTA',{number});
+let cancel={number,fingerprint:adjustment.position.fingerprint,type:'DESISTIR',items:[{itemId,quantity:1}],reason:'Retiro parcial de muestra',reference:''};
+f.state.loseBatch=true;
+assert.throws(()=>f.run('AJUSTE_CONFIRMAR',cancel,'FACTORY-WITHDRAW-01'),e=>e.appCode==='ADJUSTMENT_UNCERTAIN');
+assert.equal(f.run('AJUSTE_ESTADO',{requestId:'FACTORY-WITHDRAW-01'}).saved,true);
+f.run('AJUSTE_CONFIRMAR',cancel,'FACTORY-WITHDRAW-01');
+account=f.run('PRODUCCION_CUENTA',{number});
+assert.equal(account.items[0].tracking.received,3);
+assert.equal(account.items[0].tracking.released.BODEGA,1);
+assert.equal(f.run('REMISION_CUENTA',{number}).position.items[0].available,3);
+assert.equal(JSON.stringify(f.rows('Produccion')),history);
+assert.equal(f.rows('Anulaciones').length,1);
+assert.throws(()=>f.run('PRODUCCION_REGISTRAR',{...payload,revision:account.items[0].revision,quantity:1},'FACTORY-EXCESS-02'),e=>e.appCode==='PRODUCTION_EXCEEDS_QUANTITY');
+// Remaining units may still progress in another stage; withdrawal does not invent it.
+f.run('PRODUCCION_REGISTRAR',{...payload,revision:account.items[0].revision,stage:'SOLICITADO',quantity:3,provider:'Proveedor de muestra'},'FACTORY-REMAINING-03');
+adjustment=f.run('AJUSTE_CUENTA',{number});
+cancel={...cancel,fingerprint:adjustment.position.fingerprint,items:[{itemId,quantity:3}]};
+f.run('AJUSTE_CONFIRMAR',cancel,'FACTORY-WITHDRAW-04');
+account=f.run('PRODUCCION_CUENTA',{number});
+assert.equal(account.items[0].tracking.received,0);
+assert.equal(account.items[0].tracking.totals.SOLICITADO,0);
+assert.equal(f.run('PRODUCCION_LISTAR',{}).items.some(i=>i.item.id===itemId),false);
+assert.equal(f.run('REMISION_CUENTA',{number}).position.items[0].pending,0);
+assert.throws(()=>f.run('PRODUCCION_REGISTRAR',{...payload,revision:account.items[0].revision,quantity:1},'FACTORY-INACTIVE-05'),e=>e.appCode==='PRODUCTION_INACTIVE');
+assert.equal(JSON.stringify(f.rows('Abonos')),JSON.parse(before)[0]&&JSON.stringify(JSON.parse(before)[0]));
+// Invalid retirement data fails closed instead of adding phantom availability.
+const event=JSON.parse(f.rows('Anulaciones')[0].Consecuencias_JSON);
+event.items[0].productionReleased.BODEGA=2;
+f.rows('Anulaciones')[0].Consecuencias_JSON=JSON.stringify(event);
+assert.throws(()=>f.run('PRODUCCION_CUENTA',{number}),e=>e.appCode==='PRODUCTION_INTEGRITY');
+console.log('Factory withdrawals: partial/full, immutable events, no duplicate release, remaining-stage limits and corruption rejection verified.');
+
+const g=sandboxRuntime();g.start();g.command.items[0].quantity=4;g.command.items[0].photos=[];g.command.items[0].fulfillment='PARA_SOLICITAR';g.command.items[0].agreement='ENTREGA_POSTERIOR';
+const numberG=g.run('ORDEN_CREAR',g.command).order.number,idG=numberG+'-I-1';
+const revisionG=g.run('PRODUCCION_CUENTA',{number:numberG}).items[0].revision;
+g.run('PRODUCCION_REGISTRAR',{number:numberG,itemId:idG,revision:revisionG,stage:'BODEGA',quantity:4,date:'2026-01-01',provider:'Proveedor de muestra',notes:'',verified:true},'FACTORY-DELIVERED-01');
+let rem=g.run('REMISION_CUENTA',{number:numberG});
+g.run('REMISION_CREAR',{number:numberG,fingerprint:rem.position.fingerprint,items:[{itemId:idG,quantity:2}],transporter:{name:'Transportador de muestra',mode:'PIALLERO',favorite:false},assistant:{name:'',favorite:false},physicalCheck:true,notes:'SIN ENTREGA REAL'},'FACTORY-DELIVERED-02');
+const deliveries=JSON.stringify([g.rows('Remisiones'),g.rows('Remision_Items')]);
+const ga=g.run('AJUSTE_CUENTA',{number:numberG}),gc={number:numberG,fingerprint:ga.position.fingerprint,type:'DESISTIR',items:[{itemId:idG,quantity:3}],reason:'Retiro de muestra',reference:''};
+assert.throws(()=>g.run('AJUSTE_PREVISUALIZAR',gc),e=>e.appCode==='ADJUSTMENT_QUANTITY');
+g.run('AJUSTE_CONFIRMAR',{...gc,items:[{itemId:idG,quantity:2}]},'FACTORY-DELIVERED-03');
+rem=g.run('REMISION_CUENTA',{number:numberG});
+assert.equal(rem.position.items[0].delivered,2);assert.equal(rem.position.items[0].pending,0);assert.equal(rem.position.items[0].available,0);
+assert.equal(g.run('PRODUCCION_CUENTA',{number:numberG}).items[0].tracking.received,2);
+assert.equal(JSON.stringify([g.rows('Remisiones'),g.rows('Remision_Items')]),deliveries);
+console.log('Previously delivered units and dispatch history survive withdrawal of all remaining units.');
+
