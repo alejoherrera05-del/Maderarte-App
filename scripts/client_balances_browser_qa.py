@@ -28,7 +28,7 @@ try:
     r.fulfill(status=200,json={'status':'success','data':data})
    context.route('**/api/maderarte',route);page=context.new_page();page.on('pageerror',lambda e:errors.append(str(e)))
    page.goto(ORIGIN+'/clientes.html?search=000000001');expect(page.locator('[data-total-credit]')).to_contain_text('600.000');expect(page.locator('[data-total-due]')).to_contain_text('1.200.000')
-   expect(page.get_by_role('link',name='Ver saldo a favor')).to_have_attribute('href','/orden.html?op=MP-OP-0001')
+   expect(page.get_by_role('link',name='Ver saldo')).to_have_attribute('href','/orden.html?op=MP-OP-0001')
    expect(page.locator('.client-account')).to_contain_text('2 OP vigentes')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
    assert page.locator('.client-account-values strong').evaluate_all("es=>es.every(e=>getComputedStyle(e).whiteSpace==='nowrap'&&e.scrollWidth<=e.clientWidth+1)")

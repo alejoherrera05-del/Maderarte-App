@@ -171,8 +171,8 @@ function orderMarkup(order, allPayments, index) {
       </div>
     </div>
     <div class="client-doc-actions">
-      <button class="client-history-toggle" type="button" aria-expanded="false" aria-controls="${historyId}" data-history-target="${historyId}">Historial de abonos <span class="client-history-count">${payments.length}</span><span class="client-history-chevron">⌄</span></button>
-      <a class="client-view-doc" href="${escapeHtml(orderUrl)}">${credit > 0 ? "Ver saldo a favor" : "Ver expediente"}</a>
+      <button class="client-history-toggle" type="button" aria-expanded="false" aria-controls="${historyId}" data-history-target="${historyId}" aria-label="Historial de abonos">Abonos <span class="client-history-count">${payments.length}</span><span class="client-history-chevron">⌄</span></button>
+      <a class="client-view-doc" href="${escapeHtml(orderUrl)}">${credit > 0 ? "Ver saldo" : "Ver OP"}</a>
     </div>
     <div class="client-history-panel" id="${historyId}"><div class="client-history-box"><div class="client-history-title">Movimientos de esta orden</div>${paymentRows(payments)}</div></div>
   </article>`;
