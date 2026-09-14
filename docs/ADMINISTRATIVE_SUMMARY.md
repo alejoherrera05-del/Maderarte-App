@@ -1,23 +1,24 @@
-# Recaudos: alcance confirmado por el propietario
+# Recaudos
 
-La aclaración posterior sustituye el alcance inicial de abajo: todavía no se implementa caja contable, gastos ni egresos. Se necesita cuánto entró por día, semana o mes, por sede y medio (efectivo, tarjeta/datáfono, Addi, transferencia).
+Control de ingresos registrados y recepción del efectivo. No es caja contable, saldo bancario ni control de egresos.
 
-Cada abono activo, incluido el inicial de una OP, se cuenta una sola vez. Los traslados de saldo no son ingresos nuevos. El efectivo se marca recibido por propietario/administrador; se admiten varios recibos seleccionados. Se conserva recibo, OP, sede de origen, importe, receptor y fecha. Recoger Terraplaza no suma de nuevo en Principal.
+- Día, semana (desde lunes), mes y rango personalizado, según fecha de pago en Colombia.
+- Sede de origen y medio de pago: efectivo, datáfono, Addi y transferencia.
+- Cada abono activo que afecta saldo, incluido el inicial de la OP, se cuenta una vez. Trasladar saldo no genera ingreso. Se muestra recaudo bruto sin descontar reintegros ni gastos.
+- Propietario o administrador selecciona uno o varios recibos y confirma que recibió el efectivo físicamente. Se conserva recibo, OP, sede, importe, receptor y fecha.
+- Recoger Terraplaza no genera un segundo ingreso ni modifica el abono o saldo del cliente.
+- Acceso desde Inicio → Recaudos. Cada movimiento vuelve a su OP. Se requieren permisos de órdenes/abonos y se respetan sedes autorizadas.
 
-Persistencia propuesta: Recepciones_Efectivo, independiente de Abonos, con bloqueo, idempotencia y auditoría. No altera ventas ni saldos. Acceso de propietario/administrador con permisos de lectura de órdenes y abonos, limitado a sedes autorizadas.
+## Persistencia y recuperación
 
-## Exploración inicial (sustituida)
+Recepciones_Efectivo se crea en la primera recepción autorizada. Leer no la crea. Encabezados: ID, Numero_Recibo, Numero_OP, Sede, Valor, Fecha_Pago, Registrado_Por, Recibido_Por, Nombre_Receptor, Fecha_Recepcion, Request_ID.
 
-Primer incremento de lectura. No equivale a cierre de caja ni a saldo bancario. El conteo de efectivo, bases y gastos depende de la operación que confirme el propietario.
+Recepción, auditoría e idempotencia se guardan en un solo batch bajo ScriptLock y la barrera compartida de recuperación. Un recibo ya recibido no se admite otra vez. El navegador conserva el intento antes de enviarlo y consulta o reintenta con el mismo identificador ante una respuesta incierta. No se permite desmarcar una recepción sin trazabilidad.
 
-- Recaudos del periodo: abonos activos que afectan saldo, según fecha de pago en Colombia. Los pagos iniciales forman parte del mismo ledger y se cuentan una sola vez.
-- Reintegros del periodo: ajustes DEVOLVER confirmados. DESISTIR/RETORNAR no son salidas de dinero y TRANSFERIR no es un ingreso nuevo.
-- Neto de cobros: recaudos menos reintegros; no se rotula saldo disponible. Los reintegros actuales no tienen medio de pago estructurado, por lo que no se descuentan automáticamente del efectivo.
-- OP del periodo: órdenes emitidas en el rango, con su valor vigente. El valor vigente puede incorporar ajustes posteriores y no se presenta como una venta histórica inmutable.
-- Saldos actuales: deuda y saldo a favor por separado, para todas las OP vigentes de las sedes permitidas. No depende del rango de movimientos ni realiza compensación automática.
+## Referencia y validación
 
-Cada detalle vuelve a la OP. La consulta necesita reportes.read, ordenes.read y abonos.read; el propietario ya tiene *. No amplía roles automáticamente. Se lee bajo el mismo bloqueo de operaciones para evitar combinar datos de una escritura a medias; falla si existe un intento pendiente de conciliación. No devuelve notas internas, credenciales ni datos de otras sedes.
+Se inspeccionaron Homeeasy/caja.html y homeeasy-caja-correcciones.css. Se adaptan resumen, filtros, movimientos y controles táctiles a Maddy. El propietario excluyó PIN, caja contable y egresos.
 
-Referencia inspeccionada: Homeeasy/caja.html y homeeasy-caja-correcciones.css vigentes. Conservar resumen jerárquico, filtros legibles, feed de movimientos, controles táctiles y regreso directo. Adaptar a gris/cobre/grafito Maddy. No copiar PIN, saldo de caja ni captura de gastos antes de definir sus reglas.
+scripts/test-collections.mjs verifica totales, sedes, fecha colombiana, creación de tabla, respuesta perdida y ausencia de cambios en los registros comerciales. scripts/collections_browser_qa.py verifica interfaz en 1440, 390 y 320 px con transporte sintético. Las evidencias no representan cobros reales.
 
 Fotografías de garantías descartadas por indicación expresa del propietario.

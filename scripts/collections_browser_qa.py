@@ -4,7 +4,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 OUT=Path('artifacts/collections');OUT.mkdir(parents=True,exist_ok=True)
 ORIGIN='http://127.0.0.1:4173'
-SESSION={'profile':{'uid':'qa-cash','name':'Responsable de muestra','role':'PROPIETARIO','branches':['MP','TP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00Z'}
+SESSION={'profile':{'uid':'qa-cash','name':'Responsable de muestra','role':'PROPIETARIO','status':'ACTIVO','mainBranch':'MP','branches':['MP','TP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00Z'}
 server=subprocess.Popen(['node','scripts/serve.mjs'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
  for _ in range(50):
