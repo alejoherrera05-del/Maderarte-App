@@ -8,3 +8,6 @@
 
 .wc-status[data-state=RESUELTA_DOMICILIO]{color:#386753}
 
+
+.wc-form .wc-check[hidden]{display:none}.wc-search-row{display:flex;gap:10px}.wc-search-row input{min-width:0}.wc-search-row .ag-button{width:auto;flex:none}.wc-pick-list{display:grid;gap:10px;margin:20px 0}.wc-pick{display:flex;justify-content:space-between;align-items:center;gap:16px;width:100%;padding:18px;border:1px solid #e3e1df;background:#fff;border-radius:16px;text-decoration:none;color:inherit;text-align:left;font:inherit}.wc-pick strong,.wc-pick small{display:block}.wc-pick strong{font-weight:600;line-height:1.4}.wc-pick small{margin-top:6px;color:#736d68;line-height:1.4}.wc-pick img{width:20px;flex:none}.wc-visits{margin:24px 0;display:grid;gap:12px}.wc-visits h4{margin:0;font-weight:600}.wc-pick:focus-visible{outline:2px solid #a65d2b;outline-offset:3px}.wc-status[data-state=REPORTADA]{color:#925020}@media(hover:hover) and (pointer:fine){a.wc-pick:hover,button.wc-pick:hover{border-color:#b9afa5;background:#faf9f7}}
+
