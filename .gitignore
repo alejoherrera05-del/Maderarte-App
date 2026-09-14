@@ -6,6 +6,7 @@ node_modules/
 .wrangler/
 dist/
 coverage/
+artifacts/
 .tmp/
 *.log
 .DS_Store
@@ -52,3 +53,4 @@ secrets*.json
 *.otf
 *.woff
 *.woff2
+

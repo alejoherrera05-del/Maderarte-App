@@ -18,6 +18,7 @@ function routeAction_(action, payload, context) {
     case 'INVITACION_VALIDAR': return validateInvitation_(payload);
     case 'INVITACION_ACTIVAR': return activateInvitation_(payload, context.proxyMeta);
     case 'DASHBOARD_RESUMEN': return dashboardSummary_(context.session);
+    case 'GARANTIA_COMPROBANTE_DATOS': return wcDocument_(payload, context);
     case 'GARANTIA_LISTAR': return wcList_(payload, context);
     case 'GARANTIA_GUARDAR': return wcSave_(payload, context);
     case 'GARANTIA_ESTADO': return wcStatus_(payload, context);
@@ -113,6 +114,7 @@ function doPost(event) {
     return jsonOutput_(failure_(error, requestId));
   }
 }
+
 
 
 
