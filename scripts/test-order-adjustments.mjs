@@ -45,9 +45,17 @@ f2.run('AJUSTE_CONFIRMAR',p2,'QA-PARTIAL-CANCEL-0001');a2=f2.run('AJUSTE_CUENTA'
 const rm=f2.run('REMISION_CUENTA',{number:n2});assert.equal(rm.position.items[0].blocked,'');assert.equal(rm.position.items[0].available,2);
 const global=f2.run('PRODUCCION_LISTAR',{});assert.equal(global.items.find(i=>i.item.id===a2.items[0].id).item.adjustmentVerified,true);
 const factory=a2.items[1];f2.run('PRODUCCION_REGISTRAR',{number:n2,itemId:factory.id,revision:factory.revision,stage:'SOLICITADO',quantity:1,date:new Date().toISOString().slice(0,10),provider:'Proveedor de prueba',notes:'',verified:true},'QA-PARTIAL-FACTORY-0001');a2=f2.run('AJUSTE_CUENTA',{number:n2});
-assert.throws(()=>f2.run('AJUSTE_PREVISUALIZAR',{...p2,fingerprint:a2.position.fingerprint,items:[{itemId:factory.id,quantity:1}]}),e=>e.appCode==='ADJUSTMENT_FACTORY_REVIEW');
+const factoryPayload={...p2,fingerprint:a2.position.fingerprint,items:[{itemId:factory.id,quantity:1}]};
+const factoryHistory=JSON.stringify(f2.rows('Produccion'));
+f2.run('AJUSTE_CONFIRMAR',factoryPayload,'QA-FACTORY-WITHDRAW-0001');
+assert.equal(f2.run('PRODUCCION_CUENTA',{number:n2}).items.find(i=>i.id===factory.id).tracking.totals.SOLICITADO,0);
+assert.equal(f2.run('PRODUCCION_LISTAR',{}).items.some(i=>i.item.id===factory.id),false);
+assert.equal(f2.run('REMISION_CUENTA',{number:n2}).position.items.find(i=>i.id===factory.id).available,0);
+assert.equal(JSON.stringify(f2.rows('Produccion')),factoryHistory);
+a2=f2.run('AJUSTE_CUENTA',{number:n2});
 assert.throws(()=>f2.run('AJUSTE_PREVISUALIZAR',{...p2,fingerprint:a2.position.fingerprint,items:[{itemId:a2.items[0].id,quantity:3}]}),e=>e.appCode==='ADJUSTMENT_QUANTITY');
 f2.state.busy=true;assert.throws(()=>f2.run('AJUSTE_CONFIRMAR',p2,'QA-PARTIAL-BUSY-0001'));f2.state.busy=false;
 f.c.validateSessionToken_=()=>({permissions:['ordenes.read','abonos.read'],profile:{uid:'restricted',branches:['MP']}});assert.throws(()=>f.c.ajConfirm_(payload,{requestId:'QA-ADJUST-DENIED-0001'}));
 console.log('Order adjustments: cancellation, retained receipts, partial credit, cross-client transfer, refund, lost response recovery, duplicate rejection and permission checks passed.');
+
 

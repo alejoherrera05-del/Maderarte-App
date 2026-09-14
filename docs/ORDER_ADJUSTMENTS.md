@@ -34,3 +34,8 @@ Doble clic; reintento tras timeout; contenido diferente con igual Request_ID; re
 
 La referencia vigente `Homeeasy/main/ventas.html` se revisó para el listado y drawer de expediente. Ese archivo no aporta un flujo de desistimiento que pueda trasladarse directamente. Para la interacción nueva se conserva el expediente Maddy aprobado y sus controles compartidos.
 
+
+## Aclaración del propietario — 14 de septiembre de 2026
+
+Retirar cantidades pendientes de la OP retira esas unidades del seguimiento de fábrica y entrega en el mismo ajuste. No se exige conciliación adicional ni evidencia de WhatsApp; la comunicación con el proveedor sigue siendo manual. Se conservan los eventos originales, documentos, cobros y cantidades ya entregadas. El ajuste registra la reducción de cada etapa para que un retiro parcial mantenga operativas las unidades restantes. Registros antiguos sin cantidades verificables siguen requiriendo revisión de datos. No se ejecuta ni se afirma un envío al proveedor.
+

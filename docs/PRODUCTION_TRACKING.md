@@ -11,3 +11,8 @@ Escritura: produccion.update, sede autorizada, orden activa, versión vigente, v
 Activación: ensayo del propietario habilitado; operación comercial requiere COMMERCIAL_WRITES, MODO_OPERACION=OPERACION y PRODUCTION_SAVE_ENABLED=SI. No habilita automáticamente ventas reales. PR contiene backend; se debe desplegar el Cerebro del mismo commit.
 
 Límite: no se editan ni borran eventos. Correcciones de cantidades ya registradas requieren un futuro movimiento de ajuste. No se envía WhatsApp automáticamente.
+
+## Aclaración del propietario — 14 de septiembre de 2026
+
+Retirar cantidades pendientes de la OP retira esas unidades del seguimiento de fábrica y entrega en el mismo ajuste. No se exige conciliación adicional ni evidencia de WhatsApp; la comunicación con el proveedor sigue siendo manual. Se conservan los eventos originales, documentos, cobros y cantidades ya entregadas. El ajuste registra la reducción de cada etapa para que un retiro parcial mantenga operativas las unidades restantes. Registros antiguos sin cantidades verificables siguen requiriendo revisión de datos. No se ejecuta ni se afirma un envío al proveedor.
+
