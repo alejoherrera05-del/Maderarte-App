@@ -1,7 +1,7 @@
-import { bindOrderAdjustments } from '../core/order-adjustments.js?v=warranty-1';
+import { bindOrderAdjustments } from '../core/order-adjustments.js?v=warranty-case-1';
 import { bindProductionTracking } from '../core/production-tracking.js?v=runtime-1';
-import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=warranty-1';
-import { productState, bindProductJourney } from '../core/product-journey.js?v=warranty-1';
+import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=warranty-case-1';
+import { productState, bindProductJourney } from '../core/product-journey.js?v=warranty-case-1';
 import { hasPermission } from '../core/permissions.js';
 import { bindSandboxBanner, sandboxLink } from '../core/order-sandbox-context.js';
 import { bindOrderDocuments } from './orden-documentos.js?v=production-actions-1';
@@ -101,3 +101,4 @@ guardStandalonePage({
     }
   }
 });
+

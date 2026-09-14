@@ -86,3 +86,8 @@ PR #90 publicó recepción física de muebles devueltos, reintegro separado y co
 Siguiente incremento: programar la revisión de garantía desde el mueble de la OP utilizando Agenda. Recupera cliente y contexto; admite describir una parte del conjunto, como una silla. Marcar realizada la visita no declara solucionada la garantía. Véase WARRANTY_VISITS.md.
 
 Después: recepción y seguimiento de reparaciones, incluidos productos que trae el cliente; reportes administrativos/caja; integración propia de WhatsApp. No se imponen plazos ni cobertura automática de garantía.
+
+## Recepción y reparación — 14 de septiembre de 2026
+
+PR #91 publicó la programación contextual de revisiones. PR #92 incorpora recepción de mueble o pieza, ingreso por cliente/recogida, responsable, diagnóstico, reparación, listo y entrega nominal con historial. No altera la venta ni convierte el cumplimiento de una cita en reparación. Véase WARRANTY_REPAIRS.md. Pendientes: resolución registrada en domicilio, comprobante de custodia/fotos, reportes administrativos y caja, WhatsApp propio.
+
