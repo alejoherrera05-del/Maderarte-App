@@ -1,3 +1,4 @@
+import {loadWarrantyVisit} from '../core/warranty-visit-context.js';
 import { apiRequest, createRequestId } from '../core/api.js?v=agenda-1';
 import { guardStandalonePage } from '../core/page-guard.js';
 import { escapeHtml as esc } from '../core/format.js';
@@ -89,6 +90,7 @@ function shell(){
 }
 async function openEditor(event=null,number=''){
   if(state.attempt){$('ag-editor').showModal();return;}
+  $('ag-warranty-context')?.remove();
   state.edit=event;state.order=null;$('ag-title').textContent=event?'Editar compromiso':'Nuevo compromiso';
   for(const id of ['ag-form','ag-task-form','ag-search-area','ag-recover'])$(id).hidden=true;
   $('ag-types').hidden=!!(event||number);$('ag-error').textContent='';$('ag-query').value='';$('ag-results').textContent='';$('ag-save').textContent='Guardar programación';
@@ -96,6 +98,8 @@ async function openEditor(event=null,number=''){
   if(event||number){state.kind=event?type(event):'ENTREGA';if(state.kind==='ENTREGA')await selectOrder(event?.number||number);else chooseKind(state.kind,event);}
 }
 function chooseKind(kind,event=null){
+  $('ag-contact').closest('.ag-two').hidden=false;
+  $('ag-warranty-context')?.remove();$('ag-task-notes').placeholder='';
   state.kind=kind;$('ag-types').hidden=true;$('ag-title').textContent=(event?'Editar · ':'')+kinds[kind].single;
   if(kind==='ENTREGA'){$('ag-search-area').hidden=false;$('ag-query').focus();return;}
   $('ag-task-form').hidden=false;$('ag-task-fields').disabled=false;$('ag-task-save').disabled=false;
@@ -129,7 +133,7 @@ function saveTask(){
 function openDetail(e){
   if(!e||state.busy||state.attempt)return;const k=kinds[type(e)];$('ag-detail-title').textContent=k.single;$('ag-detail-notice').textContent='';
   const money=e.amount?new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(e.amount):'';
-  $('ag-detail-body').innerHTML=`<p class="ag-detail-when">${esc(dayName(e.date))} · ${esc(hourName(e.time))}</p><h3>${esc(type(e)==='ENTREGA'?e.client:e.title)}</h3>${e.contact?`<p>${esc(e.contact)}</p>`:''}${money?`<p class="ag-detail-value">${esc(money)}</p>`:''}${e.assignee?`<p>Responsable: ${esc(e.assignee)}</p>`:''}${e.number?`<a href="${esc(orderLink(e.number))}" class="ag-context">${esc(e.number)} ${icon('arrow-right')}</a>`:''}${e.items.length?`<ul class="ag-detail-items">${e.items.map(i=>`<li>${esc(i.description)}<span>${i.quantity} un.</span></li>`).join('')}</ul>`:''}${e.notes?`<p class="ag-detail-note">${esc(e.notes)}</p>`:''}${e.series?'<p class="ag-footnote">Esta fecha pertenece a una serie mensual. Los cambios afectan solo este compromiso.</p>':''}<div class="ag-actions">${pending(e)&&state.enabled?'<button class="ag-button" id="ag-edit-event">Editar</button><button class="ag-quiet ag-danger" id="ag-cancel-event">Cancelar compromiso</button>':''}${pending(e)&&type(e)!=='ENTREGA'&&state.enabled?'<button class="ag-button ag-secondary" id="ag-complete-event">Marcar realizado</button>':''}${pending(e)&&type(e)==='ENTREGA'?`<a class="ag-button ag-secondary" href="/remision.html?op=${encodeURIComponent(e.number)}&from=agenda&agenda=${encodeURIComponent(e.id)}">Preparar remisión</a>`:''}${e.status==='CANCELADA'&&state.enabled?'<button class="ag-button" id="ag-restore-event">Restaurar compromiso</button>':''}${e.status==='COMPLETADA'&&state.enabled?'<button class="ag-button" id="ag-reopen-event">Volver a pendiente</button>':''}</div>`;
+  $('ag-detail-body').innerHTML=`<p class="ag-detail-when">${esc(dayName(e.date))} · ${esc(hourName(e.time))}</p><h3>${esc(type(e)==='ENTREGA'?e.client:e.title)}</h3>${e.contact?`<p>${esc(e.contact)}</p>`:''}${money?`<p class="ag-detail-value">${esc(money)}</p>`:''}${e.assignee?`<p>Responsable: ${esc(e.assignee)}</p>`:''}${e.number?`<a href="${esc(orderLink(e.number))}" class="ag-context">${esc(e.number)} ${icon('arrow-right')}</a>`:''}${e.items.length?`<ul class="ag-detail-items">${e.items.map(i=>`<li>${esc(i.description)}<span>${i.quantity} un.</span></li>`).join('')}</ul>`:''}${e.notes?`<p class="ag-detail-note">${esc(e.notes)}</p>`:''}${e.series?'<p class="ag-footnote">Esta fecha pertenece a una serie mensual. Los cambios afectan solo este compromiso.</p>':''}${type(e)==='GARANTIA'?'<p class="ag-footnote">Marcar realizado confirma la atención programada; no confirma la reparación ni la entrega del mueble.</p>':''}<div class="ag-actions">${pending(e)&&state.enabled?'<button class="ag-button" id="ag-edit-event">Editar</button><button class="ag-quiet ag-danger" id="ag-cancel-event">Cancelar compromiso</button>':''}${pending(e)&&type(e)!=='ENTREGA'&&state.enabled?'<button class="ag-button ag-secondary" id="ag-complete-event">Marcar realizado</button>':''}${pending(e)&&type(e)==='ENTREGA'?`<a class="ag-button ag-secondary" href="/remision.html?op=${encodeURIComponent(e.number)}&from=agenda&agenda=${encodeURIComponent(e.id)}">Preparar remisión</a>`:''}${e.status==='CANCELADA'&&state.enabled?'<button class="ag-button" id="ag-restore-event">Restaurar compromiso</button>':''}${e.status==='COMPLETADA'&&state.enabled?'<button class="ag-button" id="ag-reopen-event">Volver a pendiente</button>':''}</div>`;
   if($('ag-edit-event'))$('ag-edit-event').onclick=async()=>{await closeDialog('ag-detail');openEditor(e);};
   for(const [id,op] of [['ag-cancel-event','cancel'],['ag-complete-event','complete'],['ag-restore-event','restore'],['ag-reopen-event','reopen']])if($(id))$(id).onclick=()=>changeStatus(e,op);
   if(!$('ag-detail').open)$('ag-detail').showModal();
@@ -182,6 +186,5 @@ await guardStandalonePage({permission:'agenda.read',render:async({session})=>{
   const context=new URLSearchParams(location.search);
   if(context.get('pending')==='1'){state.allPending=true;render();}
   const eventId=context.get('event');if(eventId){const selected=state.events.find(e=>e.id===eventId);if(selected){state.date=selected.date;state.month=selected.date.slice(0,7);render();openDetail(selected);}else{$('ag-notice').textContent='Este compromiso ya no está disponible. Puedes buscarlo en la agenda.';}}
-  const number=new URLSearchParams(location.search).get('op');if(number){$('ag-back').href=orderLink(number);$('ag-back').setAttribute('aria-label','Volver a la OP');if(state.enabled&&canOrders())await openEditor(null,number);}
+  const number=new URLSearchParams(location.search).get('op');if(number){$('ag-back').href=orderLink(number);$('ag-back').setAttribute('aria-label','Volver a la OP');if(state.enabled&&canOrders()){if(context.get('tipo')==='garantia'){await openEditor();chooseKind('GARANTIA');$('ag-task-fields').disabled=true;$('ag-task-save').disabled=true;$('ag-error').textContent='Recuperando el mueble…';try{await loadWarrantyVisit({number,itemId:context.get('item'),request:api});$('ag-task-fields').disabled=false;$('ag-task-save').disabled=false;$('ag-error').textContent='';$('ag-title').textContent='Programar revisión';}catch(error){$('ag-error').textContent=error.message;}}else await openEditor(null,number);}}
 }});
-

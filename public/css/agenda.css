@@ -52,3 +52,7 @@
 
 @media(prefers-reduced-motion:reduce){.ag-saving .ag-check>span{animation:none}.ag-check>span{transition:none}.ag-check:active>span{transform:none}}
 @media(prefers-reduced-transparency:reduce){.ag-header{background:#f5f5f7;backdrop-filter:none}.ag-dialog::backdrop{backdrop-filter:none}}
+
+.ag-warranty-context{padding:22px;margin:0 0 22px;border-radius:20px;background:#fff;border:1px solid rgba(30,30,35,.07)}
+.ag-warranty-context h3{font-size:22px;line-height:1.25;margin:8px 0 18px;font-weight:600}.ag-warranty-context p{font-size:16px;line-height:1.5;margin:6px 0;color:var(--muted,#666)}.ag-warranty-context .ag-context{display:inline-flex;margin-top:14px;min-height:44px;align-items:center;overflow-wrap:anywhere}
+.ag-warranty-context h3{font-size:20px;margin-bottom:12px}.ag-warranty-context>strong{font-weight:600}.ag-warranty-context .ag-context{background:#f5f5f7;color:#353537}.ag-two:has(#ag-amount-wrap[hidden]){grid-template-columns:1fr}

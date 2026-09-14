@@ -79,3 +79,10 @@ Pendientes posteriores: conciliación de desistimientos con fábrica, devolucion
 
 El propietario confirmó que retirar un mueble también lo retira de los pendientes de fábrica y entrega, sin una conciliación adicional ni evidencia de WhatsApp. PR #89 aplica la reducción por etapa junto al ajuste monetario, conserva el historial y las cantidades entregadas y cubre retiro parcial y completo. El estado de cuenta de Clientes y su pulido ya fueron publicados mediante PR #87 y #88.
 
+## Devoluciones y garantías — 14 de septiembre de 2026
+
+PR #90 publicó recepción física de muebles devueltos, reintegro separado y continuidad del cambio mediante nueva OP y traslado explícito de saldo. Servicio v22. Once verificaciones y cinco PDF de muestra; las pruebas no crearon operaciones comerciales reales.
+
+Siguiente incremento: programar la revisión de garantía desde el mueble de la OP utilizando Agenda. Recupera cliente y contexto; admite describir una parte del conjunto, como una silla. Marcar realizada la visita no declara solucionada la garantía. Véase WARRANTY_VISITS.md.
+
+Después: recepción y seguimiento de reparaciones, incluidos productos que trae el cliente; reportes administrativos/caja; integración propia de WhatsApp. No se imponen plazos ni cobertura automática de garantía.
