@@ -17,7 +17,7 @@ try:
   for width in [1440,390,320]:
    ctx=browser.new_context(viewport={'width':width,'height':1000},device_scale_factor=2)
    ctx.add_init_script("const s=%s;s.validatedAt=Date.now();sessionStorage.setItem('MADERARTE_APP_SESSION_SNAPSHOT_V1',JSON.stringify(s));"%json.dumps(SESSION))
-   cases=[];writes=[];results={};errors=[];lost=[True];visits=[];visit_writes=[]
+   cases=[];writes=[];results={};errors=[];lost=[True];visits=[];visit_writes=[];pdf_requests=[]
    def route(r):
     b=r.request.post_data_json;a=b['action'];v=b.get('payload',{})
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
@@ -28,7 +28,7 @@ try:
     elif a=='AGENDA_GUARDADO_ESTADO':data={'saved':False}
     elif a=='AGENDA_GUARDAR':
      assert v['caseId']=='QA-REPORT';visit_writes.append(v);visits[:]=[dict(v,id='QA-VISIT',kind='GARANTIA',status='PROGRAMADA',items=[],revision=1,by='Muestra')];data={'result':visits[0]}
-    elif a=='GARANTIA_PDF':data={'mime':'application/pdf','base64':'JVBERi1xYQ==','name':'muestra.pdf'}
+    elif a=='GARANTIA_PDF':pdf_requests.append(v);data={'mime':'application/pdf','base64':'JVBERi1xYQ==','name':'muestra.pdf'}
     elif a=='GARANTIA_ESTADO':data={'saved':v['requestId'] in results,'result':results.get(v['requestId'])}
     elif a=='GARANTIA_GUARDAR':
      rid=b['requestId'];assert rid not in results;writes.append(v)
@@ -57,7 +57,11 @@ try:
    page.locator('[data-operation=repair]').click();page.locator('#wc-notes').fill('Unión de la pata con holgura. Ajustar ensamble y comprobar estabilidad.');page.locator('#wc-form [type=submit]').click();expect(page.locator('.wc-status').last).to_have_text('En reparación')
    page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}');page.screenshot(path=str(OUT/f'repair-{width}.png'),full_page=True)
    page.locator('[data-operation=ready]').click();page.locator('#wc-notes').fill('Ensamble ajustado. Estabilidad comprobada.');page.locator('#wc-form [type=submit]').click();expect(page.locator('[data-operation=deliver]')).to_be_visible()
+   expect(page.locator('#wc-delivery-pdf')).to_have_count(0)
    page.locator('[data-operation=deliver]').click();page.locator('#wc-notes').fill('Entrega de la silla reparada en el almacén.');page.locator('#wc-recipient').fill('Persona de muestra');page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-title')).to_have_text('Garantía');expect(page.locator('.wc-timeline')).to_contain_text('Persona de muestra')
+   page.locator('#wc-delivery-pdf').click();expect(page.locator('#wc-pdf-link a')).to_be_visible();assert pdf_requests[-1]=={'id':'QA-CASE','kind':'ENTREGA'}
+   page.locator('#wc-pdf').click();expect(page.locator('#wc-progress')).to_contain_text('Comprobante listo');assert pdf_requests[-1]=={'id':'QA-CASE'}
+   page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}');page.screenshot(path=str(OUT/f'delivery-{width}.png'),full_page=True)
    page.locator('.wc-subheading').scroll_into_view_if_needed();page.screenshot(path=str(OUT/f'history-{width}.png'),full_page=True)
    assert len(writes)==4;assert not errors,errors;assert page.locator('body').evaluate('e=>e.scrollWidth<=innerWidth')
    page.locator('#wc-close').click();page.locator('#wc-closed').click();expect(page.locator('[data-case]')).to_have_count(1)
@@ -71,12 +75,14 @@ try:
    page.locator('#wc-visits a.wc-pick').click();expect(page.locator('#ag-detail')).to_be_visible();page.locator('#ag-detail a[href*="garantias.html"]').click();expect(page.locator('#wc-title')).to_have_text('Garantía');page.locator('#wc-receive-case').click();expect(page.locator('#wc-piece')).to_have_value('Silla del comedor');expect(page.locator('#wc-issue')).to_have_value('Respaldo suelto');page.locator('#wc-condition').fill('Una silla sin accesorios');page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-title')).to_have_text('Garantía');assert writes[-1]['id']=='QA-REPORT';assert len(cases)==3;assert not errors,errors
    page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}');page.screenshot(path=str(OUT/f'connected-reception-{width}.png'),full_page=True);assert page.locator('body').evaluate('e=>e.scrollWidth<=innerWidth');page.locator('#wc-close').click();page.goto(ORIGIN+'/garantias.html');expect(page.locator('#wc-list [data-case]')).to_have_count(1);page.screenshot(path=str(OUT/f'hub-{width}.png'),full_page=True);page.goto(ORIGIN+'/agenda.html');page.locator('#ag-new').click();page.locator('[data-kind=GARANTIA]').click();expect(page.locator('#wc-title')).to_have_text('Nueva garantía');ctx.close()
   docs=Path('artifacts/warranty-documents');context=browser.new_context();page=context.new_page()
-  snapshots=[(name,json.loads((docs/(name+'.json')).read_text())) for name in ['reception','home']]
+  snapshots=[(name,json.loads((docs/(name+'.json')).read_text())) for name in ['reception','home','delivery']]
   long=dict(snapshots[0][1]);long['issue']='Detalle de revisión y estado de la pieza. '*90;long['condition']='Observación de recepción. '*90;snapshots.append(('long',long))
+  long_delivery=dict(snapshots[2][1]);long_delivery['work']='Trabajo final y comprobación de estabilidad. '*80;long_delivery['deliveryNotes']='Detalle de la entrega al receptor. '*80;snapshots.append(('delivery-long',long_delivery))
   for name,snapshot in snapshots:
    page.goto(ORIGIN+'/documento-render.html');page.evaluate("s=>{const n=document.createElement('script');n.type='application/json';n.id='maddy-document-data';n.textContent=JSON.stringify(s);document.body.append(n)}",snapshot);page.wait_for_selector('[data-document-ready="true"]')
    assert page.locator('.wg-document').count()>=1
-   if name=='long':assert page.locator('.wg-document').count()>1
+   if name in ['long','delivery-long']:assert page.locator('.wg-document').count()>1
+   if name.startswith('delivery'):expect(page.locator('.rm-doc-staff').first).to_contain_text(snapshot['recipient']);expect(page.locator('.rm-doc-body')).not_to_have_count(0)
    page.pdf(path=str(docs/(name+'.pdf')),print_background=True,prefer_css_page_size=True);page.screenshot(path=str(docs/(name+'.png')),full_page=True)
   context.close();browser.close()
  print('Warranty UI: receive component, lost response/reload without duplicate, repair, ready, delivery and 1440/390/320 layouts passed.')

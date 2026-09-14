@@ -173,9 +173,9 @@ export async function handleRequest(request, env = {}) {
       return jsonResponse({ ...reply, data: { ...reply.data, pdfEngine: engine, productionReady: false } });
     }
     if (action === 'GARANTIA_PDF') {
-      const response=await forwardToAppsScript(request,env,{action:'GARANTIA_COMPROBANTE_DATOS',payload:{id:body.payload?.id}},requestId);
+      const response=await forwardToAppsScript(request,env,{action:'GARANTIA_COMPROBANTE_DATOS',payload:{id:body.payload?.id,...(body.payload?.kind?{kind:body.payload.kind}:{})}},requestId);
       if(!response.ok)return response;const checked=await response.json();if(checked.status!=='success')return jsonResponse(checked,403);
-      if(checked.data?.number!==body.payload?.id)return jsonResponse(errorBody('DOCUMENT_PLAN_INVALID','El comprobante no coincide con el expediente.',requestId),503);
+      if(checked.data?.number!==body.payload?.id||(body.payload?.kind==='ENTREGA'&&checked.data?.type!=='ENTREGA'))return jsonResponse(errorBody('DOCUMENT_PLAN_INVALID','El comprobante no coincide con el expediente.',requestId),503);
       return jsonResponse({status:'success',code:'OK',requestId,data:await generateWarrantyPdf(env,checked.data)});
     }
     if (action === 'RECIBO_MUESTRA_PDF') {

@@ -96,3 +96,8 @@ PR #91 publicó la programación contextual de revisiones. PR #92 incorpora rece
 
 PR #93 publicó resolución en domicilio y comprobantes. PR #94 conecta Inicio, reporte inicial, OP, visita y recepción bajo el mismo expediente. Agenda dirige nuevas garantías al hub y conserva las citas históricas. No se migra ni se vincula automáticamente un registro antiguo ambiguo. Pendientes: fotos, comprobante final de entrega reparada, caja e informes.
 
+
+
+## Comprobante final de garantía
+
+Se incorpora PDF de entrega desde el expediente cerrado. Conserva por separado la recepción original, usa el último trabajo terminado y la entrega nominal guardada, y no crea una remisión de venta ni un movimiento monetario. Fotos y reportes/caja siguen pendientes.

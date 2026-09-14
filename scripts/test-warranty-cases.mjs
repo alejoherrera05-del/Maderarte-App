@@ -22,19 +22,22 @@ const id=call('GARANTIA_LISTAR').items[0].id;
 const change=(operation,revision,extra={},rid='WARRANTY-TEST-'+operation+'-'+revision)=>call('GARANTIA_GUARDAR',{id,operation,revision,notes:'Detalle del trabajo',assignee:'Operario de muestra',...extra},rid);
 assert.throws(()=>change('deliver',1,{recipient:'Cliente',physicalCheck:true}),e=>e.appCode==='WARRANTY_CHANGED');
 change('repair',1);assert.throws(()=>change('note',1),e=>e.appCode==='WARRANTY_CHANGED');
-change('note',2,{assignee:'Segundo trabajador'});change('ready',3);change('repair',4);change('ready',5);
+change('note',2,{assignee:'Segundo trabajador'});change('ready',3,{notes:'Trabajo anterior sustituido'});change('repair',4);change('ready',5,{notes:'Ensamble ajustado y estabilidad comprobada.'});
+assert.throws(()=>call('GARANTIA_COMPROBANTE_DATOS',{id,kind:'ENTREGA'}),e=>e.appCode==='WARRANTY_DELIVERY_PENDING');
 assert.throws(()=>change('deliver',6,{recipient:'Cliente',physicalCheck:false}),e=>e.appCode==='WARRANTY_DELIVERY');
 change('deliver',6,{recipient:'Persona de muestra',physicalCheck:true});
 let c=call('GARANTIA_LISTAR').items[0];assert.equal(c.status,'ENTREGADA');assert.equal(c.events.length,7);assert.equal(c.quantity,1);assert.equal(c.events[2].assignee,'Segundo trabajador');assert.equal(c.events[6].recipient,'Persona de muestra');
 assert.throws(()=>change('repair',7),e=>e.appCode==='WARRANTY_CHANGED');
+const delivery=call('GARANTIA_COMPROBANTE_DATOS',{id,kind:'ENTREGA'});assert.equal(delivery.type,'ENTREGA');assert.equal(delivery.recipient,'Persona de muestra');assert.equal(delivery.work,'Ensamble ajustado y estabilidad comprobada.');assert.equal(delivery.date,c.events[6].at);assert.equal(delivery.deliveryNotes,'Detalle del trabajo');
+assert.throws(()=>call('GARANTIA_COMPROBANTE_DATOS',{id,kind:'INVALID'}),e=>e.appCode==='WARRANTY_DOCUMENT_KIND');
 const receipt=call('GARANTIA_COMPROBANTE_DATOS',{id});assert.equal(receipt.type,'RECEPCION');assert.equal(receipt.assignee,'Operario de muestra');assert.equal(receipt.condition,payload.condition);
 assert.throws(()=>call('GARANTIA_GUARDAR',{...payload,operation:'home',notes:''},'WARRANTY-HOME-BAD-0001'),e=>e.appCode==='WARRANTY_NOTE');
 const home={...payload,operation:'home',notes:'Unión ajustada en el domicilio. Se comprobó estabilidad.'};
 const h=call('GARANTIA_GUARDAR',home,'WARRANTY-HOME-GOOD-0001').result;assert.equal(h.status,'RESUELTA_DOMICILIO');
 assert.equal(call('GARANTIA_GUARDAR',home,'WARRANTY-HOME-GOOD-0001').result.id,h.id);
-const report=call('GARANTIA_COMPROBANTE_DATOS',{id:h.id});assert.equal(report.type,'DOMICILIO');assert.equal(report.work,home.notes);assert.equal(report.source,'DOMICILIO');
+const report=call('GARANTIA_COMPROBANTE_DATOS',{id:h.id});assert.equal(report.type,'DOMICILIO');assert.equal(report.work,home.notes);assert.equal(report.source,'DOMICILIO');assert.throws(()=>call('GARANTIA_COMPROBANTE_DATOS',{id:h.id,kind:'ENTREGA'}),e=>e.appCode==='WARRANTY_DELIVERY_PENDING');
 assert.equal(call('AGENDA_LISTAR').items.length,0);assert.equal(before,ledgers());
-mkdirSync('artifacts/warranty-documents',{recursive:true});for(const [name,doc] of Object.entries({reception:receipt,home:report}))writeFileSync('artifacts/warranty-documents/'+name+'.json',JSON.stringify({...doc,sandbox:true}));
+mkdirSync('artifacts/warranty-documents',{recursive:true});for(const [name,doc] of Object.entries({reception:receipt,home:report,delivery}))writeFileSync('artifacts/warranty-documents/'+name+'.json',JSON.stringify({...doc,sandbox:true}));
 
 const initial={...payload,operation:'report',physicalCheck:false,condition:'',source:''};
 const opened=call('GARANTIA_GUARDAR',initial,'WARRANTY-REPORT-0001').result;
@@ -60,7 +63,7 @@ f.production().tables.Roles.rows[0].Permisos_JSON='["agenda.read","ordenes.read"
 assert.equal(call('GARANTIA_LISTAR').enabled,false);assert.throws(()=>call('GARANTIA_GUARDAR',payload,'WARRANTY-NOWRITE-0001'),e=>e.appCode==='PERMISSION_DENIED');
 f.production().tables.Roles.rows[0].Permisos_JSON='["agenda.read","agenda.update","ordenes.read"]';
 f.production().tables.Ordenes_Pedido.rows[0].Sede='PRIVATE';f.production().tables.Agenda.rows.forEach(r=>r.Sede='PRIVATE');
-assert.equal(call('GARANTIA_LISTAR').items.length,0);assert.throws(()=>call('GARANTIA_ESTADO',{requestId:'WARRANTY-TEST-0001'}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
+assert.equal(call('GARANTIA_LISTAR').items.length,0);assert.throws(()=>call('GARANTIA_COMPROBANTE_DATOS',{id,kind:'ENTREGA'}),e=>e.appCode==='BRANCH_NOT_ALLOWED');assert.throws(()=>call('GARANTIA_ESTADO',{requestId:'WARRANTY-TEST-0001'}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
 console.log('Warranty custody: atomic lost-response recovery, unchanged commercial ledgers, partial pieces, transition guards, history, permissions and branch isolation passed.');
 
 
