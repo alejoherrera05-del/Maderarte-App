@@ -160,12 +160,12 @@ function orderMarkup(order, allPayments, index) {
       <div class="client-doc-head-right"><span class="client-status ${statusClass(order.status)}">${escapeHtml(humanizeCode(order.status || 'ACTIVA'))}</span></div>
     </div>
     <div class="client-order-layout">
-      <div><p class="client-order-desc">${escapeHtml(description)}</p><p class="client-doc-date">${escapeHtml(date(order.date))}${order.branch ? ` · ${escapeHtml(order.branch)}` : ''}</p></div>
+      <div><p class="client-order-desc">${escapeHtml(description)}</p><p class="client-doc-date"><img src="/assets/icons/calendar-dots.svg" alt="" aria-hidden="true">${escapeHtml(date(order.date))}${order.branch ? ` · ${escapeHtml(order.branch)}` : ''}</p></div>
       <div class="client-finance">
         <div class="client-finance-left"><div class="client-finance-label">Valor vigente</div><div class="client-total">${escapeHtml(money(total))}</div></div>
         <div>
-          <div class="client-paid-head"><span>Abono neto en la OP</span><strong>${escapeHtml(money(paid))}</strong></div>
-          <div class="client-progress" aria-label="Porcentaje abonado"><span style="width:${progress.toFixed(1)}%"></span></div>
+          <div class="client-paid-head"><span>Abono neto</span><strong>${escapeHtml(money(paid))}</strong></div>
+          ${!cancelled && balance > 0 ? `<div class="client-progress" aria-label="Porcentaje abonado"><span style="width:${progress.toFixed(1)}%"></span></div>` : ""}
           <div class="client-balance-label">${cancelled ? "Estado" : credit > 0 ? "Saldo a favor" : "Por pagar"}</div><div class="client-balance ${credit > 0 ? "client-credit-value" : ""}">${cancelled ? "Orden anulada" : escapeHtml(money(credit > 0 ? credit : balance))}</div>
         </div>
       </div>
@@ -221,7 +221,7 @@ function renderClientDossier(data) {
     <div class="client-identity">
       <div class="client-avatar" aria-hidden="true">${escapeHtml(initials(client.name))}</div>
       <div><h1 class="client-name">${escapeHtml(client.name || 'Cliente Maderarte')}</h1><div class="client-id-label">${escapeHtml(client.documentType || 'Identificación')}</div><div class="client-id">${escapeHtml(client.document || '—')}</div></div>
-      <button class="client-more" type="button" aria-label="Más datos del cliente" title="Consulta en modo lectura"><img src="/assets/icons/dots-three.svg" alt="" aria-hidden="true"></button>
+      <details class="client-extra"><summary class="client-more" aria-label="Más datos del cliente"><img src="/assets/icons/dots-three.svg" alt="" aria-hidden="true"></summary><div class="client-extra-panel"><h2>Datos del cliente</h2><dl><div><dt>Identificación</dt><dd>${escapeHtml(client.documentType || 'Documento')} · ${escapeHtml(client.document || '—')}</dd></div><div><dt>Otro teléfono</dt><dd>${escapeHtml(client.alternatePhone || 'No registrado')}</dd></div><div><dt>Sede</dt><dd>${escapeHtml(client.branch || 'No registrada')}</dd></div></dl></div></details>
     </div>
 
     <div class="client-contact-grid">
@@ -230,7 +230,7 @@ function renderClientDossier(data) {
     </div>
     <div class="client-email-row"><span class="client-contact-icon"><img src="/assets/icons/envelope.svg" alt="" aria-hidden="true"></span><span>${escapeHtml(email || 'Sin correo registrado')}</span></div>
 
-    ${(whatsApp || phoneHref || email) ? `<div class="client-contact-actions">${whatsApp ? `<a class="client-primary-contact" href="${escapeHtml(whatsApp)}" target="_blank" rel="noopener noreferrer">Contactar por WhatsApp</a>` : phoneHref ? `<a class="client-primary-contact" href="${escapeHtml(phoneHref)}">Llamar cliente</a>` : `<a class="client-primary-contact" href="mailto:${encodeURIComponent(email)}">Enviar correo</a>`}${phoneHref && whatsApp ? `<a class="client-secondary-contact" href="${escapeHtml(phoneHref)}">Llamar</a>` : email ? `<a class="client-secondary-contact" href="mailto:${encodeURIComponent(email)}">Correo</a>` : ''}</div>` : ''}
+    ${(whatsApp || phoneHref || email) ? `<div class="client-contact-actions">${whatsApp ? `<a class="client-primary-contact" href="${escapeHtml(whatsApp)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : phoneHref ? `<a class="client-primary-contact" href="${escapeHtml(phoneHref)}">Llamar cliente</a>` : `<a class="client-primary-contact" href="mailto:${encodeURIComponent(email)}">Enviar correo</a>`}${phoneHref && whatsApp ? `<a class="client-secondary-contact" href="${escapeHtml(phoneHref)}">Llamar</a>` : email ? `<a class="client-secondary-contact" href="mailto:${encodeURIComponent(email)}">Correo</a>` : ''}</div>` : ''}
 
 
   </section>
@@ -269,6 +269,8 @@ function renderError(error) {
 }
 
 function bindDossierInteractions() {
+  const extra = document.querySelector(".client-extra");
+  extra?.addEventListener("keydown", event => { if (event.key === "Escape") { extra.open = false; extra.querySelector("summary").focus(); } });
   document.querySelectorAll('[data-client-tab]').forEach(button => {
     button.addEventListener('click', () => {
       const tab = button.dataset.clientTab;
@@ -417,5 +419,6 @@ guardStandalonePage({
     }
   }
 });
+
 
 
