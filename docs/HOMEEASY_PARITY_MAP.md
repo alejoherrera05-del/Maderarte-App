@@ -148,3 +148,8 @@ La aclaración posterior del propietario permite sala disponible y comedor por s
 ## Simplificación del formulario — aclaración posterior del 5 de septiembre
 
 HomeEasy vigente inspeccionado: `aa21decbe809a91362a2cddfd272c7c5744dfddd`, `pedido.html`: cliente directo, líneas, observaciones, importes y saldo. Se mantiene ese recorrido. Las desviaciones aprobadas ahora son acuerdo por cada mueble, distribución opcional del abono y personalización desplegable. Recogida, envío y fechas permanecen en observaciones. Esta decisión sustituye el separado global descrito en los apartados históricos. Formulario y documento comparten cálculos. La recuperación temporal en la pestaña no guarda una OP ni habilita escrituras.
+
+## Clientes: estado de cuenta — 14 de septiembre de 2026
+
+Se inspeccionó Homeeasy/main/clientes.html vigente: ficha de contacto, pestañas Órdenes/Cotizaciones, tarjetas financieras por OP e historial desplegable. Se conserva esa composición. La adaptación responde al saldo a favor y al traslado entre personas autorizados para Maderarte: deuda y crédito aparecen separados, las OP anuladas no suman y el acceso lleva al expediente de origen. No se copian datos ni recursos de HomeEasy.
+

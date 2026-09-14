@@ -63,3 +63,14 @@ El registro de movimientos por mueble y la recepción parcial ya están implemen
 Siguiente incremento: continuidad según el estado real. Un mueble pendiente abre la solicitud con su selección; uno en seguimiento abre la actualización de producción; las unidades disponibles llevan a remisión. La solicitud limita cantidades usando los totales registrados por etapa, sin sumar etapas que corresponden a las mismas unidades.
 
 La escritura comercial general sigue en preparación. Quedan pendientes la agenda de entregas, el seguimiento global de pendientes y la validación de activación comercial. No se declara cerrada esa fase por publicar mejoras de interfaz.
+
+## Estado operativo — 14 de septiembre de 2026
+
+Esta sección actualiza el estado histórico anterior: cotizaciones, OP, abonos, remisiones, seguimiento de producción y agenda ya están publicados y habilitados. La agenda admite fecha/hora, obligaciones y recurrencias. Producción tiene consulta global (PR #85). Los desistimientos, saldos a favor, traslados entre OP y registro de devoluciones están publicados (PR #86, Apps Script v20).
+
+El 12 de septiembre se verificaron las lecturas del dominio con cero OP comerciales. Las pruebas de ajustes usaron datos sintéticos; no equivalen a una transacción comercial real verificada. No reiniciar números ni crear ventas ficticias para suplir esa limitación.
+
+Incremento actual: completar el estado de cuenta en Clientes. Mostrar por separado el dinero por pagar y el saldo a favor, conservar el vínculo a la OP de origen y distinguir los recibos históricos del abono neto tras ajustes. Mantener el expediente y sus pestañas; no incorporar compensaciones automáticas.
+
+Pendientes posteriores: conciliación de desistimientos con fábrica, devoluciones de muebles ya entregados, gestión de garantías, reportes administrativos y cierre de caja; WhatsApp propio se mantiene como integración posterior. Priorizar operación y trazabilidad antes de nuevas integraciones.
+
