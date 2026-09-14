@@ -25,6 +25,7 @@ const MENU_GROUPS = Object.freeze([
       { key: 'clientes', label: 'Clientes', description: 'Datos, cotizaciones y órdenes', icon: 'users-three', permission: 'clientes.read', href: '/clientes.html' },
       { key: 'produccion', label: 'Producción', description: 'Preparar solicitudes a fábrica', icon: 'stack', permission: 'produccion.read', href: '/produccion.html' },
       
+      { key: 'garantias', label: 'Garantías', description: 'Reportes, visitas y reparaciones', icon: 'clipboard-text', permission: 'agenda.read', href: '/garantias.html' },
       { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', href: '/agenda.html' }
     ]
   }
@@ -212,4 +213,5 @@ guardPage({
     mountToday(document.getElementById('home-today'),session);
   }
 });
+
 

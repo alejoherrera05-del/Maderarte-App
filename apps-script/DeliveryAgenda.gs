@@ -104,7 +104,7 @@ function agTaskData_(row) {
 }
 function agTaskView_(row) {
   var d=agTaskData_(row);
-  return {id:row.ID,kind:d.kind,title:row.Titulo,client:row.Cliente,number:row.Numero_OP,branch:row.Sede,date:String(row.Fecha).slice(0,10),time:String(row.Hora||''),status:row.Estado,revision:d.revision,notes:d.notes,amount:d.amount,contact:d.contact,assignee:d.assignee,series:d.series||'',items:[],by:row.Responsable};
+  return {id:row.ID,kind:d.kind,title:row.Titulo,client:row.Cliente,number:row.Numero_OP,branch:row.Sede,date:String(row.Fecha).slice(0,10),time:String(row.Hora||''),status:row.Estado,revision:d.revision,notes:d.notes,amount:d.amount,contact:d.contact,assignee:d.assignee,series:d.series||'',caseId:d.caseId||'',items:[],by:row.Responsable};
 }
 function agMonthDate_(date,offset) {
   var parts=date.split('-').map(Number),last=new Date(Date.UTC(parts[0],parts[1]+offset,0)).getUTCDate();
@@ -112,7 +112,7 @@ function agMonthDate_(date,offset) {
 }
 function agTaskSave_(payload,context) {
   if(!commercialWritesEnabled_() || getConfigValue_('MODO_OPERACION','')!=='OPERACION')throw appError_('COMMERCIAL_WRITES_DISABLED','La agenda aún no admite cambios.',403);
-  orderObject_(payload,['kind','id','revision','operation','title','contact','assignee','branch','number','date','time','notes','amount','repeat'],'compromiso');
+  orderObject_(payload,['kind','id','revision','operation','title','contact','assignee','branch','number','date','time','notes','amount','repeat','caseId'],'compromiso');
   var p={kind:orderText_(payload.kind,'kind',24,true),id:orderText_(payload.id,'id',160,false),revision:orderInteger_(payload.revision,'revision',0),operation:orderText_(payload.operation||'save','operation',20,true)};
   if(!['PROVEEDOR','IMPUESTO','SERVICIO','GARANTIA'].includes(p.kind) || !['save','cancel','restore','complete','reopen'].includes(p.operation))throw appError_('AGENDA_TYPE','Revisa el tipo de compromiso y la acción.',400);
   if(p.operation==='save') {
@@ -120,6 +120,7 @@ function agTaskSave_(payload,context) {
     p.branch=orderText_(payload.branch,'branch',16,true);p.number=orderText_(payload.number,'number',120,false);p.date=agDate_(payload.date);p.time=String(payload.time||'');p.notes=orderText_(payload.notes,'notes',1000,false);
     if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.time))throw appError_('AGENDA_TIME','Selecciona una hora válida.',400);
     p.amount=payload.amount===null || payload.amount==='' || payload.amount===undefined?null:orderInteger_(payload.amount,'amount',1);
+    if(payload.caseId)p.caseId=orderText_(payload.caseId,'caseId',160,true);
     p.repeat=orderInteger_(payload.repeat||1,'repeat',1);
     if(p.repeat>12 || (p.id && p.repeat!==1) || (p.kind==='GARANTIA' && p.repeat!==1))throw appError_('AGENDA_REPEAT','La repetición admite hasta 12 fechas para obligaciones nuevas.',400);
   } else if(!p.id)throw appError_('AGENDA_NOT_FOUND','Selecciona un compromiso existente.',404);
@@ -143,12 +144,21 @@ function agTaskSave_(payload,context) {
       if(p.date<today && (!old || p.date!==String(old.Fecha).slice(0,10)))throw appError_('AGENDA_DATE','Selecciona una fecha de hoy en adelante.',400);
       if(p.number){requirePermission_(s,'ordenes.read');var order=rcOrder_(p.number,s);if(order.Sede!==p.branch)throw appError_('AGENDA_BRANCH','La OP pertenece a otra sede.',409);}
     }
+    if(p.operation==='save'){
+      var caseId=p.caseId||(previous&&previous.caseId)||'';
+      if(previous&&previous.caseId&&p.caseId&&previous.caseId!==p.caseId)throw appError_('WARRANTY_CHANGED','La visita pertenece a otro caso.',409);
+      if(caseId){requirePermission_(s,'ordenes.read');var warranty=mdUnique_(listRows_('Agenda'),'ID',caseId);
+        if(p.kind!=='GARANTIA'||!warranty||warranty.Categoria!=='GARANTIA_EXPEDIENTE'||warranty.Numero_OP!==p.number||warranty.Sede!==p.branch||['ENTREGADA','RESUELTA_DOMICILIO'].includes(warranty.Estado))throw appError_('WARRANTY_CHANGED','Revisa el expediente de esta visita.',409);
+        if(listRows_('Agenda').some(function(r){return r.ID!==p.id&&r.Categoria==='COMPROMISO_MADDY'&&r.Estado==='PROGRAMADA'&&agTaskData_(r).caseId===caseId;}))throw appError_('WARRANTY_VISIT_EXISTS','Ya hay una visita pendiente. Abre la existente para reprogramarla.',409);
+      }
+    }
     var uid=s.profile.uid,stamp=now_().toISOString(),requests=[],dates=[],id=p.id||requestId,revision=p.revision+1;
     var count=p.operation==='save'?p.repeat:1;
     for(var n=0;n<count;n++) {
       var row;
       if(p.operation==='save') {
         var data={contract:'task-1',kind:p.kind,revision:revision,contact:p.contact,assignee:p.assignee,amount:p.amount,notes:p.notes,series:previous?previous.series:(count>1?requestId:'')};
+        if(caseId)data.caseId=caseId;
         row={ID:n?id+'-'+n:id,Fecha:agMonthDate_(p.date,n),Hora:p.time,Categoria:'COMPROMISO_MADDY',Titulo:p.title,Cliente:p.contact,Numero_OP:p.number,Sede:p.branch,Referencia_Notas:JSON.stringify(data),Estado:'PROGRAMADA',Responsable:s.profile.name||uid,Fecha_Registro:old?old.Fecha_Registro:stamp};
       } else {
         row={};Object.keys(old).forEach(function(k){if(k!=='_row')row[k]=old[k];});previous.revision=revision;row.Referencia_Notas=JSON.stringify(previous);
@@ -164,4 +174,5 @@ function agTaskSave_(payload,context) {
     clearConfirmedOrderFence_();return {saved:true,result:result};
   } finally {lock.releaseLock();}
 }
+
 
