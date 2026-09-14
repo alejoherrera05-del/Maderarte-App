@@ -20,7 +20,7 @@ try:
    def route(r):
     b=r.request.post_data_json; a=b['action']; payload=b.get('payload',{})
     if a=='AUTH_SESSION_VALIDATE': data=SESSION
-    elif a=='ORDEN_OBTENER': data=S['sofaOrder']
+    elif a=='ORDEN_OBTENER': data=dict(S['sofaOrder'],mediaWorkflow=0)
     elif a=='AJUSTE_CUENTA': data=S['sofaAfterReturn'] if received[0] else S['sofaBefore']
     elif a=='AJUSTE_PREVISUALIZAR':
      assert payload['type']=='RETORNAR' and payload['physicalCheck'] is True and payload['destination']=='EXHIBICION'

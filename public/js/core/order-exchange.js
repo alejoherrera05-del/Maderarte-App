@@ -1,6 +1,6 @@
 import {apiRequest} from './api.js?v=returns-1';
 import {money} from './format.js';
-export function exchangeNumber(search=location.search){
+export function exchangeNumber(search=window.location.search){
   const value=new URLSearchParams(search).get('cambio')||'';
   return /^[A-Z0-9-]{1,120}$/.test(value)?value:'';
 }
@@ -25,4 +25,3 @@ export async function prepareExchange(origin,{request=apiRequest,root=document}=
   }
   const notes=root.getElementById('quote-notes');if(notes&&!notes.value)notes.value='Cambio relacionado con '+origin+'.';
 }
-
