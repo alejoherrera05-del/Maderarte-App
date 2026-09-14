@@ -158,3 +158,8 @@ Se inspeccionó Homeeasy/main/clientes.html vigente: ficha de contacto, pestaña
 
 Referencia vigente Homeeasy/clientes.html: cabecera de contacto compacta en escritorio con identidad/contacto/acciones; tabs segmentadas, detalles discretos, tarjetas de OP y recibos desplegables. Maddy adopta estas proporciones con ajustes responsive para 320–1440 px, reduce la competencia tipográfica y conserva su marca cobre/grafito. El saldo a favor sigue separado y ninguna acción genera compensaciones. El control de más datos ahora funciona y se cierra con Escape o clic fuera.
 
+
+## Garantías desde Inicio — 14 de septiembre de 2026
+
+Se revisó index.html vigente de Homeeasy: navegación agrupada, controles con respuesta de presión, overlay desenfocado y bottom sheet. Se mantienen esos patrones ya portados en Maddy. El circuito propio de garantías desde reporte a visita/taller fue aprobado expresamente por el propietario; no introduce un shell nuevo.
+

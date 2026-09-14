@@ -98,6 +98,7 @@ async function openEditor(event=null,number=''){
   if(event||number){state.kind=event?type(event):'ENTREGA';if(state.kind==='ENTREGA')await selectOrder(event?.number||number);else chooseKind(state.kind,event);}
 }
 function chooseKind(kind,event=null){
+  if(kind==='GARANTIA'&&!event&&!new URLSearchParams(location.search).get('tipo')){location.assign('/garantias.html?from=agenda&nuevo=1');return;}
   $('ag-contact').closest('.ag-two').hidden=false;
   $('ag-warranty-context')?.remove();$('ag-task-notes').placeholder='';
   state.caseId=event?.caseId||'';state.kind=kind;$('ag-types').hidden=true;$('ag-title').textContent=(event?'Editar · ':'')+kinds[kind].single;

@@ -91,3 +91,8 @@ Después: recepción y seguimiento de reparaciones, incluidos productos que trae
 
 PR #91 publicó la programación contextual de revisiones. PR #92 incorpora recepción de mueble o pieza, ingreso por cliente/recogida, responsable, diagnóstico, reparación, listo y entrega nominal con historial. No altera la venta ni convierte el cumplimiento de una cita en reparación. Véase WARRANTY_REPAIRS.md. Pendientes: resolución registrada en domicilio, comprobante de custodia/fotos, reportes administrativos y caja, WhatsApp propio.
 
+
+## Garantías unificadas — 14 de septiembre de 2026
+
+PR #93 publicó resolución en domicilio y comprobantes. PR #94 conecta Inicio, reporte inicial, OP, visita y recepción bajo el mismo expediente. Agenda dirige nuevas garantías al hub y conserva las citas históricas. No se migra ni se vincula automáticamente un registro antiguo ambiguo. Pendientes: fotos, comprobante final de entrega reparada, caja e informes.
+
