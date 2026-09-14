@@ -1,3 +1,4 @@
+import {exchangeNumber,exchangeOrderPath} from '../core/order-exchange.js';
 import { createOrderProgress } from '../core/order-progress.js?v=compact-1';
 import { currentSandboxId, sandboxLink } from '../core/order-sandbox-context.js';
 import { prepareOrderMedia } from '../core/order-media.js?v=progress-1';
@@ -52,7 +53,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     node.addEventListener('click', () => { void handler(); });
     status.append(node);
   }
-  const orderPath = number => sandboxLink(`/orden.html?op=${encodeURIComponent(number)}`);
+  const orderPath = (number,linkOrigin=true) => sandboxLink(exchangeOrderPath(number,linkOrigin?exchangeNumber():''));
   function render(state) {
     const matchesOrigin = (quoteOrigin()?.number || '') === (state.quoteOrigin || '');
     const ownsDraft = state.ownsDraft && matchesOrigin;
@@ -82,7 +83,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
     status.hidden = state.working === true || !['uncertain', 'retry', 'confirmed', 'documents', 'other-tab', 'blocked', 'rejected'].includes(state.phase);
     if (!status.hidden) {
       if (state.phase === 'confirmed') {
-        action('Abrir pedido', () => navigate(orderPath(state.number)));
+        action(ownsDraft&&exchangeNumber()?'Continuar cambio':'Abrir pedido', () => navigate(orderPath(state.number,ownsDraft)));
         if (!currentSandboxId()) action(quoteOrigin() && !matchesOrigin ? 'Continuar con esta cotización' : 'Nuevo pedido', async () => {
           const result = await manager.startNew(() => { if (ownsDraft) draft()?.complete(); });
           if (result.phase === 'new') window.location.reload();
@@ -90,7 +91,7 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
         if (ownsDraft && confirmedRequest !== state.requestId) { confirmedRequest = state.requestId; draft()?.complete(); }
       } else if (state.phase === 'documents') {
         action('Completar documentos', () => manager.refresh());
-        action('Abrir pedido registrado', () => navigate(orderPath(state.number)));
+        action('Abrir pedido registrado', () => navigate(orderPath(state.number,ownsDraft)));
       } else {
         action(state.locked ? 'Consultar resultado' : 'Comprobar disponibilidad', () => manager.refresh());
         if (state.phase === 'retry') action('Reenviar el mismo intento', () => manager.retry());
@@ -153,4 +154,3 @@ export function bindOrderSave({ session, validate, branch, photos, draft, mediaB
   void manager.refresh();
   return manager;
 }
-

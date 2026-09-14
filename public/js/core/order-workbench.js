@@ -1,6 +1,6 @@
 import { furnitureNextAction } from './production-actions.js';
 import { furnitureIcon } from './furniture-category.js?v=category-images-1';
-import { productState, journeySteps } from './product-journey.js?v=factory-1';
+import { productState, journeySteps } from './product-journey.js?v=returns-1';
 import { escapeHtml as esc, money } from './format.js';
 import { sandboxLink } from './order-sandbox-context.js';
 import { hasPermission } from './permissions.js';
@@ -57,6 +57,7 @@ export function bindWorkbench(root, data, session) {
   const initial=items.findIndex(item=>item.id===new URLSearchParams(window.location.search).get('item'));
   select(initial<0?0:initial,false);
 }
+
 
 
 

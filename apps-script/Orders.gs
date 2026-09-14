@@ -81,6 +81,7 @@ function orderItems_(number) {
       fulfillment: normalizeCode_(row.Disponibilidad),
       discount: valueNumber_(row.Descuento),
       net: row.Valor_Neto === undefined || row.Valor_Neto === '' ? valueNumber_(row.Subtotal) : valueNumber_(row.Valor_Neto),
+      returned: typeof ajItemAdjustment_==='function'&&adjustments.some(function(e){return e.type==='RETORNAR';})?ajItemAdjustment_(row,adjustments).returned:0,
       cancelled: valueNumber_(row.Cantidad_Desistida),
       adjustmentVerified: typeof ajCancellationVerified_==='function'&&ajCancellationVerified_(row,adjustments),
       revision: valueNumber_(row.Version) || 1,
@@ -201,5 +202,6 @@ function systemState_(session) {
     }
   };
 }
+
 
 

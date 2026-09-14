@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {JSDOM} from 'jsdom';
+const dom=new JSDOM(readFileSync('public/pedido.html','utf8'),{url:'https://app.example.com/pedido.html?cambio=MP-OP-0001'});
+globalThis.window=dom.window;
+const {exchangeNumber,exchangeOrderPath,prepareExchange}=await import('../public/js/core/order-exchange.js');
+assert.equal(exchangeNumber(),'MP-OP-0001');assert.equal(exchangeNumber('?cambio=<script>'),'');assert.equal(exchangeNumber(''),'');
+assert.equal(exchangeOrderPath('MP-OP-0002','MP-OP-0001'),'/orden.html?op=MP-OP-0002&saldoDesde=MP-OP-0001');
+const root=dom.window.document;
+let calls=0;
+const request=async(action,p)=>{calls++;assert.equal(action,'AJUSTE_CUENTA');assert.equal(p.number,'MP-OP-0001');return {data:{order:{number:p.number,client:'Cliente de muestra',document:'000000001',phone:'000000001',email:'N/A',address:'Dirección de muestra',city:'Popayán'},position:{credit:1200000}}};};
+await prepareExchange(exchangeNumber(),{request,root});
+assert.equal(root.getElementById('quote-client-name').value,'Cliente de muestra');assert.equal(root.getElementById('quote-client-email').value,'N/A');
+assert.match(root.getElementById('exchange-origin-notice').textContent,/1.200.000/);
+root.getElementById('quote-client-name').value='Borrador conservado';root.getElementById('quote-notes').value='Indicaciones propias';
+await prepareExchange(exchangeNumber(),{request,root});assert.equal(root.getElementById('quote-client-name').value,'Borrador conservado');assert.equal(root.getElementById('quote-notes').value,'Indicaciones propias');assert.equal(calls,2);
+await assert.rejects(()=>prepareExchange('MP-OP-0001',{root,request:async()=>({data:{order:{number:'OTRA'}}})}),/origen/);
+console.log('Exchange context: validated origin, client recovery, preserved draft, linked order and read-only loading passed.');

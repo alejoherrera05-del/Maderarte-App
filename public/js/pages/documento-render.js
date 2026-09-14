@@ -1,4 +1,4 @@
-import { renderAdjustment } from './ajuste-render.js';
+import { renderAdjustment } from './ajuste-render.js?v=returns-1';
 import { renderReceipt } from './recibo-render.js';
 import { renderRemission } from './remision-render.js';
 import { renderConfirmedOrder } from './cotizacion-document-polish.js?v=family-1';
@@ -22,4 +22,3 @@ async function consume() {
 }
 new MutationObserver(() => { void consume(); }).observe(document.documentElement, { childList: true, subtree: true });
 void consume();
-

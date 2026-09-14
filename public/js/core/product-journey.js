@@ -6,6 +6,7 @@ export function productState(item, order = {}) {
   if (order.status === 'ANULADA' || item.status === 'ANULADO') return {label:'Anulado',tone:'muted',note:'Este producto no tiene acciones de entrega.'};
   if(item.cancelled===item.quantity&&item.adjustmentVerified)return {label:'Desistido',tone:'muted',note:'Retirado del pedido mediante ajuste registrado.'};
   if (item.cancelled > 0 && !item.adjustmentVerified) return {label:'Revisar ajuste',tone:'amber',note:'Hay unidades desistidas. Revisa las cantidades del expediente.'};
+  if(item.returned>0)return {label:item.returned===item.delivered&&item.pending===0?'Devuelto a exhibición':'Devolución parcial',tone:'muted',note:`${item.returned} regresaron al almacén · ${item.pending} pendientes de entrega`};
   if (item.delivered > 0 && item.pending === 0) return {label:'Despachado',tone:'blue',note:'Salida del almacén completa. No confirma recepción del cliente.'};
   if (item.delivered > 0) return {label:'Despacho parcial',tone:'blue',note:`${item.delivered} despachadas · ${item.pending} pendientes`};
   const activeQuantity=item.quantity-(item.cancelled||0);
@@ -20,6 +21,7 @@ export function journeySteps(item, order) {
   if(item.tracking?.events?.length) {
     const history=item.tracking.events.map(e=>({label:({SOLICITADO:'Solicitado',CONFIRMADO:'Confirmado',FABRICACION:'En fabricación',LISTO:'Listo en fábrica',TRANSPORTE:'En transporte',BODEGA:'Recibido en bodega'})[e.stage]||e.stage,detail:`${e.quantity} unidades · ${e.date} · ${e.by}${e.notes?' · '+e.notes:''}`,done:true}));
     if(item.cancelled&&item.adjustmentVerified)history.push({label:'Retiro de la OP',detail:`${item.cancelled} ${item.cancelled===1?'unidad retirada':'unidades retiradas'} · ${item.pending} pendientes de entrega`,current:true});
+    if(item.returned>0)history.push({label:'Regreso a exhibición',detail:`${item.returned} ${item.returned===1?'unidad recibida':'unidades recibidas'} en almacén`,current:true});
     return history;
   }
   const state=productState(item,order),factory=item.fulfillment==='PARA_SOLICITAR';
@@ -28,7 +30,7 @@ export function journeySteps(item, order) {
   if(factory) steps.push({label:'Solicitud al proveedor',detail:'Por solicitar en la OP. No hay seguimiento del envío en Maddy.',current:!item.delivered},{label:'Confirmación y fabricación',detail:'Sin confirmación registrada. No se deduce del mensaje de WhatsApp.'},{label:'Transporte a Popayán',detail:'Sin seguimiento registrado.'});
   steps.push({label:'Disponible en almacén',detail:item.fulfillment==='DISPONIBLE'?'Disponibilidad registrada en la OP.':'Recepción en bodega pendiente de registrar.',done:item.fulfillment==='DISPONIBLE',current:!factory&&!item.delivered});
   steps.push({label:item.pending===0&&item.delivered>0?'Despacho completo':'Despacho al cliente',detail:item.delivered>0?`${item.delivered} despachadas · ${item.pending} pendientes`:'Sin salida registrada.',done:item.pending===0&&item.delivered>0,current:item.delivered>0&&item.pending>0});
-  if(state.label==='Anulado'||item.cancelled>0)return [{label:state.label,detail:state.note,current:true}];
+  if(state.label==='Anulado'||item.cancelled>0||item.returned>0)return [{label:state.label,detail:state.note,current:true}];
   return steps;
 }
 export function bindProductJourney(root,data,session = {permissions:[]}) {
@@ -44,5 +46,6 @@ export function bindProductJourney(root,data,session = {permissions:[]}) {
   dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
   dialog.addEventListener('close',()=>trigger?.focus());
 }
+
 
 

@@ -19,10 +19,13 @@ jobs:
       - run: npm ci
       - run: node scripts/test-order-adjustments.mjs
       - run: pip install playwright==1.55.0
+      - run: node scripts/test-physical-returns.mjs
+        env:
+          RETURNS_EVIDENCE_DIR: artifacts/order-adjustments/returns
       - run: python scripts/order_adjustments_browser_qa.py
+      - run: python scripts/physical_returns_browser_qa.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: order-adjustments-qa
           path: artifacts/order-adjustments/
-
