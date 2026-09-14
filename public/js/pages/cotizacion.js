@@ -1,3 +1,4 @@
+import {exchangeNumber,prepareExchange} from '../core/order-exchange.js';
 import { sandboxDraftType, bindSandboxBanner } from '../core/order-sandbox-context.js';
 import { apiRequest } from '../core/api.js?v=runtime-1';
 import { APP_CONFIG, withPreview } from '../core/config.js';
@@ -14,7 +15,7 @@ import { bindOrderEntry, readOrderEntry, syncOrderAllocation } from '../core/ord
 import { bindOrderAgreements } from '../core/order-agreements.js?v=lifecycle-1';
 import { financialPosition } from '../core/order-lifecycle.js?v=lifecycle-1';
 import { bindFormDraft } from '../core/form-draft.js?v=device-1';
-import { bindOrderSave } from './pedido-save.js?v=compact-1';
+import { bindOrderSave } from './pedido-save.js?v=returns-1';
 import { readFurniture, readCommercialValues } from '../core/commercial-form-values.js?v=lifecycle-1';
 import { conversionNumber, loadQuoteOrder, lockQuoteSource } from '../core/quote-to-order.js';
 import { sandboxLink } from '../core/order-sandbox-context.js';
@@ -673,9 +674,10 @@ guardStandalonePage({
     }
     // QA preview stays ephemeral; real sessions recover only their own tab draft.
     if (!APP_CONFIG.preview.enabled) {
-      state.draft = bindFormDraft({ session, type: sandboxDraftType(state.conversion ? `order-from-${state.conversion.number}` : COMMERCIAL_DOCUMENT.isOrder ? 'order' : 'quote'), capture: captureDraft, restore: restoreDraft });
+      state.draft = bindFormDraft({ session, type: sandboxDraftType(state.conversion ? `order-from-${state.conversion.number}` : COMMERCIAL_DOCUMENT.isOrder ? (exchangeNumber()?`order-change-${exchangeNumber()}`:'order') : 'quote'), capture: captureDraft, restore: restoreDraft });
       await state.draft?.ready;
     }
+    if(COMMERCIAL_DOCUMENT.isOrder&&exchangeNumber()){try{await prepareExchange(exchangeNumber());state.draft?.changed();}catch(error){document.getElementById('quote-form-error').textContent=error.message;}}
     bindSandboxBanner(app, { prefill: true });
     if (COMMERCIAL_DOCUMENT.isOrder) state.save = bindOrderSave({
       session, validate: () => { state.validating = true; calculate(); return validateForm(); },
@@ -684,4 +686,5 @@ guardStandalonePage({
     });
   }
 });
+
 
