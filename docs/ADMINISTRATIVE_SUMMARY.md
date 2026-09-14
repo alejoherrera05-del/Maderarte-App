@@ -1,4 +1,12 @@
-# Resumen administrativo
+# Recaudos: alcance confirmado por el propietario
+
+La aclaración posterior sustituye el alcance inicial de abajo: todavía no se implementa caja contable, gastos ni egresos. Se necesita cuánto entró por día, semana o mes, por sede y medio (efectivo, tarjeta/datáfono, Addi, transferencia).
+
+Cada abono activo, incluido el inicial de una OP, se cuenta una sola vez. Los traslados de saldo no son ingresos nuevos. El efectivo se marca recibido por propietario/administrador; se admiten varios recibos seleccionados. Se conserva recibo, OP, sede de origen, importe, receptor y fecha. Recoger Terraplaza no suma de nuevo en Principal.
+
+Persistencia propuesta: Recepciones_Efectivo, independiente de Abonos, con bloqueo, idempotencia y auditoría. No altera ventas ni saldos. Acceso de propietario/administrador con permisos de lectura de órdenes y abonos, limitado a sedes autorizadas.
+
+## Exploración inicial (sustituida)
 
 Primer incremento de lectura. No equivale a cierre de caja ni a saldo bancario. El conteo de efectivo, bases y gastos depende de la operación que confirme el propietario.
 
