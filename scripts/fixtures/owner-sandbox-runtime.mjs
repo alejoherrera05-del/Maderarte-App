@@ -21,10 +21,11 @@ export function sandboxRuntime() {
         getRange: (r,col,nr=1,nc=1) => ({
           getDisplayValues: () => r === 1 ? [t.headers.slice(col-1,col-1+nc)] : t.rows.slice(r-2,r-2+nr).map(row=>t.headers.slice(col-1,col-1+nc).map(h=>String(row[h]??''))),
           getValues: () => r === 1 ? [t.headers.slice(col-1,col-1+nc)] : t.rows.slice(r-2,r-2+nr).map(row=>t.headers.slice(col-1,col-1+nc).map(h=>row[h]??'')),
-          setValue: v => { t.rows[r-2][t.headers[col-1]]=v; }
+          setValue: v => { t.rows[r-2][t.headers[col-1]]=v; },
+          setValues: values => { if(r!==1)throw Error('Fixture header initialization only');values[0].forEach((v,i)=>t.headers[col-1+i]=v); }
         }), appendRow: values=>t.rows.push(Object.fromEntries(t.headers.map((h,i)=>[h,values[i]??'']))) };
     };
-    return { getName:()=>b.name, getSheetByName:sheet, getSheets:()=>Object.keys(b.tables).map(sheet) };
+    return { getName:()=>b.name, getSheetByName:sheet, getSheets:()=>Object.keys(b.tables).map(sheet),insertSheet:name=>{if(b.tables[name])throw Error('Duplicate sheet');b.tables[name]={id:Math.max(0,...Object.values(b.tables).map(t=>t.id))+1,headers:[],rows:[]};return sheet(name);} };
   }
   function batch(id, data) {
     if (!state.locked) throw Error('Write without ScriptLock');
@@ -112,7 +113,7 @@ export function sandboxRuntime() {
     Utilities:{getUuid:randomUUID,DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},
       computeDigest:(_alg,v)=>[...Buffer.from(hash(v),'hex')],base64Decode:s=>[...Buffer.from(s,'base64')],base64Encode:v=>Buffer.from(v).toString('base64'),
       newBlob:v=>({getBytes:()=>[...Buffer.from(v)]}),
-      formatDate:(d,_tz,p)=>new Intl.DateTimeFormat('en-US',{timeZone:'America/Bogota',year:'numeric',month:'2-digit'}).formatToParts(d).find(x=>x.type===(p==='yyyy'?'year':'month')).value}
+      formatDate:(d,_tz,p)=>{const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Bogota',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d),v=k=>parts.find(x=>x.type===k).value;return p==='yyyy-MM-dd'?['year','month','day'].map(v).join('-'):v(p==='yyyy'?'year':'month');}}
   });
   const first=['Config.gs','SheetHelpers.gs','Schema.gs'];
   for(const file of [...first,...readdirSync('apps-script').filter(x=>x.endsWith('.gs')&&!first.includes(x))])vm.runInContext(readFileSync('apps-script/'+file,'utf8'),c,{filename:file});
