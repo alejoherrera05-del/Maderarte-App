@@ -139,7 +139,7 @@ function paymentRows(payments) {
     const pdf = safeExternalUrl(payment.pdfUrl);
     const content = `<span class="client-payment-left"><span class="client-payment-icon">$</span><span class="client-payment-name">${escapeHtml(payment.number || humanizeCode(payment.method) || 'Abono')}</span></span><span class="client-payment-date">${escapeHtml(date(payment.date))}</span><strong class="client-payment-amount">${escapeHtml(money(payment.value))}</strong>`;
     return pdf ? `<a class="client-payment-row" href="${escapeHtml(pdf)}" target="_blank" rel="noopener noreferrer">${content}</a>` : `<div class="client-payment-row">${content}</div>`;
-  }).join('')}<div class="client-payment-total"><span>Total abonado en movimientos</span><strong>${escapeHtml(money(total))}</strong></div>`;
+  }).join('')}<div class="client-payment-total"><span>Total recibido en estos abonos</span><strong>${escapeHtml(money(total))}</strong></div>`;
 }
 
 function orderMarkup(order, allPayments, index) {
@@ -147,6 +147,8 @@ function orderMarkup(order, allPayments, index) {
   const total = Number(order.total || 0);
   const paid = Number(order.paid || 0);
   const balance = Number(order.balance || 0);
+  const cancelled = normalizeCode(order.status) === "ANULADA";
+  const credit = cancelled ? 0 : Math.max(0, Number(order.credit ?? (paid - total)));
   const progress = total > 0 ? Math.max(0, Math.min(100, (paid / total) * 100)) : 0;
   const historyId = `client-order-history-${index}`;
   const description = order.description || order.notes || 'Orden de pedido Maderarte';
@@ -160,17 +162,17 @@ function orderMarkup(order, allPayments, index) {
     <div class="client-order-layout">
       <div><p class="client-order-desc">${escapeHtml(description)}</p><p class="client-doc-date">${escapeHtml(date(order.date))}${order.branch ? ` · ${escapeHtml(order.branch)}` : ''}</p></div>
       <div class="client-finance">
-        <div class="client-finance-left"><div class="client-finance-label">Valor total</div><div class="client-total">${escapeHtml(money(total))}</div></div>
+        <div class="client-finance-left"><div class="client-finance-label">Valor vigente</div><div class="client-total">${escapeHtml(money(total))}</div></div>
         <div>
-          <div class="client-paid-head"><span>Abonado</span><strong>${escapeHtml(money(paid))}</strong></div>
+          <div class="client-paid-head"><span>Abono neto en la OP</span><strong>${escapeHtml(money(paid))}</strong></div>
           <div class="client-progress" aria-label="Porcentaje abonado"><span style="width:${progress.toFixed(1)}%"></span></div>
-          <div class="client-balance-label">Saldo pendiente</div><div class="client-balance">${escapeHtml(money(balance))}</div>
+          <div class="client-balance-label">${cancelled ? "Estado" : credit > 0 ? "Saldo a favor" : "Por pagar"}</div><div class="client-balance ${credit > 0 ? "client-credit-value" : ""}">${cancelled ? "Orden anulada" : escapeHtml(money(credit > 0 ? credit : balance))}</div>
         </div>
       </div>
     </div>
     <div class="client-doc-actions">
       <button class="client-history-toggle" type="button" aria-expanded="false" aria-controls="${historyId}" data-history-target="${historyId}">Historial de abonos <span class="client-history-count">${payments.length}</span><span class="client-history-chevron">⌄</span></button>
-      <a class="client-view-doc" href="${escapeHtml(orderUrl)}">Ver expediente</a>
+      <a class="client-view-doc" href="${escapeHtml(orderUrl)}">${credit > 0 ? "Ver saldo a favor" : "Ver expediente"}</a>
     </div>
     <div class="client-history-panel" id="${historyId}"><div class="client-history-box"><div class="client-history-title">Movimientos de esta orden</div>${paymentRows(payments)}</div></div>
   </article>`;
@@ -210,6 +212,9 @@ function renderClientDossier(data) {
   const phoneHref = contactHrefPhone(client.phone);
   const whatsApp = whatsappHref(client.phone);
   const email = String(client.email || '').trim();
+  const activeOrders = orders.filter(order => normalizeCode(order.status) !== "ANULADA");
+  const totalDue = activeOrders.reduce((sum, order) => sum + Math.max(0, Number(order.balance || 0)), 0);
+  const totalCredit = activeOrders.reduce((sum, order) => sum + Math.max(0, Number(order.credit ?? (Number(order.paid || 0) - Number(order.total || 0)))), 0);
   const address = [client.address, client.city].filter(Boolean).join(' · ') || 'Sin dirección registrada';
 
   return `<section class="clients-card client-contact-card">
@@ -227,10 +232,14 @@ function renderClientDossier(data) {
 
     ${(whatsApp || phoneHref || email) ? `<div class="client-contact-actions">${whatsApp ? `<a class="client-primary-contact" href="${escapeHtml(whatsApp)}" target="_blank" rel="noopener noreferrer">Contactar por WhatsApp</a>` : phoneHref ? `<a class="client-primary-contact" href="${escapeHtml(phoneHref)}">Llamar cliente</a>` : `<a class="client-primary-contact" href="mailto:${encodeURIComponent(email)}">Enviar correo</a>`}${phoneHref && whatsApp ? `<a class="client-secondary-contact" href="${escapeHtml(phoneHref)}">Llamar</a>` : email ? `<a class="client-secondary-contact" href="mailto:${encodeURIComponent(email)}">Correo</a>` : ''}</div>` : ''}
 
-    <div class="client-readonly-note">Consulta en modo lectura. La creación y edición comercial se habilitarán en la etapa de escrituras.</div>
+
   </section>
 
-  <section class="client-summary" aria-label="Resumen comercial"><span class="client-summary-icon">$</span><div class="client-summary-text"><strong>${summary.orders || orders.length} ${(summary.orders || orders.length) === 1 ? 'orden' : 'órdenes'}</strong><span class="client-summary-dot">•</span><strong>${summary.quotes || quotes.length} ${(summary.quotes || quotes.length) === 1 ? 'cotización' : 'cotizaciones'}</strong><span class="client-summary-dot">•</span><span class="pending">${escapeHtml(money(summary.balance || 0))} pendiente</span></div></section>
+  <section class="client-account" aria-label="Estado de cuenta">
+    <div class="client-account-heading"><h2>Estado de cuenta</h2><span>${activeOrders.length} OP vigentes</span></div>
+    <div class="client-account-values"><div><span>Por pagar</span><strong data-total-due>${escapeHtml(money(totalDue))}</strong></div><div class="client-credit-card"><span>Saldo a favor</span><strong data-total-credit>${escapeHtml(money(totalCredit))}</strong></div></div>
+    ${totalCredit > 0 ? '<p>El saldo permanece en su OP de origen hasta que registres su uso o devolución.</p>' : ''}
+  </section>
 
   <div class="client-tabs" role="tablist" aria-label="Historial del cliente"><button class="client-tab is-active" type="button" role="tab" aria-selected="true" data-client-tab="orders">Órdenes <span class="client-tab-count">${orders.length}</span></button><button class="client-tab" type="button" role="tab" aria-selected="false" data-client-tab="quotes">Cotizaciones <span class="client-tab-count">${quotes.length}</span></button></div>
   <section class="client-panel is-active" data-client-panel="orders">${orders.length ? orders.map((order, index) => orderMarkup(order, payments, index)).join('') : '<div class="client-empty-panel">Este cliente todavía no tiene órdenes de pedido.</div>'}</section>
@@ -408,4 +417,5 @@ guardStandalonePage({
     }
   }
 });
+
 

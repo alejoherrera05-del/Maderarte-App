@@ -258,3 +258,13 @@ body.clients-page {
 @media (prefers-reduced-motion:reduce) {
   .clients-search-screen, .clients-cover-back, .clients-header-back, .clients-new-search, .client-history-panel, .client-history-chevron { transition-duration: .01ms !important; }
 }
+
+/* Account balances keep credit separate from outstanding debt. */
+.client-account{margin-top:22px;padding:24px;border:1px solid #e6e6e9;border-radius:24px;background:#fff;box-shadow:0 8px 28px #24232106}
+.client-account-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.client-account h2{font-size:20px;letter-spacing:-.4px;margin:0}.client-account-heading>span,.client-account p{color:#65656c;font-size:14px}.client-account p{margin:18px 0 0;line-height:1.5}
+.client-account-values{display:grid;grid-template-columns:1fr 1fr;gap:16px}.client-account-values>div{padding:20px;border-radius:18px;background:#f5f5f7;min-width:0}.client-account-values span{display:block;font-size:15px;color:#63636a}.client-account-values strong{display:block;margin-top:8px;font-size:clamp(25px,3vw,34px);font-weight:600;letter-spacing:-.8px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.client-account-values .client-credit-card{background:#262422;color:white}.client-credit-card span{color:#dedbd8}.client-credit-value{color:#262422}
+.client-history-panel{display:grid;grid-template-rows:0fr;max-height:none;transition:grid-template-rows .28s ease,opacity .2s ease,margin-top .2s ease}.client-history-panel.is-open{grid-template-rows:1fr;max-height:none}.client-history-box{min-height:0;overflow:hidden}
+.client-view-doc:active,.client-history-toggle:active{transform:scale(.98)}
+@media(max-width:520px){.client-account{padding:20px 16px}.client-account-values{gap:10px}.client-account-values>div{padding:17px 12px}.client-account-values strong{font-size:23px}.client-account-heading{align-items:baseline}.client-account-heading>span{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.client-history-panel{transition:none}.client-view-doc:active,.client-history-toggle:active{transform:none}}
+
