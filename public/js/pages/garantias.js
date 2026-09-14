@@ -73,7 +73,17 @@ guardStandalonePage({permission:'agenda.read',async render({session}){state.sess
 
 
 let pdfUrl='';
-async function pdf(c,kind=''){const button=$(kind==='ENTREGA'?'wc-delivery-pdf':'wc-pdf');button.disabled=true;$('wc-progress').textContent='Preparando comprobante…';try{const file=await request('GARANTIA_PDF',{id:c.id,...(kind?{kind}:{})});if(file?.mime!=='application/pdf'||!file.base64)throw Error('No se recibió el PDF.');if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfUrl=URL.createObjectURL(new Blob([Uint8Array.from(atob(file.base64),x=>x.charCodeAt(0))],{type:'application/pdf'}));const link=document.createElement('a');link.href=pdfUrl;link.target='_blank';link.rel='noopener';link.textContent='Abrir PDF';link.className='ag-button';$('wc-pdf-link').replaceChildren(link);$('wc-progress').textContent='Comprobante listo. Puedes abrirlo y guardarlo.';}catch(e){error(e);$('wc-progress').textContent='';}finally{button.disabled=false;}}
+async function pdf(c,kind=''){
+  const holder=$('wc-pdf-link'),progress=$('wc-progress'),buttons=[$('wc-pdf'),$('wc-delivery-pdf')].filter(Boolean);
+  if(buttons.some(b=>b.disabled))return;buttons.forEach(b=>b.disabled=true);holder.replaceChildren();progress.textContent='Preparando comprobante…';
+  try{
+    const file=await request('GARANTIA_PDF',{id:c.id,...(kind?{kind}:{})});
+    if(file?.mime!=='application/pdf'||!file.base64)throw Error('No se recibió el PDF.');
+    if(!holder.isConnected)return;
+    if(pdfUrl)URL.revokeObjectURL(pdfUrl);pdfUrl=URL.createObjectURL(new Blob([Uint8Array.from(atob(file.base64),x=>x.charCodeAt(0))],{type:'application/pdf'}));
+    const link=document.createElement('a');link.href=pdfUrl;link.target='_blank';link.rel='noopener';link.textContent=kind==='ENTREGA'?'Abrir PDF de entrega':c.source==='DOMICILIO'?'Abrir PDF de atención':'Abrir PDF de recepción';link.className='ag-button';holder.replaceChildren(link);progress.textContent='Comprobante listo. Puedes abrirlo y guardarlo.';
+  }catch(e){if(holder.isConnected){error(e);progress.textContent='';}}finally{buttons.forEach(b=>b.disabled=false);}
+}
 
 
 let searchVersion=0;
