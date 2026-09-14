@@ -386,6 +386,8 @@ function bindSearchInteractions() {
     if (event.key === 'Escape') hideSuggestions();
   });
   document.addEventListener('click', event => {
+    const extra = document.querySelector('.client-extra');
+    if (extra?.open && !extra.contains(event.target)) extra.open = false;
     const suggestions = suggestionsEl();
     if (!suggestions?.hidden && !suggestions.contains(event.target) && event.target !== input) hideSuggestions();
   });

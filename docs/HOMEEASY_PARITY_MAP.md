@@ -153,3 +153,8 @@ HomeEasy vigente inspeccionado: `aa21decbe809a91362a2cddfd272c7c5744dfddd`, `ped
 
 Se inspeccionó Homeeasy/main/clientes.html vigente: ficha de contacto, pestañas Órdenes/Cotizaciones, tarjetas financieras por OP e historial desplegable. Se conserva esa composición. La adaptación responde al saldo a favor y al traslado entre personas autorizados para Maderarte: deuda y crédito aparecen separados, las OP anuladas no suman y el acceso lleva al expediente de origen. No se copian datos ni recursos de HomeEasy.
 
+
+## Pulido de Clientes — 14 de septiembre de 2026
+
+Referencia vigente Homeeasy/clientes.html: cabecera de contacto compacta en escritorio con identidad/contacto/acciones; tabs segmentadas, detalles discretos, tarjetas de OP y recibos desplegables. Maddy adopta estas proporciones con ajustes responsive para 320–1440 px, reduce la competencia tipográfica y conserva su marca cobre/grafito. El saldo a favor sigue separado y ninguna acción genera compensaciones. El control de más datos ahora funciona y se cierra con Escape o clic fuera.
+
