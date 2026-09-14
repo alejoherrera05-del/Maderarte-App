@@ -31,6 +31,7 @@ try:
    expect(page.get_by_role('link',name='Ver saldo a favor')).to_have_attribute('href','/orden.html?op=MP-OP-0001')
    expect(page.locator('.client-account')).to_contain_text('2 OP vigentes')
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+   assert page.locator('.client-account-values strong').evaluate_all("es=>es.every(e=>getComputedStyle(e).whiteSpace==='nowrap'&&e.scrollWidth<=e.clientWidth+1)")
    page.screenshot(path=str(OUT/f'account-{width}.png'),full_page=True)
    toggle=page.locator('[data-history-target]').first;toggle.click();expect(toggle).to_have_attribute('aria-expanded','true');panel=page.locator('#client-order-history-0');expect(panel).to_contain_text('MP-RC-0035');expect(panel).to_contain_text('3.500.000')
    page.wait_for_timeout(400)

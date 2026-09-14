@@ -267,4 +267,9 @@ body.clients-page {
 .client-view-doc:active,.client-history-toggle:active{transform:scale(.98)}
 @media(max-width:520px){.client-account{padding:20px 16px}.client-account-values{gap:10px}.client-account-values>div{padding:17px 12px}.client-account-values strong{font-size:23px}.client-account-heading{align-items:baseline}.client-account-heading>span{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.client-history-panel{transition:none}.client-view-doc:active,.client-history-toggle:active{transform:none}}
+/* Keep money unbroken, including narrow phones and wide OP amounts. */
+.client-account-values strong{white-space:nowrap;overflow-wrap:normal}
+.client-finance{grid-template-columns:max-content minmax(0,1fr)}.client-total{font-size:28px}.client-paid-head{flex-wrap:wrap}.client-finance-left{padding-right:18px}
+.clients-app .client-primary-contact,.clients-app .client-view-doc{background:#af6029;color:#fff}.clients-app .client-primary-contact:hover,.clients-app .client-view-doc:hover{background:#945021}
+@media(max-width:520px){.client-account-values{grid-template-columns:1fr}.client-account-values>div{display:flex;align-items:center;justify-content:space-between;gap:12px}.client-account-values strong{margin:0;font-size:23px}.client-finance{grid-template-columns:1fr}.client-finance-left{padding-right:0}}
 
