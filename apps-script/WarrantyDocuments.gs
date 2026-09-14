@@ -7,7 +7,7 @@ function wcDocument_(payload,context){
   var data=wcData_(row),first=data.events[0];
   if(!first||!['receive','home'].includes(first.operation))throw appError_('WARRANTY_INTEGRITY','Falta el registro original de la atención.',409);
   return {documentKind:'warranty',issued:true,number:id,orderNumber:row.Numero_OP,branchCode:row.Sede,date:first.at,
-    client:{name:row.Cliente,document:String(order.Cedula_NIT),phone:String(order.Telefono||''),address:String(order.Direccion||'')},
+    client:{name:row.Cliente,document:String(order.Cedula_NIT),phone:String(order.Telefono||''),address:String(order.Direccion_Entrega||'')},
     type:first.operation==='home'?'DOMICILIO':'RECEPCION',piece:data.piece,quantity:data.quantity,description:data.description,
     source:data.source,issue:data.issue,condition:data.condition,work:first.notes,assignee:first.assignee,registeredBy:first.by};
 }

@@ -5,3 +5,6 @@
 .wc-form .ag-actions{position:static;background:none;backdrop-filter:none;padding:8px 0;margin-top:24px}.wc-dialog{scroll-padding-bottom:24px}.wc-dialog .wc-check{display:flex}.wc-detail .ag-actions>.ag-quiet{border:1px solid #d8d5d1;border-radius:12px;background:#fff;padding:12px 18px;color:#4b4743}.wc-draft-status{font-size:13px;color:#746d66;min-height:20px}.wc-form-row{display:grid;grid-template-columns:140px 1fr;gap:20px}.wc-form-row p{grid-column:1/-1;margin:0}
 @media(max-width:600px){.wc-detail .ag-actions>*{flex:1 0 100%;width:100%;min-height:48px}.wc-form-row{grid-template-columns:100px 1fr;gap:12px}.wc-form-row select{padding-left:9px}.wc-detail-top h3{font-size:25px}.wc-dialog .ag-dialog-head h2{font-size:22px}}
 
+
+.wc-status[data-state=RESUELTA_DOMICILIO]{color:#386753}
+

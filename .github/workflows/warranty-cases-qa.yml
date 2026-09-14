@@ -17,10 +17,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install playwright==1.55.0
+      - run: node scripts/test-warranty-cases.mjs
       - run: python scripts/warranty_cases_browser_qa.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: warranty-repair-qa
-          path: artifacts/warranty-cases/
+          path: |
+            artifacts/warranty-cases/
+            artifacts/warranty-documents/
+
 

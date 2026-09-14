@@ -23,15 +23,16 @@ try:
     if a=='AUTH_SESSION_VALIDATE':data=SESSION
     elif a=='GARANTIA_LISTAR':data={'items':cases,'enabled':True}
     elif a=='ORDEN_OBTENER':data={'order':ORDER,'items':[ITEM]}
+    elif a=='GARANTIA_PDF':data={'mime':'application/pdf','base64':'JVBERi1xYQ==','name':'muestra.pdf'}
     elif a=='GARANTIA_ESTADO':data={'saved':v['requestId'] in results,'result':results.get(v['requestId'])}
     elif a=='GARANTIA_GUARDAR':
      rid=b['requestId'];assert rid not in results;writes.append(v)
-     if v['operation']=='receive':
+     if v['operation'] in ['receive','home']:
       assert v['number']==ORDER['number'] and v['itemId']==ITEM['id'] and v['quantity']==1 and v['physicalCheck'] is True
-      c=dict(v,id='QA-CASE',client=ORDER['client'],description=ITEM['description'],branch='MP',revision=1,events=[]);cases.append(c)
-     else:c=cases[0];assert v['revision']==c['revision'];c['revision']+=1
-     c['status']={'receive':'RECIBIDA','repair':'EN_REPARACION','ready':'LISTA','deliver':'ENTREGADA'}.get(v['operation'],c.get('status'))
-     c['assignee']=v['assignee'];c['updated']='2026-09-14T19:00:00Z'
+      c=dict(v,id='QA-HOME' if v['operation']=='home' else 'QA-CASE',client=ORDER['client'],description=ITEM['description'],branch='MP',revision=1,events=[]);cases.append(c)
+     else:c=next(c for c in cases if c['id']==v['id']);assert v['revision']==c['revision'];c['revision']+=1
+     c['status']={'receive':'RECIBIDA','home':'RESUELTA_DOMICILIO','repair':'EN_REPARACION','ready':'LISTA','deliver':'ENTREGADA'}.get(v['operation'],c.get('status'))
+     c['source']='DOMICILIO' if v['operation']=='home' else c.get('source','CLIENTE');c['assignee']=v['assignee'];c['updated']='2026-09-14T19:00:00Z'
      c['events'].append({'operation':v['operation'],'at':c['updated'],'by':'Equipo de muestra','notes':v['notes'],'assignee':v['assignee'],'recipient':v.get('recipient','')})
      data={'saved':True,'result':{'id':c['id'],'revision':c['revision'],'number':ORDER['number']}};results[rid]=data['result']
      if lost[0]:lost[0]=False;r.fulfill(status=503,json={'status':'error','code':'WARRANTY_SAVE_UNCERTAIN','message':'Respuesta de prueba interrumpida'});return
@@ -53,9 +54,21 @@ try:
    page.locator('[data-operation=deliver]').click();page.locator('#wc-notes').fill('Entrega de la silla reparada en el almacén.');page.locator('#wc-recipient').fill('Persona de muestra');page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-title')).to_have_text('Reparación');expect(page.locator('.wc-timeline')).to_contain_text('Persona de muestra')
    page.locator('.wc-subheading').scroll_into_view_if_needed();page.screenshot(path=str(OUT/f'history-{width}.png'),full_page=True)
    assert len(writes)==4;assert not errors,errors;assert page.locator('body').evaluate('e=>e.scrollWidth<=innerWidth')
-   page.locator('#wc-close').click();page.locator('#wc-closed').click();expect(page.locator('[data-case]')).to_have_count(1);ctx.close()
-  browser.close()
+   page.locator('#wc-close').click();page.locator('#wc-closed').click();expect(page.locator('[data-case]')).to_have_count(1)
+   page.locator('#wc-home').click();expect(page.locator('#wc-title')).to_have_text('Solución en domicilio');page.locator('#wc-piece').fill('Silla del comedor');page.locator('#wc-issue').fill('Unión floja en la pata delantera.');page.locator('#wc-notes').fill('Se ajustó el ensamble y se comprobó estabilidad.');page.locator('#wc-assignee').fill('Operario de muestra');page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-title')).to_have_text('Reparación');expect(page.locator('#wc-body')).to_contain_text('Solucionado en domicilio');expect(page.locator('[data-operation]')).to_have_count(0)
+   page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}');page.screenshot(path=str(OUT/f'home-{width}.png'),full_page=True)
+   page.locator('#wc-pdf').click();expect(page.locator('#wc-pdf-link a')).to_have_attribute('href',__import__('re').compile('^blob:'));assert len(writes)==5;assert not errors,errors;ctx.close()
+  docs=Path('artifacts/warranty-documents');context=browser.new_context();page=context.new_page()
+  snapshots=[(name,json.loads((docs/(name+'.json')).read_text())) for name in ['reception','home']]
+  long=dict(snapshots[0][1]);long['issue']='Detalle de revisión y estado de la pieza. '*90;long['condition']='Observación de recepción. '*90;snapshots.append(('long',long))
+  for name,snapshot in snapshots:
+   page.goto(ORIGIN+'/documento-render.html');page.evaluate("s=>{const n=document.createElement('script');n.type='application/json';n.id='maddy-document-data';n.textContent=JSON.stringify(s);document.body.append(n)}",snapshot);page.wait_for_selector('[data-document-ready="true"]')
+   assert page.locator('.wg-document').count()>=1
+   if name=='long':assert page.locator('.wg-document').count()>1
+   page.pdf(path=str(docs/(name+'.pdf')),print_background=True,prefer_css_page_size=True);page.screenshot(path=str(docs/(name+'.png')),full_page=True)
+  context.close();browser.close()
  print('Warranty UI: receive component, lost response/reload without duplicate, repair, ready, delivery and 1440/390/320 layouts passed.')
 finally:server.terminate();server.wait(timeout=10)
+
 
 

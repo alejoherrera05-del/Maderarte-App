@@ -1,3 +1,4 @@
+import {generateWarrantyPdf} from './warranty-pdf.js';
 import { browserReady, finalizeOrderDocuments, probePdfEngine } from './order-documents.js';
 import { finalizeQuoteDocuments } from './quote-documents.js';
 import { generateReceiptSample } from './receipt-sample.js';
@@ -171,6 +172,12 @@ export async function handleRequest(request, env = {}) {
       const engine = await probePdfEngine(env);
       return jsonResponse({ ...reply, data: { ...reply.data, pdfEngine: engine, productionReady: false } });
     }
+    if (action === 'GARANTIA_PDF') {
+      const response=await forwardToAppsScript(request,env,{action:'GARANTIA_COMPROBANTE_DATOS',payload:{id:body.payload?.id}},requestId);
+      if(!response.ok)return response;const checked=await response.json();if(checked.status!=='success')return jsonResponse(checked,403);
+      if(checked.data?.number!==body.payload?.id)return jsonResponse(errorBody('DOCUMENT_PLAN_INVALID','El comprobante no coincide con el expediente.',requestId),503);
+      return jsonResponse({status:'success',code:'OK',requestId,data:await generateWarrantyPdf(env,checked.data)});
+    }
     if (action === 'RECIBO_MUESTRA_PDF') {
       const permission = await forwardToAppsScript(request, env, { action: 'RECIBO_CAPACIDADES', payload: {} }, requestId);
       if (!permission.ok) return permission;
@@ -203,6 +210,7 @@ export async function handleRequest(request, env = {}) {
 }
 
 export async function onRequest(context) { return handleRequest(context.request, context.env); }
+
 
 
 
