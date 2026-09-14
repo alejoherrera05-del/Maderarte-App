@@ -40,6 +40,8 @@ try:
    page.screenshot(path=str(OUT/f'review-{width}.png'),full_page=True);assert page.locator('#ag-editor').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
    page.locator('#ag-task-save').click();expect(page.locator('#ag-editor')).not_to_be_visible();assert len(writes)==1
    expect(page.locator('[data-open]')).to_contain_text('Revisar una silla');page.locator('[data-open]').click();expect(page.locator('#ag-detail')).to_contain_text('no confirma la reparación')
+   page.locator('#ag-detail').evaluate('e=>e.getAnimations().forEach(a=>a.finish())')
+   assert page.locator('#ag-detail').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
    page.screenshot(path=str(OUT/f'appointment-{width}.png'),full_page=True)
    page.locator('#ag-edit-event').click();expect(page.locator('#ag-task-notes')).to_have_value('Una silla: pata delantera floja. Reportado por WhatsApp.');expect(page.locator('#ag-op')).to_have_value(ORDER['number']);page.locator('#ag-task-time').fill('15:00');page.locator('#ag-task-save').click();expect(page.locator('#ag-editor')).not_to_be_visible();assert len(writes)==2 and writes[-1]['time']=='15:00'
    page.goto(ORIGIN+'/agenda.html?op='+ORDER['number']+'&tipo=garantia&item=OTRO');expect(page.locator('#ag-error')).to_contain_text('no pertenece');expect(page.locator('#ag-task-save')).to_be_disabled();assert len(writes)==2
