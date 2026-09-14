@@ -41,11 +41,12 @@ try:
    page.goto(ORIGIN+'/garantias.html?op='+ORDER['number']+'&item='+ITEM['id']+'&recibir=1')
    expect(page.locator('#wc-title')).to_have_text('Recibir en garantía');expect(page.locator('#wc-piece')).to_be_visible()
    page.locator('#wc-piece').fill('Silla del comedor');page.locator('#wc-issue').fill('La pata delantera tiene movimiento al sentarse.');page.locator('#wc-condition').fill('Una silla. Sin accesorios. Marca leve en la pata trasera.');page.locator('#wc-assignee').fill('Operario de muestra')
+   page.reload();expect(page.locator('#wc-piece')).to_have_value('Silla del comedor');expect(page.locator('#wc-assignee')).to_have_value('Operario de muestra')
    page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}')
    page.screenshot(path=str(OUT/f'reception-{width}.png'),full_page=True)
    assert page.locator('#wc-dialog').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
    page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-recover')).to_be_visible();assert len(writes)==1
-   page.reload();expect(page.locator('#wc-recover')).to_be_visible();page.locator('#wc-recover').click();expect(page.locator('#wc-title')).to_have_text('Expediente de reparación');assert len(writes)==1
+   page.reload();expect(page.locator('#wc-recover')).to_be_visible();page.locator('#wc-recover').click();expect(page.locator('#wc-title')).to_have_text('Reparación');assert len(writes)==1
    page.locator('[data-operation=repair]').click();page.locator('#wc-notes').fill('Unión de la pata con holgura. Ajustar ensamble y comprobar estabilidad.');page.locator('#wc-form [type=submit]').click();expect(page.locator('.wc-status').last).to_have_text('En reparación')
    page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}');page.screenshot(path=str(OUT/f'repair-{width}.png'),full_page=True)
    page.locator('[data-operation=ready]').click();page.locator('#wc-notes').fill('Ensamble ajustado. Estabilidad comprobada.');page.locator('#wc-form [type=submit]').click();expect(page.locator('[data-operation=deliver]')).to_be_visible()
