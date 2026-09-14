@@ -74,3 +74,8 @@ Incremento actual: completar el estado de cuenta en Clientes. Mostrar por separa
 
 Pendientes posteriores: conciliación de desistimientos con fábrica, devoluciones de muebles ya entregados, gestión de garantías, reportes administrativos y cierre de caja; WhatsApp propio se mantiene como integración posterior. Priorizar operación y trazabilidad antes de nuevas integraciones.
 
+
+## Desistimientos con fábrica — 14 de septiembre de 2026
+
+El propietario confirmó que retirar un mueble también lo retira de los pendientes de fábrica y entrega, sin una conciliación adicional ni evidencia de WhatsApp. PR #89 aplica la reducción por etapa junto al ajuste monetario, conserva el historial y las cantidades entregadas y cubre retiro parcial y completo. El estado de cuenta de Clientes y su pulido ya fueron publicados mediante PR #87 y #88.
+

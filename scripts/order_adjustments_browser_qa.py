@@ -7,7 +7,7 @@ ORIGIN='http://127.0.0.1:4173'
 SESSION={'profile':{'uid':'qa-adjust','name':'Equipo de prueba','role':'PROPIETARIO','status':'ACTIVO','mainBranch':'MP','branches':['MP']},'permissions':['*'],'expiresAt':'2099-01-01T00:00:00.000Z'}
 ORDER={'number':'MP-OP-0001','client':'Cliente de muestra','document':'000000001','date':'2026-09-12T12:00:00Z','city':'Popayán','status':'CONFIRMADA','branch':'MP','revision':1,'total':1500000,'paid':2100000,'balance':0,'credit':600000}
 POSITION={k:ORDER[k] for k in ['total','paid','balance','credit']};POSITION['fingerprint']='a'*64
-ITEM={'id':'item-1','description':'Sofá de tres puestos','category':'SOFA','quantity':1,'pending':1,'delivered':0,'cancelled':0,'net':1500000,'unitValue':1500000,'unit':'UN','agreement':'SEPARADO','fulfillment':'PARA_SOLICITAR','revision':1,'tracking':{'totals':{'SOLICITADO':1},'events':[{'id':'qa-production','stage':'SOLICITADO','quantity':1,'date':'2026-09-12','by':'Equipo de muestra','notes':''}],'stage':'SOLICITADO','received':0,'available':0}}
+ITEM={'id':'item-1','description':'Sofá de tres puestos','category':'SOFA','quantity':1,'pending':1,'delivered':0,'cancelled':0,'net':1500000,'subtotal':1500000,'unitValue':1500000,'unit':'UN','agreement':'SEPARADO','fulfillment':'PARA_SOLICITAR','revision':1,'tracking':{'totals':{'SOLICITADO':1},'events':[{'id':'qa-production','stage':'SOLICITADO','quantity':1,'date':'2026-09-12','by':'Equipo de muestra','notes':''}],'stage':'SOLICITADO','received':0,'available':0}}
 TARGET={'number':'MP-OP-0002','client':'Cuenta de familiar · muestra','document':'000000002','status':'CONFIRMADA','total':2000000,'paid':0,'balance':2000000,'credit':0}
 TPOS={k:TARGET[k] for k in ['total','paid','balance','credit']};TPOS['fingerprint']='b'*64
 EVENT={'id':'MP-AJ-0001','type':'DESISTIR','amount':2000000,'source':ORDER['number'],'date':'2026-09-12T12:00:00Z','reason':'Desistimiento de muestra','reference':''}
@@ -51,6 +51,8 @@ try:
    dialog.get_by_role('button',name='Confirmar desistimiento').click();expect(dialog).to_contain_text('Movimiento registrado');assert len(writes)==2
    page.goto(ORIGIN+'/orden.html?op='+ORDER['number']+'&item='+ITEM['id']);expect(page.locator('[data-route-content] h2')).to_have_text('Desistido')
    assert page.locator('[data-route-content] .ow-primary').count()==0
+   assert page.locator('.ow-dispatch').count()==0
+   assert page.get_by_role('link',name='Programar entrega').count()==0
    page.locator('.ow-journey summary').click();expect(page.locator('.ow-journey')).to_contain_text('Retiro de la OP');page.screenshot(path=str(OUT/f'withdraw-result-{width}.png'),full_page=True)
    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1');assert not errors,errors
    context.close()
