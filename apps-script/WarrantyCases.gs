@@ -61,7 +61,7 @@ function wcSave_(payload,context) {
     var stamp=now_().toISOString(),uid=s.profile.uid,id=p.id||requestId;
     if(!old){
       var item=mdUnique_(listRows_('Orden_Items'),'Item_ID',p.itemId);
-      if(!item||item.Numero_OP!==p.number||Number(item.Cantidad_Entregada||0)<=0)throw appError_('WARRANTY_ITEM','Selecciona un mueble entregado de esta OP.',409);
+      if(!item||item.Numero_OP!==p.number||ajItemAdjustment_(item,ajEvents_(p.number)).returnable<=0)throw appError_('WARRANTY_ITEM','Selecciona un mueble entregado de esta OP.',409);
       data={contract:'warranty-1',revision:0,itemId:p.itemId,description:String(item.Descripcion),piece:p.piece,quantity:p.quantity,source:p.source,condition:p.condition,issue:p.issue,events:[]};
     }
     var status={receive:'RECIBIDA',repair:'EN_REPARACION',ready:'LISTA',deliver:'ENTREGADA',note:old?old.Estado:''}[p.operation];
@@ -69,7 +69,7 @@ function wcSave_(payload,context) {
     data.events.push({at:stamp,by:s.profile.name||uid,uid:uid,operation:p.operation,status:status,notes:p.notes,assignee:p.assignee,recipient:p.recipient||''});
     if(JSON.stringify(data).length>40000)throw appError_('WARRANTY_CAPACITY','El expediente alcanzó su capacidad de notas. Requiere revisión.',409);
     var row={ID:id,Fecha:old?old.Fecha:stamp.slice(0,10),Hora:'',Categoria:'GARANTIA_EXPEDIENTE',Titulo:data.piece,Cliente:order.Nombre_Cliente,Numero_OP:order.Numero_OP||p.number||old.Numero_OP,Sede:order.Sede,Referencia_Notas:JSON.stringify(data),Estado:status,Responsable:p.assignee,Fecha_Registro:old?old.Fecha_Registro:stamp};
-    var result={id:id,number:row.Numero_OP,revision:data.revision,status:status};
+    var result={requestId:requestId,id:id,number:row.Numero_OP,revision:data.revision,status:status};
     var requests=old?orderUpdateRequests_('Agenda',old._row,row):[orderAppendRequest_('Agenda',[row])];
     requests.push(orderAppendRequest_('Auditoria',[{ID:requestId+'-AUD',Fecha:stamp,Usuario:uid,Rol:s.profile.role,Modulo:'GARANTIAS',Accion:p.operation.toUpperCase(),Entidad:'GARANTIA',Entidad_ID:id,Resumen:'Recepción y seguimiento de reparación',Estado:'CONFIRMADA',Request_ID:requestId,Antes_JSON:JSON.stringify(old||{}),Despues_JSON:JSON.stringify(row),Reversible:'NO',Motivo_No_Reversible:'Se conserva la recepción y su recorrido.'}]));
     requests.push(orderAppendRequest_('Idempotencia',[{Request_ID:requestId,Fecha:stamp,Tipo_Operacion:'GARANTIA_GUARDAR',Entidad:'GARANTIA',Entidad_ID:id,Estado:'CONFIRMADA',Resultado_JSON:JSON.stringify({fingerprint:hash,result:result}),Usuario:uid}]));
