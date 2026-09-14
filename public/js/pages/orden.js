@@ -1,4 +1,4 @@
-import { bindOrderAdjustments } from '../core/order-adjustments.js?v=1';
+import { bindOrderAdjustments } from '../core/order-adjustments.js?v=factory-1';
 import { bindProductionTracking } from '../core/production-tracking.js?v=runtime-1';
 import { renderWorkbench, bindWorkbench } from '../core/order-workbench.js?v=agenda-1';
 import { productState, bindProductJourney } from '../core/product-journey.js?v=actions-1';
@@ -101,6 +101,7 @@ guardStandalonePage({
     }
   }
 });
+
 
 
 

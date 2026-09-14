@@ -4,7 +4,7 @@ var PT_STAGES_ = ['SOLICITADO','CONFIRMADO','FABRICACION','LISTO','TRANSPORTE','
 function ptEnabled_() { return typeof osActive_==='function' && osActive_() || commercialWritesEnabled_() && getConfigValue_('MODO_OPERACION','')==='OPERACION' && optionalProperty_('PRODUCTION_SAVE_ENABLED','NO')==='SI'; }
 function ptSession_(context,write) {var s=validateSessionToken_(context.sessionToken,false);requirePermission_(s,'ordenes.read');requirePermission_(s,'produccion.read');if(write)requirePermission_(s,'produccion.update');return s;}
 function ptEvents_(number) {return listRows_('Produccion').filter(function(r){return r.Numero_OP===number;});}
-function ptView_(item,rows) {
+function ptView_(item,rows,adjustments) {
   var totals={},events=[],legacy=false;PT_STAGES_.forEach(function(k){totals[k]=0;});
   rows.filter(function(r){return !r.Item_ID||r.Item_ID===item.Item_ID;}).forEach(function(r){
     var p=parseJson_(r.Observaciones,null);if(!p||p.contract!==1||!PT_STAGES_.includes(r.Estado_Produccion)){legacy=true;return;}
@@ -12,11 +12,21 @@ function ptView_(item,rows) {
     totals[r.Estado_Produccion]+=p.quantity;
     events.push({id:r.Produccion_ID,stage:r.Estado_Produccion,quantity:p.quantity,date:p.date,recordedAt:valueDateIso_(r.Actualizado_En),by:r.Responsable,provider:r.Taller_Proveedor,notes:p.notes});
   });
-  var limit=Number(item.Cantidad)-Number(item.Cantidad_Desistida||0),received=totals.BODEGA;
+  var cancelled=Number(item.Cantidad_Desistida||0),released={};PT_STAGES_.forEach(function(k){released[k]=0;});
+  if(cancelled){
+    adjustments=adjustments||ajEvents_(item.Numero_OP);
+    if(!ajCancellationVerified_(item,adjustments))throw appError_('PRODUCTION_INTEGRITY','El retiro del mueble requiere revisión.',409);
+    adjustments.filter(function(e){return e.type==='DESISTIR'&&e.source===item.Numero_OP;}).forEach(function(e){e.items.filter(function(i){return i.itemId===item.Item_ID;}).forEach(function(i){
+      if(!i.productionReleased)return; // Earlier adjustments had no factory movements.
+      PT_STAGES_.forEach(function(k){var q=i.productionReleased[k];if(!Number.isSafeInteger(q)||q<0||q>i.quantity)throw appError_('PRODUCTION_INTEGRITY','El ajuste de producción requiere revisión.',409);released[k]+=q;});
+    });});
+  }
+  PT_STAGES_.forEach(function(k){if(released[k]>totals[k])throw appError_('PRODUCTION_INTEGRITY','El retiro supera los movimientos registrados.',409);totals[k]-=released[k];});
+  var limit=Number(item.Cantidad)-cancelled,received=totals.BODEGA;
   if(PT_STAGES_.some(function(k){return totals[k]>limit;}))throw appError_('PRODUCTION_INTEGRITY','Los movimientos superan las unidades del mueble.',409);
   var available=item.Disponibilidad==='DISPONIBLE'?Number(item.Cantidad_Pendiente):Math.max(0,received-Number(item.Cantidad_Entregada||0));
   var stage=PT_STAGES_.filter(function(k){return totals[k]>0;}).pop()||'';
-  return {contract:1,totals:totals,received:received,available:available,stage:stage,legacy:legacy,events:events};
+  return {contract:1,totals:totals,released:released,received:received,available:available,stage:stage,legacy:legacy,events:events};
 }
 function ptAccount_(payload,context) {
   var s=ptSession_(context,false),row=rcOrder_(String(payload.number||''),s),events=ptEvents_(row.Numero_OP);
@@ -54,5 +64,6 @@ function ptRecord_(payload,context) {
     SpreadsheetApp.flush();reserveOrderFence_(id,uid,hash,'PRODUCCION_REGISTRAR');try{orderAtomicBatch_(requests);}catch(e){throw appError_('PRODUCTION_SAVE_UNCERTAIN','No se pudo confirmar el movimiento. Consulta el mismo intento antes de volver a registrar.',503);}clearConfirmedOrderFence_();return {saved:true,result:result};
   } finally{lock.releaseLock();}
 }
+
 
 

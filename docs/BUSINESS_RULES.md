@@ -100,3 +100,8 @@ Consultar `ORDER_LIFECYCLE.md` antes de implementar escrituras. Los movimientos 
 En borradores, Eliminar permite Deshacer las últimas 20 eliminaciones, incluso tras recargar la misma pestaña dentro de la vigencia del borrador. Se recuperan los datos del mueble, su identidad, acuerdo individual, fotos y asignación de abono. Los pagos y las ediciones posteriores se conservan. Si el nuevo total es menor que el abono indicado, mostrar el exceso y exigir revisión; no mostrar saldo cero ni inventar una devolución.
 
 En una OP emitida no se borrará la línea: se registrará un desistimiento con su motivo y efectos. Cantidades ya entregadas requieren devolución; una solicitud a fábrica exige revisión. Precios netos emitidos no se redistribuyen entre los muebles que quedan. Un eventual saldo a favor se muestra separado y su aplicación/devolución requiere un movimiento explícito. Estas transacciones aún no están implementadas ni habilitadas.
+
+## Aclaración del propietario — 14 de septiembre de 2026
+
+Retirar cantidades pendientes de la OP retira esas unidades del seguimiento de fábrica y entrega en el mismo ajuste. No se exige conciliación adicional ni evidencia de WhatsApp; la comunicación con el proveedor sigue siendo manual. Se conservan los eventos originales, documentos, cobros y cantidades ya entregadas. El ajuste registra la reducción de cada etapa para que un retiro parcial mantenga operativas las unidades restantes. Registros antiguos sin cantidades verificables siguen requiriendo revisión de datos. No se ejecuta ni se afirma un envío al proveedor.
+

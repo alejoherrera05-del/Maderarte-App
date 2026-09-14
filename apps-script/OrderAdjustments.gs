@@ -56,9 +56,12 @@ function ajPlan_(p,s){
     if(!['CONFIRMADA','EN_PROCESO'].includes(row.Estado))throw appError_('ADJUSTMENT_INACTIVE','Esta OP no admite desistimientos.',409);
     var source=listRows_('Orden_Items').filter(function(i){return i.Numero_OP===p.number;}),production=ptEvents_(p.number);amount=0;
     p.items.forEach(function(selection){var i=mdUnique_(source,'Item_ID',selection.itemId);if(!i||selection.quantity>Number(i.Cantidad_Pendiente))throw appError_('ADJUSTMENT_QUANTITY','Solo puedes retirar cantidades pendientes de esta OP.',409);
-      if(production.some(function(e){return !e.Item_ID||e.Item_ID===i.Item_ID;}))throw appError_('ADJUSTMENT_FACTORY_REVIEW','Este mueble tiene movimientos de fábrica. Primero requiere conciliación con el proveedor.',409);
+      var tracking=ptView_(i,production),released={};
+      if(tracking.legacy)throw appError_('ADJUSTMENT_FACTORY_REVIEW','Hay registros de fábrica sin cantidades verificables. Revisa esos datos antes de retirar el mueble.',409);
+      // Retire only unfulfilled units from each operational stage; keep original events.
+      PT_STAGES_.forEach(function(stage){released[stage]=Math.min(selection.quantity,Math.max(0,tracking.totals[stage]-Number(i.Cantidad_Entregada||0)));});
       var n=Number(i.Cantidad),c=Number(i.Cantidad_Desistida||0),net=Number(i.Valor_Neto),value=Number(BigInt(net)*BigInt(c+selection.quantity)/BigInt(n)-BigInt(net)*BigInt(c)/BigInt(n));
-      amount+=value;items.push({itemId:i.Item_ID,description:i.Descripcion,quantity:selection.quantity,reduction:value,row:i});
+      amount+=value;items.push({itemId:i.Item_ID,description:i.Descripcion,quantity:selection.quantity,reduction:value,productionReleased:released,row:i});
     });after.total-=amount;
   }else{
     if(amount>before.credit)throw appError_('ADJUSTMENT_EXCEEDS_CREDIT','El importe supera el saldo a favor disponible.',409);after.paid-=amount;
@@ -72,14 +75,14 @@ function ajPlan_(p,s){
   if(!Number.isSafeInteger(amount)||amount<0)ajFail_();
   return {row:row,before:before,after:after,items:items,amount:amount,target:target,targetBefore:targetBefore,targetAfter:targetAfter};
 }
-function ajPreview_(payload,context){var s=ajSession_(context,true),p=ajPayload_(payload),plan=ajPlan_(p,s);return {type:p.type,amount:plan.amount,before:plan.before,after:plan.after,target:plan.target?{number:plan.target.Numero_OP,client:plan.target.Nombre_Cliente}:null,targetBefore:plan.targetBefore,targetAfter:plan.targetAfter,items:plan.items.map(function(i){return {itemId:i.itemId,description:i.description,quantity:i.quantity,reduction:i.reduction};})};}
+function ajPreview_(payload,context){var s=ajSession_(context,true),p=ajPayload_(payload),plan=ajPlan_(p,s);return {type:p.type,amount:plan.amount,before:plan.before,after:plan.after,target:plan.target?{number:plan.target.Numero_OP,client:plan.target.Nombre_Cliente}:null,targetBefore:plan.targetBefore,targetAfter:plan.targetAfter,items:plan.items.map(function(i){return {itemId:i.itemId,description:i.description,quantity:i.quantity,reduction:i.reduction,productionReleased:i.productionReleased};})};}
 function ajReplay_(id,s,hash){var r=mdUnique_(listRows_('Idempotencia'),'Request_ID',id);if(!r)return null;if(r.Usuario!==s.profile.uid||r.Tipo_Operacion!=='AJUSTE_CONFIRMAR')throw appError_('REQUEST_ID_CONFLICT','El intento pertenece a otra operación.',409);var saved=parseJson_(r.Resultado_JSON,null);if(!saved||!saved.result||r.Estado!=='CONFIRMADA')throw appError_('ORDER_RECOVERY_REQUIRED','Consulta el movimiento pendiente.',409);rcOrder_(saved.result.number,s);if(saved.result.target)rcOrder_(saved.result.target,s);if(hash&&saved.fingerprint!==hash)throw appError_('REQUEST_CONTENT_CHANGED','El intento original tiene otros datos.',409);return saved.result;}
 function ajStatus_(payload,context){var s=ajSession_(context,true),result=ajReplay_(orderRequestId_(payload.requestId),s,'');return result?{saved:true,result:result}:{saved:false,retrySameRequest:!readOrderFence_()};}
 function ajConfirm_(payload,context){
   if(!ajEnabled_())throw appError_('COMMERCIAL_WRITES_DISABLED','Los ajustes todavía no están habilitados.',403);
   var p=ajPayload_(payload),id=orderRequestId_(context.requestId),lock=osOperationLock_();if(!lock.tryLock(5000))throw appError_('ORDER_SAVE_BUSY','Hay otro movimiento guardándose. Reintenta el mismo registro.',503);
   try{var s=ajSession_(context,true),hash=sha256_(JSON.stringify(p)),replay=ajReplay_(id,s,hash);if(replay){clearConfirmedOrderFence_();return {saved:true,result:replay};}assertNoUnresolvedOrderFence_();
-    var plan=ajPlan_(p,s),stamp=now_().toISOString(),uid=s.profile.uid,event={contract:1,type:p.type,amount:plan.amount,target:p.type==='TRANSFERIR'?p.target:'',reference:p.reference,items:plan.items.map(function(i){return {itemId:i.itemId,description:i.description,quantity:i.quantity,reduction:i.reduction};}),before:plan.before,after:plan.after,targetBefore:plan.targetBefore,targetAfter:plan.targetAfter};
+    var plan=ajPlan_(p,s),stamp=now_().toISOString(),uid=s.profile.uid,event={contract:1,type:p.type,amount:plan.amount,target:p.type==='TRANSFERIR'?p.target:'',reference:p.reference,items:plan.items.map(function(i){return {itemId:i.itemId,description:i.description,quantity:i.quantity,reduction:i.reduction,productionReleased:i.productionReleased};}),before:plan.before,after:plan.after,targetBefore:plan.targetBefore,targetAfter:plan.targetAfter};
     var prefix=plan.row.Sede+'-AJ-',sequence=listRows_('Anulaciones').filter(function(r){return String(r.Anulacion_ID).indexOf(prefix)===0;}).length+1,documentNumber=prefix+String(sequence).padStart(4,'0');
     if(mdUnique_(listRows_('Anulaciones'),'Anulacion_ID',documentNumber))ajFail_('El consecutivo del ajuste requiere revisión.');
     var result={id:documentNumber,number:p.number,target:event.target,type:p.type,amount:plan.amount,after:plan.after,requestId:id};
@@ -103,4 +106,5 @@ function ajReceiptHistory_(payment,row){
   var paid=history.reduce(function(n,h){return n+h.amount;},0);if(!Number.isSafeInteger(paid)||paid!==Number(row.Valor_Total)-Number(payment.Saldo_Nuevo))ajFail_('El historial del recibo requiere conciliación.');
   return history;
 }
+
 
