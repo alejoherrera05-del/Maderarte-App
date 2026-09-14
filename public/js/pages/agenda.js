@@ -98,6 +98,7 @@ async function openEditor(event=null,number=''){
   if(event||number){state.kind=event?type(event):'ENTREGA';if(state.kind==='ENTREGA')await selectOrder(event?.number||number);else chooseKind(state.kind,event);}
 }
 function chooseKind(kind,event=null){
+  $('ag-contact').closest('.ag-two').hidden=false;
   $('ag-warranty-context')?.remove();$('ag-task-notes').placeholder='';
   state.kind=kind;$('ag-types').hidden=true;$('ag-title').textContent=(event?'Editar · ':'')+kinds[kind].single;
   if(kind==='ENTREGA'){$('ag-search-area').hidden=false;$('ag-query').focus();return;}

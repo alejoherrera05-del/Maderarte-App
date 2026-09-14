@@ -17,6 +17,8 @@ export async function loadWarrantyVisit({number,itemId,request,root=document}){
   set('ag-task-title',('Revisar '+item.description).slice(0,160));set('ag-contact',order.client);set('ag-op',number);set('ag-branch',order.branch);
   if(root.getElementById('ag-branch').value!==order.branch)throw Error('La sede de esta OP no está disponible para tu usuario.');
   root.getElementById('ag-branch').disabled=true;
+  root.getElementById('ag-contact').closest('.ag-two').hidden=true;
+  root.getElementById('ag-op-wrap').hidden=true;
   root.getElementById('ag-task-notes').placeholder='Describe el problema y la pieza afectada. Ej.: una silla del comedor, pata delantera floja.';
   root.getElementById('ag-task-help').textContent='Programa la revisión. Si es una parte del conjunto, indícala en el título o las notas. La visita no confirma una reparación ni una recogida.';
   return {order,item};
