@@ -35,11 +35,33 @@ assert.equal(call('GARANTIA_GUARDAR',home,'WARRANTY-HOME-GOOD-0001').result.id,h
 const report=call('GARANTIA_COMPROBANTE_DATOS',{id:h.id});assert.equal(report.type,'DOMICILIO');assert.equal(report.work,home.notes);assert.equal(report.source,'DOMICILIO');
 assert.equal(call('AGENDA_LISTAR').items.length,0);assert.equal(before,ledgers());
 mkdirSync('artifacts/warranty-documents',{recursive:true});for(const [name,doc] of Object.entries({reception:receipt,home:report}))writeFileSync('artifacts/warranty-documents/'+name+'.json',JSON.stringify({...doc,sandbox:true}));
+
+const initial={...payload,operation:'report',physicalCheck:false,condition:'',source:''};
+const opened=call('GARANTIA_GUARDAR',initial,'WARRANTY-REPORT-0001').result;
+assert.equal(opened.status,'REPORTADA');assert.throws(()=>call('GARANTIA_COMPROBANTE_DATOS',{id:opened.id}),e=>e.appCode==='WARRANTY_INTEGRITY');
+const visit={kind:'GARANTIA',id:'',revision:0,operation:'save',title:'Revisar silla',contact:'Cliente de muestra',assignee:'Operario',branch:'MP',number:order.number,date:'2099-12-20',time:'10:00',notes:'Pata floja',amount:null,repeat:1,caseId:opened.id};
+const appointment=call('AGENDA_GUARDAR',visit,'WARRANTY-VISIT-0001').result;
+assert.equal(call('AGENDA_LISTAR').items[0].caseId,opened.id);
+assert.throws(()=>call('AGENDA_GUARDAR',visit,'WARRANTY-VISIT-DOUBLE'),e=>e.appCode==='WARRANTY_VISIT_EXISTS');
+assert.throws(()=>call('AGENDA_GUARDAR',{...visit,caseId:'OTHER'},'WARRANTY-VISIT-WRONG'),e=>e.appCode==='WARRANTY_CHANGED');
+call('AGENDA_GUARDAR',{kind:'GARANTIA',id:appointment.id,revision:1,operation:'complete'},'WARRANTY-VISIT-DONE');
+assert.equal(call('GARANTIA_LISTAR').items.find(c=>c.id===opened.id).status,'REPORTADA');
+const received={...payload,id:opened.id,revision:1};
+assert.throws(()=>call('GARANTIA_GUARDAR',{...received,piece:'Otro mueble'},'WARRANTY-REPORT-MISMATCH'),e=>e.appCode==='WARRANTY_CHANGED');
+const continued=call('GARANTIA_GUARDAR',received,'WARRANTY-REPORT-RECEIVE').result;
+assert.equal(continued.id,opened.id);assert.equal(continued.revision,2);assert.equal(call('GARANTIA_GUARDAR',received,'WARRANTY-REPORT-RECEIVE').result.id,opened.id);
+assert.equal(call('GARANTIA_COMPROBANTE_DATOS',{id:opened.id}).condition,payload.condition);
+const second=call('GARANTIA_GUARDAR',initial,'WARRANTY-REPORT-0002').result;
+const solved=call('GARANTIA_GUARDAR',{...home,id:second.id,revision:1},'WARRANTY-REPORT-HOME').result;
+assert.equal(solved.id,second.id);assert.equal(call('GARANTIA_COMPROBANTE_DATOS',{id:second.id}).type,'DOMICILIO');
+assert.throws(()=>call('AGENDA_GUARDAR',{...visit,caseId:second.id},'WARRANTY-VISIT-CLOSED'),e=>e.appCode==='WARRANTY_CHANGED');
+assert.equal(before,ledgers());
 f.production().tables.Roles.rows[0].Permisos_JSON='["agenda.read","ordenes.read"]';
 assert.equal(call('GARANTIA_LISTAR').enabled,false);assert.throws(()=>call('GARANTIA_GUARDAR',payload,'WARRANTY-NOWRITE-0001'),e=>e.appCode==='PERMISSION_DENIED');
 f.production().tables.Roles.rows[0].Permisos_JSON='["agenda.read","agenda.update","ordenes.read"]';
 f.production().tables.Ordenes_Pedido.rows[0].Sede='PRIVATE';f.production().tables.Agenda.rows.forEach(r=>r.Sede='PRIVATE');
 assert.equal(call('GARANTIA_LISTAR').items.length,0);assert.throws(()=>call('GARANTIA_ESTADO',{requestId:'WARRANTY-TEST-0001'}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
 console.log('Warranty custody: atomic lost-response recovery, unchanged commercial ledgers, partial pieces, transition guards, history, permissions and branch isolation passed.');
+
 
 
