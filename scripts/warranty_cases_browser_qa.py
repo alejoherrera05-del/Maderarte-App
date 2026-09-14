@@ -50,11 +50,12 @@ try:
    page.locator('[data-operation=repair]').click();page.locator('#wc-notes').fill('Unión de la pata con holgura. Ajustar ensamble y comprobar estabilidad.');page.locator('#wc-form [type=submit]').click();expect(page.locator('.wc-status').last).to_have_text('En reparación')
    page.locator('#wc-dialog').evaluate('e=>{e.getAnimations().forEach(a=>a.finish());e.scrollTop=0}');page.screenshot(path=str(OUT/f'repair-{width}.png'),full_page=True)
    page.locator('[data-operation=ready]').click();page.locator('#wc-notes').fill('Ensamble ajustado. Estabilidad comprobada.');page.locator('#wc-form [type=submit]').click();expect(page.locator('[data-operation=deliver]')).to_be_visible()
-   page.locator('[data-operation=deliver]').click();page.locator('#wc-notes').fill('Entrega de la silla reparada en el almacén.');page.locator('#wc-recipient').fill('Persona de muestra');page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-title')).to_have_text('Expediente de reparación');expect(page.locator('.wc-timeline')).to_contain_text('Persona de muestra')
+   page.locator('[data-operation=deliver]').click();page.locator('#wc-notes').fill('Entrega de la silla reparada en el almacén.');page.locator('#wc-recipient').fill('Persona de muestra');page.locator('[name=physicalCheck]').check();page.locator('#wc-form [type=submit]').click();expect(page.locator('#wc-title')).to_have_text('Reparación');expect(page.locator('.wc-timeline')).to_contain_text('Persona de muestra')
    page.locator('.wc-subheading').scroll_into_view_if_needed();page.screenshot(path=str(OUT/f'history-{width}.png'),full_page=True)
    assert len(writes)==4;assert not errors,errors;assert page.locator('body').evaluate('e=>e.scrollWidth<=innerWidth')
    page.locator('#wc-close').click();page.locator('#wc-closed').click();expect(page.locator('[data-case]')).to_have_count(1);ctx.close()
   browser.close()
  print('Warranty UI: receive component, lost response/reload without duplicate, repair, ready, delivery and 1440/390/320 layouts passed.')
 finally:server.terminate();server.wait(timeout=10)
+
 
