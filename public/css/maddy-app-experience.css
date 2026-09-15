@@ -1,0 +1,151 @@
+/* Maddy App Experience · shared visual foundation
+   This layer is intentionally additive: it does not change business logic,
+   document contracts, Apps Script, routes, or data structures. */
+
+:root {
+  --maddy-bg: #f4f4f2;
+  --maddy-panel: rgba(255,255,255,.92);
+  --maddy-panel-solid: #fff;
+  --maddy-ink: #202022;
+  --maddy-muted: #717177;
+  --maddy-border: rgba(32,32,34,.10);
+  --maddy-accent: #d86b1c;
+  --maddy-accent-deep: #b95410;
+  --maddy-accent-soft: #fff1e6;
+  --maddy-radius: 18px;
+  --maddy-radius-sm: 12px;
+  --maddy-shadow: 0 18px 48px rgba(24,24,26,.08);
+  --maddy-shadow-soft: 0 5px 18px rgba(24,24,26,.055);
+  --maddy-motion: 180ms cubic-bezier(.2,.75,.25,1);
+}
+
+html { background: var(--maddy-bg); }
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(circle at 90% -10%, rgba(216,107,28,.07), transparent 32rem),
+    var(--maddy-bg);
+}
+
+/* Give independent documents the same app-like chrome without changing routes. */
+.quote-header {
+  background: rgba(244,244,242,.86) !important;
+  border-bottom: 1px solid var(--maddy-border) !important;
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+}
+.quote-header-inner { min-height: 68px; }
+.quote-header-brand strong { letter-spacing: -.015em; }
+.quote-header-brand small { color: var(--maddy-muted); }
+
+.quote-round-button,
+.quote-preview-button,
+.quote-secondary-action,
+.quote-primary-action,
+.quote-add-item,
+.quote-change-branch {
+  transition: transform var(--maddy-motion), box-shadow var(--maddy-motion), background var(--maddy-motion), border-color var(--maddy-motion), opacity var(--maddy-motion);
+}
+.quote-round-button:hover,
+.quote-preview-button:hover:not(:disabled),
+.quote-secondary-action:hover,
+.quote-add-item:hover,
+.quote-change-branch:hover { transform: translateY(-1px); }
+.quote-primary-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(185,84,16,.20);
+}
+.quote-round-button:active,
+.quote-preview-button:active:not(:disabled),
+.quote-secondary-action:active,
+.quote-primary-action:active:not(:disabled),
+.quote-add-item:active,
+.quote-change-branch:active { transform: scale(.985); }
+
+.quote-workspace { animation: maddy-enter .28s ease both; }
+.quote-shell { max-width: 1380px; }
+.quote-document-head,
+.quote-editor-section,
+.quote-summary-card {
+  border-color: var(--maddy-border) !important;
+  box-shadow: var(--maddy-shadow-soft) !important;
+}
+.quote-editor-section,
+.quote-summary-card { background: var(--maddy-panel) !important; }
+.quote-summary-card {
+  position: sticky;
+  top: 88px;
+  border-radius: var(--maddy-radius) !important;
+}
+
+.quote-section-title h2,
+.quote-document-number-row h1,
+.quote-summary-total strong { letter-spacing: -.025em; }
+.quote-section-title > div > span,
+.quote-document-kicker,
+.quote-summary-head > span {
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.quote-field label { color: #4e4e54; font-weight: 650; }
+.quote-field input,
+.quote-field textarea,
+.quote-discount-field input {
+  border-color: rgba(32,32,34,.13) !important;
+  background: rgba(255,255,255,.88) !important;
+  transition: border-color var(--maddy-motion), box-shadow var(--maddy-motion), background var(--maddy-motion);
+}
+.quote-field input:hover,
+.quote-field textarea:hover { border-color: rgba(32,32,34,.22) !important; }
+.quote-field input:focus,
+.quote-field textarea:focus,
+.quote-discount-field input:focus {
+  border-color: rgba(216,107,28,.65) !important;
+  box-shadow: 0 0 0 4px rgba(216,107,28,.10) !important;
+  outline: none;
+  background: #fff !important;
+}
+.quote-helper { color: var(--maddy-muted) !important; }
+
+.quote-primary-action {
+  background: linear-gradient(180deg, #df762b, var(--maddy-accent-deep)) !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 16px rgba(185,84,16,.15);
+}
+.quote-primary-action:disabled { box-shadow: none; }
+
+.quote-gate-stage {
+  border-radius: 24px;
+  box-shadow: var(--maddy-shadow);
+}
+.quote-gate-option {
+  transition: transform var(--maddy-motion), border-color var(--maddy-motion), box-shadow var(--maddy-motion), background var(--maddy-motion);
+}
+.quote-gate-option:hover {
+  transform: translateY(-2px);
+  border-color: rgba(216,107,28,.32) !important;
+  box-shadow: var(--maddy-shadow-soft);
+}
+
+.quote-preview-overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.quote-preview-sheet { box-shadow: 0 -20px 60px rgba(20,20,22,.18); }
+
+@keyframes maddy-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+  .quote-summary-card { position: static; }
+  .quote-header-inner { min-height: 62px; }
+  .quote-editor-section,
+  .quote-summary-card { border-radius: 16px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
