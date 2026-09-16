@@ -1,3 +1,15 @@
+// V3 readability floor. It stays isolated with the pilot so the legacy quote
+// styles cannot reduce labels or form values below the approved app baseline.
+const readability = document.createElement('style');
+readability.textContent = `
+  body.maddy-quote-v3-page .quote-editor .quote-field > label,
+  body.maddy-quote-v3-page .quote-editor .quote-discount-field > label { font-size: 15px !important; }
+  body.maddy-quote-v3-page .quote-editor input:not([type="file"]),
+  body.maddy-quote-v3-page .quote-editor select,
+  body.maddy-quote-v3-page .quote-editor textarea { font-size: 16px !important; }
+`;
+document.head.appendChild(readability);
+
 const summary = document.getElementById('quote-summary-column');
 const reviewButton = document.getElementById('mq-dock-review');
 const summaryClose = document.getElementById('mq-summary-close');
