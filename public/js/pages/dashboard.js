@@ -27,6 +27,7 @@ const MENU_GROUPS = Object.freeze([
       
       { key: 'garantias', label: 'Garantías', description: 'Reportes, visitas y reparaciones', icon: 'clipboard-text', permission: 'agenda.read', href: '/garantias.html' },
       { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', href: '/agenda.html' },
+      { key: 'nomina', label: 'Nómina', description: 'Trabajadores, comprobantes y comisiones', icon: 'wallet', permission: 'nomina.read', href: '/nomina.html' },
       { key: 'recaudos', label: 'Recaudos', description: 'Por sede y medio de pago', icon: 'wallet', permission: 'recaudos.read', href: '/recaudos.html' }
     ]
   }

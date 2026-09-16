@@ -1,3 +1,4 @@
+import {generatePayrollPdf} from './payroll-pdf.js';
 import {generateWarrantyPdf} from './warranty-pdf.js';
 import { browserReady, finalizeOrderDocuments, probePdfEngine } from './order-documents.js';
 import { finalizeQuoteDocuments } from './quote-documents.js';
@@ -6,7 +7,7 @@ const COOKIE_NAME = '__Host-maderarte_session';
 const MAX_BODY_BYTES = 1_048_576;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 export function upstreamTimeoutMs(action, extended = false) {
-  return extended || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS?|DASHBOARD|AGENDA|GARANTIA)_/.test(action) ? 90_000 : UPSTREAM_TIMEOUT_MS;
+  return extended || /^(ORDEN(?:ES)?|COTIZACION(?:ES)?|RECIBO|REMISION|PRODUCCION|CLIENTES?|SISTEMA|USUARIOS?|NOMINA|DASHBOARD|AGENDA|GARANTIA)_/.test(action) ? 90_000 : UPSTREAM_TIMEOUT_MS;
 }
 const PUBLIC_ACTIONS = new Set(['PING', 'AUTH_LOGIN', 'INVITACION_VALIDAR', 'INVITACION_ACTIVAR']);
 
@@ -164,6 +165,14 @@ export async function handleRequest(request, env = {}) {
     const body = await parseRequestBody(request);
     const action = String(body?.action || '').trim().toUpperCase();
     if (action.startsWith('INTERNO_')) return jsonResponse(errorBody('ACTION_FORBIDDEN', 'La acción es interna del generador documental.', requestId), 403);
+    if(action==='NOMINA_PDF'){
+      const prepared=await forwardToAppsScript(request,env,{action:'INTERNO_NOMINA_PDF_DATOS',payload:{id:body.payload?.id}},requestId,true);
+      if(!prepared.ok)return prepared;const plan=await prepared.json();if(plan.status!=='success')return jsonResponse(plan,503);
+      const pdf=await generatePayrollPdf(env,plan.data.document);
+      const saved=await forwardToAppsScript(request,env,{action:'INTERNO_NOMINA_PDF_GUARDAR',payload:{id:body.payload?.id,hash:plan.data.hash,base64:pdf.base64}},requestId,true);
+      if(!saved.ok)return saved;const confirmation=await saved.json();if(confirmation.status!=='success')return jsonResponse(confirmation,503);
+      return jsonResponse({status:'success',code:'OK',requestId,data:{...pdf,saved:true}});
+    }
     if (action === 'SISTEMA_DOCUMENTOS_DIAGNOSTICO') {
       const response = await forwardToAppsScript(request, env, body, requestId);
       if (!response.ok) return response;
