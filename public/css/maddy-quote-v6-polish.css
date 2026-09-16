@@ -55,6 +55,17 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-document-head {
   background: transparent !important;
   box-shadow: none !important;
 }
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-document-head::before { display: none !important; }
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-document-status { display: none !important; }
+
+/* The editor itself is only layout. Real business objects earn containment. */
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor {
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor-section {
   margin: 0 !important;
   padding-left: 0 !important;
@@ -162,6 +173,19 @@ body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:not(:first-child).is-activ
     padding: 20px 0 18px !important;
     border: 0 !important;
     background: transparent !important;
+  }
+  body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-title {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+  body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-title > div { flex: 1; min-width: 0; }
+  body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-title .quote-add-item {
+    width: auto !important;
+    min-width: 88px !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
   }
 
   /* A closed summary sheet must be completely off-canvas. */
