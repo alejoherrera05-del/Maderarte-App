@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f1f1f0">
+  <meta name="theme-color" content="#f5f5f7">
   <meta name="description" content="Formulario interno de cotización de Maderarte.">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/css/tokens.css">
@@ -19,85 +19,131 @@
   <link rel="stylesheet" href="/css/cotizacion-document-adaptive.css?v=adaptive-1">
   <link rel="stylesheet" href="/css/cotizacion-document-final-approval.css?v=approval-1">
   <link rel="stylesheet" href="/css/commercial-document-refined.css?v=hierarchy-2">
-  <link rel="stylesheet" href="/css/maddy-app-experience.css?v=pilot-1">
-  <title>Nueva cotización · Maderarte App</title>
   <link rel="stylesheet" href="/css/order-progress.css?v=compact-1">
-  <link rel="preload" as="image" href="/assets/brand/maddy-working-approved.webp">
+  <link rel="stylesheet" href="/css/maddy-quote-v3.css?v=3">
+  <title>Nueva cotización · Maddy</title>
+  <link rel="preload" as="image" href="/assets/brand/maderarte-logo-2026.webp">
 </head>
-<body class="quote-page" data-commercial-document="quote">
-  <main id="quote-app" class="quote-app" data-document-layout="compact-v2" hidden>
-    <header class="quote-header">
-      <div class="quote-header-inner">
-        <a class="quote-round-button" href="/index.html" aria-label="Volver al inicio"><img src="/assets/icons/arrow-left.svg" alt="" aria-hidden="true"></a>
-        <div class="quote-header-brand"><img src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true"><span><strong>Cotizaciones</strong><small>Documento comercial</small></span></div>
-        <button class="quote-preview-button" id="quote-preview-button" type="button" disabled>Vista previa</button>
-      </div>
-    </header>
+<body class="quote-page maddy-quote-v3-page" data-commercial-document="quote">
+  <main id="quote-app" class="quote-app maddy-quote-v3" data-document-layout="compact-v2" hidden>
+    <div class="mq-frame">
+      <aside class="mq-sidebar" aria-label="Navegación principal de Maddy">
+        <a class="mq-brand" href="/index.html" aria-label="Ir al inicio de Maddy">
+          <span class="mq-brand-mark"><img src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true"></span>
+          <span class="mq-brand-copy"><strong>Maddy</strong><span>by Maderarte</span></span>
+        </a>
+        <p class="mq-nav-label">Comercial</p>
+        <nav class="mq-nav" aria-label="Comercial">
+          <a href="/index.html"><span class="mq-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5v7a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Z"/><path d="M9 20v-6h6v6"/></svg></span>Inicio</a>
+          <a href="/pedido.html"><span class="mq-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v16H7z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>Ventas</a>
+          <a class="is-active" href="/cotizaciones.html" aria-current="page"><span class="mq-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h5M10 16h5"/></svg></span>Cotizaciones</a>
+          <a href="/clientes.html"><span class="mq-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20v-1.5A3.5 3.5 0 0 0 12.5 15h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3"/><path d="M17 9a3 3 0 0 1 0 6M20 20v-1.5a3.5 3.5 0 0 0-2.2-3.25"/></svg></span>Clientes</a>
+        </nav>
+        <p class="mq-nav-label">Operación</p>
+        <nav class="mq-nav" aria-label="Operación">
+          <a href="/abono.html"><span class="mq-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v11H4z"/><path d="M4 10h16M16 15h1"/></svg></span>Abonos</a>
+          <a href="/remision.html"><span class="mq-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span>Remisiones</a>
+        </nav>
+        <div class="mq-sidebar-foot">Maddy · herramienta interna de Maderarte</div>
+      </aside>
 
-    <section class="quote-branch-gate" id="quote-branch-gate" aria-labelledby="quote-gate-title">
-      <div class="quote-gate-stage">
-        <div class="quote-gate-brand" aria-label="Maderarte"><img src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte"><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"></div>
-        <p class="quote-gate-eyebrow">Nueva cotización</p><h1 id="quote-gate-title">¿Desde qué sede se emite?</h1>
-        <p class="quote-gate-intro">La sede define el consecutivo, los datos del documento y la operación que quedará asociada a la propuesta.</p>
-        <div class="quote-gate-options" id="quote-gate-options">
-          <button class="quote-gate-option" type="button" data-quote-branch="MP"><span class="quote-gate-code">MP</span><span class="quote-gate-option-copy"><strong>Sede principal</strong><small>Transversal 9 # 6N-26 · Edificio Dorado</small></span><span class="quote-gate-arrow" aria-hidden="true">›</span></button>
-          <button class="quote-gate-option" type="button" data-quote-branch="TP"><span class="quote-gate-code">TP</span><span class="quote-gate-option-copy"><strong>Sede norte · Terraplaza</strong><small>Local 113 · Primer piso</small></span><span class="quote-gate-arrow" aria-hidden="true">›</span></button>
-        </div>
-        <p class="quote-gate-message" id="quote-gate-message" role="status"></p>
-      </div>
-    </section>
+      <section class="mq-main">
+        <header class="quote-header">
+          <div class="quote-header-inner">
+            <a class="quote-round-button mq-mobile-home" href="/index.html" aria-label="Volver al inicio">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            </a>
+            <div class="mq-page-title">
+              <span class="mq-page-title-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5M10 12h5M10 16h5"/></svg></span>
+              <span class="mq-page-title-copy"><strong>Nueva cotización</strong><span>Propuesta comercial</span></span>
+            </div>
+            <button class="quote-preview-button" id="quote-preview-button" type="button" disabled>Vista previa</button>
+          </div>
+        </header>
 
-    <div class="quote-workspace" id="quote-workspace" hidden>
-      <div class="quote-shell">
-        <section class="quote-document-head" aria-label="Datos de emisión">
-          <div class="quote-document-identity"><p class="quote-document-kicker">Cotización · borrador</p><div class="quote-document-number-row"><h1 id="quote-meta-number">Pendiente</h1><span class="quote-document-status" id="quote-number-status">Se asigna al guardar</span></div><p id="quote-meta-branch-name">Sede sin definir</p></div>
-          <div class="quote-document-meta"><div class="quote-meta-cell"><span>Fecha</span><strong id="quote-meta-date">—</strong></div><div class="quote-meta-cell"><span>Asesor</span><strong id="quote-meta-advisor">—</strong></div><div class="quote-meta-cell"><span>Sede</span><strong id="quote-meta-branch">—</strong></div><button class="quote-change-branch" id="quote-change-branch" type="button">Cambiar sede</button></div>
+        <section class="quote-branch-gate" id="quote-branch-gate" aria-labelledby="quote-gate-title">
+          <div class="quote-gate-stage">
+            <div class="quote-gate-brand" aria-label="Maderarte"><img src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte"><img src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"></div>
+            <p class="quote-gate-eyebrow">Nueva cotización</p>
+            <h1 id="quote-gate-title">¿Desde qué sede se emite?</h1>
+            <p class="quote-gate-intro">Esto define el consecutivo y los datos comerciales que aparecerán en la propuesta.</p>
+            <div class="quote-gate-options" id="quote-gate-options">
+              <button class="quote-gate-option" type="button" data-quote-branch="MP"><span class="quote-gate-code">MP</span><span class="quote-gate-option-copy"><strong>Sede principal</strong><small>Transversal 9 # 6N-26 · Edificio Dorado</small></span><span class="quote-gate-arrow" aria-hidden="true">›</span></button>
+              <button class="quote-gate-option" type="button" data-quote-branch="TP"><span class="quote-gate-code">TP</span><span class="quote-gate-option-copy"><strong>Sede norte · Terraplaza</strong><small>Local 113 · Primer piso</small></span><span class="quote-gate-arrow" aria-hidden="true">›</span></button>
+            </div>
+            <p class="quote-gate-message" id="quote-gate-message" role="status"></p>
+          </div>
         </section>
 
-        <p id="quote-form-error" class="quote-form-error" role="alert"></p>
-        <div id="quote-draft-status" class="quote-draft-status" role="status"></div>
-        <form id="quote-form" class="quote-form" novalidate>
-          <div class="quote-editor">
-            <section class="quote-editor-section">
-              <div class="quote-section-title"><div><span>Cliente</span><h2>Datos de la propuesta</h2></div><small>Empieza por la cédula. Si el cliente es nuevo, continúa con sus datos.</small></div>
-              <p class="quote-helper">Todos los datos del cliente son obligatorios, excepto el segundo teléfono.</p>
-              <div class="quote-field-grid quote-field-grid-client">
-                <div class="quote-field quote-client-lookup"><label for="quote-client-document">Cédula / NIT</label><div class="quote-client-control"><input id="quote-client-document" required type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message"><div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" aria-label="Clientes coincidentes" hidden></div></div><p id="quote-client-message" class="quote-helper" role="status" aria-live="polite"></p></div>
-                <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" required autocomplete="name"></div>
-                <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" required type="tel" inputmode="tel" autocomplete="tel"></div>
-                <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono (opcional)</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Otro número de contacto"></div>
-                <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" required type="text" inputmode="email" autocomplete="email" spellcheck="false" aria-describedby="quote-email-help"><p id="quote-email-help" class="quote-helper">Si no tiene correo, escribe N/A.</p></div>
-                <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección</label><input id="quote-client-address" required autocomplete="street-address"></div>
-                <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" required autocomplete="address-level2"></div>
+        <div class="quote-workspace" id="quote-workspace" hidden>
+          <div class="quote-shell">
+            <section class="quote-document-head" aria-label="Contexto de la cotización">
+              <div class="quote-document-identity">
+                <p class="quote-document-kicker">Cotización · borrador</p>
+                <div class="quote-document-number-row"><h1 id="quote-meta-number">Pendiente</h1><span class="quote-document-status" id="quote-number-status">Se asigna al guardar</span></div>
+                <p id="quote-meta-branch-name">Sede sin definir</p>
+              </div>
+              <div class="quote-document-meta">
+                <div class="quote-meta-cell"><span>Fecha</span><strong id="quote-meta-date">—</strong></div>
+                <div class="quote-meta-cell"><span>Asesor</span><strong id="quote-meta-advisor">—</strong></div>
+                <div class="quote-meta-cell"><span>Sede</span><strong id="quote-meta-branch">—</strong></div>
+                <button class="quote-change-branch" id="quote-change-branch" type="button">Cambiar</button>
               </div>
             </section>
 
-            <section class="quote-editor-section quote-items-section">
-              <div class="quote-section-title quote-items-title"><div><span>Mobiliario</span><h2>Items de la cotización</h2></div><button class="quote-add-item" id="quote-add-item" type="button">+ Añadir mueble</button></div>
-              <div id="quote-removed-item" class="quote-removed-item" role="status" hidden></div><div id="quote-items" class="quote-items"></div>
-            </section>
+            <p id="quote-form-error" class="quote-form-error" role="alert"></p>
+            <div id="quote-draft-status" class="quote-draft-status" role="status"></div>
 
-            <section class="quote-editor-section">
-              <div class="quote-section-title"><div><span>Cierre</span><h2>Observaciones y condiciones</h2></div><small>Información que debe quedar clara antes de confirmar la propuesta.</small></div>
-              <div class="quote-field"><label for="quote-notes">Observaciones especiales</label><textarea id="quote-notes" rows="4" placeholder="Instalación, accesos, cambios acordados, aclaraciones o cualquier condición especial de esta propuesta."></textarea></div>
-              <p class="quote-helper">Las condiciones de pago y entrega se acuerdan con el cliente. Si requiere fabricación, el plazo estimado es de 25 a 30 días desde la confirmación de la solicitud.</p>
-            </section>
+            <form id="quote-form" class="quote-form" novalidate>
+              <div class="quote-editor">
+                <section class="quote-editor-section">
+                  <div class="quote-section-title"><div><span>Cliente</span><h2>Datos de la propuesta</h2></div><small>Busca por cédula. Si es un cliente nuevo, completa sus datos aquí mismo.</small></div>
+                  <div class="quote-field-grid quote-field-grid-client">
+                    <div class="quote-field quote-client-lookup"><label for="quote-client-document">Cédula / NIT</label><div class="quote-client-control"><input id="quote-client-document" required type="text" inputmode="numeric" placeholder="Número de identificación" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="quote-client-suggestions" aria-describedby="quote-client-message"><div id="quote-client-suggestions" class="quote-client-suggestions" role="listbox" aria-label="Clientes coincidentes" hidden></div></div><p id="quote-client-message" class="quote-helper" role="status" aria-live="polite"></p></div>
+                    <div class="quote-field quote-field-name"><label for="quote-client-name">Nombre completo</label><input id="quote-client-name" required autocomplete="name"></div>
+                    <div class="quote-field"><label for="quote-client-phone">Teléfono</label><input id="quote-client-phone" required type="tel" inputmode="tel" autocomplete="tel"></div>
+                    <div class="quote-field"><label for="quote-client-alternatePhone">Segundo teléfono</label><input id="quote-client-alternatePhone" type="tel" inputmode="tel" autocomplete="off" placeholder="Opcional"></div>
+                    <div class="quote-field quote-field-email"><label for="quote-client-email">Correo</label><input id="quote-client-email" required type="text" inputmode="email" autocomplete="email" spellcheck="false" aria-describedby="quote-email-help"><p id="quote-email-help" class="quote-helper">Si no tiene correo, escribe N/A.</p></div>
+                    <div class="quote-field quote-field-address"><label for="quote-client-address">Dirección</label><input id="quote-client-address" required autocomplete="street-address"></div>
+                    <div class="quote-field"><label for="quote-client-city">Ciudad</label><input id="quote-client-city" required autocomplete="address-level2"></div>
+                  </div>
+                </section>
+
+                <section class="quote-editor-section quote-items-section">
+                  <div class="quote-section-title quote-items-title"><div><span>Mobiliario</span><h2>Muebles</h2></div><button class="quote-add-item" id="quote-add-item" type="button">+ Añadir</button></div>
+                  <div id="quote-removed-item" class="quote-removed-item" role="status" hidden></div>
+                  <div id="quote-items" class="quote-items"></div>
+                </section>
+
+                <section class="quote-editor-section">
+                  <div class="quote-section-title"><div><span>Cierre</span><h2>Notas y condiciones</h2></div><small>Solo lo que realmente necesita quedar consignado en la propuesta.</small></div>
+                  <div class="quote-field"><label for="quote-notes">Observaciones especiales</label><textarea id="quote-notes" rows="4" placeholder="Instalación, accesos, cambios acordados, obsequios, transporte u otras condiciones."></textarea></div>
+                  <p class="quote-helper">Si requiere fabricación, el plazo estimado es de 25 a 30 días desde la confirmación de la solicitud.</p>
+                </section>
+              </div>
+
+              <aside class="quote-summary-column" id="quote-summary-column" aria-label="Resumen comercial">
+                <section class="quote-summary-card">
+                  <div class="mq-summary-mobile-head"><strong>Resumen</strong><button class="mq-summary-close" id="mq-summary-close" type="button" aria-label="Cerrar resumen">×</button></div>
+                  <div class="quote-summary-head"><span>Resumen comercial</span><small id="quote-item-count">1 mueble</small></div>
+                  <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
+                  <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
+                  <div class="quote-summary-total"><span>Total</span><strong id="quote-total">$ 0</strong></div>
+                  <p class="quote-helper">El abono se acuerda al preparar el pedido.</p>
+                  <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa</button>
+                  <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Emitir cotización</button>
+                </section>
+              </aside>
+            </form>
           </div>
+        </div>
+      </section>
+    </div>
 
-          <aside class="quote-summary-column" aria-label="Resumen financiero">
-            <section class="quote-summary-card">
-              <div class="quote-summary-head"><span>Resumen comercial</span><small id="quote-item-count">1 item</small></div>
-              <div class="quote-summary-row"><span>Subtotal</span><strong id="quote-subtotal">$ 0</strong></div>
-              <div class="quote-discount-field"><label for="quote-discount">Descuento</label><div><span>−</span><input id="quote-discount" type="text" inputmode="numeric" placeholder="$ 0"></div></div>
-              <div class="quote-summary-total"><span>Total cotizado</span><strong id="quote-total">$ 0</strong></div>
-              <p class="quote-helper">El abono se acuerda con el cliente y se indica al preparar el pedido.</p>
-              <button class="quote-secondary-action" id="quote-summary-preview" type="button">Vista previa del documento</button>
-              <button class="quote-primary-action" id="quote-submit" type="submit" disabled>Emitir cotización</button>
-              <p class="quote-write-note">La emisión real se habilita únicamente cuando el Cerebro confirma numeración, archivo y recuperación.</p>
-            </section>
-          </aside>
-        </form>
-      </div>
+    <button class="mq-summary-backdrop" id="mq-summary-backdrop" type="button" aria-label="Cerrar resumen" hidden></button>
+    <div class="mq-mobile-dock" id="mq-mobile-dock" hidden>
+      <div class="mq-dock-copy"><strong class="mq-dock-total" id="mq-dock-total">$ 0</strong><span class="mq-dock-count" id="mq-dock-count">1 mueble</span></div>
+      <button class="mq-dock-review" id="mq-dock-review" type="button" aria-controls="quote-summary-column">Revisar</button>
     </div>
 
     <div class="quote-preview-overlay" id="quote-preview-overlay" aria-hidden="true">
@@ -106,5 +152,6 @@
   </main>
   <script type="module" src="/js/pages/cotizacion.js?v=returns-1"></script>
   <script type="module" src="/js/pages/cotizacion-save.js?v=runtime-1"></script>
+  <script type="module" src="/js/pages/maddy-quote-v3.js?v=3"></script>
 </body>
 </html>
