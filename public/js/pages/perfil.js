@@ -3,6 +3,7 @@ import { logout, sendPasswordReset } from '../core/auth.js';
 import { getDeviceMetadata, setDeviceName } from '../core/session.js';
 import { escapeHtml, initials } from '../core/format.js';
 import { guardStandalonePage } from '../core/page-guard.js';
+import { hasPermission } from '../core/permissions.js';
 
 function tile(label, value, id = '') {
   return `<article class="pf-tile"><span>${escapeHtml(label)}</span><strong${id ? ` id="${escapeHtml(id)}"` : ''}>${escapeHtml(String(value || '—'))}</strong></article>`;
@@ -29,6 +30,7 @@ guardStandalonePage({
   async render({ session }) {
     const root = document.getElementById('profile-app');
     render(root, session);
+    if(hasPermission(session,'config.read')){const link=document.createElement('a');link.className='pf-action';link.href=withPreview('/configuracion.html');link.textContent='Configuración';root.querySelector('.pf-actions').append(link);}
     root.hidden = false;
 
     document.getElementById('pf-password').addEventListener('click', async () => {
