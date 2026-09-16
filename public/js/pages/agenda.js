@@ -7,7 +7,7 @@ import { attachAgendaSwipe } from '../core/agenda-swipe.js?v=agenda-6';
 
 const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Bogota'}).format(new Date());
 const kinds={ENTREGA:{label:'Entregas',single:'Entrega',icon:'truck'},PROVEEDOR:{label:'Proveedores',single:'Pago a proveedor',icon:'wallet'},IMPUESTO:{label:'Impuestos',single:'Impuesto',icon:'file-text'},SERVICIO:{label:'Servicios',single:'Servicio',icon:'house'},GARANTIA:{label:'Garantías',single:'Garantía',icon:'clipboard-text'}};
-const state={date:today,month:today.slice(0,7),events:[],enabled:false,loaded:false,filter:'',query:'',archive:false,expanded:false,edit:null,order:null,kind:'ENTREGA',busy:false,attempt:null,key:'',session:null,undo:null};
+const state={date:today,month:today.slice(0,7),events:[],enabled:false,loaded:false,loadError:false,filter:'',query:'',archive:false,expanded:false,edit:null,order:null,kind:'ENTREGA',busy:false,attempt:null,key:'',session:null,undo:null};
 const $=id=>document.getElementById(id);
 const api=async(action,payload={},options={})=>(await apiRequest(action,payload,options)).data;
 const dayName=value=>new Intl.DateTimeFormat('es-CO',{day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'));
@@ -49,7 +49,8 @@ function render(){
   calendar();$('ag-day').textContent=state.query?'Resultados':state.allPending?'Pendientes hasta hoy':state.date===today?'Hoy, '+dayName(state.date):dayName(state.date);
   const matches=e=>(!state.filter||type(e)===state.filter)&&(!state.query||[e.title,e.client,e.contact,e.number,e.notes].join(' ').toLocaleLowerCase('es').includes(state.query));
   const selected=state.events.filter(e=>matches(e)&&(state.query||state.allPending&&e.date<=today||e.date===state.date)&&(state.archive||pending(e)));
-  $('ag-list').innerHTML=!state.loaded?'<div class="ag-empty"><h2>Cargando compromisos…</h2></div>':selected.length?selected.map(eventCard).join(''):`<div class="ag-empty">${icon('calendar-dots')}<h2>${state.query?'Sin coincidencias':'Sin compromisos pendientes'}</h2><p>${state.query?'Prueba con otro nombre o referencia.':'Este día está libre.'}</p></div>`;
+  $('ag-list').innerHTML=!state.loaded?(state.loadError?'<div class="ag-empty"><h2>No pudimos cargar la agenda</h2><p>Vuelve a intentarlo para consultar tus compromisos.</p><button type="button" class="ag-button" id="ag-load-retry">Reintentar</button></div>':'<div class="ag-empty"><h2>Cargando compromisos…</h2></div>'):selected.length?selected.map(eventCard).join(''):`<div class="ag-empty">${icon('calendar-dots')}<h2>${state.query?'Sin coincidencias':'Sin compromisos pendientes'}</h2><p>${state.query?'Prueba con otro nombre o referencia.':'Este día está libre.'}</p></div>`;
+  if($('ag-load-retry'))$('ag-load-retry').onclick=load;
   const overdue=state.events.filter(e=>pending(e)&&e.date<today&&matches(e));
   $('ag-overdue').innerHTML=!state.query&&!state.allPending&&overdue.length?`<details><summary>${overdue.length} pendientes anteriores ${icon('caret-down')}</summary>${overdue.map(eventCard).join('')}</details>`:'';
   const count=state.events.filter(e=>pending(e)&&e.date===state.date).length;$('ag-count').textContent=count?`${count} ${count===1?'compromiso':'compromisos'}`:'Agenda del almacén';
@@ -57,9 +58,11 @@ function render(){
   document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.filter===state.filter));bindCards();
 }
 async function load(){
-  $('ag-refresh').disabled=true;$('ag-notice').textContent='Actualizando agenda…';
+  if(state.loading)return false;
+  state.loading=true;
+  $('ag-refresh').disabled=true;state.loadError=false;if(!state.loaded)render();$('ag-notice').textContent='Actualizando agenda…';
   try{const d=await api('AGENDA_LISTAR');state.events=d.items;state.enabled=d.enabled;state.loaded=true;render();$('ag-notice').textContent='';return true;}
-  catch(e){$('ag-notice').textContent=e.message;return false;}finally{$('ag-refresh').disabled=false;}
+  catch(e){state.loadError=true;render();$('ag-notice').textContent=state.loaded?'No se pudo actualizar. Sigues viendo la última consulta; vuelve a actualizar.':'La consulta no terminó. Puedes reintentarlo.';return false;}finally{state.loading=false;$('ag-refresh').disabled=false;}
 }
 function shell(){
   $('agenda-app').innerHTML=`<header class="ag-header"><a class="ag-round" id="ag-back" href="/index.html" aria-label="Volver al inicio">${icon('arrow-left')}</a><div class="ag-brand"><img class="ag-seal" src="/assets/brand/maderarte-logo-2026.webp" alt=""><img class="ag-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Agenda</span></div><button class="ag-round" id="ag-refresh" aria-label="Actualizar agenda">${icon('arrow-clockwise')}</button></header>

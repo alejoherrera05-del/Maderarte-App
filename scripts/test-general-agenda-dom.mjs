@@ -6,9 +6,9 @@ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialog
 const motions=[];w.Element.prototype.animate=function(frames,options){motions.push({frames,options});return {finished:Promise.resolve(),cancel(){}};};w.matchMedia=()=>({matches:false});w.APP_CONFIG={version:'0.2.0'};w.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');let seq=0;
 w.createRequestId=()=>`AGENDA-DOM-${++seq}`;
 w.guardStandalonePage=async({render})=>render({session:{profile:{uid:'TEST',branches:['MP'],mainBranch:'MP'},permissions:['agenda.read','agenda.update']}});
-let events=[],saved=new Map(),sent=[],lose=true,loseCancel=true;
+let events=[],saved=new Map(),sent=[],lose=true,loseCancel=true,failLoads=1,listCalls=0;
 w.apiRequest=async(action,p,options)=>{
- if(action==='AGENDA_LISTAR')return {data:{items:events,enabled:true}};
+ if(action==='AGENDA_LISTAR'){listCalls++;if(failLoads-->0)throw Error('Upstream response invalid');return {data:{items:events,enabled:true}};}
  if(action==='AGENDA_GUARDADO_ESTADO')return {data:{saved:saved.has(p.requestId),result:saved.get(p.requestId)}};
  if(action==='AGENDA_GUARDAR'){
    sent.push(p);if(p.operation==='cancel')await new Promise(r=>setTimeout(r,80));const result={id:p.id||options.requestId,date:p.date||events[0].date,time:p.time||'10:00',revision:(p.revision||0)+1,count:1};
@@ -20,6 +20,13 @@ w.apiRequest=async(action,p,options)=>{
 };
 const code=readFileSync('public/js/pages/agenda.js','utf8').replace(/^import .*;\r?\n/gm,'').replace('await guardStandalonePage(','globalThis.finished=guardStandalonePage(');w.eval(readFileSync('public/js/core/agenda-swipe.js','utf8').replace('export function','function')+'\n'+code);await w.finished;
 const $=id=>w.document.getElementById(id),wait=()=>new Promise(r=>setTimeout(r,300));
+assert.match($('ag-list').textContent,/No pudimos cargar/);
+assert.doesNotMatch($('ag-list').textContent,/Cargando|Sin compromisos/,'Failed query is neither loading nor empty');
+assert.equal($('ag-new').disabled,true,'No creation before a successful capability check');
+w.document.querySelector('[data-filter="SERVICIO"]').click();assert.ok($('ag-load-retry'),'Filter does not erase the failure state');
+$('ag-load-retry').click();$('ag-refresh').click();await wait();
+assert.equal(listCalls,2,'Retry remains single-flight');
+assert.match($('ag-list').textContent,/Sin compromisos/);assert.equal($('ag-load-retry'),null);assert.equal($('ag-notice').textContent,'');
 $('ag-new').click();assert.equal(w.document.querySelector('[data-kind="ENTREGA"]').disabled,true,'No order permission cannot open delivery');
 w.document.querySelector('[data-kind="SERVICIO"]').click();assert.equal($('ag-task-form').hidden,false);assert.equal($('ag-search-area').hidden,true,'No OP required for service');
 $('ag-task-title').value='Servicio <prueba>'; $('ag-contact').value='Entidad';$('ag-task-date').value='2092-01-31';$('ag-task-time').value='10:00';$('ag-repeat').value='3';
@@ -40,6 +47,11 @@ loseCancel=true;w.document.querySelector('.ag-row-delete').click();await wait();
 assert.equal($('ag-detail').open,false);assert.equal($('ag-editor').open,false);assert.equal($('ag-list-recover').hidden,false);
 const directWrites=sent.length;$('ag-list-recover').click();await wait();assert.equal(sent.length,directWrites);assert.equal(events[0].status,'CANCELADA');
 $('ag-undo').click();await wait();assert.equal(events[0].status,'PROGRAMADA');
-assert.equal(w.sessionStorage.getItem('maddy.agenda.attempt.TEST'),null);dom.window.close();console.log('General agenda DOM: permission-aware categories, save/recovery, edit prefilling, search, cancellation and undo verified.');
+assert.equal(w.sessionStorage.getItem('maddy.agenda.attempt.TEST'),null);
+const priorList=$('ag-list').textContent;failLoads=1;$('ag-refresh').click();await wait();
+assert.equal($('ag-list').textContent,priorList,'Failed refresh keeps previously loaded commitments');
+assert.match($('ag-notice').textContent,/última consulta/);assert.equal($('ag-load-retry'),null);
+$('ag-refresh').click();await wait();assert.equal($('ag-notice').textContent,'');
+dom.window.close();console.log('General agenda DOM: load failures and recovery, permission-aware categories, save/recovery, edit prefilling, search, cancellation and undo verified.');
 
 
