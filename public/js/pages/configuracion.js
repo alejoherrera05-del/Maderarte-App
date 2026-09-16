@@ -9,7 +9,7 @@ import {guardStandalonePage} from '../core/page-guard.js';
 import {hasPermission} from '../core/permissions.js';
 const $=id=>document.getElementById(id),roleNames={PROPIETARIO:'Propietario',ADMINISTRADOR:'Administrador',VENDEDOR:'Vendedor',BODEGA_LOGISTICA:'Bodega y logística',CONSULTA:'Consulta'},branches={MP:'Principal',TP:'Terraplaza'};
 const state={team:null,session:null,busy:false,selected:null};
-const request=async(a,p={})=>(previewApiData(a)||await apiRequest(a,p)).data;
+const request=async(a,p={})=>(previewApiData(a,p)||await apiRequest(a,p)).data;
 function roleName(r){return roleNames[r]||humanizeCode(r);}
 function branchNames(bs){return (bs||[]).map(b=>branches[b]||b).join(' · ');}
 function permissionName(p){if(p==='*')return 'Control completo de Maddy';const [area,verb,scope]=p.split('.');const labels=Object.fromEntries((state.team?.permissionGroups||[]).flatMap(g=>g.items));if(labels[p])return labels[p];const areas={app:'Maddy',perfil:'perfil',config:'configuración',users:'usuarios',ordenes:'órdenes',cotizaciones:'cotizaciones',abonos:'abonos',remisiones:'remisiones',produccion:'producción',agenda:'agenda',clientes:'clientes',reportes:'reportes'},verbs={read:'Consultar',create:'Crear',update:'Actualizar',delete:'Eliminar',manage:'Administrar',access:'Acceder a','*':'Administrar'};return `${verbs[verb]||humanizeCode(verb||'')} ${areas[area]||humanizeCode(area)}${scope==='own'?' propios':''}`;}

@@ -87,6 +87,6 @@ function activityDetail_(p,session) {
   result.hasBefore=Object.keys(before).length>0;result.hasAfter=Object.keys(after).length>0;
   var ref=String(row.Entidad_ID||'');result.href='';
   if(/^(MP|TP)-OP-\d+$/.test(ref))result.href='/orden.html?op='+encodeURIComponent(ref);
-  if(/^(MP|TP)-COT-\d+$/.test(ref))result.href='/cotizacion-ver.html?numero='+encodeURIComponent(ref);
+  if(/^(MP|TP)-COT-\d+$/.test(ref))result.href='/cotizacion-ver.html?cot='+encodeURIComponent(ref);
   return result;
 }
