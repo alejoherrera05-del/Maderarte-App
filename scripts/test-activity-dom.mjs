@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {mountActivity,activityDetailMarkup} from '../public/js/core/config-activity.js';
+const dom=new JSDOM('<div id="root"><nav class="cfg-nav"></nav><div class="cfg-panels"><footer class="team-footer"></footer></div><dialog id="cfg-detail" open></dialog></div>',{url:'https://example.invalid/configuracion.html'});
+globalThis.document=dom.window.document;globalThis.FormData=dom.window.FormData;
+const calls=[];let dialog='';const root=document.querySelector('#root');
+const item={id:'a',actor:'Persona de prueba',date:'2026-09-16T18:00:00Z',module:'EQUIPO',action:'PERMISOS_INDIVIDUALES',reference:'Cuenta',status:'CONFIRMADA'};
+const mounted=mountActivity({root,choosePanel:()=>{},openDialog:(_,html)=>{dialog=html;},request:async(a,p)=>{calls.push([a,p]);return a==='ACTIVIDAD_LISTAR'?{items:[item],total:26,hasMore:true,modules:['EQUIPO'],actors:[item.actor]}:{...item,changes:[{field:'Estado',before:'ACTIVO',after:'INACTIVO'}],hasBefore:true};}});
+mounted.open();await new Promise(r=>setTimeout(r,0));assert.equal(root.querySelectorAll('[data-activity]').length,1);
+root.querySelector('[data-activity]').click();await new Promise(r=>setTimeout(r,0));assert(dialog.includes('Antes'));assert(dialog.includes('Después'));
+root.querySelector('#activity-next').click();await new Promise(r=>setTimeout(r,0));assert.equal(calls.at(-1)[1].offset,25);
+root.querySelector('[name=query]').value='Prueba';root.querySelector('#activity-filters').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,0));assert.equal(calls.at(-1)[1].offset,0);assert.equal(calls.at(-1)[1].query,'Prueba');
+const unsafe=activityDetailMarkup({...item,actor:'<img src=x onerror=alert(1)>',changes:[{field:'Descripción',before:null,after:'<script>alert(1)</script>'}],href:'javascript:alert(1)'});
+assert(!unsafe.includes('<script>'));assert(!unsafe.includes('href="javascript:'));assert(unsafe.includes('No registrado en esta operación'));
+dom.window.close();console.log('Activity UI: filter reset, pagination, detail, escaping and unavailable metadata passed.');

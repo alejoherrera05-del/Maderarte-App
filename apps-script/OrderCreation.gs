@@ -169,6 +169,7 @@ function orderCell_(value) {
 }
 
 function orderAppendRequest_(name, objects) {
+  if (name === 'Auditoria' && typeof activityStamp_ === 'function') objects = objects.map(activityStamp_);
   var sheet = getSheet_(name);
   var headers = getHeaders_(sheet);
   objects.forEach(function(object) {

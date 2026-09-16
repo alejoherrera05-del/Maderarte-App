@@ -2,6 +2,8 @@
 
 ## Estado vigente — 16 de septiembre de 2026
 
+Prioridad posterior del propietario: completar controles de Configuración equivalentes a HomeEasy. PR #107 incorpora Actividad con filtros, comparación de campos permitidos y casilla de acceso de todas las sedes. El inventario documental/versiones y las restauraciones dentro de Configuración siguen pendientes; los respaldos no equivalen a esas pantallas. La verificación de lanzamiento permanece como trabajo independiente.
+
 Esta sección prevalece sobre los pendientes históricos de abajo. La revisión del propietario y la entrega se hacen en el dominio oficial, sin una segunda app de revisión.
 
 - Publicados: cotizaciones y PDF, OP, abonos y recibos, producción por mueble, remisiones con varios ítems, agenda con fecha/hora y recurrencias, estado de cuenta, desistimientos, saldos a favor, traslados, devoluciones y cambios.

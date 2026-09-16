@@ -151,9 +151,18 @@ export function createPreviewSession(persistence = 'session') {
   return writeSessionSnapshot(session, persistence);
 }
 
-export function previewApiData(action) {
+export function previewApiData(action, payload = {}) {
   if (!APP_CONFIG.preview.enabled) return null;
   const common = { status: 'success', code: 'PREVIEW_LOCAL', msg: 'Vista local sin datos comerciales.', requestId: 'PREVIEW-LOCAL' };
+  if (action.startsWith('ACTIVIDAD_')) {
+    const items = [
+      {id:'sample-1',actor:'Administración · muestra',date:'2026-09-16T20:15:00Z',module:'EQUIPO',action:'PERMISOS_INDIVIDUALES',reference:'Persona de muestra',status:'CONFIRMADA',device:'Equipo de muestra',browser:'Safari',platform:'iOS',hasBefore:true,changes:[{field:'Permisos',before:'app.access, config.read',after:'app.access, config.read, auditoria.read'}]},
+      {id:'sample-2',actor:'Operación · muestra',date:'2026-09-16T17:30:00Z',module:'PRODUCCION',action:'PRODUCCION_REGISTRAR',reference:'Mueble de muestra',status:'CONFIRMADA',device:'Computador de muestra',hasBefore:true,changes:[{field:'Estado de producción',before:'EN_FABRICACION',after:'EN_BODEGA'}]}
+    ];
+    if(action==='ACTIVIDAD_OBTENER')return {...common,data:items.find(x=>x.id===payload.id)||items[0]};
+    const filtered=items.filter(x=>(!payload.module||x.module===payload.module)&&(!payload.actor||x.actor===payload.actor)&&(!payload.status||x.status===payload.status)&&(!payload.query||JSON.stringify(x).toLowerCase().includes(payload.query.toLowerCase()))&&(!payload.from||x.date.slice(0,10)>=payload.from)&&(!payload.to||x.date.slice(0,10)<=payload.to));
+    return {...common,data:{items:filtered,total:filtered.length,hasMore:false,modules:['EQUIPO','PRODUCCION'],actors:items.map(x=>x.actor)}};
+  }
   if (action === 'DASHBOARD_RESUMEN') return { ...common, data: { metrics: { activeOrders: 0, pendingBalance: 0, pendingProduction: 0, readyDelivery: 0 }, priorities: [], mode: 'PREPARACION' } };
   if (action === 'CLIENTES_LISTAR') return { ...common, data: { items: [], total: 0 } };
   if (action === 'CLIENTE_OBTENER') return { ...common, data: null };

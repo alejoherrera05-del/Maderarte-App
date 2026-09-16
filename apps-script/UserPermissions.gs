@@ -1,6 +1,7 @@
 // Individual allowlists, stored privately in Configuracion. Empty lists deny access.
 // Legacy accounts inherit their role until explicitly saved; owner is protected.
 var USER_PERMISSION_GROUPS_ = [
+  {title:'Actividad administrativa',sensitive:true,items:[['auditoria.read','Consultar cambios de todas las sedes']]},
   {title:'Acceso',items:[['app.access','Entrar a Maddy'],['perfil.read','Consultar su perfil']]},
   {title:'Clientes',items:[['clientes.read','Consultar clientes'],['clientes.create','Crear clientes']]},
   {title:'Cotizaciones',items:[['cotizaciones.read','Consultar cotizaciones'],['cotizaciones.create','Crear cotizaciones'],['cotizaciones.update.all','Completar documentos de otros asesores']]},
@@ -11,6 +12,7 @@ var USER_PERMISSION_GROUPS_ = [
   {title:'Acciones delicadas',sensitive:true,items:[['ajustes.desistir','Retirar muebles de una orden'],['ajustes.retornar','Registrar devolución de un mueble'],['ajustes.transferir','Trasladar saldo a otra orden'],['ajustes.devolver','Registrar devolución de dinero'],['recaudos.read','Consultar ingresos por sede'],['recaudos.receive','Confirmar efectivo recibido'],['config.read','Consultar configuración'],['users.manage','Administrar equipo y sus accesos']]}
 ];
 var USER_PERMISSION_DEPS_ = {
+  'auditoria.read':['config.read'],
   'clientes.create':['clientes.read'],'cotizaciones.create':['cotizaciones.read','clientes.read','clientes.create'],
   'cotizaciones.update.all':['cotizaciones.read','cotizaciones.create'],'ordenes.create':['ordenes.read','clientes.read','clientes.create'],
   'ordenes.update.own':['ordenes.read'],'ordenes.update.all':['ordenes.read'],
