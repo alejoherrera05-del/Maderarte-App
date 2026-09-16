@@ -5,7 +5,7 @@ export function payrollDays(from,to){payrollDate(from);payrollDate(to);if(from>t
 export function payrollAmount(v){const n=Number(v||0);if(!Number.isFinite(n)||n<0||n>1000000000)throw Error('Revisa los importes: usa valores positivos, sin separadores.');return Math.round(n);}
 export function payrollCalculate(p,employee,commissions=[]){
   const from=payrollDate(p.from),to=payrollDate(p.to),year=Number(to.slice(0,4)),rates=PAYROLL_RATES[year];
-  if(!rates)throw Error('Faltan parámetros aprobados para ese año.');if(from>to||from<employee.start)throw Error('El período debe estar dentro de la vinculación laboral.');
+  if(!rates)throw Error('Faltan parámetros aprobados para ese año.');if(from>to||from<employee.start||(employee.end&&to>employee.end&&p.type!=='COMISION'))throw Error('El período debe estar dentro de la vinculación laboral.');
   if(!['SALARIO','COMISION','PRIMA','LIQUIDACION'].includes(p.type))throw Error('Selecciona el tipo de comprobante.');
   const salary=payrollAmount(employee.salary||rates.salary),transport=employee.transport===false?0:rates.transport,lines=[],coverage=[];
   const add=(label,value,deduction=false)=>{value=payrollAmount(value);if(value)lines.push({label,amount:value,deduction});};
@@ -43,7 +43,7 @@ export function payrollCalculate(p,employee,commissions=[]){
       const c=benefit('CESANTIAS','Cesantías',p.severanceFrom||from,p.severanceBase||p.benefitBase,360,p.severancePaid);
       const interest=Math.round(c.gross*c.days*.12/360),interestPaid=payrollAmount(p.interestPaid);if(interestPaid>interest)throw Error('Revisa los intereses ya pagados.');add('Intereses a las cesantías',interest);add('Intereses ya pagados',interestPaid,true);
       benefit('VACACIONES','Vacaciones pendientes',p.vacationFrom||from,p.vacationBase,720,p.vacationPaid);
-      add('Salario pendiente de liquidación',p.salaryPending);add('Indemnización revisada',p.indemnity);
+      if(payrollAmount(p.salaryPending)){const a=payrollDate(p.salaryPendingFrom),b=payrollDate(p.salaryPendingTo);if(a<employee.start||a>b||b>to||a.slice(0,7)!==b.slice(0,7))throw Error('Revisa las fechas del salario pendiente.');cover('SALARIO',a,b);}add('Salario pendiente de liquidación',p.salaryPending);add('Indemnización revisada',p.indemnity);
       const pending=payrollAmount(p.salaryPending);add('Salud sobre salario pendiente · 4 %',pending*.04,true);add('Pensión sobre salario pendiente · 4 %',pending*.04,true);
     }
   }
@@ -51,5 +51,5 @@ export function payrollCalculate(p,employee,commissions=[]){
   if((payrollAmount(p.deduction)||payrollAmount(p.extra)||payrollAmount(p.indemnity))&&!String(p.notes||'').trim())throw Error('Describe los conceptos adicionales y su soporte en las notas.');
   const earned=lines.filter(x=>!x.deduction).reduce((s,x)=>s+x.amount,0),deducted=lines.filter(x=>x.deduction).reduce((s,x)=>s+x.amount,0);
   if(deducted>earned||earned===0)throw Error('Revisa el neto: los descuentos no pueden superar lo devengado.');
-  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,rules:'CO-2026-09-v1',notes:String(p.notes||'').slice(0,2000)};
+  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,rules:'CO-2026-09-v1',notes:String(p.notes||'').slice(0,500)};
 }

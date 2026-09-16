@@ -8,6 +8,8 @@ assert.equal(first.earned+second.earned,2000000);assert.equal(first.deducted,700
 const settlement=payrollCalculate({type:'LIQUIDACION',from:'2026-01-01',to:'2026-12-31',primaFrom:'2026-07-01',benefitBase:2000000,severanceBase:2000000,vacationBase:1750905,reviewed:true},employee);
 assert.equal(settlement.lines.find(l=>l.label==='Intereses a las cesantías').amount,240000);
 assert.throws(()=>payrollCalculate({type:'PRIMA',from:'2026-01-01',to:'2026-12-31',benefitBase:2000000,reviewed:true},employee),/semestre/);
+assert.throws(()=>payrollCalculate({type:'SALARIO',from:'2026-02-01',to:'2026-02-15'},{...employee,end:'2026-01-31'}),/vinculación/);
+assert.throws(()=>payrollCalculate({type:'LIQUIDACION',from:'2026-07-01',to:'2026-12-31',benefitBase:2000000,vacationBase:1750905,reviewed:true,salaryPending:500000},employee),/fecha/);
 const f=sandboxRuntime();let serial=0;const call=(a,p={},id='PAYROLL-TEST-'+String(++serial).padStart(8,'0'))=>f.c.routeAction_(a,p,{...f.ctx,requestId:id,session:f.c.validateSessionToken_(f.ctx.sessionToken,false)});
 assert.equal(call('NOMINA_LISTAR').employees.length,0);assert.equal(f.production().tables.Nomina_Eventos,undefined);
 const input={name:'Persona sintética',document:'DEMO-001',branch:'MP',role:'Asesor',start:'2026-01-01',end:'2026-12-31',contract:'Término fijo',transport:true,salary:0,sellerUid:'qa-owner'};
@@ -29,5 +31,7 @@ const paid=call('NOMINA_ESTADO',{id:r2.id,revision:r2.revision,operation:'PAGAR'
 assert.throws(()=>call('NOMINA_ESTADO',{id:paid.id,revision:paid.revision,operation:'ANULAR',reason:'No'}),/Solo puedes/);
 f.production().tables.Ordenes_Pedido.rows[0].Valor_Total=4000000;assert.equal(call('NOMINA_LISTAR').commissions[0].status,'REVISAR');
 const salary={employeeId:e.id,type:'SALARIO',from:'2026-06-01',to:'2026-06-15'};preview=call('NOMINA_PREVISUALIZAR',salary);call('NOMINA_EMITIR',{input:salary,fingerprint:preview.fingerprint,confirmed:true});assert.throws(()=>call('NOMINA_PREVISUALIZAR',salary),/coincide/);
+assert.throws(()=>call('NOMINA_PREVISUALIZAR',{employeeId:e.id,type:'LIQUIDACION',from:'2026-01-01',to:'2026-06-30',benefitBase:2000000,vacationBase:1750905,reviewed:true,salaryPending:875453,salaryPendingFrom:'2026-06-01',salaryPendingTo:'2026-06-15'}),/coincide/);
+f.c.mdDrive_=()=>({getContentText:()=>JSON.stringify({shared:true,permissions:[{type:'anyone',role:'reader'}]})});assert.throws(()=>f.c.npPrivateFolder_({getId:()=> 'synthetic-folder'}),/privada/);
 f.production().tables.Usuarios.rows[0].Rol='VENDEDOR';f.production().tables.Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:'["ordenes.read"]'});assert.throws(()=>call('NOMINA_LISTAR'),e=>e.appCode==='PERMISSION_DENIED');
 console.log('Payroll: statutory example, 30-day periods, rounding, private permissions, employees, old commissions, manual eligibility, atomic timeout replay, reservation, cancellation, payment, changed sale and duplicate periods passed.');
