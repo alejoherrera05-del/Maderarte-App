@@ -45,6 +45,13 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-workspace {
   animation: none !important;
   transform: none !important;
 }
+/* The branch choice is a decision, not a decorative scene transition. */
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-branch-gate.is-closed {
+  transition: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: none !important;
+}
 body.maddy-quote-v3-page .maddy-quote-v3 .quote-document-head {
   min-height: 56px !important;
   margin: 0 !important;
@@ -176,6 +183,7 @@ body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:not(:first-child).is-activ
   }
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-title {
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
@@ -185,6 +193,7 @@ body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:not(:first-child).is-activ
     width: auto !important;
     min-width: 88px !important;
     flex: 0 0 auto !important;
+    align-self: center !important;
     margin: 0 !important;
   }
 
