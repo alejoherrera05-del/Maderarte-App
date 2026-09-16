@@ -3,7 +3,6 @@ v5Style.rel = 'stylesheet';
 v5Style.href = '/css/maddy-quote-v5.css?v=1';
 document.head.appendChild(v5Style);
 
-const previewMode = new URLSearchParams(location.search).get('preview') === '1';
 const money = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 
 /* A small Maderarte story moment gives the shell identity without painting the UI orange. */
@@ -24,9 +23,6 @@ let clientEditLocked = false;
 function value(id) { return String(document.getElementById(id)?.value || '').trim(); }
 function clientRequiredComplete() {
   return ['quote-client-document','quote-client-name','quote-client-phone','quote-client-email','quote-client-address','quote-client-city'].every(id => value(id));
-}
-function clientCanSummarize() {
-  return clientRequiredComplete() || (previewMode && value('quote-client-document') && value('quote-client-name'));
 }
 
 let clientSummary = null;
@@ -54,18 +50,17 @@ function refreshClientObject() {
   const email = value('quote-client-email');
   clientSummary.querySelector('strong').textContent = name;
   clientSummary.querySelector('.mq5-client-copy span').textContent = [documentNumber ? `CC/NIT ${documentNumber}` : '', city, phone, email].filter(Boolean).join(' · ') || 'Completa los datos del cliente';
-  const canCollapse = clientCanSummarize();
-  if (!canCollapse) clientEditLocked = false;
-  clientSection.classList.toggle('mq5-client-collapsed', canCollapse && (!clientEditLocked || previewMode));
+  const complete = clientRequiredComplete();
+  const editing = Boolean(clientGrid?.contains(document.activeElement));
+  if (!complete) clientEditLocked = false;
+  clientSection.classList.toggle('mq5-client-collapsed', complete && !clientEditLocked && !editing);
 }
 
 document.getElementById('quote-form')?.addEventListener('input', event => {
-  if (event.target.closest?.('.quote-field-grid-client')) {
-    clientEditLocked = !clientRequiredComplete();
-    refreshClientObject();
-  }
+  if (event.target.closest?.('.quote-field-grid-client')) refreshClientObject();
 });
 document.getElementById('quote-form')?.addEventListener('change', refreshClientObject);
+clientGrid?.addEventListener('focusout', () => window.setTimeout(refreshClientObject, 0));
 
 /* Furniture cards receive a visual object layer while the original inputs remain the source of truth. */
 const CATEGORY_IMAGE = {
@@ -161,13 +156,6 @@ if (itemRoot) {
     }));
   }).observe(itemRoot, { childList: true, subtree: false });
 }
-
-/* Reset edit lock when a client lookup fills the whole record asynchronously. */
-const clientMutation = new MutationObserver(() => {
-  if (clientRequiredComplete()) clientEditLocked = false;
-  refreshClientObject();
-});
-clientGrid?.querySelectorAll('input').forEach(input => clientMutation.observe(input, { attributes: true, attributeFilter: ['value'] }));
 
 window.setTimeout(() => {
   refreshClientObject();
