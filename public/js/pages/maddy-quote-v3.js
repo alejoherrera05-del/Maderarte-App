@@ -3,9 +3,15 @@ v4Style.rel = 'stylesheet';
 v4Style.href = '/css/maddy-quote-v4.css?v=1';
 document.head.appendChild(v4Style);
 
-/* Keep the entire editor comfortably readable across desktop and mobile. */
+/* Readability + final composition safeguards shared by QA and the real UI. */
 const readability = document.createElement('style');
-readability.textContent = `.maddy-quote-v3 .quote-field>label{font-size:15px!important}.maddy-quote-v3 .quote-field input:not([type=file]),.maddy-quote-v3 .quote-field select,.maddy-quote-v3 .quote-field textarea{font-size:16px!important}`;
+readability.textContent = `
+.maddy-quote-v3 .quote-field>label{font-size:15px!important}
+.maddy-quote-v3 .quote-field input:not([type=file]),.maddy-quote-v3 .quote-field select,.maddy-quote-v3 .quote-field textarea{font-size:16px!important}
+.maddy-quote-v3 .quote-editor-section:first-child{padding-top:20px!important}
+@media(min-width:761px){body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor-section{background:transparent!important;border-top:0!important;border-left:0!important;border-right:0!important;border-radius:0!important;box-shadow:none!important}}
+@media(max-width:760px){.maddy-quote-v3 .quote-editor-section:first-child{padding-top:30px!important}}
+`;
 document.head.appendChild(readability);
 
 const summary = document.getElementById('quote-summary-column');
@@ -81,7 +87,7 @@ flowNav.setAttribute('aria-label', 'Etapas de la cotización');
 
 const flowButtons = editorSections.slice(0, 3).map((section, index) => {
   section.id ||= `mq-flow-section-${index + 1}`;
-  section.style.scrollMarginTop = mobile.matches ? '112px' : '142px';
+  section.style.scrollMarginTop = mobile.matches ? '138px' : '154px';
   const button = document.createElement('button');
   button.type = 'button';
   button.className = `mq-flow-step${index === 0 ? ' is-active' : ''}`;
@@ -117,7 +123,7 @@ if ('IntersectionObserver' in window && editorSections.length) {
     if (!visible) return;
     const index = editorSections.indexOf(visible.target);
     flowButtons.forEach((button, i) => button.classList.toggle('is-active', i === index));
-  }, { rootMargin: '-18% 0px -64% 0px', threshold: [0, .1, .35, .6] });
+  }, { rootMargin: '-20% 0px -62% 0px', threshold: [0, .1, .35, .6] });
   editorSections.slice(0, 3).forEach(section => flowObserver.observe(section));
 }
 
@@ -143,7 +149,7 @@ if (total) mirrorObserver.observe(total, { childList: true, characterData: true,
 if (count) mirrorObserver.observe(count, { childList: true, characterData: true, subtree: true });
 if (workspace) mirrorObserver.observe(workspace, { attributes: true, attributeFilter: ['hidden'] });
 mobile.addEventListener?.('change', () => {
-  editorSections.forEach(section => { section.style.scrollMarginTop = mobile.matches ? '112px' : '142px'; });
+  editorSections.forEach(section => { section.style.scrollMarginTop = mobile.matches ? '138px' : '154px'; });
   syncMode();
 });
 
