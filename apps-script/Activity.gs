@@ -19,7 +19,7 @@ function activitySummary_(row, names) {
   return {id:activityText_(row.ID), date:isNaN(time.getTime())?'':time.toISOString(),
     actor:names[user] || (user === 'EDITOR_APPS_SCRIPT' ? 'Administración del servicio' : 'Usuario no identificado'),
     module:activityText_(row.Modulo), action:activityText_(row.Accion), entity:activityText_(row.Entidad),
-    reference:activityText_(row.Entidad_ID), status:activityText_(row.Estado),
+    reference:row.Entidad==='USUARIO'?(names[String(row.Entidad_ID)]||'Cuenta de usuario'):activityText_(row.Entidad_ID), status:activityText_(row.Estado),
     device:activityText_(row.Dispositivo,180)};
 }
 function activityNames_() {
@@ -49,6 +49,8 @@ function activityList_(p, session) {
 }
 // Only known business fields are projected. Unknown and technical fields stay private.
 var ACTIVITY_FIELDS_ = {
+  number:'Documento', total:'Total', balance:'Saldo', paid:'Abonado', orderNumber:'Orden de pedido',
+  title:'Título', date:'Fecha', time:'Hora', category:'Categoría', branch:'Sede', description:'Descripción',
   status:'Estado', Estado:'Estado', Estado_Registro:'Estado', mode:'Modo operativo', permissions:'Permisos',
   Cantidad:'Cantidad', quantity:'Cantidad', stage:'Etapa', Estado_Produccion:'Estado de producción',
   Total_Cotizado:'Total cotizado', Valor_Total:'Valor total', Abonado_Total:'Total abonado', Saldo_Pendiente:'Saldo pendiente',
@@ -82,6 +84,9 @@ function activityDetail_(p,session) {
     result.changes.push({field:(b||a).label,before:a?a.value:null,after:b?b.value:null});
   });
   result.browser=activityText_(row.Navegador,180);result.platform=activityText_(row.Plataforma,180);
-  result.hasBefore=!!String(row.Antes_JSON||'').trim();result.hasAfter=!!String(row.Despues_JSON||'').trim();
+  result.hasBefore=Object.keys(before).length>0;result.hasAfter=Object.keys(after).length>0;
+  var ref=String(row.Entidad_ID||'');result.href='';
+  if(/^(MP|TP)-OP-\d+$/.test(ref))result.href='/orden.html?op='+encodeURIComponent(ref);
+  if(/^(MP|TP)-COT-\d+$/.test(ref))result.href='/cotizacion-ver.html?numero='+encodeURIComponent(ref);
   return result;
 }
