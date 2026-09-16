@@ -1,5 +1,6 @@
 import { sandboxRequestContext } from './order-sandbox-context.js?v=adjustments-1';
 import { APP_CONFIG } from './config.js';
+import { beginRequest } from './request-activity.js';
 
 export class ApiError extends Error {
   constructor(message, { code = 'API_ERROR', status = 0, requestId = '', transient = false, details = null } = {}) {
@@ -32,6 +33,7 @@ export async function apiRequest(action, payload = {}, options = {}) {
   const controller = new AbortController();
   const timeoutMs = requestTimeoutMs(action, Boolean(sandbox.sandboxId), options.timeoutMs);
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  const finishRequest = beginRequest();
 
   try {
     const response = await fetch(APP_CONFIG.apiPath, {
@@ -77,6 +79,7 @@ export async function apiRequest(action, payload = {}, options = {}) {
       details: String(error?.message || error)
     });
   } finally {
+    finishRequest();
     window.clearTimeout(timer);
   }
 }
