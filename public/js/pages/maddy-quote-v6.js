@@ -3,6 +3,11 @@ v6Style.rel = 'stylesheet';
 v6Style.href = '/css/maddy-quote-v6.css?v=3';
 document.head.appendChild(v6Style);
 
+const v6Polish = document.createElement('link');
+v6Polish.rel = 'stylesheet';
+v6Polish.href = '/css/maddy-quote-v6-polish.css?v=1';
+document.head.appendChild(v6Polish);
+
 const previewMode = new URLSearchParams(location.search).get('preview') === '1';
 const clientSection = document.querySelector('.quote-editor > .quote-editor-section');
 const clientGrid = document.querySelector('.quote-field-grid-client');
