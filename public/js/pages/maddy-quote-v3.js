@@ -155,5 +155,10 @@ mobile.addEventListener?.('change', () => {
 
 syncMode();
 
-/* V5 turns the same HTML into a more Maderarte-specific product experience. */
-import('./maddy-quote-v5.js?v=1');
+/* V5/V6 are the product experience. Baseline preview stays stable for legacy QA;
+   enhanced preview can opt in explicitly with ?preview=1&v6objects=1. */
+const quoteParams = new URLSearchParams(location.search);
+const enhancedPreview = quoteParams.get('v6objects') === '1';
+if (quoteParams.get('preview') !== '1' || enhancedPreview) {
+  import('./maddy-quote-v5.js?v=4');
+}
