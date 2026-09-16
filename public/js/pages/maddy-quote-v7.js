@@ -1,6 +1,6 @@
 const v7Style = document.createElement('link');
 v7Style.rel = 'stylesheet';
-v7Style.href = '/css/maddy-quote-v7.css?v=1';
+v7Style.href = '/css/maddy-quote-v7.css?v=2';
 document.head.appendChild(v7Style);
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -8,7 +8,9 @@ const itemRoot = document.getElementById('quote-items');
 const itemsSection = document.querySelector('.quote-items-section');
 const clientSection = document.querySelector('.quote-editor > .quote-editor-section');
 const clientSummary = document.querySelector('.mq5-client-summary');
+const clientMessage = document.getElementById('quote-client-message');
 const reviewCta = document.querySelector('.mq6-review-cta');
+const mobileReview = document.getElementById('mq-dock-review');
 const flowButtons = [...document.querySelectorAll('.mq-flow-step')];
 
 /* Language: concise and domain-specific. */
@@ -43,6 +45,22 @@ function stateLabel(state) {
   if (state === 'ready') return 'Listo';
   if (state === 'working') return 'En edición';
   return 'Nuevo';
+}
+
+/* Client lookup is progressive disclosure: document first, full record only when needed. */
+function syncClientDisclosure() {
+  if (!clientSection || !document.querySelector('.quote-field-grid-client')) return;
+  if (clientSection.classList.contains('mq5-client-collapsed')) {
+    clientSection.classList.remove('mq7-client-lookup-only');
+    return;
+  }
+  const otherValues = [
+    'quote-client-name','quote-client-phone','quote-client-alternatePhone',
+    'quote-client-email','quote-client-address','quote-client-city'
+  ].some(id => text(document.getElementById(id)));
+  const message = String(clientMessage?.textContent || '').trim();
+  const noMatch = /sin coincidencias|no encontramos|cliente nuevo|nuevo cliente/i.test(message);
+  clientSection.classList.toggle('mq7-client-lookup-only', !otherValues && !noMatch);
 }
 
 function animateState(card) {
@@ -111,6 +129,11 @@ function syncPageState() {
     const label = reviewCta.querySelector('span');
     if (label) label.textContent = readyCount === 0 ? 'Completa un mueble' : 'Revisar cotización';
   }
+  if (mobileReview) {
+    mobileReview.disabled = readyCount === 0;
+    mobileReview.setAttribute('aria-disabled', String(readyCount === 0));
+  }
+  syncClientDisclosure();
 }
 
 function bindCard(card) {
@@ -168,17 +191,22 @@ if (clientSection) {
   clientSection.addEventListener('input', syncPageState);
   clientSection.addEventListener('change', syncPageState);
 }
+if (clientMessage) {
+  new MutationObserver(syncClientDisclosure).observe(clientMessage, { childList: true, characterData: true, subtree: true });
+}
 
 /* Keep product state aligned with the actual total/count without introducing new business rules. */
 for (const node of [document.getElementById('quote-total'), document.getElementById('quote-item-count')]) {
   if (node) new MutationObserver(syncPageState).observe(node, { childList: true, characterData: true, subtree: true });
 }
 
+syncClientDisclosure();
 syncPageState();
 
 window.MaddyQuoteV7 = Object.freeze({
   refresh() {
     itemRoot?.querySelectorAll('.quote-item').forEach(card => syncCard(card));
+    syncClientDisclosure();
     syncPageState();
   }
 });
