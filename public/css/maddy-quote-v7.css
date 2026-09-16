@@ -119,6 +119,33 @@ body.maddy-quote-v3-page {
 .maddy-quote-v3 .quote-section-title h2 { font-size:23px!important;letter-spacing:-.035em!important; }
 .maddy-quote-v3 .quote-section-title small { color:var(--mq7-muted)!important; }
 
+/* Search first: before client identity is known, ask for only one thing. */
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only {
+  padding-top:18px!important;
+  padding-bottom:24px!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-field-grid-client {
+  display:block!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-field-grid-client > .quote-field:not(.quote-client-lookup) {
+  display:none!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-client-lookup {
+  width:min(520px,100%);
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title {
+  margin-bottom:14px!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title h2::after {
+  content:'Busca al cliente';
+  display:block;
+  margin-top:5px;
+  color:var(--mq7-muted);
+  font-size:12px;
+  font-weight:450;
+  letter-spacing:0;
+}
+
 /* Client identity is intentionally one compact object once known. */
 .maddy-quote-v3 .mq5-client-summary {
   min-height:70px!important;
@@ -213,10 +240,13 @@ body.maddy-quote-v3-page {
   box-shadow:0 10px 30px rgba(35,31,27,.035)!important;
 }
 body.mq6-work-mode .maddy-quote-v3 .quote-summary-card { padding:15px!important; }
-.mq6-review-cta:disabled {
-  cursor:default;
-  background:#e9e6e0!important;
+.mq6-review-cta:disabled,
+.maddy-quote-v3 .mq-dock-review:disabled {
+  cursor:default!important;
+  background:#e7e4de!important;
   color:#98948d!important;
+  box-shadow:none!important;
+  opacity:1!important;
 }
 
 /* Keyboard/focus craft. */
@@ -253,6 +283,16 @@ body.mq6-work-mode .maddy-quote-v3 .quote-summary-card { padding:15px!important;
   .maddy-quote-v3 .quote-section-title h2 { font-size:22px!important; }
   .maddy-quote-v3 .quote-section-title small { display:none!important; }
 
+  .maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only {
+    padding:14px 0 18px!important;
+  }
+  .maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title h2 {
+    font-size:20px!important;
+  }
+  .maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title h2::after {
+    font-size:12px;
+  }
+
   .maddy-quote-v3 .quote-items-section { padding-top:18px!important; }
   .maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size:23px!important; }
   .maddy-quote-v3 .quote-add-item { min-height:38px!important; }
@@ -274,6 +314,24 @@ body.mq6-work-mode .maddy-quote-v3 .quote-summary-card { padding:15px!important;
   .maddy-quote-v3 .mq5-swatch { font-size:9.5px!important; }
   .maddy-quote-v3 .mq5-item-money { grid-column:2!important; }
   .maddy-quote-v3 .mq5-item-money strong { font-size:16.5px!important; }
+
+  /* Review is a solid modal sheet; glass stays in navigation, not content. */
+  .maddy-quote-v3 .mq-summary-backdrop.is-open {
+    background:rgba(24,22,20,.24)!important;
+    backdrop-filter:blur(4px)!important;
+    -webkit-backdrop-filter:blur(4px)!important;
+  }
+  .maddy-quote-v3 .quote-summary-column.is-open {
+    background:#fbfaf7!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .maddy-quote-v3 .quote-summary-column.is-open .quote-summary-card {
+    background:#fbfaf7!important;
+    opacity:1!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
 
   .maddy-quote-v3 .quote-shell { padding-bottom:108px!important; }
 }
