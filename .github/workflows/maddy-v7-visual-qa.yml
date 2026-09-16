@@ -1,0 +1,43 @@
+name: Maddy V7 Visual QA
+
+on:
+  pull_request:
+    paths:
+      - 'public/css/maddy-quote-v7.css'
+      - 'public/js/pages/maddy-quote-v7.js'
+      - 'public/js/pages/maddy-quote-v6.js'
+      - 'scripts/maddy_v7_visual_qa.py'
+      - '.github/workflows/maddy-v7-visual-qa.yml'
+
+jobs:
+  states:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Selenium
+        run: pip install selenium==4.35.0
+      - name: Servir la rama actual
+        run: |
+          node scripts/serve.mjs > /tmp/maderarte-v7.log 2>&1 &
+          echo $! > /tmp/maderarte-v7.pid
+          for i in {1..20}; do
+            if curl -fsS 'http://127.0.0.1:4173/cotizacion.html?preview=1&v6objects=1&v7states=1' >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/maderarte-v7.log
+          exit 1
+      - name: Capturar los tres estados reales
+        env:
+          MADDY_V7_URL: http://127.0.0.1:4173/cotizacion.html?preview=1&v6objects=1&v7states=1
+        run: python scripts/maddy_v7_visual_qa.py
+      - name: Publicar capturas V7
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maddy-v7-visual-qa
+          path: |
+            artifacts/maddy-v7-*.png
+          if-no-files-found: error
