@@ -40,7 +40,7 @@ const prod=run('PRODUCCION_CUENTA',{number}),item=prod.items[1];run('PRODUCCION_
 const delivery=run('REMISION_CUENTA',{number});const remission=run('REMISION_CREAR',{number,fingerprint:delivery.position.fingerprint,items:[{itemId:number+'-I-1',quantity:1},{itemId:number+'-I-2',quantity:1}],transporter:{name:'Transportador de muestra',mode:'PIALLERO',favorite:false},assistant:{name:'',favorite:false},physicalCheck:true,notes:'Sin entrega real'}).remission;
 pdf('INTERNO_REMISION_DOCUMENTO_PREPARAR','INTERNO_REMISION_DOCUMENTO_CONFIRMAR',remission.number);assert(run('REMISION_PDF_LEER',{number:remission.number}).base64);assert.equal(totals(),money);
 as('CONSULTA');assert(run('ORDEN_OBTENER',{number}));assert(run('COTIZACION_OBTENER',{number:q}));for(const action of ['COTIZACION_CREAR','ORDEN_CREAR','RECIBO_CREAR','REMISION_CREAR','PRODUCCION_REGISTRAR','AGENDA_GUARDAR','AJUSTE_CONFIRMAR','INVITACION_CREAR','RECAUDO_RECIBIR'])deny(action);
-as('ADMINISTRADOR');assert(run('RECAUDOS_LISTAR',{from:'2026-09-16',to:'2026-09-16'}));
+as('ADMINISTRADOR');assert.equal(run('RECAUDO_RECIBIR',{receipts:[receipt.number],expectedTotal:100000,physicalCheck:true}).saved,true);assert(run('RECAUDOS_LISTAR',{from:'2026-09-16',to:'2026-09-16'}));
 console.log('Role flow passed: seller quote/new client/PDF/conversion/order/PDF/receipt/PDF; logistics production and two-item dispatch/PDF; read-only and forbidden actions; branch isolation. Synthetic Google transport; no real grants.');
 
 
@@ -51,7 +51,8 @@ console.log('Role flow passed: seller quote/new client/PDF/conversion/order/PDF/
 as('VENDEDOR');const qrow=f.production().tables.Cotizaciones.rows[0],orow=f.production().tables.Ordenes_Pedido.rows[0];qrow.Creado_Por='other-person';orow.Creado_Por='other-person';
 assert.throws(()=>run('INTERNO_COTIZACION_DOCUMENTO_PREPARAR',{number:q}),e=>e.appCode==='QUOTE_DOCUMENT_FORBIDDEN');
 assert.throws(()=>run('INTERNO_DOCUMENTO_PREPARAR',{number}),e=>e.appCode==='ORDER_DOCUMENT_FORBIDDEN');
-as('ADMINISTRADOR');assert(run('INTERNO_COTIZACION_DOCUMENTO_PREPARAR',{number:q}).complete);assert(run('INTERNO_DOCUMENTO_PREPARAR',{number}).complete);
+as('ADMINISTRADOR');assert(run('INTERNO_COTIZACION_DOCUMENTO_PREPARAR',{number:q}).complete);assert.throws(()=>run('INTERNO_DOCUMENTO_PREPARAR',{number}),e=>e.appCode==='DOCUMENT_REVISION_CHANGED','admin passes ownership guard but may not rewrite a changed order');
 orow.Sede='TP';for(const role of ['VENDEDOR','ADMINISTRADOR','BODEGA_LOGISTICA','CONSULTA']){as(role);assert.throws(()=>run('ORDEN_OBTENER',{number}),e=>['BRANCH_NOT_ALLOWED','ORDER_NOT_FOUND'].includes(e.appCode));}orow.Sede='MP';
 as('CONSULTA');assert.throws(()=>c.operationalRoleProposal_(c.validateSessionToken_('qa-session',false)),e=>e.appCode==='PERMISSION_DENIED');
 console.log('Cross-user document ownership and all nonowner branch boundaries passed.');
+
