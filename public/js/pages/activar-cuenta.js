@@ -25,7 +25,7 @@ function syncMode() {
   confirmInput.required=create;
   passwordInput.autocomplete=create?'new-password':'current-password';
   document.getElementById('activation-password-label').textContent=create?'Nueva contraseña':'Contraseña actual';
-  document.getElementById('activation-help').textContent=create?'Elige una contraseña de al menos seis caracteres.':'Usa tu contraseña actual, también si ya utilizas HomeEasy.';
+  document.getElementById('activation-help').textContent=create?'Elige una contraseña de al menos seis caracteres.':'Usa la contraseña que ya tienes para este correo.';
   showMessage('');
 }
 modes.forEach(n=>n.addEventListener('change',syncMode));
