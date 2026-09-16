@@ -44,8 +44,8 @@ def build_scene():
       '#quote-client-address': 'Cra. 8 # 12-44, Apto 705',
       '#quote-client-city': 'Popayán',
     }
-    for selector, value in client.items():
-        set_value(selector, value)
+    for selector, field_value in client.items():
+        set_value(selector, field_value)
 
     items = [
       {
@@ -92,6 +92,9 @@ def build_scene():
       window.MaddyQuoteV6.refresh();
       window.MaddyQuoteV6.compactClient();
       window.MaddyQuoteV6.compactItems();
+      document.getElementById('quote-summary-column').classList.remove('is-open');
+      document.body.classList.remove('mq-summary-open');
+      document.getElementById('mq-summary-backdrop')?.setAttribute('hidden','');
       window.scrollTo(0,0);
     ''')
     wait.until(lambda d: d.execute_script("return document.querySelectorAll('.quote-item.mq5-compact').length") == 3)
@@ -99,8 +102,9 @@ def build_scene():
     wait.until(lambda d: d.execute_script("return document.getElementById('quote-total').textContent.trim() !== '$ 0'"))
 
 
-def audit(width):
+def audit():
     return driver.execute_script('''
+      const summary=document.getElementById('quote-summary-column');
       return {
         width: innerWidth,
         overflow: document.documentElement.scrollWidth > innerWidth + 1,
@@ -108,7 +112,9 @@ def audit(width):
         compactItems: document.querySelectorAll('.quote-item.mq5-compact').length,
         visibleForms: [...document.querySelectorAll('.quote-item .quote-item-essential')].filter(n=>getComputedStyle(n).display!=='none').length,
         total: document.getElementById('quote-total').textContent.trim(),
-        dockVisible: getComputedStyle(document.getElementById('mq-mobile-dock')).display !== 'none'
+        dockVisible: getComputedStyle(document.getElementById('mq-mobile-dock')).display !== 'none',
+        summaryOpen: summary.classList.contains('is-open'),
+        summaryVisibility: getComputedStyle(summary).visibility
       };
     ''')
 
@@ -116,15 +122,18 @@ def audit(width):
 try:
     driver.set_window_size(1440, 1100)
     build_scene()
-    desktop = audit(1440)
+    desktop = audit()
     assert not desktop['overflow'] and desktop['clientCompact'] and desktop['compactItems'] == 3 and desktop['visibleForms'] == 0, desktop
     driver.save_screenshot(str(ART / 'maddy-v6-desktop.png'))
 
+    # Reload from scratch at phone width so responsive state matches a real phone launch,
+    # rather than a desktop session resized after the fact.
     driver.set_window_size(390, 1000)
     driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {'width':390,'height':1000,'deviceScaleFactor':1,'mobile':False})
-    driver.execute_script("window.scrollTo(0,0)")
-    mobile = audit(390)
+    build_scene()
+    mobile = audit()
     assert not mobile['overflow'] and mobile['clientCompact'] and mobile['compactItems'] == 3 and mobile['dockVisible'], mobile
+    assert not mobile['summaryOpen'] and mobile['summaryVisibility'] == 'hidden', mobile
     driver.save_screenshot(str(ART / 'maddy-v6-mobile.png'))
 
     driver.find_element(By.ID, 'mq-dock-review').click()
