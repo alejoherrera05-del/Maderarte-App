@@ -181,8 +181,14 @@ function validateInvitationInput_(payload) {
 
 function createInvitation_(payload, session) {
   requirePermission_(session, 'users.manage');
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))throw appError_('SYSTEM_BUSY','Hay otra invitación en proceso. Consulta el equipo antes de reintentar.',409);
+  try {
   var input = validateInvitationInput_(payload || {});
+  validateTeamGrant_(input,session);
+  var baseUrl = requiredProperty_('APP_BASE_URL').replace(/\/$/, '');
   var existingUser = findRow_('Usuarios', 'Email', input.email);
+  if(existingUser&&normalizeCode_(existingUser.Rol)==='PROPIETARIO')throw appError_('OWNER_PROTECTED','La cuenta propietaria no se modifica mediante invitaciones.',403);
   if (existingUser && normalizeCode_(existingUser.Estado) === 'ACTIVO') throw appError_('USER_ALREADY_ACTIVE', 'Ese correo ya tiene acceso activo.', 409);
   var pending = listRows_('Invitaciones').filter(function(row) {
     return normalizeEmail_(row.Email) === input.email && normalizeCode_(row.Estado) === 'PENDIENTE' && new Date(row.Expira_En).getTime() > Date.now();
@@ -211,12 +217,12 @@ function createInvitation_(payload, session) {
     Revocada_En: '',
     Motivo_Revocacion: ''
   });
-  var baseUrl = requiredProperty_('APP_BASE_URL').replace(/\/$/, '');
   return {
     invitationId: invitationId,
     activationUrl: baseUrl + '/activar-cuenta.html?token=' + encodeURIComponent(rawToken),
     expiresAt: expiresAt.toISOString()
   };
+  } finally {lock.releaseLock();}
 }
 
 function activateInvitation_(payload, proxyMeta) {
@@ -229,6 +235,11 @@ function activateInvitation_(payload, proxyMeta) {
 
     var byUid = findRow_('Usuarios', 'UID_Firebase', firebaseUser.uid);
     var byEmail = findRow_('Usuarios', 'Email', firebaseUser.email);
+    if(byEmail&&normalizeCode_(byEmail.Rol)==='PROPIETARIO')throw appError_('OWNER_PROTECTED','La cuenta propietaria no se modifica mediante invitaciones.',403);
+    if(byEmail&&normalizeCode_(byEmail.Estado)==='ACTIVO')throw appError_('USER_ALREADY_ACTIVE','La cuenta ya tiene acceso. Inicia sesión.',409);
+    var issuer=findRow_('Usuarios','UID_Firebase',invitation.Creada_Por);
+    if(!issuer||normalizeCode_(issuer.Estado)!=='ACTIVO')throw appError_('INVITATION_UNAVAILABLE','Quien creó la invitación ya no tiene acceso activo.',403);
+    validateTeamGrant_(validateInvitationInput_({name:invitation.Nombre_Completo,email:invitation.Email,role:invitation.Rol,mainBranch:invitation.Sede_Principal,branches:String(invitation.Sedes_Permitidas||'').split(',')}),{profile:publicProfile_(issuer),permissions:getRolePermissions_(issuer.Rol)});
     if (byUid && normalizeEmail_(byUid.Email) !== firebaseUser.email) throw appError_('UID_ALREADY_LINKED', 'La identidad ya está vinculada a otro usuario.', 409);
     if (byEmail && byEmail.UID_Firebase && String(byEmail.UID_Firebase) !== firebaseUser.uid) throw appError_('EMAIL_ALREADY_LINKED', 'El correo ya está vinculado a otra identidad.', 409);
 
@@ -278,5 +289,22 @@ function listUsers_(session) {
       lastAccess: valueDateIso_(row.Ultimo_Acceso)
     };
   }).sort(function(a, b) { return a.name.localeCompare(b.name, 'es'); });
-  return { items: items, total: items.length };
+  return { items: items, total: items.length, roles:teamRoles_(session), invitations:listRows_('Invitaciones').filter(function(r){return normalizeCode_(r.Estado)==='PENDIENTE';}).map(function(r){return {id:r.Invitacion_ID,name:r.Nombre_Completo,email:normalizeEmail_(r.Email),role:normalizeCode_(r.Rol),mainBranch:normalizeCode_(r.Sede_Principal),branches:String(r.Sedes_Permitidas||'').split(','),expiresAt:valueDateIso_(r.Expira_En),status:new Date(r.Expira_En).getTime()>Date.now()?'PENDIENTE':'VENCIDA'};}) };
+}
+
+function validateTeamGrant_(input,session){
+  requirePermission_(session,'users.manage');
+  var permissions=getRolePermissions_(input.role);
+  if(!permissions.length)throw appError_('ROLE_NOT_ALLOWED','El rol no está activo o no tiene permisos configurados.',400);
+  if(session.profile.role!=='PROPIETARIO'){
+    if(permissions.some(function(p){return !hasPermission_(session.permissions,p);}))throw appError_('ROLE_NOT_ALLOWED','No puedes invitar con permisos superiores a los tuyos.',403);
+    if(input.branches.some(function(b){return (session.profile.branches||[]).indexOf(b)===-1;}))throw appError_('BRANCH_NOT_ALLOWED','Solo puedes invitar a tus sedes autorizadas.',403);
+  }
+  input.branches.forEach(function(b){var r=findRow_('Sedes','Sede_ID',b);if(!r||normalizeCode_(r.Estado)!=='ACTIVA')throw appError_('BRANCH_INVALID','La sede no está activa.',400);});
+}
+function teamRoles_(session){
+  return ['PROPIETARIO','ADMINISTRADOR','VENDEDOR','BODEGA_LOGISTICA','CONSULTA'].map(function(role){
+    var r=findRow_('Roles','Rol',role),permissions=r&&normalizeCode_(r.Activo)==='SI'?getRolePermissions_(role):[];
+    return {role:role,permissions:permissions,active:!!permissions.length,invitable:role!=='PROPIETARIO'&&!!permissions.length&&(session.profile.role==='PROPIETARIO'||permissions.every(function(p){return hasPermission_(session.permissions,p);}))};
+  });
 }
