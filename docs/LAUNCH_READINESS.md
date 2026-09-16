@@ -8,5 +8,6 @@ Este documento define un procedimiento técnico. Los resultados del entorno oper
 4. Ensayar los documentos y el circuito comercial en el entorno aislado previsto por el proyecto, sin usar registros comerciales reales.
 5. Verificar una copia recuperable de datos y documentos y su restauración aislada antes del uso empresarial.
 6. Comprobar Safari en un dispositivo real: una vista estrecha de escritorio no sustituye esa prueba.
+7. Mantener una pestaña abierta durante una publicación: el aviso de actualización no debe recargarla ni borrar un formulario. Verificar «Después», bloqueo mientras se guarda y actualización explícita desde Inicio.
 
 La agenda debe diferenciar carga en curso, fallo de consulta y día sin compromisos. Si falla la primera consulta, debe ofrecer reintento sin afirmar que la agenda está vacía. Si falla una actualización, debe conservar los resultados anteriores e indicar que no se pudieron actualizar.

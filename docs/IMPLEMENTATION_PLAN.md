@@ -1,5 +1,20 @@
 # Plan de implementación
 
+## Estado vigente — 16 de septiembre de 2026
+
+Esta sección prevalece sobre los pendientes históricos de abajo. La revisión del propietario y la entrega se hacen en el dominio oficial, sin una segunda app de revisión.
+
+- Publicados: cotizaciones y PDF, OP, abonos y recibos, producción por mueble, remisiones con varios ítems, agenda con fecha/hora y recurrencias, estado de cuenta, desistimientos, saldos a favor, traslados, devoluciones y cambios.
+- Garantías: circuito de reporte, visita, recepción, reparación, solución en domicilio y comprobantes. Las fotos no forman parte del alcance solicitado.
+- Recaudos: ingresos por sede y medio, con recepción de efectivo. Egresos y caja contable se difieren por decisión del propietario.
+- Equipo: permisos individuales por casillas y revalidación de acceso. No incorporar empleados hasta la autorización de estreno.
+- Respaldo privado y recuperación aislada: implementación publicada; evidencia operativa guardada fuera del repositorio. La primera ejecución programada aún debe observarse.
+- Continuidad de pestañas abiertas: aviso de versión nueva, actualización explícita y protección de formularios/solicitudes. Véase APP_UPDATES.md.
+
+El siguiente cierre es de verificación, no de añadir módulos: completar la matriz del circuito comercial aislado sobre el servicio publicado, comprobar recuperación tras fallos de conexión, observar el respaldo programado y confirmar el uso en Safari físico. Una suite simulada o una vista móvil de escritorio no sustituye estas comprobaciones.
+
+WhatsApp automatizado y contabilidad completa quedan para una etapa posterior. No reiniciar consecutivos, crear operaciones comerciales ficticias ni declarar el sistema al 100% por aprobar solamente pruebas sintéticas.
+
 ## Fase 1 — Fundación
 
 - Repositorio público independiente.

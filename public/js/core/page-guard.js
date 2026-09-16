@@ -4,6 +4,7 @@ import { readSessionSnapshot } from './session.js';
 import { initializeTheme, mountShell } from './shell.js';
 import { errorState } from './ui.js';
 import { watchAccess } from './access-watch.js';
+import { startAppUpdates } from './app-updates.js';
 
 let pendingTimer = null;
 
@@ -65,6 +66,7 @@ function showAccessChange(denied) {
 
 export async function guardPage({ permission, activeKey, title, subtitle, render }) {
   initializeTheme();
+  startAppUpdates();
   try {
     const session = await initialSession();
     hidePendingCover();
@@ -89,6 +91,7 @@ export async function guardPage({ permission, activeKey, title, subtitle, render
 
 export async function guardStandalonePage({ permission, render }) {
   initializeTheme();
+  startAppUpdates();
   try {
     const session = await initialSession();
     hidePendingCover();
