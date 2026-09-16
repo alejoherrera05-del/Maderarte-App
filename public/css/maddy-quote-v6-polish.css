@@ -40,6 +40,73 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-section {
 .quote-item.mq5-compact .mq5-item-presentation:focus-within,
 .quote-item.mq5-compact .mq5-item-presentation:hover { background: rgba(255,255,255,.34); }
 
+/* Final specificity pass: inherited V3 cards should not survive the product design. */
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-workspace {
+  animation: none !important;
+  transform: none !important;
+}
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-document-head {
+  min-height: 56px !important;
+  margin: 0 !important;
+  padding: 8px 1px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(37,34,30,.095) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor-section {
+  margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor-section:not(:last-child) {
+  border-bottom: 1px solid rgba(37,34,30,.095) !important;
+}
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-section { border-bottom: 0 !important; }
+
+/* The client section has one name; the field labels explain the rest. */
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor > .quote-editor-section:first-child .quote-section-title h2 {
+  font-size: 0 !important;
+}
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor > .quote-editor-section:first-child .quote-section-title h2::before {
+  content: 'Cliente';
+  font-size: 23px;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  color: #1d1c1a;
+}
+body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor > .quote-editor-section:first-child .quote-section-title h2::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Client is always the current step until the required identity is complete. */
+body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:first-child {
+  opacity: 1 !important;
+  color: #1d1c1a !important;
+}
+body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:first-child::before { color: #d66318 !important; }
+body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:first-child::after {
+  content: '' !important;
+  display: block !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -11px;
+  height: 2px;
+  background: #d66318 !important;
+}
+body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:not(:first-child).is-active { color: #8b8882 !important; }
+body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:not(:first-child).is-active::before { color: #aaa69f !important; }
+body.mq7-client-pending .maddy-quote-v3 .mq-flow-step:not(:first-child).is-active::after { display: none !important; }
+
 @media (max-width:760px) {
   /* On phone document context is a quiet row, not another card. */
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-document-head {
@@ -105,6 +172,7 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-section {
     pointer-events: none !important;
   }
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-summary-column.is-open {
+    z-index: 120 !important;
     transform: translateY(0) !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -114,15 +182,18 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-section {
     overflow: hidden !important;
   }
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-summary-column {
+    z-index: 120 !important;
     transition: transform 230ms cubic-bezier(.2,.75,.25,1), opacity 170ms ease, visibility 230ms !important;
   }
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-summary-column.is-open .quote-summary-card {
     background: #fbfaf7 !important;
     opacity: 1 !important;
+    filter: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     box-shadow: 0 -24px 70px rgba(20,18,16,.22) !important;
   }
+  body.maddy-quote-v3-page .maddy-quote-v3 .mq-summary-backdrop { z-index: 110 !important; }
   body.maddy-quote-v3-page .mq-summary-backdrop.is-open {
     background: rgba(20,18,16,.30) !important;
     backdrop-filter: none !important;
@@ -138,8 +209,11 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-section {
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-item.mq5-compact { margin-top: 9px !important; }
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-item.mq5-compact .mq5-item-presentation { min-height: 104px !important; }
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-item.mq5-compact .mq5-item-money strong { letter-spacing: -.025em; }
-  /* The whole object row is editable by tap, so a second Edit button is redundant on phone. */
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-item.mq5-compact .mq5-item-toggle { display: none !important; }
+
+  body.maddy-quote-v3-page .maddy-quote-v3 .quote-editor > .quote-editor-section:first-child .quote-section-title h2::before {
+    font-size: 20px;
+  }
 
   /* Keep the floating dock above device safe-area without covering object content. */
   body.maddy-quote-v3-page .maddy-quote-v3 .quote-shell { padding-bottom: 104px !important; }
