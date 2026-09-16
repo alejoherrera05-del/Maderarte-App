@@ -27,7 +27,7 @@ const MENU_GROUPS = Object.freeze([
       
       { key: 'garantias', label: 'Garantías', description: 'Reportes, visitas y reparaciones', icon: 'clipboard-text', permission: 'agenda.read', href: '/garantias.html' },
       { key: 'agenda', label: 'Agenda', description: 'Entregas y compromisos', icon: 'calendar-dots', permission: 'agenda.read', href: '/agenda.html' },
-      { key: 'recaudos', label: 'Recaudos', description: 'Por sede y medio de pago', icon: 'wallet', permission: 'abonos.read', href: '/recaudos.html' }
+      { key: 'recaudos', label: 'Recaudos', description: 'Por sede y medio de pago', icon: 'wallet', permission: 'recaudos.read', href: '/recaudos.html' }
     ]
   }
 ]);
@@ -179,7 +179,7 @@ guardPage({
       </section>
       <div class="dashboard-groups">${menuGroup(MENU_GROUPS[0],0)}</div>
       <section class="home-today" id="home-today" aria-label="Agenda de hoy"></section>
-      <nav class="home-tools" aria-label="Más herramientas">${MENU_GROUPS[1].items.filter(item=>item.key!=='recaudos'||['PROPIETARIO','ADMINISTRADOR'].includes(session.profile.role)).map(item=>menuItem(item,'quiet')).join('')}</nav>
+      <nav class="home-tools" aria-label="Más herramientas">${MENU_GROUPS[1].items.map(item=>menuItem(item,'quiet')).join('')}</nav>
     </section>
     <footer class="dashboard-footer" aria-label="Información de Maderarte">
       <img class="dashboard-footer-seal" src="/assets/brand/maderarte-logo-2026.webp" alt="" aria-hidden="true">

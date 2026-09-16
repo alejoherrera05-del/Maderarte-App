@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {permissionPicker,editUserAccess} from '../public/js/core/user-permissions.js';
+const dom=new JSDOM('<button id="cfg-detail-close"></button><div id="root"></div>');
+globalThis.document=dom.window.document;
+const groups=[{title:'Acceso',items:[['app.access','Entrar a Maddy']]},{title:'Abonos',items:[['abonos.read','Consultar abonos'],['abonos.create','Registrar abonos']]}];
+const deps={'abonos.create':['abonos.read']},root=document.getElementById('root');
+let read=permissionPicker(root,{groups,dependencies:deps,selected:['app.access']});
+const change=(key,value)=>{const n=document.querySelector(`[data-access="${key}"]`);n.checked=value;n.dispatchEvent(new dom.window.Event('change'));};
+change('abonos.create',true);assert.deepEqual(read(),['abonos.create','abonos.read','app.access']);
+change('abonos.read',false);assert.deepEqual(read(),['app.access']);
+change('app.access',false);assert.deepEqual(read(),[]);assert.match(root.textContent,/no podrá acceder/);
+let writes=0,reloads=0;
+editUserAccess({user:{name:'Asesora',email:'qa@example.invalid',branches:['MP'],permissions:['app.access'],accessRevision:'revision1',customAccess:true},team:{permissionGroups:groups,permissionDependencies:deps},session:{permissions:['*']},openDialog:(_,html)=>root.innerHTML=html,request:async(action,p)=>{writes++;assert.equal(action,'USUARIO_PERMISOS_GUARDAR');assert.equal(p.revision,'revision1');assert(p.permissions.includes('abonos.read'));return {saved:true};},reload:async()=>reloads++});
+change('abonos.read',true);document.getElementById('access-next').click();assert.equal(writes,0);assert.match(document.getElementById('access-review').textContent,/Consultar abonos/);
+await document.getElementById('access-save').onclick();assert.equal(writes,1);assert.equal(reloads,1);assert.match(document.getElementById('access-feedback').textContent,/Permisos guardados/);
+console.log('Permission checkboxes: dependency toggles, no-entry state, explicit review and confirmed save passed.');
