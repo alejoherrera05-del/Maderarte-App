@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {sandboxRuntime} from './fixtures/owner-sandbox-runtime.mjs';
 const f=sandboxRuntime(),c=f.c;
-Object.assign(f.state.props,{QUOTE_DOCUMENTS_SCHEMA_VERSION:'1',COMMERCIAL_OPERATION_ENABLED:'SI',ORDER_SAVE_ENABLED:'SI',ORDER_DOCUMENTS_ENABLED:'SI',ORDER_DOCUMENTS_ACCEPTED:'SI',QUOTE_WRITES_ENABLED:'SI',QUOTE_DOCUMENTS_ENABLED:'SI',RECEIPT_SAVE_ENABLED:'SI',REMISSION_SAVE_ENABLED:'SI',PRODUCTION_SAVE_ENABLED:'SI'});
+Object.assign(f.state.props,{ORDER_ADJUSTMENTS_ENABLED:'SI',QUOTE_DOCUMENTS_SCHEMA_VERSION:'1',COMMERCIAL_OPERATION_ENABLED:'SI',ORDER_SAVE_ENABLED:'SI',ORDER_DOCUMENTS_ENABLED:'SI',ORDER_DOCUMENTS_ACCEPTED:'SI',QUOTE_WRITES_ENABLED:'SI',QUOTE_DOCUMENTS_ENABLED:'SI',RECEIPT_SAVE_ENABLED:'SI',REMISSION_SAVE_ENABLED:'SI',PRODUCTION_SAVE_ENABLED:'SI'});
 f.production().tables.Configuracion.rows[0].Valor='OPERACION';
 for(const [role,perms] of Object.entries(c.OPERATIONAL_ROLE_PROPOSAL_))if(role!=='PROPIETARIO')f.production().tables.Roles.rows.push({Rol:role,Activo:'SI',Permisos_JSON:JSON.stringify(perms)});
 const as=role=>{f.production().tables.Usuarios.rows[0].Rol=role;f.production().tables.Usuarios.rows[0].Sedes_Permitidas='MP';};
@@ -33,4 +33,5 @@ pdf('INTERNO_REMISION_DOCUMENTO_PREPARAR','INTERNO_REMISION_DOCUMENTO_CONFIRMAR'
 as('CONSULTA');assert(run('ORDEN_OBTENER',{number}));assert(run('COTIZACION_OBTENER',{number:q}));for(const action of ['COTIZACION_CREAR','ORDEN_CREAR','RECIBO_CREAR','REMISION_CREAR','PRODUCCION_REGISTRAR','AGENDA_GUARDAR','AJUSTE_CONFIRMAR','INVITACION_CREAR','RECAUDO_RECIBIR'])deny(action);
 as('ADMINISTRADOR');assert(run('RECAUDOS_LISTAR',{from:'2026-09-16',to:'2026-09-16'}));
 console.log('Role flow passed: seller quote/new client/PDF/conversion/order/PDF/receipt/PDF; logistics production and two-item dispatch/PDF; read-only and forbidden actions; branch isolation. Synthetic Google transport; no real grants.');
+
 
