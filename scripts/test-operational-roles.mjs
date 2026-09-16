@@ -56,3 +56,18 @@ orow.Sede='TP';for(const role of ['VENDEDOR','ADMINISTRADOR','BODEGA_LOGISTICA',
 as('CONSULTA');assert.throws(()=>c.operationalRoleProposal_(c.validateSessionToken_('qa-session',false)),e=>e.appCode==='PERMISSION_DENIED');
 console.log('Cross-user document ownership and all nonowner branch boundaries passed.');
 
+
+// Approved editor migration: authorization, additive-only grants and one atomic audit.
+{
+ const m=sandboxRuntime(),c=m.c,t=m.production().tables;
+ for(const role of ['ADMINISTRADOR','VENDEDOR','BODEGA_LOGISTICA','CONSULTA'])t.Roles.rows.push({Rol:role,Activo:'SI',Permisos_JSON:'["app.access"]'});
+ let email='intruder@example.invalid';c.Session={getEffectiveUser:()=>({getEmail:()=>email})};
+ const before=JSON.stringify(m.production());assert.throws(()=>c.aplicarPermisosOperativosAprobados(),e=>e.appCode==='PERMISSION_DENIED');assert.equal(JSON.stringify(m.production()),before);
+ email='owner@example.invalid';const unchanged=JSON.stringify([t.Usuarios,t.Sedes,t.Sesiones,t.Roles.rows.filter(r=>['PROPIETARIO','BODEGA_LOGISTICA'].includes(r.Rol))]);
+ m.state.loseBatch=true;assert.throws(()=>c.aplicarPermisosOperativosAprobados());
+ const replay=c.aplicarPermisosOperativosAprobados();assert.equal(replay.changedRoles.length,0);assert.equal(m.production().tables.Auditoria.rows.length,1);
+ assert.equal(JSON.stringify([m.production().tables.Usuarios,m.production().tables.Sedes,m.production().tables.Sesiones,m.production().tables.Roles.rows.filter(r=>['PROPIETARIO','BODEGA_LOGISTICA'].includes(r.Rol))]),unchanged);
+ assert(c.getRolePermissions_('VENDEDOR').includes('clientes.create'));assert(!c.getRolePermissions_('VENDEDOR').includes('ajustes.create'));
+ m.production().tables.Roles.rows.push({...m.production().tables.Roles.rows[1]});assert.throws(()=>c.aplicarPermisosOperativosAprobados(),e=>e.appCode==='ROLE_REVIEW_DUPLICATE');
+}
+console.log('Editor migration: owner-only, atomic grants+audit, lost-reply replay, protected accounts and branch/session preservation passed.');
