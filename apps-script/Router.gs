@@ -11,6 +11,8 @@ function validateProxy_(body) {
 
 function routeAction_(action, payload, context) {
   switch (action) {
+    case 'ACTIVIDAD_LISTAR': return activityList_(payload, context.session);
+    case 'ACTIVIDAD_OBTENER': return activityDetail_(payload, context.session);
     case 'PING': return { version: MADERARTE_APP.VERSION, name: MADERARTE_APP.NAME };
     case 'AUTH_LOGIN': return login_(payload, context.proxyMeta);
     case 'AUTH_SESSION_VALIDATE': return validateSession_(context.sessionToken);
@@ -112,11 +114,14 @@ function doPost(event) {
       session: null
     };
     if (PUBLIC_ACTIONS_.indexOf(action) === -1) context.session = validateSessionToken_(context.sessionToken, true);
+    activitySession_ = context.session;
     var run = function() { return routeAction_(action, body.payload && typeof body.payload === 'object' ? body.payload : {}, context); };
     var data = Object.prototype.hasOwnProperty.call(body, 'sandboxId') ? osAdmit_(body.sandboxId, action, context, run) : run();
     return jsonOutput_(success_('OK', 'Operación completada.', data, requestId, 200));
   } catch (error) {
     return jsonOutput_(failure_(error, requestId));
+  } finally {
+    activitySession_ = null;
   }
 }
 
