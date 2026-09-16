@@ -3,17 +3,26 @@ import {escapeHtml as esc, dateTime, humanizeCode, initials} from './format.js';
 const labels={EQUIPO:'Equipo',PRODUCCION:'Producción',GARANTIAS:'Garantías',RECAUDOS:'Recaudos',AJUSTES:'Ajustes',CONFIGURACION:'Configuración',ORDENES:'Órdenes',COTIZACIONES:'Cotizaciones',ABONOS:'Abonos',REMISIONES:'Remisiones',AGENDA:'Agenda'};
 const actions={PERMISOS_INDIVIDUALES:'Actualizó los permisos',ACTIVAR_CUENTA:'Reactivó una cuenta',DESACTIVAR_CUENTA:'Desactivó una cuenta',PRODUCCION_REGISTRAR:'Actualizó producción',RECIBIR_EFECTIVO:'Confirmó recepción de efectivo',ORDEN_CREAR:'Creó una orden',COTIZACION_CREAR:'Creó una cotización',RECIBO_CREAR:'Registró un abono',REMISION_CREAR:'Registró una entrega'};
 const statusName=s=>({CONFIRMADA:'Confirmado',CONFIRMADO:'Confirmado',EXITOSO:'Completado',FALLIDO:'Fallido',ERROR:'Error'}[s]||humanizeCode(s)||'Sin estado');
-const actionName=s=>actions[s]||humanizeCode(s)||'Actividad registrada';
+Object.assign(actions,{ACTIVACION_COMERCIAL_PREPARADA:'Actualizó el modo operativo',MATRIZ_OPERATIVA_APROBADA:'Confirmó los accesos operativos',SAVE:'Guardó un compromiso',CANCEL:'Canceló un compromiso',REOPEN:'Reabrió un compromiso',COMPLETE:'Marcó un compromiso como cumplido',RESTORE:'Restauró un compromiso'});
+export const actionName=s=>actions[String(s).toUpperCase()]||humanizeCode(s)||'Actividad registrada';
+export function referenceName(d){
+  if(d.reference==='MODO_OPERACION')return 'Modo operativo';
+  if(d.reference==='operational-roles-v1')return 'Accesos del equipo';
+  if(d.module==='AGENDA'&&/^AGENDA-[a-f0-9-]+$/i.test(d.reference))return 'Compromiso de agenda';
+  return d.reference||'Sin referencia';
+}
+const permissionLabels={"auditoria.read":"Consultar cambios de todas las sedes","app.access":"Entrar a Maddy","perfil.read":"Consultar su perfil","clientes.read":"Consultar clientes","clientes.create":"Crear clientes","cotizaciones.read":"Consultar cotizaciones","cotizaciones.create":"Crear cotizaciones","cotizaciones.update.all":"Completar documentos de otros asesores","ordenes.read":"Consultar órdenes","ordenes.create":"Crear órdenes","ordenes.update.own":"Actualizar documentos propios","ordenes.update.all":"Completar documentos de otros asesores","abonos.read":"Consultar abonos","abonos.create":"Registrar abonos","remisiones.read":"Consultar remisiones","remisiones.create":"Registrar remisiones","produccion.read":"Consultar producción","produccion.update":"Actualizar producción","agenda.read":"Consultar agenda y garantías","agenda.update":"Gestionar agenda y garantías","ajustes.desistir":"Retirar muebles de una orden","ajustes.retornar":"Registrar devolución de un mueble","ajustes.transferir":"Trasladar saldo a otra orden","ajustes.devolver":"Registrar devolución de dinero","recaudos.read":"Consultar ingresos por sede","recaudos.receive":"Confirmar efectivo recibido","config.read":"Consultar configuración","users.manage":"Administrar equipo y sus accesos"};
 function valueText(v,field){
   if(v===null)return 'Sin registro';
   if(v==='')return 'Vacío';
-  if(field==='Permisos')return v.split(', ').map(p=>({'config.read':'Consultar configuración','auditoria.read':'Consultar actividad','app.access':'Entrar a Maddy','users.manage':'Administrar equipo'}[p]||p)).join(' · ');
+  if(field==='Modo operativo')return ({PREPARACION:'Preparación',OPERACION:'Operación'}[v]||v);
+  if(field==='Permisos')return v.split(', ').map(p=>(permissionLabels[p]||humanizeCode(p.replaceAll('.', ' ')))).join(' · ');
   if(/^[A-Z_]+$/.test(v))return humanizeCode(v);
   return v;
 }
 export function activityDetailMarkup(d){
   return `<div class="activity-detail-lead"><span class="activity-avatar">${esc(initials(d.actor))}</span><div><strong>${esc(d.actor)}</strong><p>${esc(dateTime(d.date))}</p></div></div>
-    <dl class="activity-facts"><div><dt>Módulo</dt><dd>${esc(labels[d.module]||humanizeCode(d.module))}</dd></div><div><dt>Resultado</dt><dd>${esc(statusName(d.status))}</dd></div><div><dt>Referencia</dt><dd>${esc(d.reference||'Sin referencia')}</dd></div><div><dt>Dispositivo</dt><dd>${esc([d.device,d.browser,d.platform].filter(Boolean).join(' · ')||'No registrado en esta operación')}</dd></div></dl>
+    <dl class="activity-facts"><div><dt>Módulo</dt><dd>${esc(labels[d.module]||humanizeCode(d.module))}</dd></div><div><dt>Resultado</dt><dd>${esc(statusName(d.status))}</dd></div><div><dt>Referencia</dt><dd>${esc(referenceName(d))}</dd></div><div><dt>Dispositivo</dt><dd>${esc([d.device,d.browser,d.platform].filter(Boolean).join(' · ')||'No registrado en esta operación')}</dd></div></dl>
     ${/^\/(orden|cotizacion-ver)\.html\?/.test(d.href||'')?`<a class="cfg-copy-button" href="${esc(d.href)}">Abrir documento relacionado →</a>`:''}<h3 class="activity-changes-title">Qué cambió</h3>${!d.hasBefore?'<p class="activity-muted">Este registro no conserva campos anteriores comparables.</p>':''}
     ${d.changes.length?`<div class="activity-changes">${d.changes.map(x=>`<section class="activity-change"><h4>${esc(x.field)}</h4><div class="activity-compare"><div><span>Antes</span><p>${esc(valueText(x.before,x.field))}</p></div><div><span>Después</span><p>${esc(valueText(x.after,x.field))}</p></div></div></section>`).join('')}</div>`:'<p class="activity-empty">Este evento no contiene campos comparables disponibles. Se conserva la constancia de la acción.</p>'}`;
 }
@@ -35,7 +44,7 @@ export function mountActivity({root,request,openDialog,choosePanel}){
       const d=await request('ACTIVIDAD_LISTAR',{...values(),offset});if(seq!==sequence)return;
       options('module',d.modules,'Todos los módulos');options('actor',d.actors,'Todas las personas');
       $('activity-count').textContent=`${d.total} ${d.total===1?'registro':'registros'}`;
-      $('activity-list').innerHTML=d.items.length?d.items.map(x=>`<button class="activity-row" data-activity="${esc(x.id)}"><span class="activity-avatar" aria-hidden="true">${esc(initials(x.actor))}</span><span class="activity-copy"><strong>${esc(actionName(x.action))}</strong><span>${esc(x.actor)} · ${esc(labels[x.module]||humanizeCode(x.module))}</span><small>${esc(x.reference||'Sin referencia')}</small></span><span class="activity-side"><time>${esc(dateTime(x.date))}</time><span class="activity-status ${['ERROR','FALLIDO'].includes(x.status)?'is-error':''}">${esc(statusName(x.status))}</span></span><span class="activity-arrow" aria-hidden="true">›</span></button>`).join(''):'<div class="activity-empty"><strong>No hay cambios en esta consulta</strong><p>Prueba con otras fechas o filtros.</p></div>';
+      $('activity-list').innerHTML=d.items.length?d.items.map(x=>`<button class="activity-row" data-activity="${esc(x.id)}"><span class="activity-avatar" aria-hidden="true">${esc(initials(x.actor))}</span><span class="activity-copy"><strong>${esc(actionName(x.action))}</strong><span>${esc(x.actor)} · ${esc(labels[x.module]||humanizeCode(x.module))}</span><small>${esc(referenceName(x))}</small></span><span class="activity-side"><time>${esc(dateTime(x.date))}</time><span class="activity-status ${['ERROR','FALLIDO'].includes(x.status)?'is-error':''}">${esc(statusName(x.status))}</span></span><span class="activity-arrow" aria-hidden="true">›</span></button>`).join(''):'<div class="activity-empty"><strong>No hay cambios en esta consulta</strong><p>Prueba con otras fechas o filtros.</p></div>';
       $('activity-prev').disabled=offset===0;$('activity-next').disabled=!d.hasMore;$('activity-page').textContent=d.total?`${offset+1}–${offset+d.items.length} de ${d.total}`:'';
       panel.querySelectorAll('[data-activity]').forEach(b=>b.onclick=async()=>{
         const detail=++detailSequence;openDialog('Detalle de actividad','<p class="activity-empty" role="status">Consultando el cambio…</p>');
