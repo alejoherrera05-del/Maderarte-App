@@ -1,3 +1,19 @@
+// V3 readability baseline. This is injected last so legacy quote styles cannot
+// reduce form text below the app's accessibility floor while the pilot is isolated.
+const readability = document.createElement('style');
+readability.textContent = `
+  body.maddy-quote-v3-page .quote-editor .quote-field > label,
+  body.maddy-quote-v3-page .quote-editor .quote-discount-field > label {
+    font-size: 15px !important;
+  }
+  body.maddy-quote-v3-page .quote-editor input:not([type="file"]),
+  body.maddy-quote-v3-page .quote-editor select,
+  body.maddy-quote-v3-page .quote-editor textarea {
+    font-size: 16px !important;
+  }
+`;
+document.head.appendChild(readability);
+
 const summary = document.getElementById('quote-summary-column');
 const reviewButton = document.getElementById('mq-dock-review');
 const summaryClose = document.getElementById('mq-summary-close');
