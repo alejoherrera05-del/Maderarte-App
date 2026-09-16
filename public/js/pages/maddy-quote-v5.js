@@ -3,7 +3,6 @@ v5Style.rel = 'stylesheet';
 v5Style.href = '/css/maddy-quote-v5.css?v=1';
 document.head.appendChild(v5Style);
 
-const previewMode = new URLSearchParams(location.search).get('preview') === '1';
 const money = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
 
 /* A small Maderarte story moment gives the shell identity without painting the UI orange. */
@@ -16,18 +15,10 @@ if (sidebar && !sidebar.querySelector('.mq5-brand-story')) {
   sidebar.appendChild(story);
 }
 
-/* Client data is an editing form only while it needs to be. Once identified it becomes an object. */
+/* V5 paints the client identity object. V6 exclusively controls when edit mode collapses. */
 const clientSection = document.querySelector('.quote-editor > .quote-editor-section');
 const clientGrid = document.querySelector('.quote-field-grid-client');
-let clientEditLocked = false;
-
 function value(id) { return String(document.getElementById(id)?.value || '').trim(); }
-function clientRequiredComplete() {
-  return ['quote-client-document','quote-client-name','quote-client-phone','quote-client-email','quote-client-address','quote-client-city'].every(id => value(id));
-}
-function clientCanSummarize() {
-  return clientRequiredComplete();
-}
 
 let clientSummary = null;
 if (clientSection && clientGrid) {
@@ -39,14 +30,13 @@ if (clientSection && clientGrid) {
     <button class="mq5-client-edit" type="button">Editar</button>`;
   clientGrid.insertAdjacentElement('beforebegin', clientSummary);
   clientSummary.querySelector('.mq5-client-edit')?.addEventListener('click', () => {
-    clientEditLocked = true;
-    clientSection.classList.remove('mq5-client-collapsed');
+    clientSection.classList.remove('mq5-client-collapsed', 'mq6-client-object');
     document.getElementById('quote-client-document')?.focus({ preventScroll: true });
   });
 }
 
 function refreshClientObject() {
-  if (!clientSection || !clientSummary) return;
+  if (!clientSummary) return;
   const name = value('quote-client-name') || 'Cliente por identificar';
   const documentNumber = value('quote-client-document');
   const city = value('quote-client-city');
@@ -54,18 +44,14 @@ function refreshClientObject() {
   const email = value('quote-client-email');
   clientSummary.querySelector('strong').textContent = name;
   clientSummary.querySelector('.mq5-client-copy span').textContent = [documentNumber ? `CC/NIT ${documentNumber}` : '', city, phone, email].filter(Boolean).join(' · ') || 'Completa los datos del cliente';
-  const canCollapse = clientCanSummarize();
-  if (!canCollapse) clientEditLocked = false;
-  clientSection.classList.toggle('mq5-client-collapsed', canCollapse && !clientEditLocked);
 }
 
 document.getElementById('quote-form')?.addEventListener('input', event => {
-  if (event.target.closest?.('.quote-field-grid-client')) {
-    if (!clientRequiredComplete()) clientEditLocked = true;
-    refreshClientObject();
-  }
+  if (event.target.closest?.('.quote-field-grid-client')) refreshClientObject();
 });
-document.getElementById('quote-form')?.addEventListener('change', refreshClientObject);
+document.getElementById('quote-form')?.addEventListener('change', event => {
+  if (event.target.closest?.('.quote-field-grid-client')) refreshClientObject();
+});
 
 /* Furniture cards receive a visual object layer while the original inputs remain the source of truth. */
 const CATEGORY_IMAGE = {
@@ -162,17 +148,10 @@ if (itemRoot) {
   }).observe(itemRoot, { childList: true, subtree: false });
 }
 
-/* Reset edit lock when a client lookup fills the whole record asynchronously. */
-const clientMutation = new MutationObserver(() => {
-  if (clientRequiredComplete()) clientEditLocked = false;
-  refreshClientObject();
-});
-clientGrid?.querySelectorAll('input').forEach(input => clientMutation.observe(input, { attributes: true, attributeFilter: ['value'] }));
-
 window.setTimeout(() => {
   refreshClientObject();
   itemRoot?.querySelectorAll('.quote-item').forEach(decorateItem);
 }, 120);
 
 /* V6 adds safe object-mode transitions and contextual review behavior. */
-import('./maddy-quote-v6.js?v=1');
+import('./maddy-quote-v6.js?v=2');
