@@ -26,7 +26,7 @@ function clientRequiredComplete() {
   return ['quote-client-document','quote-client-name','quote-client-phone','quote-client-email','quote-client-address','quote-client-city'].every(id => value(id));
 }
 function clientCanSummarize() {
-  return clientRequiredComplete() || (previewMode && value('quote-client-document') && value('quote-client-name'));
+  return clientRequiredComplete();
 }
 
 let clientSummary = null;
@@ -173,3 +173,6 @@ window.setTimeout(() => {
   refreshClientObject();
   itemRoot?.querySelectorAll('.quote-item').forEach(decorateItem);
 }, 120);
+
+/* V6 adds safe object-mode transitions and contextual review behavior. */
+import('./maddy-quote-v6.js?v=1');
