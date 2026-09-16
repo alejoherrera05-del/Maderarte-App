@@ -10,5 +10,6 @@ with sync_playwright() as p:
  browser=p.chromium.launch(executable_path=shutil.which('google-chrome') or shutil.which('chromium'),headless=True)
  tab=browser.new_page(viewport={'width':1280,'height':1050},device_scale_factor=2)
  tab.set_content(page);tab.screenshot(path=str(out/'matriz.png'),full_page=True)
- tab.pdf(path=str(out/'matriz.pdf'),format='A4',landscape=True,print_background=True)
+ tab.pdf(path=str(out/'matriz.pdf'),format='A4',landscape=True,print_background=True,scale=0.88)
  browser.close()
+
