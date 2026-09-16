@@ -3,6 +3,7 @@ name: Maddy V7 Visual QA
 on:
   pull_request:
     paths:
+      - 'public/css/maddy-quote-v6-polish.css'
       - 'public/css/maddy-quote-v7.css'
       - 'public/js/pages/maddy-quote-v7.js'
       - 'public/js/pages/maddy-quote-v6.js'
