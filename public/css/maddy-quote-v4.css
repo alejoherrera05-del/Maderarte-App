@@ -1,0 +1,340 @@
+/* Maddy · Cotización V4
+   Editorial refinement layer over V3. UI only: no commercial logic or data contracts. */
+
+body.maddy-quote-v3-page {
+  --mq4-canvas: #f4f4f2;
+  --mq4-paper: #ffffff;
+  --mq4-ink: #202022;
+  --mq4-muted: #68686f;
+  --mq4-line: rgba(31,31,35,.09);
+  --mq4-line-strong: rgba(31,31,35,.15);
+  --mq4-orange: #d76518;
+  --mq4-orange-dark: #b84e0b;
+  --mq4-orange-wash: #fff2e8;
+  --mq4-glass: rgba(250,250,248,.76);
+  --mq4-ease: cubic-bezier(.2,.75,.25,1);
+  background: var(--mq4-canvas) !important;
+}
+
+/* --- Shell: quieter, more architectural --- */
+.maddy-quote-v3 .mq-sidebar {
+  width: 220px !important;
+  padding: 18px 14px 16px !important;
+  background:
+    radial-gradient(circle at 30% 0%, rgba(215,101,24,.12), transparent 180px),
+    #191817 !important;
+  border-right: 1px solid rgba(255,255,255,.055) !important;
+}
+.maddy-quote-v3 .mq-brand { padding: 6px 8px 24px !important; gap: 10px !important; }
+.maddy-quote-v3 .mq-brand-mark { width: 34px !important; height: 34px !important; border-radius: 11px !important; }
+.maddy-quote-v3 .mq-brand-copy strong { font-size: 16px !important; letter-spacing: -.025em !important; }
+.maddy-quote-v3 .mq-brand-copy span { font-size: 10px !important; color: rgba(255,255,255,.45) !important; }
+.maddy-quote-v3 .mq-nav-label {
+  padding: 0 10px !important;
+  margin: 10px 0 7px !important;
+  font-size: 9.5px !important;
+  letter-spacing: .13em !important;
+  color: rgba(255,255,255,.33) !important;
+}
+.maddy-quote-v3 .mq-nav { gap: 3px !important; }
+.maddy-quote-v3 .mq-nav a {
+  min-height: 42px !important;
+  border-radius: 11px !important;
+  padding: 0 10px !important;
+  color: rgba(255,255,255,.64) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  transition: background 160ms var(--mq4-ease), color 160ms var(--mq4-ease), transform 160ms var(--mq4-ease) !important;
+}
+.maddy-quote-v3 .mq-nav a:hover { background: rgba(255,255,255,.055) !important; color: #fff !important; transform: translateX(1px); }
+.maddy-quote-v3 .mq-nav a.is-active {
+  background: rgba(215,101,24,.17) !important;
+  color: #fff !important;
+  box-shadow: inset 3px 0 0 var(--mq4-orange) !important;
+}
+.maddy-quote-v3 .mq-nav-icon { opacity: .78; }
+.maddy-quote-v3 .mq-nav a.is-active .mq-nav-icon { color: #ff9a55 !important; opacity: 1; }
+.maddy-quote-v3 .mq-sidebar-foot { padding: 12px 10px 4px !important; font-size: 9.5px !important; color: rgba(255,255,255,.27) !important; }
+
+.maddy-quote-v3 .mq-main { background: var(--mq4-canvas) !important; }
+.maddy-quote-v3 .quote-header {
+  margin: 12px 18px 0 !important;
+  border: 1px solid rgba(255,255,255,.72) !important;
+  border-radius: 17px !important;
+  background: var(--mq4-glass) !important;
+  box-shadow: 0 8px 28px rgba(25,25,28,.055) !important;
+  backdrop-filter: blur(22px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(150%) !important;
+  transition: box-shadow 180ms var(--mq4-ease), background 180ms var(--mq4-ease) !important;
+}
+.maddy-quote-v3 .quote-header.mq4-scrolled { background: rgba(250,250,248,.92) !important; box-shadow: 0 12px 34px rgba(25,25,28,.085) !important; }
+.maddy-quote-v3 .quote-header-inner { min-height: 58px !important; padding: 0 14px !important; }
+.maddy-quote-v3 .mq-page-title-icon { display: none !important; }
+.maddy-quote-v3 .mq-page-title-copy strong { font-size: 16px !important; letter-spacing: -.025em !important; }
+.maddy-quote-v3 .mq-page-title-copy span { font-size: 11px !important; color: var(--mq4-muted) !important; }
+.maddy-quote-v3 .quote-preview-button {
+  min-height: 36px !important;
+  border-radius: 10px !important;
+  padding: 0 13px !important;
+  background: rgba(255,255,255,.72) !important;
+  border: 1px solid var(--mq4-line-strong) !important;
+  box-shadow: 0 1px 1px rgba(0,0,0,.02) !important;
+  font-size: 13px !important;
+}
+
+/* --- Workspace: content rather than nested cards --- */
+.maddy-quote-v3 .quote-shell { max-width: 1250px !important; padding: 24px 24px 96px !important; }
+.maddy-quote-v3 .quote-document-head {
+  padding: 6px 2px 18px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--mq4-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.maddy-quote-v3 .quote-document-kicker { color: var(--mq4-orange-dark) !important; font-size: 10px !important; letter-spacing: .1em !important; }
+.maddy-quote-v3 .quote-document-number-row h1 { font-size: 24px !important; letter-spacing: -.04em !important; }
+.maddy-quote-v3 .quote-document-status { border-radius: 999px !important; padding: 5px 8px !important; font-size: 10px !important; }
+.maddy-quote-v3 .quote-meta-cell span { color: var(--mq4-muted) !important; font-size: 10px !important; }
+.maddy-quote-v3 .quote-meta-cell strong { font-size: 12.5px !important; }
+.maddy-quote-v3 .quote-change-branch { min-height: 34px !important; border-radius: 9px !important; }
+
+/* Scroll-aware mini flow navigation, injected by maddy-quote-v3.js */
+.maddy-quote-v3 .mq-flow-steps {
+  position: sticky;
+  top: 83px;
+  z-index: 12;
+  display: flex;
+  width: fit-content;
+  gap: 4px;
+  padding: 4px;
+  margin: 14px 0 18px;
+  border: 1px solid rgba(255,255,255,.78);
+  border-radius: 13px;
+  background: rgba(246,246,244,.78);
+  box-shadow: 0 6px 18px rgba(25,25,28,.045);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+.maddy-quote-v3 .mq-flow-step {
+  appearance: none;
+  border: 0;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: transparent;
+  color: #74747b;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 160ms var(--mq4-ease), color 160ms var(--mq4-ease), box-shadow 160ms var(--mq4-ease);
+}
+.maddy-quote-v3 .mq-flow-step.is-active { background: #fff; color: var(--mq4-ink); box-shadow: 0 1px 5px rgba(25,25,28,.08); }
+.maddy-quote-v3 .mq-flow-step.is-complete::before { content: '✓'; margin-right: 5px; color: var(--mq4-orange-dark); }
+
+.maddy-quote-v3 .quote-form { gap: 24px !important; }
+.maddy-quote-v3 .quote-editor { gap: 0 !important; }
+.maddy-quote-v3 .quote-editor-section {
+  padding: 24px 2px 28px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--mq4-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.maddy-quote-v3 .quote-editor-section:first-child { padding-top: 2px !important; }
+.maddy-quote-v3 .quote-section-title { align-items: end !important; margin-bottom: 18px !important; }
+.maddy-quote-v3 .quote-section-title > div > span {
+  color: var(--mq4-orange-dark) !important;
+  font-size: 10px !important;
+  letter-spacing: .1em !important;
+}
+.maddy-quote-v3 .quote-section-title h2 { font-size: 25px !important; letter-spacing: -.042em !important; line-height: 1.08 !important; }
+.maddy-quote-v3 .quote-section-title small { max-width: 360px !important; color: var(--mq4-muted) !important; font-size: 12px !important; line-height: 1.45 !important; }
+
+/* Inputs: calmer chrome, stronger focus */
+.maddy-quote-v3 .quote-field label { font-size: 13px !important; font-weight: 620 !important; color: #45454b !important; }
+.maddy-quote-v3 .quote-field input,
+.maddy-quote-v3 .quote-field select,
+.maddy-quote-v3 .quote-field textarea {
+  min-height: 44px !important;
+  border-radius: 11px !important;
+  border-color: rgba(31,31,35,.13) !important;
+  background: rgba(255,255,255,.78) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65) !important;
+  transition: border-color 150ms var(--mq4-ease), box-shadow 150ms var(--mq4-ease), background 150ms var(--mq4-ease), transform 150ms var(--mq4-ease) !important;
+}
+.maddy-quote-v3 .quote-field input:hover,
+.maddy-quote-v3 .quote-field select:hover,
+.maddy-quote-v3 .quote-field textarea:hover { border-color: rgba(31,31,35,.22) !important; background: #fff !important; }
+.maddy-quote-v3 .quote-field input:focus,
+.maddy-quote-v3 .quote-field select:focus,
+.maddy-quote-v3 .quote-field textarea:focus {
+  border-color: rgba(215,101,24,.66) !important;
+  box-shadow: 0 0 0 4px rgba(215,101,24,.09) !important;
+  background: #fff !important;
+}
+.maddy-quote-v3 .quote-helper { color: #74747b !important; }
+
+/* Furniture becomes the visual hero */
+.maddy-quote-v3 .quote-add-item {
+  min-height: 36px !important;
+  border-radius: 10px !important;
+  background: var(--mq4-orange-wash) !important;
+  border-color: rgba(215,101,24,.22) !important;
+  color: var(--mq4-orange-dark) !important;
+  box-shadow: none !important;
+}
+.maddy-quote-v3 .quote-item {
+  position: relative;
+  margin-top: 10px !important;
+  border: 1px solid var(--mq4-line) !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.76) !important;
+  box-shadow: 0 8px 24px rgba(25,25,28,.04) !important;
+  overflow: hidden !important;
+  transition: transform 180ms var(--mq4-ease), box-shadow 180ms var(--mq4-ease), border-color 180ms var(--mq4-ease) !important;
+}
+.maddy-quote-v3 .quote-item:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(25,25,28,.065) !important; border-color: rgba(31,31,35,.14) !important; }
+.maddy-quote-v3 .quote-item::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 2px; background: linear-gradient(var(--mq4-orange), rgba(215,101,24,.2)); }
+.maddy-quote-v3 .quote-item-head { padding: 14px 16px !important; background: rgba(248,248,247,.72) !important; border-bottom: 1px solid var(--mq4-line) !important; }
+.maddy-quote-v3 .quote-item-index > span { border-radius: 9px !important; background: var(--mq4-orange-wash) !important; color: var(--mq4-orange-dark) !important; }
+.maddy-quote-v3 .quote-remove-item { opacity: .58; transition: opacity 140ms ease !important; }
+.maddy-quote-v3 .quote-item:hover .quote-remove-item { opacity: 1; }
+.maddy-quote-v3 .quote-item-essential { padding: 18px 18px 16px !important; }
+.maddy-quote-v3 .quote-item-line-total { border-radius: 11px !important; background: #f3f3f3 !important; }
+.maddy-quote-v3 .quote-item-details { border-top: 1px solid var(--mq4-line) !important; }
+.maddy-quote-v3 .quote-item-details > summary { min-height: 46px !important; padding: 0 18px !important; color: #525259 !important; }
+
+/* Summary inspector */
+.maddy-quote-v3 .quote-summary-card {
+  top: 96px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(255,255,255,.78) !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.82) !important;
+  box-shadow: 0 14px 42px rgba(25,25,28,.065) !important;
+  backdrop-filter: blur(16px) saturate(145%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(145%) !important;
+}
+.maddy-quote-v3 .quote-summary-card::before { display: none !important; }
+.maddy-quote-v3 .quote-summary-head { padding-bottom: 12px !important; margin-bottom: 4px !important; border-bottom: 1px solid var(--mq4-line) !important; }
+.maddy-quote-v3 .quote-summary-head > span { color: var(--mq4-ink) !important; font-size: 12px !important; letter-spacing: -.01em !important; text-transform: none !important; }
+.maddy-quote-v3 .quote-summary-row { min-height: 43px !important; }
+.maddy-quote-v3 .quote-discount-field { border-top: 1px solid var(--mq4-line) !important; border-bottom: 1px solid var(--mq4-line) !important; }
+.maddy-quote-v3 .quote-summary-total { padding: 17px 0 13px !important; }
+.maddy-quote-v3 .quote-summary-total strong { font-size: 30px !important; letter-spacing: -.045em !important; color: var(--mq4-ink) !important; }
+.maddy-quote-v3 .quote-secondary-action { min-height: 42px !important; border-radius: 11px !important; background: #f1f1f2 !important; border-color: transparent !important; }
+.maddy-quote-v3 .quote-primary-action { min-height: 44px !important; border-radius: 11px !important; background: var(--mq4-orange) !important; box-shadow: 0 6px 15px rgba(184,78,11,.15) !important; }
+.maddy-quote-v3 .quote-primary-action:not(:disabled):hover { background: #ca5b12 !important; transform: translateY(-1px); }
+.maddy-quote-v3 .quote-primary-action:disabled { background: #e5e5e6 !important; color: #8a8a90 !important; box-shadow: none !important; }
+
+/* --- Mobile: designed separately, not compressed desktop --- */
+@media (max-width: 760px) {
+  body.maddy-quote-v3-page { background: #f6f6f4 !important; }
+  .maddy-quote-v3 .quote-header {
+    margin: 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--mq4-line) !important;
+    border-radius: 0 !important;
+    background: rgba(248,248,246,.88) !important;
+    box-shadow: none !important;
+  }
+  .maddy-quote-v3 .quote-header-inner { min-height: 58px !important; padding: 0 14px !important; }
+  .maddy-quote-v3 .mq-page-title-copy strong { font-size: 17px !important; }
+  .maddy-quote-v3 .mq-page-title-copy span { display: none !important; }
+  .maddy-quote-v3 .quote-preview-button { min-height: 38px !important; background: #fff !important; font-size: 13px !important; }
+  .maddy-quote-v3 .quote-shell { padding: 14px 12px 118px !important; }
+  .maddy-quote-v3 .quote-document-head {
+    padding: 6px 2px 13px !important;
+    margin-bottom: 4px !important;
+  }
+  .maddy-quote-v3 .quote-document-number-row h1 { font-size: 21px !important; }
+  .maddy-quote-v3 .quote-document-meta { gap: 10px !important; }
+  .maddy-quote-v3 .quote-meta-cell { min-width: 0 !important; }
+  .maddy-quote-v3 .mq-flow-steps {
+    top: 58px;
+    z-index: 24;
+    width: calc(100% + 8px);
+    margin: 9px -4px 14px;
+    padding: 4px;
+    border-radius: 12px;
+    justify-content: stretch;
+    background: rgba(246,246,244,.88);
+  }
+  .maddy-quote-v3 .mq-flow-step { flex: 1; padding: 0 7px; min-height: 34px; font-size: 11px; }
+  .maddy-quote-v3 .quote-form { display: block !important; }
+  .maddy-quote-v3 .quote-editor-section {
+    padding: 18px 2px 22px !important;
+    border-bottom-color: rgba(31,31,35,.08) !important;
+  }
+  .maddy-quote-v3 .quote-section-title { align-items: start !important; margin-bottom: 15px !important; }
+  .maddy-quote-v3 .quote-section-title h2 { font-size: 23px !important; }
+  .maddy-quote-v3 .quote-section-title small { margin-top: 6px !important; font-size: 13px !important; }
+  .maddy-quote-v3 .quote-field { gap: 7px !important; }
+  .maddy-quote-v3 .quote-field label { font-size: 15px !important; }
+  .maddy-quote-v3 .quote-field input,
+  .maddy-quote-v3 .quote-field select,
+  .maddy-quote-v3 .quote-field textarea { min-height: 48px !important; border-radius: 13px !important; font-size: 16px !important; padding: 12px 13px !important; }
+  .maddy-quote-v3 .quote-helper { font-size: 12.5px !important; }
+  .maddy-quote-v3 .quote-add-item { min-height: 40px !important; padding: 0 13px !important; }
+  .maddy-quote-v3 .quote-item { border-radius: 17px !important; box-shadow: none !important; background: #fff !important; }
+  .maddy-quote-v3 .quote-item:hover { transform: none; }
+  .maddy-quote-v3 .quote-item-head { padding: 13px 14px !important; }
+  .maddy-quote-v3 .quote-item-essential { padding: 16px 14px 14px !important; }
+
+  /* Floating action dock: only glass use that matters */
+  .maddy-quote-v3 .mq-mobile-dock {
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    min-height: 66px !important;
+    padding: 8px 8px 8px 14px !important;
+    border: 1px solid rgba(255,255,255,.80) !important;
+    border-radius: 21px !important;
+    background: rgba(250,250,248,.82) !important;
+    box-shadow: 0 16px 42px rgba(25,25,28,.16), 0 2px 8px rgba(25,25,28,.06) !important;
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  }
+  .maddy-quote-v3 .mq-dock-total { font-size: 19px !important; letter-spacing: -.035em !important; }
+  .maddy-quote-v3 .mq-dock-count { font-size: 11.5px !important; color: var(--mq4-muted) !important; }
+  .maddy-quote-v3 .mq-dock-review {
+    min-width: 100px !important;
+    min-height: 48px !important;
+    border-radius: 15px !important;
+    background: linear-gradient(180deg, #df7020, #c95a10) !important;
+    box-shadow: 0 7px 16px rgba(184,78,11,.22) !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+  }
+
+  /* Bottom sheet */
+  .maddy-quote-v3 .quote-summary-column {
+    border-radius: 26px 26px 0 0 !important;
+    background: rgba(250,250,248,.97) !important;
+    box-shadow: 0 -24px 70px rgba(20,20,22,.22) !important;
+  }
+  .maddy-quote-v3 .quote-summary-card { padding: 8px 18px calc(22px + env(safe-area-inset-bottom)) !important; background: transparent !important; border: 0 !important; box-shadow: none !important; backdrop-filter: none !important; }
+  .maddy-quote-v3 .mq-summary-mobile-head::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    width: 38px;
+    height: 5px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    background: rgba(31,31,35,.15);
+  }
+  .maddy-quote-v3 .mq-summary-mobile-head { position: relative; padding-top: 17px !important; }
+  .maddy-quote-v3 .quote-summary-total strong { font-size: 34px !important; }
+  .maddy-quote-v3 .quote-secondary-action,
+  .maddy-quote-v3 .quote-primary-action { min-height: 50px !important; border-radius: 14px !important; font-size: 16px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maddy-quote-v3 *, .maddy-quote-v3 *::before, .maddy-quote-v3 *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
