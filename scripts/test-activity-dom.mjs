@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {mountActivity,activityDetailMarkup} from '../public/js/core/config-activity.js';
+import {mountActivity,activityDetailMarkup,actionName,referenceName} from '../public/js/core/config-activity.js';
+assert.equal(actionName('Cancel'),'Canceló un compromiso');
+assert.equal(actionName('SAVE'),'Guardó un compromiso');
+assert.equal(actionName('ACTIVACION_COMERCIAL_PREPARADA'),'Actualizó el modo operativo');
+assert.equal(referenceName({reference:'MODO_OPERACION'}),'Modo operativo');
+assert.equal(referenceName({module:'AGENDA',reference:'AGENDA-00000000-0000-0000-0000-000000000001'}),'Compromiso de agenda');
+assert.equal(referenceName({module:'ORDENES',reference:'MP-OP-0048'}),'MP-OP-0048');
 const dom=new JSDOM('<div id="root"><nav class="cfg-nav"></nav><div class="cfg-panels"><footer class="team-footer"></footer></div><dialog id="cfg-detail" open></dialog></div>',{url:'https://example.invalid/configuracion.html'});
 globalThis.document=dom.window.document;globalThis.FormData=dom.window.FormData;
 const calls=[];let dialog='';const root=document.querySelector('#root');
@@ -12,4 +18,6 @@ root.querySelector('#activity-next').click();await new Promise(r=>setTimeout(r,0
 root.querySelector('[name=query]').value='Prueba';root.querySelector('#activity-filters').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));await new Promise(r=>setTimeout(r,0));assert.equal(calls.at(-1)[1].offset,0);assert.equal(calls.at(-1)[1].query,'Prueba');
 const unsafe=activityDetailMarkup({...item,actor:'<img src=x onerror=alert(1)>',changes:[{field:'Descripción',before:null,after:'<script>alert(1)</script>'}],href:'javascript:alert(1)'});
 assert(!unsafe.includes('<script>'));assert(!unsafe.includes('href="javascript:'));assert(unsafe.includes('No registrado en esta operación'));
+const permissions=activityDetailMarkup({...item,changes:[{field:'Permisos',before:null,after:'ordenes.read, auditoria.read'}]});
+assert(permissions.includes('Consultar órdenes'));assert(permissions.includes('Consultar cambios de todas las sedes'));assert(!permissions.includes('ordenes.read'));
 dom.window.close();console.log('Activity UI: filter reset, pagination, detail, escaping and unavailable metadata passed.');
