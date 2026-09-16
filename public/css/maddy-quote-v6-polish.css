@@ -124,9 +124,9 @@ body.maddy-quote-v3-page .maddy-quote-v3 .quote-items-section {
     box-shadow: 0 -24px 70px rgba(20,18,16,.22) !important;
   }
   body.maddy-quote-v3-page .mq-summary-backdrop.is-open {
-    background: rgba(20,18,16,.28) !important;
-    backdrop-filter: blur(3px) !important;
-    -webkit-backdrop-filter: blur(3px) !important;
+    background: rgba(20,18,16,.30) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
   body.maddy-quote-v3-page.mq-summary-open .mq-mobile-dock {
     opacity: 0 !important;
