@@ -137,7 +137,13 @@ try:
     driver.save_screenshot(str(ART / 'maddy-v6-mobile.png'))
 
     driver.find_element(By.ID, 'mq-dock-review').click()
-    wait.until(lambda d: d.execute_script("return document.getElementById('quote-summary-column').classList.contains('is-open')"))
+    wait.until(lambda d: d.execute_script('''
+      const panel=document.getElementById('quote-summary-column');
+      const css=getComputedStyle(panel);
+      if(!panel.classList.contains('is-open') || css.visibility!=='visible') return false;
+      const transform=css.transform==='none' ? new DOMMatrixReadOnly() : new DOMMatrixReadOnly(css.transform);
+      return parseFloat(css.opacity) > .99 && Math.abs(transform.m42) < .75;
+    '''))
     driver.save_screenshot(str(ART / 'maddy-v6-mobile-review.png'))
 
     errors = [e['message'] for e in driver.get_log('browser') if e['level'] == 'SEVERE' and 'favicon.ico' not in e['message']]
