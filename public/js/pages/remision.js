@@ -1,4 +1,5 @@
 import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
+import { renderSaveFeedback } from '../core/commercial-save-feedback.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js?v=runtime-1';
 import { guardStandalonePage } from '../core/page-guard.js';
@@ -40,12 +41,13 @@ function renderItems(){
   calculate();
 }
 function renderSave(state){
+  renderSaveFeedback($('recovery'),$('submit'),state,'Confirmar despacho y crear remisión');
   locked=state.locked;$('fields').disabled=locked||!account?.canDeliver||!capabilities;
   $('query').disabled=locked;for(const control of $('search-form').querySelectorAll('button'))control.disabled=locked;
   $('submit').disabled=!state.canSave||!account?.canDeliver||!account?.position.items.some(i=>i.pending>0&&!i.blocked);
-  $('mode').textContent=state.phase==='disabled'?'En preparación: puedes consultar los despachos.':state.phase==='ready'?'La remisión se numera al confirmar la salida del almacén.':state.message;
-  const root=$('recovery');root.replaceChildren();root.hidden=['disabled','ready','new'].includes(state.phase);
-  if(root.hidden)return;root.append(document.createTextNode(state.message));
+  $('mode').textContent=state.phase==='disabled'?'En preparación: puedes consultar los despachos.':state.phase==='ready'?'La remisión se numera al confirmar la salida del almacén.':'';
+  const root=$('recovery');root.hidden=['disabled','ready','new'].includes(state.phase);
+  if(root.hidden)return;
   if(state.phase==='confirmed'){
     button(root,'Abrir remisión',()=>window.location.assign(path(state.number)));
     button(root,'Nuevo despacho',async()=>{if((await manager.startNew()).phase==='new')window.location.assign(sandboxLink('/remision.html'+(account?'?op='+encodeURIComponent(account.order.number):'')));});
@@ -55,7 +57,7 @@ function renderSave(state){
     if(state.phase==='retry')button(root,'Reenviar el mismo intento',()=>manager.retry());
     if(state.phase==='documents')button(root,'Abrir despacho registrado',()=>window.location.assign(path(state.number)));
   }
-  if(state.locked){$('account').hidden=true;flow.ready();entrance?.open();}
+  if(state.locked){flow.ready();if($('workflow').hidden)entrance?.open();}
 }
 async function selectOrder(number){
   if(locked)return;clearTimeout(searchTimer);
