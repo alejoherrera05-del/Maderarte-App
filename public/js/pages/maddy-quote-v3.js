@@ -154,3 +154,6 @@ mobile.addEventListener?.('change', () => {
 });
 
 syncMode();
+
+/* V5 turns the same HTML into a more Maderarte-specific product experience. */
+import('./maddy-quote-v5.js?v=1');
