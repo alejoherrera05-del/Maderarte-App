@@ -44,19 +44,30 @@ def audit():
         width:innerWidth,
         overflow:document.documentElement.scrollWidth>innerWidth+1,
         bodyState:[...document.body.classList].find(x=>x.startsWith('mq7-')&&x.endsWith('-quote'))||'',
+        clientPending:document.body.classList.contains('mq7-client-pending'),
         itemState:card?.dataset.mq7State||'',
         compactItems:document.querySelectorAll('.quote-item.mq5-compact').length,
         clientCompact:!!document.querySelector('.quote-editor-section.mq5-client-collapsed'),
         reviewDisabled:document.querySelector('.mq6-review-cta')?.disabled||false,
+        dockDisabled:document.getElementById('mq-dock-review')?.disabled||false,
         coverPhotos:document.querySelectorAll('.quote-photo-thumb.mq7-cover-photo').length,
         total:document.getElementById('quote-total')?.textContent.trim()||''
       };
     ''')
 
 
+def fill_client():
+    client={
+      '#quote-client-document':'1061760852', '#quote-client-name':'María Fernanda López',
+      '#quote-client-phone':'312 555 9081', '#quote-client-email':'mariafernanda@email.com',
+      '#quote-client-address':'Cra. 8 # 12-44, Apto 705', '#quote-client-city':'Popayán'
+    }
+    for selector,value in client.items(): set_value(selector,value)
+    driver.execute_script('window.MaddyQuoteV6.compactClient();window.MaddyQuoteV7.refresh()')
+
+
 def build_working():
-    set_value('#quote-client-document','1061760852')
-    set_value('#quote-client-name','María Fernanda López')
+    fill_client()
     card=driver.find_element(By.CSS_SELECTOR,'.quote-item')
     set_value('[data-field="description"]','Sofá Oslo 2.10 m',card)
     set_value('[data-field="category"]','SALA',card)
@@ -65,13 +76,7 @@ def build_working():
 
 
 def build_ready():
-    client={
-      '#quote-client-document':'1061760852', '#quote-client-name':'María Fernanda López',
-      '#quote-client-phone':'312 555 9081', '#quote-client-email':'mariafernanda@email.com',
-      '#quote-client-address':'Cra. 8 # 12-44, Apto 705', '#quote-client-city':'Popayán'
-    }
-    for selector,value in client.items(): set_value(selector,value)
-
+    fill_client()
     items=[
       ('Sofá Oslo 2.10 m','SALA','1','Bouclé marfil','Champaña satinado','2.10 × 0.88 m · Espuma alta densidad','4850000','/assets/interiors/living-room-morning.webp'),
       ('Comedor Siena 6 puestos','COMEDOR','1','Lino arena','Roble champagne','Mesa 1.80 m · 6 sillas tapizadas','6200000','/assets/categories/furniture/comedor-v1.webp'),
@@ -117,22 +122,27 @@ def capture(width, name, builder=None):
 
 try:
     empty_desktop=capture(1440,'maddy-v7-empty-desktop.png')
-    assert empty_desktop['itemState']=='empty' and empty_desktop['reviewDisabled'], empty_desktop
+    assert empty_desktop['itemState']=='empty' and empty_desktop['reviewDisabled'] and empty_desktop['clientPending'], empty_desktop
 
     working_desktop=capture(1440,'maddy-v7-working-desktop.png',build_working)
-    assert working_desktop['itemState']=='working' and working_desktop['bodyState']=='mq7-working-quote', working_desktop
+    assert working_desktop['itemState']=='working' and working_desktop['bodyState']=='mq7-working-quote' and not working_desktop['clientPending'], working_desktop
 
     ready_desktop=capture(1440,'maddy-v7-ready-desktop.png',build_ready)
-    assert ready_desktop['compactItems']==3 and ready_desktop['clientCompact'] and ready_desktop['coverPhotos']==3, ready_desktop
+    assert ready_desktop['compactItems']==3 and ready_desktop['clientCompact'] and ready_desktop['coverPhotos']==3 and not ready_desktop['clientPending'], ready_desktop
 
     empty_mobile=capture(390,'maddy-v7-empty-mobile.png')
-    assert empty_mobile['itemState']=='empty' and empty_mobile['reviewDisabled'], empty_mobile
+    assert empty_mobile['itemState']=='empty' and empty_mobile['reviewDisabled'] and empty_mobile['dockDisabled'] and empty_mobile['clientPending'], empty_mobile
 
     ready_mobile=capture(390,'maddy-v7-ready-mobile.png',build_ready)
-    assert ready_mobile['compactItems']==3 and ready_mobile['clientCompact'] and ready_mobile['coverPhotos']==3, ready_mobile
+    assert ready_mobile['compactItems']==3 and ready_mobile['clientCompact'] and ready_mobile['coverPhotos']==3 and not ready_mobile['dockDisabled'], ready_mobile
 
     driver.find_element(By.ID,'mq-dock-review').click()
-    wait.until(lambda d: d.execute_script("return document.getElementById('quote-summary-column').classList.contains('is-open')"))
+    wait.until(lambda d: d.execute_script('''
+      const sheet=document.getElementById('quote-summary-column');
+      const css=getComputedStyle(sheet);
+      const matrix=css.transform==='none'?new DOMMatrixReadOnly():new DOMMatrixReadOnly(css.transform);
+      return sheet.classList.contains('is-open') && css.visibility==='visible' && parseFloat(css.opacity||'1')>.99 && Math.abs(matrix.m42)<.5;
+    '''))
     driver.save_screenshot(str(ART/'maddy-v7-review-mobile.png'))
 
     errors=[e['message'] for e in driver.get_log('browser') if e['level']=='SEVERE' and 'favicon.ico' not in e['message']]
