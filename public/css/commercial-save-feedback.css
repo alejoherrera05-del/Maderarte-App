@@ -2,6 +2,7 @@
 .commercial-save-message{display:flex;align-items:center;gap:12px;margin:0!important;color:var(--text,#292624);font-size:16px;line-height:1.5;font-weight:500}
 .commercial-save-feedback[data-active=true] .commercial-save-message::before{content:"";flex:0 0 18px;height:18px;border:2px solid #e9e3dd;border-top-color:#a8602c;border-radius:50%;animation:save-feedback-spin .9s linear infinite}
 .commercial-save-number{display:block;margin-top:8px;font-size:13px;overflow-wrap:anywhere;color:var(--text-soft,#655d57)}
+.commercial-save-feedback{scroll-margin-top:100px}
 .commercial-save-steps{display:flex;gap:12px;padding:0;margin:20px 0 0;list-style:none;counter-reset:save-step}
 .commercial-save-steps li{counter-increment:save-step;flex:1;display:flex;align-items:center;gap:8px;font-size:13px;color:#716b65}
 .commercial-save-steps li::before{content:counter(save-step);display:grid;place-items:center;width:24px;height:24px;flex:0 0 24px;border:1px solid #d9d6d2;border-radius:50%;font-size:12px}

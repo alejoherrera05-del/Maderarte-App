@@ -27,4 +27,6 @@ export function renderSaveFeedback(root, button, state, idleLabel) {
     steps.append(step);
   });
   root.append(steps);
+  root.hidden = false;
+  if (state.phase === 'preparing') root.scrollIntoView?.({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
 }
