@@ -1,0 +1,47 @@
+name: Maddy V6 Visual QA
+
+on:
+  pull_request:
+    paths:
+      - 'public/cotizacion.html'
+      - 'public/css/maddy-quote-v*.css'
+      - 'public/js/pages/maddy-quote-v*.js'
+      - 'public/assets/categories/furniture/**'
+      - 'public/assets/interiors/**'
+      - 'scripts/maddy_v6_visual_qa.py'
+      - '.github/workflows/maddy-v6-visual-qa.yml'
+
+jobs:
+  object-experience:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar Selenium
+        run: pip install selenium==4.35.0
+      - name: Servir la rama actual
+        run: |
+          node scripts/serve.mjs > /tmp/maderarte-v6.log 2>&1 &
+          echo $! > /tmp/maderarte-v6.pid
+          for i in {1..20}; do
+            if curl -fsS 'http://127.0.0.1:4173/cotizacion.html?preview=1&v6objects=1' >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/maderarte-v6.log
+          exit 1
+      - name: Capturar experiencia V6 real
+        env:
+          MADDY_V6_URL: 'http://127.0.0.1:4173/cotizacion.html?preview=1&v6objects=1'
+        run: python scripts/maddy_v6_visual_qa.py
+      - name: Publicar capturas V6
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maddy-v6-visual-qa
+          path: |
+            artifacts/maddy-v6-desktop.png
+            artifacts/maddy-v6-mobile.png
+            artifacts/maddy-v6-mobile-review.png
+          if-no-files-found: error
