@@ -1,3 +1,5 @@
+import { createOrderFlow, orderReturnPath } from '../core/order-flow-context.js';
+import { renderSaveFeedback } from '../core/commercial-save-feedback.js';
 import { createEntrance } from '../core/maddy-entrance.js?v=1';
 import { apiRequest } from '../core/api.js?v=runtime-1';
 import { guardStandalonePage } from '../core/page-guard.js';
@@ -11,6 +13,7 @@ import { currentSandboxId, sandboxLink, bindSandboxBanner } from '../core/order-
 
 const $ = id => document.getElementById(id);
 let entrance;
+const flow=createOrderFlow({cover:$('receipt-cover'),workflow:$('receipt-workflow'),label:'Abonos',loadingText:'Consultando saldo y abonos de esta orden…'});
 let account=null, sequence=0,manager,locked=false,capabilities=false;
 const receiptPath=number=>sandboxLink('/abono.html?recibo='+encodeURIComponent(number));
 function action(root,label,run){const button=document.createElement('button');button.type='button';button.textContent=label;button.addEventListener('click',()=>void run());root.append(button);return button;}
@@ -44,32 +47,33 @@ async function openPdf(number){
   }catch(failure){popup?.close();$('receipt-feedback').textContent=failure.message;}
 }
 async function showReceipt(number){
-  entrance?.open();
+  entrance?.open();$('receipt-mode').textContent='';
   $('receipt-entry').hidden=true;$('receipt-result').hidden=false;$('receipt-result').textContent='Consultando el recibo…';
   try {const {data:r}=await apiRequest('RECIBO_OBTENER',{number});
+    flow.ready();$('receipt-back').href=orderReturnPath(r.orderNumber);$('receipt-back').setAttribute('aria-label','Volver a la orden');
     $('receipt-result').innerHTML=`<span>Recibo registrado</span><h2>${esc(r.number)}</h2><p>${esc(r.client)}</p><p class="receipt-result-amount">${esc(money(r.amount))}</p><p>${esc(humanizeCode(r.method))} · ${esc(date(r.date))}</p><p>${esc(r.concept)}</p><p>Saldo después de este pago: <strong>${esc(money(r.balance))}</strong></p><a href="${esc(sandboxLink('/orden.html?op='+encodeURIComponent(r.orderNumber)))}">Abrir ${esc(r.orderNumber)}</a><p>${r.complete?'PDF archivado.':'Pago registrado. Su PDF está pendiente.'}</p>`;
     if(r.complete)action($('receipt-result'),'Abrir PDF',()=>openPdf(number));
     else if(capabilities)action($('receipt-result'),'Completar PDF',async()=>{try {$('receipt-feedback').textContent='Completando el PDF…';await apiRequest('RECIBO_DOCUMENTOS_FINALIZAR',{number},{timeoutMs:150000});$('receipt-feedback').textContent='';await showReceipt(number);}catch(e){$('receipt-feedback').textContent=e.message;}});
   }catch(e){$('receipt-result').textContent=e.message;action($('receipt-result'),'Volver a intentar',()=>showReceipt(number));}
 }
 function renderSave(state){
+  renderSaveFeedback($('receipt-recovery'),$('receipt-submit'),state,'Guardar recibo de caja');
   locked=state.locked;$('receipt-fields').disabled=locked || !account?.canReceive || !account?.position.balance;
   $('receipt-query').disabled=locked;$('receipt-search-form').querySelector('button').disabled=locked;
   $('receipt-submit').disabled=!state.canSave || !account?.canReceive || !account?.position.balance;
-  $('receipt-mode').textContent=state.phase==='disabled'?'En preparación: puedes consultar pagos y saldos. El registro aún no está habilitado.':state.phase==='ready'?'El número del recibo se asigna al confirmar el pago.':state.message;
-  const root=$('receipt-recovery');root.replaceChildren();root.hidden=['disabled','ready','new'].includes(state.phase);
+  $('receipt-mode').textContent=state.phase==='disabled'?'En preparación: puedes consultar pagos y saldos. El registro aún no está habilitado.':state.phase==='ready'?'El número del recibo se asigna al confirmar el pago.':'';
+  const root=$('receipt-recovery');root.hidden=['disabled','ready','new'].includes(state.phase);
   if(root.hidden)return;
-  root.append(document.createTextNode(state.message));
   if(state.phase==='confirmed'){
     action(root,'Abrir recibo',()=>window.location.assign(receiptPath(state.number)));
-    action(root,'Nuevo abono',async()=>{const result=await manager.startNew();if(result.phase==='new')window.location.assign(sandboxLink('/abono.html'));});
+    action(root,'Nuevo abono',async()=>{const result=await manager.startNew();if(result.phase==='new')window.location.assign(sandboxLink('/abono.html'+(account?'?op='+encodeURIComponent(account.order.number):'')));});
   }else if(!['saving','checking'].includes(state.phase) && !state.working){
     if(state.phase==='rejected' && account)action(root,'Actualizar saldo de la orden',()=>selectOrder(account.order.number));
     action(root,'Consultar resultado',()=>manager.refresh());
     if(state.phase==='retry')action(root,'Reenviar el mismo intento',()=>manager.retry());
     if(state.phase==='documents')action(root,'Abrir recibo registrado',()=>window.location.assign(receiptPath(state.number)));
   }
-  if(state.locked){$('receipt-account').hidden=true;entrance?.open();}
+  if(state.locked){flow.ready();if($('receipt-workflow').hidden)entrance?.open();}
 }
 async function selectOrder(number){
   if(locked)return;clearTimeout(searchTimer);
@@ -83,8 +87,8 @@ async function selectOrder(number){
     for(const p of data.payments){const row=document.createElement('div');row.className='receipt-history-row';row.innerHTML=`<div>${esc(p.number)}<small>${esc(date(p.date))} · ${esc(humanizeCode(p.method))}${p.comment?' · '+esc(p.comment):''}</small></div><div><strong>${esc(money(p.value))}</strong></div>`;action(row.lastElementChild,'Ver recibo',()=>window.location.assign(receiptPath(p.number)));history.append(row);}
     $('receipt-form').reset();$('receipt-concept').value='Abono a la orden '+number;error('');
     $('receipt-search-status').textContent=!data.canReceive?'Esta orden no admite nuevos pagos.':data.position.balance===0?'La orden no tiene saldo pendiente.':'';
-    $('receipt-account').hidden=false;renderSave(manager?.getState()||{phase:'disabled',locked:false,canSave:false});calculate();entrance?.open();
-  }catch(e){if(ticket===sequence)$('receipt-search-status').textContent=e.message;}
+    $('receipt-account').hidden=false;renderSave(manager?.getState()||{phase:'disabled',locked:false,canSave:false});calculate();flow.ready();entrance?.open();
+  }catch(e){if(ticket===sequence){$('receipt-search-status').textContent=e.message;flow.fail(e.message);}}
 }
 async function search(){
   clearTimeout(searchTimer);
@@ -99,13 +103,13 @@ async function search(){
 guardStandalonePage({permission:'abonos.read',async render({session}){
   $('receipt-app').hidden=false;
   entrance=createEntrance({cover:$('receipt-cover'),workflow:$('receipt-workflow'),input:$('receipt-query'),newSearch:$('receipt-new-search'),onReturn:()=>{
-    if(locked)return false;$('receipt-entry').hidden=false;$('receipt-result').hidden=true;clearTimeout(searchTimer);sequence++;account=null;$('receipt-query').value='';$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';
+    if(locked)return false;flow.clear();$('receipt-entry').hidden=false;$('receipt-result').hidden=true;clearTimeout(searchTimer);sequence++;account=null;$('receipt-query').value='';$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';
   }});
   $('receipt-version').textContent=`Maderarte · Sistema Maddy · v${APP_CONFIG.version} · ${new Date().getFullYear()}`;
   bindSandboxBanner($('receipt-app'));
   $('receipt-sample').addEventListener('click',()=>void showSample());
   const params=new URLSearchParams(window.location.search),op=params.get('op'),receipt=params.get('recibo');
-  if(op){$('receipt-back').href=sandboxLink('/orden.html?op='+encodeURIComponent(op));$('receipt-back').setAttribute('aria-label','Volver a la orden');}
+  if(op){$('receipt-back').href=orderReturnPath(op);$('receipt-back').setAttribute('aria-label','Volver a la orden');}
   $('receipt-search-form').addEventListener('submit',e=>{e.preventDefault();void search();});
   $('receipt-query').addEventListener('input',()=>{clearTimeout(searchTimer);sequence++;account=null;$('receipt-account').hidden=true;$('receipt-results').replaceChildren();$('receipt-search-status').textContent='';if($('receipt-query').value.trim().length>=3)searchTimer=setTimeout(()=>void search(),450);});
   $('receipt-amount').addEventListener('input',calculate);

@@ -7,14 +7,14 @@ export function orderReturnPath(number, item = new URLSearchParams(window.locati
 }
 
 // Only UI context travels in the URL. The server remains the source of order data.
-export function createOrderFlow({ cover, workflow, label }) {
+export function createOrderFlow({ cover, workflow, label, loadingText = 'Cargando los muebles de esta orden…' }) {
   const params = new URLSearchParams(window.location.search), number = params.get('op');
   if (!number) return { ready() {}, fail() {}, sync() {}, clear() {} };
   cover.hidden = true; workflow.hidden = false; workflow.classList.add('order-flow-loading');
   const nav = document.createElement('section'); nav.className = 'order-flow-context';
   const back = document.createElement('a'); back.href = orderReturnPath(number); back.textContent = 'Volver a la OP';
   const trail = document.createElement('p'); trail.textContent = `${number} / ${label}`;
-  const status = document.createElement('p'); status.className = 'order-flow-status'; status.setAttribute('role', 'status'); status.textContent = 'Cargando los muebles de esta orden…';
+  const status = document.createElement('p'); status.className = 'order-flow-status'; status.setAttribute('role', 'status'); status.textContent = loadingText;
   const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = 'Volver a intentar'; retry.hidden = true;
   retry.addEventListener('click', () => window.location.reload());
   nav.append(back, trail, status, retry); workflow.querySelector('header')?.after(nav);

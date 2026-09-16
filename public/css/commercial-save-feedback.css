@@ -1,0 +1,23 @@
+.commercial-save-feedback{padding:24px!important;border:1px solid var(--line,#dedbd7);border-radius:20px;background:#fff;box-shadow:0 8px 28px #29262408;margin:0 0 24px;animation:save-feedback-in .18s ease-out}
+.commercial-save-message{display:flex;align-items:center;gap:12px;margin:0!important;color:var(--text,#292624);font-size:16px;line-height:1.5;font-weight:500}
+.commercial-save-feedback[data-active=true] .commercial-save-message::before{content:"";flex:0 0 18px;height:18px;border:2px solid #e9e3dd;border-top-color:#a8602c;border-radius:50%;animation:save-feedback-spin .9s linear infinite}
+.commercial-save-number{display:block;margin-top:8px;font-size:13px;overflow-wrap:anywhere;color:var(--text-soft,#655d57)}
+.commercial-save-feedback{scroll-margin-top:100px}
+.commercial-save-steps{display:flex;gap:12px;padding:0;margin:20px 0 0;list-style:none;counter-reset:save-step}
+.commercial-save-steps li{counter-increment:save-step;flex:1;display:flex;align-items:center;gap:8px;font-size:13px;color:#716b65}
+.commercial-save-steps li::before{content:counter(save-step);display:grid;place-items:center;width:24px;height:24px;flex:0 0 24px;border:1px solid #d9d6d2;border-radius:50%;font-size:12px}
+.commercial-save-steps li[aria-current]{color:#8b4c22;font-weight:600}
+.commercial-save-steps li[aria-current]::before{border-color:#a8602c}
+.commercial-save-steps li[data-complete]::before{content:"✓";background:#292624;color:white;border-color:#292624}
+.commercial-save-feedback>button{margin-top:16px}
+@keyframes save-feedback-spin{to{transform:rotate(360deg)}}
+@keyframes save-feedback-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:480px){.commercial-save-feedback{padding:18px!important}.commercial-save-steps{gap:8px}.commercial-save-steps li{font-size:12px;gap:5px}}
+@media(max-width:600px){
+  #receipt-workflow .quote-header-inner{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px 10px}
+  #receipt-workflow .quote-header-brand{grid-column:2 / 4;grid-row:1;justify-content:flex-start}
+  #receipt-sample{grid-column:2;grid-row:2;justify-self:end}
+  #receipt-new-search{grid-column:3;grid-row:2}
+  #receipt-recovery{scroll-margin-top:142px}
+}
+@media(prefers-reduced-motion:reduce){.commercial-save-feedback,.commercial-save-feedback[data-active=true] .commercial-save-message::before{animation:none}}

@@ -189,6 +189,7 @@ export function createOrderSave({ uid, request, durable, temporary, locks, crypt
     return exclusive(async () => {
       const journal = getJournal();
       if (journal) return check(journal);
+      notify('preparing', { working: true, message: 'Comprobando disponibilidad antes de guardar…' });
       if (!await capabilities()) return notify('disabled', { locked: false,
         message: 'El guardado comercial aún no está habilitado. Conserva el borrador.' });
       if (snapshot._media?.length && !supportsMedia) return notify('disabled', { locked: false, message: 'El servidor todavía no admite fotografías. No se envió ni descartó el pedido.' });
