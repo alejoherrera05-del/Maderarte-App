@@ -1,12 +1,14 @@
 const v7Style = document.createElement('link');
 v7Style.rel = 'stylesheet';
-v7Style.href = '/css/maddy-quote-v7.css?v=2';
+v7Style.href = '/css/maddy-quote-v7.css?v=3';
 document.head.appendChild(v7Style);
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const itemRoot = document.getElementById('quote-items');
 const itemsSection = document.querySelector('.quote-items-section');
-const clientSection = document.querySelector('.quote-editor > .quote-editor-section');
+const editorSections = [...document.querySelectorAll('.quote-editor > .quote-editor-section')];
+const clientSection = editorSections[0] || null;
+const closingSection = editorSections[2] || null;
 const clientSummary = document.querySelector('.mq5-client-summary');
 const clientMessage = document.getElementById('quote-client-message');
 const reviewCta = document.querySelector('.mq6-review-cta');
@@ -24,11 +26,26 @@ if (clientSummary) {
   clientSummary.setAttribute('aria-label', 'Cliente de la cotización');
 }
 
+/* A locked next-step row keeps the empty quote calm and makes the sequence obvious. */
+let furnitureGate = null;
+if (itemsSection && !itemsSection.querySelector('.mq7-furniture-gate')) {
+  furnitureGate = document.createElement('div');
+  furnitureGate.className = 'mq7-furniture-gate';
+  furnitureGate.innerHTML = '<span class="mq7-gate-index" aria-hidden="true">2</span><span><strong>Muebles</strong><small>Identifica al cliente para continuar.</small></span>';
+  itemsSection.insertAdjacentElement('afterbegin', furnitureGate);
+} else {
+  furnitureGate = itemsSection?.querySelector('.mq7-furniture-gate') || null;
+}
+
 function text(input) {
   return String(input?.value || '').trim();
 }
 function moneyValue(input) {
   return Number(String(input?.value || '').replace(/[^0-9]/g, '') || 0);
+}
+function clientRequiredComplete() {
+  return ['quote-client-document','quote-client-name','quote-client-phone','quote-client-email','quote-client-address','quote-client-city']
+    .every(id => text(document.getElementById(id)));
 }
 function hasCustomization(card) {
   return ['category','fabric','wood','specifications'].some(field => text(card.querySelector(`[data-field="${field}"]`)))
@@ -115,24 +132,38 @@ function syncCard(card, { animate = false } = {}) {
 function syncPageState() {
   const cards = [...(itemRoot?.querySelectorAll('.quote-item') || [])];
   const states = cards.map(stateFor);
+  const clientComplete = clientRequiredComplete();
   const clientCompact = Boolean(clientSection?.classList.contains('mq5-client-collapsed'));
   const readyCount = states.filter(state => state === 'ready').length;
-  const anyStarted = states.some(state => state !== 'empty') || clientCompact;
-  const allReady = cards.length > 0 && readyCount === cards.length && clientCompact;
+  const anyStarted = states.some(state => state !== 'empty') || clientComplete;
+  const allReady = cards.length > 0 && readyCount === cards.length && clientComplete;
 
+  document.body.classList.toggle('mq7-client-pending', !clientComplete);
   document.body.classList.toggle('mq7-empty-quote', !anyStarted);
   document.body.classList.toggle('mq7-working-quote', anyStarted && !allReady);
   document.body.classList.toggle('mq7-ready-quote', allReady);
 
+  if (furnitureGate) furnitureGate.setAttribute('aria-hidden', String(clientComplete));
+  if (closingSection) closingSection.setAttribute('aria-hidden', String(!clientComplete));
+
+  flowButtons.slice(1).forEach(button => {
+    button.disabled = !clientComplete;
+    button.setAttribute('aria-disabled', String(!clientComplete));
+  });
+
   if (reviewCta) {
-    reviewCta.disabled = readyCount === 0;
+    reviewCta.disabled = readyCount === 0 || !clientComplete;
     const label = reviewCta.querySelector('span');
     if (label) label.textContent = readyCount === 0 ? 'Completa un mueble' : 'Revisar cotización';
   }
   if (mobileReview) {
-    mobileReview.disabled = readyCount === 0;
-    mobileReview.setAttribute('aria-disabled', String(readyCount === 0));
+    mobileReview.disabled = readyCount === 0 || !clientComplete;
+    mobileReview.setAttribute('aria-disabled', String(readyCount === 0 || !clientComplete));
   }
+
+  /* A complete client may still be open for editing; compactness is visual, not business state. */
+  if (clientComplete && clientCompact) document.body.classList.add('mq7-client-identified');
+  else document.body.classList.remove('mq7-client-identified');
 }
 
 function bindCard(card) {
@@ -186,7 +217,6 @@ if (itemRoot) {
 }
 
 if (clientSection) {
-  /* Class changes only refresh quote state; they never write another client class. */
   new MutationObserver(syncPageState).observe(clientSection, { attributes: true, attributeFilter: ['class'] });
   clientSection.addEventListener('input', () => {
     syncClientDisclosure();
@@ -201,7 +231,6 @@ if (clientMessage) {
   new MutationObserver(syncClientDisclosure).observe(clientMessage, { childList: true, characterData: true, subtree: true });
 }
 
-/* Keep product state aligned with the actual total/count without introducing new business rules. */
 for (const node of [document.getElementById('quote-total'), document.getElementById('quote-item-count')]) {
   if (node) new MutationObserver(syncPageState).observe(node, { childList: true, characterData: true, subtree: true });
 }
