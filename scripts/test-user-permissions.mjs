@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import {sandboxRuntime} from './fixtures/owner-sandbox-runtime.mjs';
+const f=sandboxRuntime(),c=f.c,book=()=>f.production().tables;
+book().Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:JSON.stringify(['app.access','perfil.read','ordenes.read','ordenes.create','abonos.read','abonos.create'])});
+book().Usuarios.rows.push({UID_Firebase:'staff',Email:'staff@example.invalid',Nombre_Completo:'Persona de prueba',Rol:'VENDEDOR',Sede_Principal:'MP',Sedes_Permitidas:'MP',Estado:'ACTIVO'});
+const user=()=>c.findRow_('Usuarios','UID_Firebase','staff');
+const context={sessionToken:'qa-session',requestId:'USER-ACCESS-TEST-0001'};
+const save=permissions=>c.upSave_({email:user().Email,permissions,revision:c.upRevision_(user())},context);
+const own=()=>c.validateSessionToken_('qa-session',false);
+const initial=c.getUserPermissions_(user());assert(initial.includes('abonos.create'));
+assert.throws(()=>save(['*']),e=>e.appCode==='PERMISSIONS_INVALID');
+assert.throws(()=>save(['abonos.create']),e=>e.appCode==='PERMISSION_DEPENDENCY');
+assert.throws(()=>c.upSave_({email:own().profile.email,permissions:[],revision:''},context),e=>e.appCode==='OWNER_PROTECTED');
+const session=c.createSession_(user(),{},{}),limited=['app.access','perfil.read','ordenes.read'];
+const stale=c.upRevision_(user());save(limited);
+assert.deepEqual([...c.validateSessionToken_(session.sessionToken,false).permissions],limited.slice().sort());
+assert.throws(()=>c.requirePermission_(c.validateSessionToken_(session.sessionToken,false),'abonos.create'),e=>e.appCode==='PERMISSION_DENIED');
+assert.throws(()=>c.upSave_({email:user().Email,permissions:['app.access'],revision:stale},context),e=>e.appCode==='ACCESS_CHANGED');
+// A role change cannot reinstate deliberately removed permissions.
+book().Roles.rows.find(r=>r.Rol==='VENDEDOR').Permisos_JSON='["app.access","abonos.create","users.manage"]';
+assert(!c.getUserPermissions_(user()).includes('users.manage'));
+// One atomic save + audit; retry after lost reply is a no-op.
+const before=book().Auditoria.rows.length;f.state.loseBatch=true;assert.throws(()=>save(['app.access']));
+assert(save(['app.access']).unchanged);assert.equal(book().Auditoria.rows.length,before+1);
+save([]);assert.throws(()=>c.validateSessionToken_(session.sessionToken,false),e=>e.appCode==='PERMISSION_DENIED');
+save(['app.access','config.read','users.manage']);
+assert.throws(()=>c.upSave_({email:user().Email,permissions:['app.access'],revision:c.upRevision_(user())},{sessionToken:session.sessionToken}),e=>e.appCode==='OWNER_PROTECTED');
+book().Usuarios.rows.push({UID_Firebase:'other',Email:'other@example.invalid',Rol:'VENDEDOR',Sedes_Permitidas:'TP',Estado:'ACTIVO'});
+assert.throws(()=>c.upSave_({email:'other@example.invalid',permissions:[],revision:''},{sessionToken:session.sessionToken}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
+assert.throws(()=>c.upGrant_(['abonos.create'],c.validateSessionToken_(session.sessionToken,false)),e=>e.appCode==='PERMISSION_DENIED');
+save(['app.access','ordenes.read','abonos.read','recaudos.read','ajustes.retornar']);
+const narrow=c.validateSessionToken_(session.sessionToken,false);
+assert(c.colSession_({sessionToken:session.sessionToken}));
+assert.throws(()=>c.colSession_({sessionToken:session.sessionToken},true),e=>e.appCode==='PERMISSION_DENIED');
+assert.throws(()=>c.ajPlan_({type:'DEVOLVER'},narrow),e=>e.appCode==='PERMISSION_DENIED');
+assert.throws(()=>c.ajPlan_({type:'TRANSFERIR'},narrow),e=>e.appCode==='PERMISSION_DENIED');
+// Unknown/malformed policy fails closed rather than inheriting the role.
+book().Configuracion.rows.find(r=>r.Clave===c.upKey_(user().Email)).Valor='invalid';
+assert.throws(()=>c.validateSessionToken_(session.sessionToken,false),e=>e.appCode==='ACCESS_CONFIGURATION');
+assert(own().permissions.includes('*'));
+{
+ const g=sandboxRuntime(),a=g.c;g.state.props.APP_BASE_URL='https://maddy.example.invalid';
+ g.production().tables.Invitaciones||={id:901,headers:[...a.REQUIRED_HEADERS.Invitaciones],rows:[]};
+ g.production().tables.Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:'["app.access","abonos.create"]'});
+ const invitation=a.createInvitation_({name:'Acceso limitado',email:'limited@example.invalid',role:'VENDEDOR',mainBranch:'MP',branches:['MP'],permissions:['app.access','clientes.read']},a.validateSessionToken_('qa-session',false));
+ g.production().tables.Roles.rows.find(r=>r.Rol==='VENDEDOR').Permisos_JSON='["app.access","users.manage","abonos.create"]';
+ a.lookupFirebaseUser_=()=>({uid:'limited',email:'limited@example.invalid',emailVerified:true});
+ const activated=a.activateInvitation_({token:new URL(invitation.activationUrl).searchParams.get('token')},{});
+ assert.deepEqual([...activated.permissions],['app.access','clientes.read']);
+ assert(!a.validateSessionToken_(activated.sessionToken,false).permissions.includes('abonos.create'));
+}
+console.log('Individual permissions: preservation, explicit denies, live session revocation, immutable role baseline, owner/self protection, scope, dependency checks, atomic audit and lost-reply retry passed.');

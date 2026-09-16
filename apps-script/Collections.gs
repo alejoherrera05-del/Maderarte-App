@@ -1,9 +1,9 @@
 // Recorded customer receipts and cash handover. Never a second income entry.
 var COLLECTION_HEADERS_=['ID','Numero_Recibo','Numero_OP','Sede','Valor','Fecha_Pago','Registrado_Por','Recibido_Por','Nombre_Receptor','Fecha_Recepcion','Request_ID'];
-function colSession_(context){
+function colSession_(context,write){
   var s=validateSessionToken_(context.sessionToken,false);
   requirePermission_(s,'ordenes.read');requirePermission_(s,'abonos.read');
-  if(!['PROPIETARIO','ADMINISTRADOR'].includes(s.profile.role))throw appError_('PERMISSION_DENIED','El control de recaudos corresponde a administración.',403);
+  requirePermission_(s,write?'recaudos.receive':'recaudos.read');
   return s;
 }
 function colSheet_(create){
@@ -38,7 +38,7 @@ function colList_(payload,context){
       return {number:p.Numero_Recibo,orderNumber:p.Numero_OP,branch:p.Sede,client:p.Nombre_Cliente,date:valueDateIso_(p.Fecha_Pago),amount:amount,method:method,registeredBy:people[p.Registrado_Por]||'Usuario registrado',handover:h?{by:h.Nombre_Receptor,date:valueDateIso_(h.Fecha_Recepcion)}:null};
     }).sort(function(a,b){return b.date.localeCompare(a.date)||a.number.localeCompare(b.number);});
     if(![total,cash,received].every(Number.isSafeInteger))throw appError_('COLLECTION_INTEGRITY','El total excede el rango permitido.',409);
-    return {from:from,to:to,branch:branch,total:total,cash:cash,received:received,pending:cash-received,methods:methods,branches:branches,items:items,asOf:now_().toISOString(),enabled:commercialWritesEnabled_()&&getConfigValue_('MODO_OPERACION','')==='OPERACION'};
+    return {from:from,to:to,branch:branch,total:total,cash:cash,received:received,pending:cash-received,methods:methods,branches:branches,items:items,asOf:now_().toISOString(),enabled:hasPermission_(s.permissions,'recaudos.receive')&&commercialWritesEnabled_()&&getConfigValue_('MODO_OPERACION','')==='OPERACION'};
   }finally{lock.releaseLock();}
 }
 function colReplay_(id,s,hash){
@@ -50,7 +50,7 @@ function colReplay_(id,s,hash){
 }
 function colStatus_(p,context){var s=colSession_(context),r=colReplay_(orderRequestId_(p.requestId),s,'');return {saved:!!r,result:r};}
 function colReceive_(p,context){
-  var s=colSession_(context);if(!commercialWritesEnabled_()||getConfigValue_('MODO_OPERACION','')!=='OPERACION')throw appError_('COMMERCIAL_WRITES_DISABLED','La recepción no está habilitada.',403);
+  var s=colSession_(context,true);if(!commercialWritesEnabled_()||getConfigValue_('MODO_OPERACION','')!=='OPERACION')throw appError_('COMMERCIAL_WRITES_DISABLED','La recepción no está habilitada.',403);
   orderObject_(p,['receipts','expectedTotal','physicalCheck'],'recaudo');
   if(p.physicalCheck!==true||!Array.isArray(p.receipts)||!p.receipts.length||p.receipts.length>100)throw appError_('COLLECTION_SELECTION','Confirma de 1 a 100 recibos de efectivo.',400);
   var ids=p.receipts.map(function(n){return orderText_(n,'receipt',120,true);}).sort();if(new Set(ids).size!==ids.length)throw appError_('COLLECTION_SELECTION','Hay recibos repetidos.',400);

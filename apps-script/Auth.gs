@@ -30,6 +30,7 @@ function authorizedUserByFirebase_(firebaseUser) {
 }
 
 function createSession_(user, payload, proxyMeta) {
+  if(upPolicy_(upKey_(user.Email)))requirePermission_({permissions:getUserPermissions_(user)},'app.access');
   var persistent = payload && payload.persistent === true;
   var createdAt = now_();
   var expiresAt = new Date(createdAt.getTime() + (persistent ? MADERARTE_APP.PERSISTENT_SESSION_DAYS * 86400000 : MADERARTE_APP.SESSION_HOURS * 3600000));
@@ -65,7 +66,7 @@ function createSession_(user, payload, proxyMeta) {
   return {
     sessionToken: token,
     profile: publicProfile_(user),
-    permissions: getRolePermissions_(user.Rol),
+    permissions: getUserPermissions_(user),
     expiresAt: expiresAt.toISOString(),
     persistent: persistent
   };
@@ -102,7 +103,8 @@ function validateSessionToken_(token, touch) {
     closeSessionRow_(row, 'Usuario inactivo', 'REVOCADA');
     throw appError_('USER_INACTIVE', 'El usuario ya no tiene acceso a Maderarte.', 403);
   }
-  var permissions = getRolePermissions_(user.Rol);
+  var permissions = getUserPermissions_(user);
+  if(upPolicy_(upKey_(user.Email)))requirePermission_({permissions:permissions},'app.access');
   if (touch !== false) {
     var lastActivity = row.Ultima_Actividad instanceof Date ? row.Ultima_Actividad.getTime() : new Date(row.Ultima_Actividad).getTime();
     if (!isFinite(lastActivity) || Date.now() - lastActivity > 300000) {
@@ -176,7 +178,7 @@ function validateInvitationInput_(payload) {
   if (['MP', 'TP'].indexOf(mainBranch) === -1) throw appError_('BRANCH_INVALID', 'La sede principal no es válida.', 400);
   branches = branches.filter(function(value, index, array) { return ['MP', 'TP'].indexOf(value) !== -1 && array.indexOf(value) === index; });
   if (branches.indexOf(mainBranch) === -1) branches.unshift(mainBranch);
-  return { name: name, email: email, role: role, mainBranch: mainBranch, branches: branches };
+  return { name: name, email: email, role: role, mainBranch: mainBranch, branches: branches, permissions: payload && payload.permissions };
 }
 
 function createInvitation_(payload, session) {
@@ -186,6 +188,7 @@ function createInvitation_(payload, session) {
   try {
   var input = validateInvitationInput_(payload || {});
   validateTeamGrant_(input,session);
+  var selected=input.permissions===undefined?upLegacy_(input.role).filter(function(p){return upKeys_().indexOf(p)!==-1;}):upInput_(input.permissions);upGrant_(selected,session);
   var baseUrl = requiredProperty_('APP_BASE_URL').replace(/\/$/, '');
   var existingUser = findRow_('Usuarios', 'Email', input.email);
   if(existingUser&&normalizeCode_(existingUser.Rol)==='PROPIETARIO')throw appError_('OWNER_PROTECTED','La cuenta propietaria no se modifica mediante invitaciones.',403);
@@ -199,7 +202,7 @@ function createInvitation_(payload, session) {
   var createdAt = now_();
   var expiresAt = new Date(createdAt.getTime() + MADERARTE_APP.INVITATION_DAYS * 86400000);
   var invitationId = 'INV-' + Utilities.getUuid().toUpperCase();
-  appendObject_('Invitaciones', {
+  var invitationRecord = {
     Invitacion_ID: invitationId,
     Token_Hash: sha256_(rawToken),
     Email: input.email,
@@ -216,7 +219,8 @@ function createInvitation_(payload, session) {
     Revocada_Por: '',
     Revocada_En: '',
     Motivo_Revocacion: ''
-  });
+  };
+  orderAtomicBatch_([orderAppendRequest_('Invitaciones',[invitationRecord])].concat(upWrite_('INV_ACCESS_V1_'+invitationId,selected,session)));
   return {
     invitationId: invitationId,
     activationUrl: baseUrl + '/activar-cuenta.html?token=' + encodeURIComponent(rawToken),
@@ -239,10 +243,12 @@ function activateInvitation_(payload, proxyMeta) {
     if(byEmail&&normalizeCode_(byEmail.Estado)==='ACTIVO')throw appError_('USER_ALREADY_ACTIVE','La cuenta ya tiene acceso. Inicia sesión.',409);
     var issuer=findRow_('Usuarios','UID_Firebase',invitation.Creada_Por);
     if(!issuer||normalizeCode_(issuer.Estado)!=='ACTIVO')throw appError_('INVITATION_UNAVAILABLE','Quien creó la invitación ya no tiene acceso activo.',403);
-    validateTeamGrant_(validateInvitationInput_({name:invitation.Nombre_Completo,email:invitation.Email,role:invitation.Rol,mainBranch:invitation.Sede_Principal,branches:String(invitation.Sedes_Permitidas||'').split(',')}),{profile:publicProfile_(issuer),permissions:getRolePermissions_(issuer.Rol)});
+    validateTeamGrant_(validateInvitationInput_({name:invitation.Nombre_Completo,email:invitation.Email,role:invitation.Rol,mainBranch:invitation.Sede_Principal,branches:String(invitation.Sedes_Permitidas||'').split(','),permissions:(upPolicy_('INV_ACCESS_V1_'+invitation.Invitacion_ID)||{}).permissions}),{profile:publicProfile_(issuer),permissions:getUserPermissions_(issuer)});
     if (byUid && normalizeEmail_(byUid.Email) !== firebaseUser.email) throw appError_('UID_ALREADY_LINKED', 'La identidad ya está vinculada a otro usuario.', 409);
     if (byEmail && byEmail.UID_Firebase && String(byEmail.UID_Firebase) !== firebaseUser.uid) throw appError_('EMAIL_ALREADY_LINKED', 'El correo ya está vinculado a otra identidad.', 409);
 
+    var granted=upPolicy_('INV_ACCESS_V1_'+invitation.Invitacion_ID);
+    if(granted){upGrant_(granted.permissions,{profile:publicProfile_(issuer),permissions:getUserPermissions_(issuer)});orderAtomicBatch_(upWrite_(upKey_(firebaseUser.email),granted.permissions,{profile:publicProfile_(issuer)}));}
     var activatedAt = now_();
     var userPatch = {
       UID_Firebase: firebaseUser.uid,
@@ -286,16 +292,18 @@ function listUsers_(session) {
       mainBranch: normalizeCode_(row.Sede_Principal),
       branches: String(row.Sedes_Permitidas || '').split(',').map(function(value) { return normalizeCode_(value); }).filter(Boolean),
       status: normalizeCode_(row.Estado),
-      lastAccess: valueDateIso_(row.Ultimo_Acceso)
+      lastAccess: valueDateIso_(row.Ultimo_Acceso),
+      permissions:getUserPermissions_(row),accessRevision:upRevision_(row),customAccess:!!upPolicy_(upKey_(row.Email)),editable:normalizeCode_(row.Rol)!=='PROPIETARIO'&&row.UID_Firebase!==session.profile.uid&&(session.profile.role==='PROPIETARIO'||String(row.Sedes_Permitidas||'').split(',').every(function(b){return session.profile.branches.indexOf(normalizeCode_(b))!==-1;})&&getUserPermissions_(row).every(function(p){return hasPermission_(session.permissions,p);}))
     };
   }).sort(function(a, b) { return a.name.localeCompare(b.name, 'es'); });
-  return { items: items, total: items.length, roles:teamRoles_(session), invitations:listRows_('Invitaciones').filter(function(r){return normalizeCode_(r.Estado)==='PENDIENTE';}).map(function(r){return {id:r.Invitacion_ID,name:r.Nombre_Completo,email:normalizeEmail_(r.Email),role:normalizeCode_(r.Rol),mainBranch:normalizeCode_(r.Sede_Principal),branches:String(r.Sedes_Permitidas||'').split(','),expiresAt:valueDateIso_(r.Expira_En),status:new Date(r.Expira_En).getTime()>Date.now()?'PENDIENTE':'VENCIDA'};}) };
+  return { permissionGroups:USER_PERMISSION_GROUPS_,permissionDependencies:USER_PERMISSION_DEPS_, items: items, total: items.length, roles:teamRoles_(session), invitations:listRows_('Invitaciones').filter(function(r){return normalizeCode_(r.Estado)==='PENDIENTE';}).map(function(r){return {id:r.Invitacion_ID,name:r.Nombre_Completo,email:normalizeEmail_(r.Email),role:normalizeCode_(r.Rol),mainBranch:normalizeCode_(r.Sede_Principal),branches:String(r.Sedes_Permitidas||'').split(','),expiresAt:valueDateIso_(r.Expira_En),status:new Date(r.Expira_En).getTime()>Date.now()?'PENDIENTE':'VENCIDA'};}) };
 }
 
 function validateTeamGrant_(input,session){
   requirePermission_(session,'users.manage');
-  var permissions=getRolePermissions_(input.role);
-  if(!permissions.length)throw appError_('ROLE_NOT_ALLOWED','El rol no está activo o no tiene permisos configurados.',400);
+  var permissions=input.permissions===undefined?upLegacy_(input.role):upInput_(input.permissions);
+  if(!getRolePermissions_(input.role).length)throw appError_('ROLE_NOT_ALLOWED','El rol no está activo.',400);
+  
   if(session.profile.role!=='PROPIETARIO'){
     if(permissions.some(function(p){return !hasPermission_(session.permissions,p);}))throw appError_('ROLE_NOT_ALLOWED','No puedes invitar con permisos superiores a los tuyos.',403);
     if(input.branches.some(function(b){return (session.profile.branches||[]).indexOf(b)===-1;}))throw appError_('BRANCH_NOT_ALLOWED','Solo puedes invitar a tus sedes autorizadas.',403);
@@ -304,7 +312,7 @@ function validateTeamGrant_(input,session){
 }
 function teamRoles_(session){
   return ['PROPIETARIO','ADMINISTRADOR','VENDEDOR','BODEGA_LOGISTICA','CONSULTA'].map(function(role){
-    var r=findRow_('Roles','Rol',role),permissions=r&&normalizeCode_(r.Activo)==='SI'?getRolePermissions_(role):[];
+    var r=findRow_('Roles','Rol',role),permissions=r&&normalizeCode_(r.Activo)==='SI'?upLegacy_(role):[];
     return {role:role,permissions:permissions,active:!!permissions.length,invitable:role!=='PROPIETARIO'&&!!permissions.length&&(session.profile.role==='PROPIETARIO'||permissions.every(function(p){return hasPermission_(session.permissions,p);}))};
   });
 }

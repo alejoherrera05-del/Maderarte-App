@@ -29,7 +29,7 @@ assert.ok(list().items.find(x=>x.number==='TP-RC-0001').handover.by);
 assert.throws(()=>call('RECAUDO_RECIBIR',payload,'CASH-OTHER-PERSON'),e=>e.appCode==='COLLECTION_ALREADY_RECEIVED');
 assert.throws(()=>call('RECAUDO_RECIBIR',{...payload,expectedTotal:3}),e=>e.appCode==='REQUEST_CONTENT_CHANGED');
 assert.equal(JSON.stringify([f.production().tables.Abonos.rows,f.production().tables.Ordenes_Pedido.rows]),before,'Handover must not alter income or order ledgers');
-f.production().tables.Roles.rows[0].Permisos_JSON='["ordenes.read","abonos.read"]';f.production().tables.Usuarios.rows[0].Sedes_Permitidas='MP';
+f.production().tables.Roles.rows[0].Permisos_JSON='["ordenes.read","abonos.read","recaudos.read"]';f.production().tables.Usuarios.rows[0].Sedes_Permitidas='MP';
 assert.equal(list().total,700000);assert.throws(()=>call('RECAUDOS_LISTAR',{...period,branch:'TP'}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
 assert.throws(()=>call('RECAUDO_RECEPCION_ESTADO',{requestId:'CASH-HANDOVER-0001'}),e=>e.appCode==='BRANCH_NOT_ALLOWED');
 f.production().tables.Usuarios.rows[0].Rol='VENDEDOR';f.production().tables.Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:'["ordenes.read","abonos.read"]'});

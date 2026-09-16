@@ -8,7 +8,7 @@ function ajEvents_(number) {
     return e;
   }).filter(function(e){return !number||e.source===number||e.target===number;});
 }
-function ajSession_(context,write){var s=validateSessionToken_(context.sessionToken,false);requirePermission_(s,'ordenes.read');requirePermission_(s,'abonos.read');if(write)requirePermission_(s,'ajustes.create');return s;}
+function ajSession_(context,write){var s=validateSessionToken_(context.sessionToken,false);requirePermission_(s,'ordenes.read');requirePermission_(s,'abonos.read');if(write&&!['ajustes.create','ajustes.desistir','ajustes.retornar','ajustes.transferir','ajustes.devolver'].some(function(p){return hasPermission_(s.permissions,p);}))requirePermission_(s,'ajustes.create');return s;}
 function ajEnabled_(){return typeof osActive_==='function'&&osActive_()||commercialWritesEnabled_()&&getConfigValue_('MODO_OPERACION','')==='OPERACION'&&optionalProperty_('ORDER_ADJUSTMENTS_ENABLED','NO')==='SI';}
 function ajFail_(message){throw appError_('ADJUSTMENT_INTEGRITY',message||'Los movimientos de esta OP requieren conciliación.',409);}
 function ajCancellationVerified_(item,events){
@@ -35,7 +35,7 @@ function ajPosition_(row,events){
   return {total:total,paid:paid,balance:balance,credit:credit,received:received,incoming:incoming,outgoing:outgoing,original:original,
     fingerprint:sha256_(JSON.stringify([row.Numero_OP,row.Estado,row.Version,total,paid,items,payments,events]))};
 }
-function ajAccount_(payload,context){var s=ajSession_(context,false),row=rcOrder_(String(payload.number||''),s),events=ajEvents_(row.Numero_OP);return {order:normalizeOrder_(row),position:ajPosition_(row,events),items:orderItems_(row.Numero_OP),events:events.map(function(e){return {id:e.id,type:e.type,amount:e.amount,source:e.source,target:e.target,date:e.date,reason:e.reason,reference:e.reference,returnReceipt:e.returnReceipt||null};}),enabled:ajEnabled_()&&hasPermission_(s.permissions,'ajustes.create')};}
+function ajAccount_(payload,context){var s=ajSession_(context,false),row=rcOrder_(String(payload.number||''),s),events=ajEvents_(row.Numero_OP);return {order:normalizeOrder_(row),position:ajPosition_(row,events),items:orderItems_(row.Numero_OP),events:events.map(function(e){return {id:e.id,type:e.type,amount:e.amount,source:e.source,target:e.target,date:e.date,reason:e.reason,reference:e.reference,returnReceipt:e.returnReceipt||null};}),enabled:ajEnabled_()&&['ajustes.create','ajustes.desistir','ajustes.retornar','ajustes.transferir','ajustes.devolver'].some(function(p){return hasPermission_(s.permissions,p);}),allowedTypes:['DESISTIR','RETORNAR','TRANSFERIR','DEVOLVER'].filter(function(t){return hasPermission_(s.permissions,'ajustes.create')||hasPermission_(s.permissions,'ajustes.'+t.toLowerCase());})};}
 function ajPayload_(p){
   orderObject_(p,['number','fingerprint','type','items','amount','target','targetFingerprint','reason','reference','physicalCheck','destination'],'adjustment');
   var result={number:orderText_(p.number,'number',120,true),fingerprint:orderText_(p.fingerprint,'fingerprint',64,true),type:orderEnum_(p.type,['DESISTIR','RETORNAR','TRANSFERIR','DEVOLVER'],'type'),reason:orderText_(p.reason,'reason',1000,true),reference:orderText_(p.reference,'reference',240,false),target:String(p.target||''),targetFingerprint:String(p.targetFingerprint||''),amount:p.amount===undefined?0:orderInteger_(p.amount,'amount',0),items:[]};
@@ -51,6 +51,7 @@ function ajPayload_(p){
   return result;
 }
 function ajPlan_(p,s){
+  if(!hasPermission_(s.permissions,'ajustes.create'))requirePermission_(s,'ajustes.'+p.type.toLowerCase());
   var row=rcOrder_(p.number,s),before=ajPosition_(row),after={total:before.total,paid:before.paid},items=[],target=null,targetBefore=null,targetAfter=null,amount=p.amount;
   if(before.fingerprint!==p.fingerprint)throw appError_('ADJUSTMENT_CHANGED','La cuenta cambió. Actualiza antes de confirmar.',409);
   if(p.type==='RETORNAR')return ajReturnPlan_(p,row,before);
