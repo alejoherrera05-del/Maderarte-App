@@ -5,7 +5,7 @@ var OPERATIONAL_ROLE_PROPOSAL_ = Object.freeze({
   ADMINISTRADOR: ['app.access','perfil.read','config.read','users.manage','clientes.read','clientes.create','cotizaciones.read','cotizaciones.create','cotizaciones.update.all','ordenes.read','ordenes.create','ordenes.update.all','abonos.read','abonos.create','remisiones.read','remisiones.create','produccion.read','produccion.update','agenda.read','agenda.update','ajustes.create'],
   VENDEDOR: ['app.access','perfil.read','clientes.read','clientes.create','cotizaciones.read','cotizaciones.create','ordenes.read','ordenes.create','ordenes.update.own','abonos.read','abonos.create'],
   BODEGA_LOGISTICA: ['app.access','perfil.read','ordenes.read','produccion.read','produccion.update','remisiones.read','remisiones.create'],
-  CONSULTA: ['app.access','perfil.read','clientes.read','cotizaciones.read','ordenes.read']
+  CONSULTA: ['app.access','perfil.read','clientes.read','cotizaciones.read','ordenes.read','abonos.read','remisiones.read']
 });
 function operationalRoleProposal_(session) {
   requirePermission_(session,'users.manage');
@@ -18,3 +18,4 @@ function operationalRoleProposal_(session) {
       active:!!current.length,applied:false};
   });
 }
+
