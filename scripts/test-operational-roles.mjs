@@ -6,7 +6,16 @@ f.production().tables.Configuracion.rows[0].Valor='OPERACION';
 for(const [role,perms] of Object.entries(c.OPERATIONAL_ROLE_PROPOSAL_))if(role!=='PROPIETARIO')f.production().tables.Roles.rows.push({Rol:role,Activo:'SI',Permisos_JSON:JSON.stringify(perms)});
 const as=role=>{f.production().tables.Usuarios.rows[0].Rol=role;f.production().tables.Usuarios.rows[0].Sedes_Permitidas='MP';};
 let seq=0;const run=(action,payload={})=>c.routeAction_(action,payload,{...f.ctx,requestId:'ROLE-FLOW-REQUEST-'+String(++seq).padStart(4,'0'),session:c.validateSessionToken_('qa-session',false)});
-const deny=(action,p={})=>assert.throws(()=>run(action,p),e=>e.appCode==='PERMISSION_DENIED');
+const deny=(action,p)=>{
+ const common={number,fingerprint:'0'.repeat(64)};
+ const samples={COTIZACION_CREAR:quote,ORDEN_CREAR:command,
+ RECIBO_CREAR:{...common,amount:100000,method:'EFECTIVO',concept:'Prueba',reference:'',internalNote:''},
+ AJUSTE_CONFIRMAR:{...common,type:'DEVOLVER',amount:100000,reason:'Prueba',reference:'Prueba'},
+ PRODUCCION_REGISTRAR:{number,itemId:number+'-I-2',revision:1,stage:'BODEGA',quantity:1,date:'2026-09-16',provider:'Taller',notes:'',verified:true},
+ REMISION_CREAR:{...common,items:[{itemId:number+'-I-1',quantity:1}],transporter:{name:'Prueba',mode:'PIALLERO',favorite:false},assistant:{name:'',favorite:false},physicalCheck:true,notes:''},
+ AGENDA_GUARDAR:{id:'',number,date:'2026-09-20',time:'10:00',items:[{itemId:number+'-I-1',quantity:1}],notes:'',revision:0}};
+ assert.throws(()=>run(action,p||samples[action]||{}),e=>e.appCode==='PERMISSION_DENIED',action);
+};
 const before=JSON.stringify(f.production());const plan=c.operationalRoleProposal_(c.validateSessionToken_('qa-session',false));assert.equal(plan.length,5);assert.equal(JSON.stringify(f.production()),before,'proposal is read-only');
 as('VENDEDOR');
 const command=structuredClone(f.command);command.items.forEach(i=>i.photos=[]);
@@ -33,5 +42,6 @@ pdf('INTERNO_REMISION_DOCUMENTO_PREPARAR','INTERNO_REMISION_DOCUMENTO_CONFIRMAR'
 as('CONSULTA');assert(run('ORDEN_OBTENER',{number}));assert(run('COTIZACION_OBTENER',{number:q}));for(const action of ['COTIZACION_CREAR','ORDEN_CREAR','RECIBO_CREAR','REMISION_CREAR','PRODUCCION_REGISTRAR','AGENDA_GUARDAR','AJUSTE_CONFIRMAR','INVITACION_CREAR','RECAUDO_RECIBIR'])deny(action);
 as('ADMINISTRADOR');assert(run('RECAUDOS_LISTAR',{from:'2026-09-16',to:'2026-09-16'}));
 console.log('Role flow passed: seller quote/new client/PDF/conversion/order/PDF/receipt/PDF; logistics production and two-item dispatch/PDF; read-only and forbidden actions; branch isolation. Synthetic Google transport; no real grants.');
+
 
 
