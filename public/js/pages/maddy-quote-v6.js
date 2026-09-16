@@ -245,3 +245,6 @@ window.MaddyQuoteV6 = Object.freeze({
   editItems() { itemRoot?.querySelectorAll('.quote-item').forEach(openItem); },
   refresh() { itemRoot?.querySelectorAll('.quote-item').forEach(syncFurnitureObject); syncSaveState(); }
 });
+
+/* V7 is the final refinement layer before extracting the shared Maddy design system. */
+import('./maddy-quote-v7.js?v=1');
