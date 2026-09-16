@@ -1,9 +1,9 @@
 const v6Style = document.createElement('link');
 v6Style.rel = 'stylesheet';
-v6Style.href = '/css/maddy-quote-v6.css?v=2';
+v6Style.href = '/css/maddy-quote-v6.css?v=3';
 document.head.appendChild(v6Style);
 
-const form = document.getElementById('quote-form');
+const previewMode = new URLSearchParams(location.search).get('preview') === '1';
 const clientSection = document.querySelector('.quote-editor > .quote-editor-section');
 const clientGrid = document.querySelector('.quote-field-grid-client');
 const itemRoot = document.getElementById('quote-items');
@@ -66,16 +66,18 @@ function maybeCompactClient() {
   if (clientGrid.contains(document.activeElement)) return;
   setClientCompact(true);
 }
-clientGrid?.addEventListener('focusin', () => setClientCompact(false));
-clientGrid?.addEventListener('focusout', () => window.setTimeout(maybeCompactClient, 0));
-clientGrid?.addEventListener('input', () => {
-  if (clientGrid.contains(document.activeElement)) setClientCompact(false);
-});
-clientGrid?.addEventListener('change', () => {
-  if (clientGrid.contains(document.activeElement)) setClientCompact(false);
-});
+if (!previewMode) {
+  clientGrid?.addEventListener('focusin', () => setClientCompact(false));
+  clientGrid?.addEventListener('focusout', () => window.setTimeout(maybeCompactClient, 0));
+  clientGrid?.addEventListener('input', () => {
+    if (clientGrid.contains(document.activeElement)) setClientCompact(false);
+  });
+  clientGrid?.addEventListener('change', () => {
+    if (clientGrid.contains(document.activeElement)) setClientCompact(false);
+  });
+  window.setTimeout(maybeCompactClient, 180);
+}
 document.querySelector('.mq5-client-edit')?.addEventListener('click', () => setClientCompact(false));
-window.setTimeout(maybeCompactClient, 180);
 
 /* Furniture becomes an object only at explicit, safe workflow boundaries. */
 function moneyInputValue(input) {
@@ -175,14 +177,16 @@ function bindItem(card) {
   }
 
   const details = card.querySelector('.quote-item-details');
-  details?.addEventListener('toggle', () => {
-    if (!details.open) window.setTimeout(() => compactItem(card), 0);
-  });
+  if (!previewMode) {
+    details?.addEventListener('toggle', () => {
+      if (!details.open) window.setTimeout(() => compactItem(card), 0);
+    });
+  }
 
   const photoList = card.querySelector('[data-photo-list]');
   if (photoList) new MutationObserver(() => syncFurnitureObject(card)).observe(photoList, { childList: true, subtree: true });
 
-  window.setTimeout(() => compactItem(card), 160);
+  if (!previewMode) window.setTimeout(() => compactItem(card), 160);
 }
 
 itemRoot?.querySelectorAll('.quote-item').forEach(bindItem);
@@ -198,14 +202,13 @@ if (itemRoot) {
   }).observe(itemRoot, { childList: true, subtree: false });
 }
 
-/* Adding another furniture piece is a natural boundary: previous finished pieces collapse. */
-document.getElementById('quote-add-item')?.addEventListener('click', () => {
-  const cards = [...(itemRoot?.querySelectorAll('.quote-item') || [])];
-  compactReadyItems(cards.at(-1) || null);
-});
-
-/* Moving between workflow stages also leaves completed furniture in object mode. */
-flowNav?.addEventListener('click', () => window.setTimeout(() => compactReadyItems(), 0));
+if (!previewMode) {
+  document.getElementById('quote-add-item')?.addEventListener('click', () => {
+    const cards = [...(itemRoot?.querySelectorAll('.quote-item') || [])];
+    compactReadyItems(cards.at(-1) || null);
+  });
+  flowNav?.addEventListener('click', () => window.setTimeout(() => compactReadyItems(), 0));
+}
 
 /* Financial inspector earns attention only at review time. */
 const summaryCard = document.querySelector('.quote-summary-card');
@@ -228,3 +231,12 @@ function syncReviewMode() {
 }
 if (flowNav) new MutationObserver(syncReviewMode).observe(flowNav, { attributes: true, subtree: true, attributeFilter: ['class'] });
 syncReviewMode();
+
+/* Explicit API lets QA capture the same finished-object state a real seller sees after leaving edit mode. */
+window.MaddyQuoteV6 = Object.freeze({
+  compactClient() { if (clientComplete()) setClientCompact(true); },
+  editClient() { setClientCompact(false); },
+  compactItems() { compactReadyItems(); },
+  editItems() { itemRoot?.querySelectorAll('.quote-item').forEach(openItem); },
+  refresh() { itemRoot?.querySelectorAll('.quote-item').forEach(syncFurnitureObject); syncSaveState(); }
+});
