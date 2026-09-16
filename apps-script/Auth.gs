@@ -193,6 +193,7 @@ function createInvitation_(payload, session) {
   var existingUser = findRow_('Usuarios', 'Email', input.email);
   if(existingUser&&normalizeCode_(existingUser.Rol)==='PROPIETARIO')throw appError_('OWNER_PROTECTED','La cuenta propietaria no se modifica mediante invitaciones.',403);
   if (existingUser && normalizeCode_(existingUser.Estado) === 'ACTIVO') throw appError_('USER_ALREADY_ACTIVE', 'Ese correo ya tiene acceso activo.', 409);
+  if(existingUser)throw appError_('USER_ALREADY_EXISTS','Esta persona ya está en Equipo. Revisa sus permisos y reactiva su cuenta desde la ficha.',409);
   var pending = listRows_('Invitaciones').filter(function(row) {
     return normalizeEmail_(row.Email) === input.email && normalizeCode_(row.Estado) === 'PENDIENTE' && new Date(row.Expira_En).getTime() > Date.now();
   })[0];
@@ -241,6 +242,7 @@ function activateInvitation_(payload, proxyMeta) {
     var byEmail = findRow_('Usuarios', 'Email', firebaseUser.email);
     if(byEmail&&normalizeCode_(byEmail.Rol)==='PROPIETARIO')throw appError_('OWNER_PROTECTED','La cuenta propietaria no se modifica mediante invitaciones.',403);
     if(byEmail&&normalizeCode_(byEmail.Estado)==='ACTIVO')throw appError_('USER_ALREADY_ACTIVE','La cuenta ya tiene acceso. Inicia sesión.',409);
+    if(byEmail)throw appError_('USER_ALREADY_EXISTS','Esta cuenta debe reactivarse desde Equipo. Solicita la revisión de su acceso.',409);
     var issuer=findRow_('Usuarios','UID_Firebase',invitation.Creada_Por);
     if(!issuer||normalizeCode_(issuer.Estado)!=='ACTIVO')throw appError_('INVITATION_UNAVAILABLE','Quien creó la invitación ya no tiene acceso activo.',403);
     validateTeamGrant_(validateInvitationInput_({name:invitation.Nombre_Completo,email:invitation.Email,role:invitation.Rol,mainBranch:invitation.Sede_Principal,branches:String(invitation.Sedes_Permitidas||'').split(','),permissions:(upPolicy_('INV_ACCESS_V1_'+invitation.Invitacion_ID)||{}).permissions}),{profile:publicProfile_(issuer),permissions:getUserPermissions_(issuer)});

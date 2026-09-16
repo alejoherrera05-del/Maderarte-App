@@ -76,3 +76,32 @@ function upSave_(payload,context){
     orderAtomicBatch_(requests);return {saved:true,permissions:next,revision:upRevision_(user)};
   }finally{lock.releaseLock();}
 }
+
+// Deactivation preserves the permission policy and commercial history. All
+// existing sessions are revoked atomically so reactivation cannot revive them.
+function upStatus_(payload,context){
+  var lock=LockService.getScriptLock();if(!lock.tryLock(10000))throw appError_('ACCESS_BUSY','Hay otro cambio en curso. Reintenta.',409);
+  try{
+    if(typeof osActive_==='function'&&osActive_())throw appError_('PERMISSION_DENIED','Los accesos se administran fuera del ensayo.',403);
+    var session=validateSessionToken_(context.sessionToken,false);requirePermission_(session,'users.manage');
+    var status=String(payload.status||'');
+    if(['ACTIVO','INACTIVO'].indexOf(status)===-1)throw appError_('STATUS_INVALID','Elige activar o desactivar la cuenta.',400);
+    var matches=listRows_('Usuarios').filter(function(u){return normalizeEmail_(u.Email)===normalizeEmail_(payload.email);});
+    if(matches.length!==1)throw appError_('USER_NOT_FOUND','No se encontró una única persona.',404);
+    var user=matches[0];
+    if(!user.UID_Firebase||normalizeCode_(user.Rol)==='PROPIETARIO'||user.UID_Firebase===session.profile.uid)throw appError_('OWNER_PROTECTED','No puedes modificar tu propia cuenta ni la cuenta propietaria.',403);
+    if(session.profile.role!=='PROPIETARIO'){
+      if(String(user.Sedes_Permitidas||'').split(',').some(function(b){return session.profile.branches.indexOf(normalizeCode_(b))===-1;}))throw appError_('BRANCH_NOT_ALLOWED','Esta persona tiene sedes fuera de tu alcance.',403);
+      upGrant_(getUserPermissions_(user),session);
+    }
+    if(normalizeCode_(user.Estado)===status)return {saved:true,unchanged:true,status:status,revision:upRevision_(user)};
+    if(payload.revision!==upRevision_(user))throw appError_('ACCESS_CHANGED','La cuenta cambió. Abre de nuevo su ficha.',409);
+    var time=now_().toISOString(),requests=orderUpdateRequests_('Usuarios',user._row,{Estado:status});
+    listRows_('Sesiones').filter(function(r){return r.UID_Firebase===user.UID_Firebase&&normalizeCode_(r.Estado)==='ACTIVA';}).forEach(function(r){requests=requests.concat(orderUpdateRequests_('Sesiones',r._row,{Estado:'REVOCADA',Cerrada_En:time,Motivo_Cierre:'Cambio de estado de cuenta'}));});
+    // An old pending invitation must not provide a route around deactivation.
+    listRows_('Invitaciones').filter(function(r){return normalizeEmail_(r.Email)===normalizeEmail_(user.Email)&&normalizeCode_(r.Estado)==='PENDIENTE';}).forEach(function(r){requests=requests.concat(orderUpdateRequests_('Invitaciones',r._row,{Estado:'REVOCADA',Revocada_Por:session.profile.uid,Revocada_En:time,Motivo_Revocacion:'Cambio de estado de cuenta'}));});
+    var id='ACCOUNT-'+Utilities.getUuid();
+    requests.push(orderAppendRequest_('Auditoria',[{ID:id,Fecha:time,Usuario:session.profile.uid,Rol:session.profile.role,Modulo:'EQUIPO',Accion:status==='ACTIVO'?'ACTIVAR_CUENTA':'DESACTIVAR_CUENTA',Entidad:'USUARIO',Entidad_ID:user.UID_Firebase,Resumen:'Cambio de estado de acceso',Estado:'CONFIRMADA',Antes_JSON:JSON.stringify({status:user.Estado}),Despues_JSON:JSON.stringify({status:status}),Request_ID:String(context.requestId||id),Reversible:'NO',Motivo_No_Reversible:'Un nuevo cambio exige autorización; las sesiones cerradas no se reactivan.'}]));
+    orderAtomicBatch_(requests);return {saved:true,status:status,revision:upRevision_(findRow_('Usuarios','UID_Firebase',user.UID_Firebase))};
+  }finally{lock.releaseLock();}
+}

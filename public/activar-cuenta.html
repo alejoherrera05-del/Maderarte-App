@@ -11,16 +11,19 @@
 <link rel="stylesheet" href="/css/auth-parity.css">
 <title>Maderarte · Activar acceso</title>
 </head>
-<body class="auth-page">
+<body class="auth-page activation-page">
 <main class="auth-shell">
   <section class="auth-card auth-card-single">
     <div class="auth-brand"><img class="auth-brand-logo" src="/assets/brand/maderarte-logo-2026.webp" alt="Logo de Maderarte"><img class="auth-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="MADERARTE"><div class="auth-system">Activación segura</div></div>
     <div class="auth-heading" id="activation-state"><h1>Validando invitación</h1><p>Estamos comprobando que este acceso siga vigente.</p></div>
     <form id="activation-form" hidden novalidate>
       <div class="auth-heading"><h1 id="activation-name">Usuario Maderarte</h1><p>Rol asignado: <strong id="activation-role">USUARIO</strong></p></div>
+      <p class="activation-branches" id="activation-branches"></p>
+      <fieldset class="activation-mode"><legend>Tu cuenta</legend><label><input type="radio" name="activation-mode" value="existing" checked> Ya tengo cuenta</label><label><input type="radio" name="activation-mode" value="new"> Crear mi cuenta</label></fieldset>
+      <p class="activation-help" id="activation-help">Usa la contraseña que ya tienes para este correo.</p>
       <div class="auth-field"><label for="activation-email">Correo autorizado</label><input class="auth-input" id="activation-email" type="email" readonly></div>
-      <div class="auth-field"><label for="activation-password">Nueva contraseña</label><input class="auth-input" id="activation-password" type="password" minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres" required></div>
-      <div class="auth-field"><label for="activation-confirm">Repetir contraseña</label><input class="auth-input" id="activation-confirm" type="password" minlength="6" autocomplete="new-password" required></div>
+      <div class="auth-field"><label for="activation-password" id="activation-password-label">Contraseña actual</label><input class="auth-input" id="activation-password" type="password" minlength="6" autocomplete="current-password" required></div>
+      <div class="auth-field" id="activation-confirm-field" hidden><label for="activation-confirm">Repetir contraseña</label><input class="auth-input" id="activation-confirm" type="password" minlength="6" autocomplete="new-password"></div>
       <div class="auth-options"><label class="auth-remember"><input id="activation-remember" type="checkbox"> Mantener sesión</label></div>
       <div class="auth-status" id="activation-message" role="alert"></div>
       <button class="auth-submit" id="activation-button" type="submit">Activar mi cuenta</button>
@@ -28,7 +31,7 @@
     <a class="auth-back" href="/login.html">Volver al inicio de sesión</a>
   </section>
 </main>
-<script type="module" src="/js/pages/activar-cuenta.js?v=runtime-1"></script>
+<script type="module" src="/js/pages/activar-cuenta.js?v=access-lifecycle-1"></script>
 </body>
 </html>
 

@@ -3,6 +3,7 @@ import { canAccessPage } from './permissions.js';
 import { readSessionSnapshot } from './session.js';
 import { initializeTheme, mountShell } from './shell.js';
 import { errorState } from './ui.js';
+import { watchAccess } from './access-watch.js';
 
 let pendingTimer = null;
 
@@ -48,13 +49,18 @@ function renderStandaloneState(message, requestId = '') {
 }
 
 function revalidateInBackground(session, permission) {
-  if (!session?.needsRevalidation) return;
-  void revalidateSession({ allowCachedOnTransient: true }).then(fresh => {
-    if (fresh?.offline) return;
-    if (!canAccessPage(fresh, permission)) window.location.reload();
-  }).catch(error => {
-    if (shouldRedirectToLogin(error)) window.location.replace(loginRedirect());
-  });
+  watchAccess({session,validate:()=>revalidateSession({allowCachedOnTransient:true}),
+    onChanged:()=>showAccessChange(false),onDenied:()=>showAccessChange(true)});
+}
+
+function showAccessChange(denied) {
+  if(document.getElementById('access-changed'))return;
+  const dialog=document.createElement('dialog');
+  dialog.id='access-changed';dialog.className='access-change-dialog';dialog.setAttribute('aria-labelledby','access-changed-title');
+  dialog.innerHTML=`<img src="/assets/brand/maddy-signature.svg" alt="Maddy" width="100" height="52"><h1 id="access-changed-title">${denied?'Tu acceso ya no está disponible':'Tus permisos cambiaron'}</h1><p>${denied?'Esta sesión no puede continuar. Si necesitas ingresar, consulta con quien administra el equipo.':'Actualiza la pantalla para continuar con tus accesos actuales. Lo que no hayas guardado en este formulario podría perderse.'}</p><button type="button">${denied?'Ir al inicio de sesión':'Actualizar pantalla'}</button>`;
+  document.body.append(dialog);dialog.addEventListener('cancel',e=>e.preventDefault());
+  dialog.querySelector('button').onclick=()=>denied?window.location.replace(loginRedirect()):window.location.reload();
+  dialog.showModal();
 }
 
 export async function guardPage({ permission, activeKey, title, subtitle, render }) {
