@@ -11,6 +11,16 @@ function validateProxy_(body) {
 
 function routeAction_(action, payload, context) {
   switch (action) {
+    case 'NOMINA_LISTAR': return npList_(payload,context);
+    case 'NOMINA_OBTENER': return npGet_(payload,context);
+    case 'NOMINA_TRABAJADOR_GUARDAR': return npEmployeeSave_(payload,context);
+    case 'NOMINA_PREVISUALIZAR': return npPreview_(payload,context);
+    case 'NOMINA_EMITIR': return npIssue_(payload,context);
+    case 'NOMINA_ESTADO': return npChange_(payload,context);
+    case 'NOMINA_ARCHIVO_GUARDAR': return npFileSave_(payload,context);
+    case 'NOMINA_ARCHIVO_LEER': return npFileRead_(payload,context);
+    case 'INTERNO_NOMINA_PDF_DATOS': return npPdfPlan_(payload,context);
+    case 'INTERNO_NOMINA_PDF_GUARDAR': return npPdfSave_(payload,context);
     case 'ACTIVIDAD_LISTAR': return activityList_(payload, context.session);
     case 'ACTIVIDAD_OBTENER': return activityDetail_(payload, context.session);
     case 'PING': return { version: MADERARTE_APP.VERSION, name: MADERARTE_APP.NAME };

@@ -1,0 +1,2 @@
+import {payrollDocument} from '../core/payroll-document.js';
+export async function renderPayroll(d,target){if(d.documentKind!=='payroll'||!d.number||!d.employee||!Array.isArray(d.lines))throw Error('Invalid payroll document');document.body.className='payroll-print';target.innerHTML=payrollDocument(d);await Promise.all([...target.querySelectorAll('img')].map(i=>i.decode()));return {pages:target.querySelectorAll('.np-paper').length};}

@@ -20,6 +20,7 @@ jobs:
       - run: node scripts/test-team-access.mjs
       - run: python scripts/team_access_browser_qa.py
       - run: python scripts/activity_browser_qa.py
+      - run: python scripts/payroll_browser_qa.py
       - run: node scripts/test-access-lifecycle.mjs && node scripts/test-access-watch.mjs
       - run: python scripts/access_lifecycle_browser_qa.py
       - uses: actions/upload-artifact@v4

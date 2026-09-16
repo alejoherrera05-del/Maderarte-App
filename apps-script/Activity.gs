@@ -38,7 +38,7 @@ function activityList_(p, session) {
   if (from && to && from>to) throw appError_('ACTIVITY_FILTER','La fecha inicial debe ser anterior a la final.',400);
   var offset=Number(p.offset||0), limit=25;
   if (!Number.isSafeInteger(offset)||offset<0) throw appError_('ACTIVITY_FILTER','Revisa la página solicitada.',400);
-  var names=activityNames_(), all=listRows_('Auditoria').filter(function(r){return r.ID;}).map(function(r){return activitySummary_(r,names);});
+  var names=activityNames_(), all=listRows_('Auditoria').filter(function(r){return r.ID&&(r.Modulo!=='NOMINA'||hasPermission_(session.permissions,'nomina.read'));}).map(function(r){return activitySummary_(r,names);});
   var modules=[], actors=[];
   all.forEach(function(r){if(r.module&&modules.indexOf(r.module)<0)modules.push(r.module);if(actors.indexOf(r.actor)<0)actors.push(r.actor);});
   var rows=all.filter(function(r){
@@ -77,6 +77,7 @@ function activityDetail_(p,session) {
   activityAccess_(session);
   var id=activityText_(p.id), rows=listRows_('Auditoria').filter(function(r){return String(r.ID)===id;});
   if(!id||rows.length!==1)throw appError_('ACTIVITY_NOT_FOUND','No se encontró un registro único.',404);
+  if(rows[0].Modulo==='NOMINA')requirePermission_(session,'nomina.read');
   var row=rows[0], result=activitySummary_(row,activityNames_()), before=activityFields_(row.Antes_JSON), after=activityFields_(row.Despues_JSON);
   result.changes=[];
   Object.keys(before).concat(Object.keys(after)).filter(function(k,i,a){return a.indexOf(k)===i;}).forEach(function(k){

@@ -1,6 +1,7 @@
 // Individual allowlists, stored privately in Configuracion. Empty lists deny access.
 // Legacy accounts inherit their role until explicitly saved; owner is protected.
 var USER_PERMISSION_GROUPS_ = [
+  {title:'Nómina · información laboral privada de todas las sedes',sensitive:true,items:[['nomina.read','Consultar nómina y documentos laborales'],['nomina.workers','Administrar fichas y documentos laborales'],['nomina.prepare','Preparar comprobantes'],['nomina.issue','Emitir y anular comprobantes'],['nomina.pay','Confirmar pagos realizados']]},
   {title:'Actividad administrativa',sensitive:true,items:[['auditoria.read','Consultar cambios de todas las sedes']]},
   {title:'Acceso',items:[['app.access','Entrar a Maddy'],['perfil.read','Consultar su perfil']]},
   {title:'Clientes',items:[['clientes.read','Consultar clientes'],['clientes.create','Crear clientes']]},
@@ -12,6 +13,7 @@ var USER_PERMISSION_GROUPS_ = [
   {title:'Acciones delicadas',sensitive:true,items:[['ajustes.desistir','Retirar muebles de una orden'],['ajustes.retornar','Registrar devolución de un mueble'],['ajustes.transferir','Trasladar saldo a otra orden'],['ajustes.devolver','Registrar devolución de dinero'],['recaudos.read','Consultar ingresos por sede'],['recaudos.receive','Confirmar efectivo recibido'],['config.read','Consultar configuración'],['users.manage','Administrar equipo y sus accesos']]}
 ];
 var USER_PERMISSION_DEPS_ = {
+  'nomina.workers':['nomina.read'],'nomina.prepare':['nomina.read'],'nomina.issue':['nomina.read','nomina.prepare'],'nomina.pay':['nomina.read'],
   'auditoria.read':['config.read'],
   'clientes.create':['clientes.read'],'cotizaciones.create':['cotizaciones.read','clientes.read','clientes.create'],
   'cotizaciones.update.all':['cotizaciones.read','cotizaciones.create'],'ordenes.create':['ordenes.read','clientes.read','clientes.create'],

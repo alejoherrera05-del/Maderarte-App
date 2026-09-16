@@ -1,3 +1,4 @@
+import {renderPayroll} from './nomina-render.js';
 import {renderWarranty} from './garantia-render.js';
 import { renderAdjustment } from './ajuste-render.js?v=returns-1';
 import { renderReceipt } from './recibo-render.js';
@@ -12,7 +13,7 @@ async function consume() {
   try {
     const snapshot = JSON.parse(node.textContent);
     node.remove();
-    const result = await (snapshot.documentKind === 'warranty' ? renderWarranty(snapshot,target) : snapshot.documentKind === 'adjustment' ? renderAdjustment(snapshot, target) : snapshot.documentKind === 'remission' ? renderRemission(snapshot, target) : snapshot.documentKind === 'receipt' ? renderReceipt(snapshot, target) : renderConfirmedOrder(snapshot, target));
+    const result = await (snapshot.documentKind === 'payroll' ? renderPayroll(snapshot,target) : snapshot.documentKind === 'warranty' ? renderWarranty(snapshot,target) : snapshot.documentKind === 'adjustment' ? renderAdjustment(snapshot, target) : snapshot.documentKind === 'remission' ? renderRemission(snapshot, target) : snapshot.documentKind === 'receipt' ? renderReceipt(snapshot, target) : renderConfirmedOrder(snapshot, target));
     target.dataset.documentPages = String(result.pages);
     target.dataset.documentReady = 'true';
   } catch {
