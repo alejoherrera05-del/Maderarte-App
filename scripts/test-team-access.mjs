@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {sandboxRuntime} from './fixtures/owner-sandbox-runtime.mjs';
+const f=sandboxRuntime(),c=f.c;
+f.state.props.APP_BASE_URL='https://maddy.example.invalid';
+const tables=f.production().tables;
+for(const name of ['Invitaciones'])tables[name]||={id:900,headers:[...c.REQUIRED_HEADERS[name]],rows:[]};
+tables.Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:'["app.access","ordenes.read","ordenes.create"]'},{Rol:'ADMINISTRADOR',Activo:'SI',Permisos_JSON:'["app.access","users.manage","ordenes.read"]'},{Rol:'CONSULTA',Activo:'NO',Permisos_JSON:'["app.access"]'});
+const owner=c.validateSessionToken_('qa-session',false),input={name:'Persona sintética',email:'person@example.invalid',role:'VENDEDOR',mainBranch:'MP',branches:['MP']};
+assert.throws(()=>c.createInvitation_(input,{profile:owner.profile,permissions:['app.access']}),e=>e.appCode==='PERMISSION_DENIED');
+assert.throws(()=>c.createInvitation_({...input,role:'CONSULTA'},owner),e=>e.appCode==='ROLE_NOT_ALLOWED');
+const admin={profile:{uid:'admin',role:'ADMINISTRADOR',branches:['MP']},permissions:['users.manage','app.access','ordenes.read']};
+assert.throws(()=>c.createInvitation_(input,admin),e=>e.appCode==='ROLE_NOT_ALLOWED');
+assert.throws(()=>c.createInvitation_({...input,role:'ADMINISTRADOR',mainBranch:'TP',branches:['TP']},admin),e=>e.appCode==='BRANCH_NOT_ALLOWED');
+f.state.busy=true;assert.throws(()=>c.createInvitation_(input,owner),e=>e.appCode==='SYSTEM_BUSY');f.state.busy=false;
+const out=c.createInvitation_(input,owner),token=new URL(out.activationUrl).searchParams.get('token');assert(token);assert.equal(tables.Invitaciones.rows.length,1);assert.notEqual(tables.Invitaciones.rows[0].Token_Hash,token);
+assert.throws(()=>c.createInvitation_(input,owner),e=>e.appCode==='INVITATION_ALREADY_PENDING');
+const team=c.listUsers_(owner);assert.equal(team.invitations.length,1);assert.equal(team.roles.find(r=>r.role==='PROPIETARIO').invitable,false);assert(!JSON.stringify(team).includes(token));assert(!JSON.stringify(team).includes('Token_Hash'));
+const proprietor=tables.Usuarios.rows[0];proprietor.Estado='SUSPENDIDO';assert.throws(()=>c.createInvitation_({...input,email:proprietor.Email},owner),e=>e.appCode==='OWNER_PROTECTED');proprietor.Estado='ACTIVO';
+// Identity-provider seam only; activation and all sheet/session behavior are real modules.
+c.lookupFirebaseUser_=()=>({uid:'new-user',email:input.email,emailVerified:true});
+proprietor.Estado='SUSPENDIDO';assert.throws(()=>c.activateInvitation_({token},{}),e=>e.appCode==='INVITATION_UNAVAILABLE');proprietor.Estado='ACTIVO';
+const activated=c.activateInvitation_({token},{});assert.equal(activated.profile.role,'VENDEDOR');assert.equal(activated.profile.mainBranch,'MP');assert.equal(tables.Invitaciones.rows[0].Estado,'USADA');
+assert.throws(()=>c.activateInvitation_({token},{}),e=>e.appCode==='INVITATION_UNAVAILABLE');assert.throws(()=>c.createInvitation_(input,owner),e=>e.appCode==='USER_ALREADY_ACTIVE');
+const user=tables.Usuarios.rows.find(u=>u.UID_Firebase==='new-user');user.Estado='SUSPENDIDO';assert.throws(()=>c.validateSessionToken_(activated.sessionToken,false),e=>e.appCode==='USER_INACTIVE');
+const second=c.createInvitation_({...input,email:'expired@example.invalid'},owner);tables.Invitaciones.rows[1].Expira_En='2000-01-01';assert.throws(()=>c.validateInvitation_({token:new URL(second.activationUrl).searchParams.get('token')}),e=>e.appCode==='INVITATION_EXPIRED');
+console.log('Team access: active roles, scoped grants, owner protection, duplicate lock, private invitation tokens, activation, expired link and suspended session passed.');
