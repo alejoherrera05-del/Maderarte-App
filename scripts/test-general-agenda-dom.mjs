@@ -6,9 +6,9 @@ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialog
 const motions=[];w.Element.prototype.animate=function(frames,options){motions.push({frames,options});return {finished:Promise.resolve(),cancel(){}};};w.matchMedia=()=>({matches:false});w.APP_CONFIG={version:'0.2.0'};w.esc=v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');let seq=0;
 w.createRequestId=()=>`AGENDA-DOM-${++seq}`;
 w.guardStandalonePage=async({render})=>render({session:{profile:{uid:'TEST',branches:['MP'],mainBranch:'MP'},permissions:['agenda.read','agenda.update']}});
-let events=[],saved=new Map(),sent=[],lose=true,loseCancel=true,failLoads=1,listCalls=0;
+let events=[],saved=new Map(),sent=[],lose=true,loseCancel=true,failLoads=1,listCalls=0,malformed;
 w.apiRequest=async(action,p,options)=>{
- if(action==='AGENDA_LISTAR'){listCalls++;if(failLoads-->0)throw Error('Upstream response invalid');return {data:{items:events,enabled:true}};}
+ if(action==='AGENDA_LISTAR'){listCalls++;if(failLoads-->0)throw Error('Upstream response invalid');return {data:malformed===undefined?{items:events,enabled:true}:malformed};}
  if(action==='AGENDA_GUARDADO_ESTADO')return {data:{saved:saved.has(p.requestId),result:saved.get(p.requestId)}};
  if(action==='AGENDA_GUARDAR'){
    sent.push(p);if(p.operation==='cancel')await new Promise(r=>setTimeout(r,80));const result={id:p.id||options.requestId,date:p.date||events[0].date,time:p.time||'10:00',revision:(p.revision||0)+1,count:1};
@@ -24,8 +24,13 @@ assert.match($('ag-list').textContent,/No pudimos cargar/);
 assert.doesNotMatch($('ag-list').textContent,/Cargando|Sin compromisos/,'Failed query is neither loading nor empty');
 assert.equal($('ag-new').disabled,true,'No creation before a successful capability check');
 w.document.querySelector('[data-filter="SERVICIO"]').click();assert.ok($('ag-load-retry'),'Filter does not erase the failure state');
+malformed={enabled:true};
+$('ag-load-retry').click();await wait();
+assert.match($('ag-list').textContent,/No pudimos cargar/,'A success envelope missing items remains a recoverable failure');
+assert.equal($('ag-new').disabled,true);assert.equal($('ag-refresh').disabled,false);
+malformed=undefined;
 $('ag-load-retry').click();$('ag-refresh').click();await wait();
-assert.equal(listCalls,2,'Retry remains single-flight');
+assert.equal(listCalls,3,'Retry remains single-flight');
 assert.match($('ag-list').textContent,/Sin compromisos/);assert.equal($('ag-load-retry'),null);assert.equal($('ag-notice').textContent,'');
 $('ag-new').click();assert.equal(w.document.querySelector('[data-kind="ENTREGA"]').disabled,true,'No order permission cannot open delivery');
 w.document.querySelector('[data-kind="SERVICIO"]').click();assert.equal($('ag-task-form').hidden,false);assert.equal($('ag-search-area').hidden,true,'No OP required for service');
@@ -52,6 +57,18 @@ const priorList=$('ag-list').textContent;failLoads=1;$('ag-refresh').click();awa
 assert.equal($('ag-list').textContent,priorList,'Failed refresh keeps previously loaded commitments');
 assert.match($('ag-notice').textContent,/última consulta/);assert.equal($('ag-load-retry'),null);
 $('ag-refresh').click();await wait();assert.equal($('ag-notice').textContent,'');
+for(const bad of [null,{}, {items:{},enabled:true}, {items:[],enabled:'true'}, {items:[null],enabled:true},
+  {items:[{id:'broken',date:'not-a-date',status:'PROGRAMADA',items:[]}],enabled:true},
+  {items:[{id:'broken',date:'2092-01-31',time:'25:00',status:'PROGRAMADA',items:[]}],enabled:true},
+  {items:[{id:'broken',date:'2092-01-31',status:'PROGRAMADA'}],enabled:true}]){
+  malformed=bad;$('ag-refresh').click();await wait();
+  assert.equal($('ag-list').textContent,priorList,'Malformed refresh preserves the last complete list');
+  assert.match($('ag-notice').textContent,/última consulta/);
+  assert.equal($('ag-refresh').disabled,false,'Retry remains available');
+  $('ag-today').click();$('ag-find').dispatchEvent(new w.Event('input'));
+  assert.equal($('ag-list').textContent,priorList,'Calendar and search remain usable after an invalid reply');
+}
+malformed=undefined;$('ag-refresh').click();await wait();assert.equal($('ag-notice').textContent,'');
 dom.window.close();console.log('General agenda DOM: load failures and recovery, permission-aware categories, save/recovery, edit prefilling, search, cancellation and undo verified.');
 
 

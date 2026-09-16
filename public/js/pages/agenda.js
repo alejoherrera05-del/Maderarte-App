@@ -61,8 +61,15 @@ async function load(){
   if(state.loading)return false;
   state.loading=true;
   $('ag-refresh').disabled=true;state.loadError=false;if(!state.loaded)render();$('ag-notice').textContent='Actualizando agenda…';
-  try{const d=await api('AGENDA_LISTAR');state.events=d.items;state.enabled=d.enabled;state.loaded=true;render();$('ag-notice').textContent='';return true;}
+  try{const d=await api('AGENDA_LISTAR');validateAgendaResponse(d);state.events=d.items;state.enabled=d.enabled;state.loaded=true;render();$('ag-notice').textContent='';return true;}
   catch(e){state.loadError=true;render();$('ag-notice').textContent=state.loaded?'No se pudo actualizar. Sigues viendo la última consulta; vuelve a actualizar.':'La consulta no terminó. Puedes reintentarlo.';return false;}finally{state.loading=false;$('ag-refresh').disabled=false;}
+}
+function validateAgendaResponse(data){
+  const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'));
+  const validItem=item=>item&&typeof item.id==='string'&&item.id&&validDate(item.date)&&typeof item.status==='string'&&
+    (!item.time||/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(item.time))&&
+    (type(item)!=='ENTREGA'||Array.isArray(item.items));
+  if(!data||!Array.isArray(data.items)||typeof data.enabled!=='boolean'||!data.items.every(validItem))throw Error('La agenda no devolvió una consulta completa.');
 }
 function shell(){
   $('agenda-app').innerHTML=`<header class="ag-header"><a class="ag-round" id="ag-back" href="/index.html" aria-label="Volver al inicio">${icon('arrow-left')}</a><div class="ag-brand"><img class="ag-seal" src="/assets/brand/maderarte-logo-2026.webp" alt=""><img class="ag-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Agenda</span></div><button class="ag-round" id="ag-refresh" aria-label="Actualizar agenda">${icon('arrow-clockwise')}</button></header>
