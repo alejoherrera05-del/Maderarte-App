@@ -13,8 +13,8 @@ const deny=(action,p)=>{
  AJUSTE_CONFIRMAR:{...common,type:'DEVOLVER',amount:100000,reason:'Prueba',reference:'Prueba'},
  PRODUCCION_REGISTRAR:{number,itemId:number+'-I-2',revision:1,stage:'BODEGA',quantity:1,date:'2026-09-16',provider:'Taller',notes:'',verified:true},
  REMISION_CREAR:{...common,items:[{itemId:number+'-I-1',quantity:1}],transporter:{name:'Prueba',mode:'PIALLERO',favorite:false},assistant:{name:'',favorite:false},physicalCheck:true,notes:''},
- AGENDA_GUARDAR:{id:'',number,date:'2026-09-20',time:'10:00',items:[{itemId:number+'-I-1',quantity:1}],notes:'',revision:0}};
- assert.throws(()=>run(action,p||samples[action]||{}),e=>e.appCode==='PERMISSION_DENIED',action);
+ AGENDA_GUARDAR:{id:'',number,date:'2026-09-20',time:'10:00',items:[{id:number+'-I-1',quantity:1,revision:1}],notes:'',revision:0}};
+ const snapshot=JSON.stringify(f.production());assert.throws(()=>run(action,p||samples[action]||{}),e=>e.appCode==='PERMISSION_DENIED',action);assert.equal(JSON.stringify(f.production()),snapshot,action+' must not write');
 };
 const before=JSON.stringify(f.production());const plan=c.operationalRoleProposal_(c.validateSessionToken_('qa-session',false));assert.equal(plan.length,5);assert.equal(JSON.stringify(f.production()),before,'proposal is read-only');
 as('VENDEDOR');
@@ -45,3 +45,13 @@ console.log('Role flow passed: seller quote/new client/PDF/conversion/order/PDF/
 
 
 
+
+
+// Cross-user PDF completion stays restricted for sellers, even within one branch.
+as('VENDEDOR');const qrow=f.production().tables.Cotizaciones.rows[0],orow=f.production().tables.Ordenes_Pedido.rows[0];qrow.Creado_Por='other-person';orow.Creado_Por='other-person';
+assert.throws(()=>run('INTERNO_COTIZACION_DOCUMENTO_PREPARAR',{number:q}),e=>e.appCode==='QUOTE_DOCUMENT_FORBIDDEN');
+assert.throws(()=>run('INTERNO_DOCUMENTO_PREPARAR',{number}),e=>e.appCode==='ORDER_DOCUMENT_FORBIDDEN');
+as('ADMINISTRADOR');assert(run('INTERNO_COTIZACION_DOCUMENTO_PREPARAR',{number:q}).complete);assert(run('INTERNO_DOCUMENTO_PREPARAR',{number}).complete);
+orow.Sede='TP';for(const role of ['VENDEDOR','ADMINISTRADOR','BODEGA_LOGISTICA','CONSULTA']){as(role);assert.throws(()=>run('ORDEN_OBTENER',{number}),e=>['BRANCH_NOT_ALLOWED','ORDER_NOT_FOUND'].includes(e.appCode));}orow.Sede='MP';
+as('CONSULTA');assert.throws(()=>c.operationalRoleProposal_(c.validateSessionToken_('qa-session',false)),e=>e.appCode==='PERMISSION_DENIED');
+console.log('Cross-user document ownership and all nonowner branch boundaries passed.');
