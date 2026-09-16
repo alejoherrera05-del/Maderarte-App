@@ -38,4 +38,15 @@ assert.throws(()=>c.ajPlan_({type:'TRANSFERIR'},narrow),e=>e.appCode==='PERMISSI
 book().Configuracion.rows.find(r=>r.Clave===c.upKey_(user().Email)).Valor='invalid';
 assert.throws(()=>c.validateSessionToken_(session.sessionToken,false),e=>e.appCode==='ACCESS_CONFIGURATION');
 assert(own().permissions.includes('*'));
+{
+ const g=sandboxRuntime(),a=g.c;g.state.props.APP_BASE_URL='https://maddy.example.invalid';
+ g.production().tables.Invitaciones||={id:901,headers:[...a.REQUIRED_HEADERS.Invitaciones],rows:[]};
+ g.production().tables.Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:'["app.access","abonos.create"]'});
+ const invitation=a.createInvitation_({name:'Acceso limitado',email:'limited@example.invalid',role:'VENDEDOR',mainBranch:'MP',branches:['MP'],permissions:['app.access','clientes.read']},a.validateSessionToken_('qa-session',false));
+ g.production().tables.Roles.rows.find(r=>r.Rol==='VENDEDOR').Permisos_JSON='["app.access","users.manage","abonos.create"]';
+ a.lookupFirebaseUser_=()=>({uid:'limited',email:'limited@example.invalid',emailVerified:true});
+ const activated=a.activateInvitation_({token:new URL(invitation.activationUrl).searchParams.get('token')},{});
+ assert.deepEqual([...activated.permissions],['app.access','clientes.read']);
+ assert(!a.validateSessionToken_(activated.sessionToken,false).permissions.includes('abonos.create'));
+}
 console.log('Individual permissions: preservation, explicit denies, live session revocation, immutable role baseline, owner/self protection, scope, dependency checks, atomic audit and lost-reply retry passed.');
