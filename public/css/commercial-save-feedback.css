@@ -13,4 +13,11 @@
 @keyframes save-feedback-spin{to{transform:rotate(360deg)}}
 @keyframes save-feedback-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:480px){.commercial-save-feedback{padding:18px!important}.commercial-save-steps{gap:8px}.commercial-save-steps li{font-size:12px;gap:5px}}
+@media(max-width:600px){
+  #receipt-workflow .quote-header-inner{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px 10px}
+  #receipt-workflow .quote-header-brand{grid-column:2 / 4;grid-row:1;justify-content:flex-start}
+  #receipt-sample{grid-column:2;grid-row:2;justify-self:end}
+  #receipt-new-search{grid-column:3;grid-row:2}
+  #receipt-recovery{scroll-margin-top:142px}
+}
 @media(prefers-reduced-motion:reduce){.commercial-save-feedback,.commercial-save-feedback[data-active=true] .commercial-save-message::before{animation:none}}

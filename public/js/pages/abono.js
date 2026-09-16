@@ -47,7 +47,7 @@ async function openPdf(number){
   }catch(failure){popup?.close();$('receipt-feedback').textContent=failure.message;}
 }
 async function showReceipt(number){
-  entrance?.open();
+  entrance?.open();$('receipt-mode').textContent='';
   $('receipt-entry').hidden=true;$('receipt-result').hidden=false;$('receipt-result').textContent='Consultando el recibo…';
   try {const {data:r}=await apiRequest('RECIBO_OBTENER',{number});
     flow.ready();$('receipt-back').href=orderReturnPath(r.orderNumber);$('receipt-back').setAttribute('aria-label','Volver a la orden');
