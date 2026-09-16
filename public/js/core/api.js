@@ -50,6 +50,7 @@ export async function apiRequest(action, payload = {}, options = {}) {
     let body = null;
     try { body = await response.json(); } catch { body = null; }
     if (!response.ok || !body || body.status !== 'success') {
+      if(action!=='AUTH_SESSION_VALIDATE'&&[401,403].includes(response.status))window.dispatchEvent(new window.Event('maddy:access-recheck'));
       const message = body?.msg || body?.message || `No fue posible completar la solicitud (${response.status}).`;
       throw new ApiError(message, {
         code: body?.code || `HTTP_${response.status}`,

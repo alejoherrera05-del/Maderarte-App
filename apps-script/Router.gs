@@ -87,6 +87,7 @@ function routeAction_(action, payload, context) {
     case 'PRUEBA_LIMPIAR': return osClean_(payload, context);
     case 'SISTEMA_ESTADO': return systemState_(context.session);
     case 'USUARIO_PERMISOS_GUARDAR': return upSave_(payload,context);
+    case 'USUARIO_ESTADO_GUARDAR': return upStatus_(payload,context);
     case 'USUARIOS_LISTAR': return listUsers_(context.session);
     case 'INVITACION_CREAR': return createInvitation_(payload, context.session);
     default: throw appError_('ACTION_NOT_FOUND', 'La acción solicitada no existe.', 404);

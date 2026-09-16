@@ -1,4 +1,5 @@
 *, *::before, *::after { box-sizing: border-box; }
+.access-change-dialog{width:min(440px,calc(100% - 32px));padding:32px;border:1px solid #e5e2df;border-radius:24px;background:#fff;color:#252426;box-shadow:0 24px 80px #0003;font:inherit;text-align:left}.access-change-dialog::backdrop{background:#25242666;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}.access-change-dialog h1{font-size:26px;line-height:1.15;font-weight:600;letter-spacing:-.035em;margin:20px 0 14px}.access-change-dialog p{font-size:16px;line-height:1.55;color:#656167}.access-change-dialog button{width:100%;min-height:50px;border:0;border-radius:14px;background:#252426;color:white;font:inherit;font-weight:600;cursor:pointer;margin-top:12px}.access-change-dialog button:active{transform:scale(.98)}.access-change-dialog[open]{animation:access-arrive .2s ease-out}@keyframes access-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.access-change-dialog[open]{animation:none}.access-change-dialog button:active{transform:none}}
 
 html {
   min-width: 320px;
