@@ -133,7 +133,6 @@ function syncPageState() {
     mobileReview.disabled = readyCount === 0;
     mobileReview.setAttribute('aria-disabled', String(readyCount === 0));
   }
-  syncClientDisclosure();
 }
 
 function bindCard(card) {
@@ -187,9 +186,16 @@ if (itemRoot) {
 }
 
 if (clientSection) {
+  /* Class changes only refresh quote state; they never write another client class. */
   new MutationObserver(syncPageState).observe(clientSection, { attributes: true, attributeFilter: ['class'] });
-  clientSection.addEventListener('input', syncPageState);
-  clientSection.addEventListener('change', syncPageState);
+  clientSection.addEventListener('input', () => {
+    syncClientDisclosure();
+    syncPageState();
+  });
+  clientSection.addEventListener('change', () => {
+    syncClientDisclosure();
+    syncPageState();
+  });
 }
 if (clientMessage) {
   new MutationObserver(syncClientDisclosure).observe(clientMessage, { childList: true, characterData: true, subtree: true });
