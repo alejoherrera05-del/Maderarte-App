@@ -56,12 +56,12 @@ function refreshClientObject() {
   clientSummary.querySelector('.mq5-client-copy span').textContent = [documentNumber ? `CC/NIT ${documentNumber}` : '', city, phone, email].filter(Boolean).join(' · ') || 'Completa los datos del cliente';
   const canCollapse = clientCanSummarize();
   if (!canCollapse) clientEditLocked = false;
-  clientSection.classList.toggle('mq5-client-collapsed', canCollapse && !clientEditLocked);
+  clientSection.classList.toggle('mq5-client-collapsed', canCollapse && (!clientEditLocked || previewMode));
 }
 
 document.getElementById('quote-form')?.addEventListener('input', event => {
   if (event.target.closest?.('.quote-field-grid-client')) {
-    if (!clientRequiredComplete()) clientEditLocked = true;
+    clientEditLocked = !clientRequiredComplete();
     refreshClientObject();
   }
 });
