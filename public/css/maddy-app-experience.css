@@ -1,151 +1,58 @@
-/* Maddy App Experience · shared visual foundation
-   This layer is intentionally additive: it does not change business logic,
-   document contracts, Apps Script, routes, or data structures. */
+/* Maddy App Experience · pilot 2
+   UI-only layer. No business logic, routes, IDs or data contracts changed. */
+:root{
+  --maddy-bg:#f5f5f3;--maddy-panel:#fff;--maddy-ink:#1d1d1f;--maddy-secondary:#5f6067;
+  --maddy-tertiary:#7b7c82;--maddy-line:rgba(29,29,31,.10);--maddy-accent:#d9681c;
+  --maddy-accent-deep:#b95110;--maddy-accent-soft:#fff0e5;--maddy-radius:20px;
+  --maddy-radius-sm:13px;--maddy-shadow:0 12px 36px rgba(20,20,22,.065);
+  --maddy-motion:180ms cubic-bezier(.2,.75,.25,1)
+}
+html{background:var(--maddy-bg)}
+body{background:var(--maddy-bg);color:var(--maddy-ink);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.quote-header{background:rgba(245,245,243,.88)!important;border-bottom:1px solid var(--maddy-line)!important;backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%)}
+.quote-header-inner{min-height:64px}.quote-header-brand strong{letter-spacing:-.02em}.quote-header-brand small{color:var(--maddy-secondary)!important}
+.quote-workspace{animation:maddy-enter .24s ease both}.quote-shell{max-width:1320px}
+.quote-document-head,.quote-editor-section,.quote-summary-card{border:1px solid var(--maddy-line)!important;box-shadow:var(--maddy-shadow)!important;background:var(--maddy-panel)!important}
+.quote-editor-section,.quote-summary-card{border-radius:var(--maddy-radius)!important}.quote-summary-card{position:sticky;top:82px}
+.quote-section-title h2,.quote-document-number-row h1,.quote-summary-total strong{letter-spacing:-.035em;color:var(--maddy-ink)!important}
+.quote-section-title>div>span,.quote-document-kicker,.quote-summary-head>span{font-size:11px!important;line-height:1.2;letter-spacing:.075em;text-transform:uppercase;font-weight:700;color:var(--maddy-accent-deep)!important}
+.quote-helper,.quote-section-title small,.quote-write-note{color:var(--maddy-secondary)!important;line-height:1.45}
+.quote-field label,.quote-discount-field label{color:#45464b!important;font-weight:600!important}
+.quote-field input,.quote-field textarea,.quote-discount-field input{border:1px solid rgba(29,29,31,.14)!important;background:#fff!important;color:var(--maddy-ink)!important;box-shadow:none!important;transition:border-color var(--maddy-motion),box-shadow var(--maddy-motion),background var(--maddy-motion)}
+.quote-field input:focus,.quote-field textarea:focus,.quote-discount-field input:focus{outline:none!important;border-color:rgba(217,104,28,.70)!important;box-shadow:0 0 0 4px rgba(217,104,28,.10)!important}
+.quote-round-button,.quote-preview-button,.quote-secondary-action,.quote-primary-action,.quote-add-item,.quote-change-branch{transition:transform var(--maddy-motion),box-shadow var(--maddy-motion),background var(--maddy-motion),border-color var(--maddy-motion),opacity var(--maddy-motion)}
+.quote-primary-action{background:var(--maddy-accent)!important;color:#fff!important;border:0!important;box-shadow:0 5px 14px rgba(185,81,16,.16)!important;font-weight:700!important}
+.quote-primary-action:disabled{background:#e5e5e7!important;color:#8b8b91!important;box-shadow:none!important;opacity:1!important}
+.quote-secondary-action{background:#f1f1f2!important;color:var(--maddy-ink)!important;border:1px solid rgba(29,29,31,.08)!important;font-weight:650!important}
+.quote-primary-action:active:not(:disabled),.quote-secondary-action:active,.quote-add-item:active,.quote-round-button:active{transform:scale(.985)}
+.quote-gate-stage{border-radius:24px!important;box-shadow:var(--maddy-shadow)!important}.quote-gate-option{transition:transform var(--maddy-motion),border-color var(--maddy-motion),box-shadow var(--maddy-motion)}.quote-gate-option:hover{transform:translateY(-1px);border-color:rgba(217,104,28,.28)!important}
+.quote-preview-overlay{backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+@keyframes maddy-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
-:root {
-  --maddy-bg: #f4f4f2;
-  --maddy-panel: rgba(255,255,255,.92);
-  --maddy-panel-solid: #fff;
-  --maddy-ink: #202022;
-  --maddy-muted: #717177;
-  --maddy-border: rgba(32,32,34,.10);
-  --maddy-accent: #d86b1c;
-  --maddy-accent-deep: #b95410;
-  --maddy-accent-soft: #fff1e6;
-  --maddy-radius: 18px;
-  --maddy-radius-sm: 12px;
-  --maddy-shadow: 0 18px 48px rgba(24,24,26,.08);
-  --maddy-shadow-soft: 0 5px 18px rgba(24,24,26,.055);
-  --maddy-motion: 180ms cubic-bezier(.2,.75,.25,1);
+/* Phone treatment: compact, readable and deliberately app-like. */
+@media(max-width:600px){
+  body.quote-page{background:#f5f5f3!important}
+  .quote-header-inner{min-height:58px!important;padding-left:14px!important;padding-right:14px!important}
+  .quote-header-brand small{display:none!important}.quote-header-brand strong{font-size:16px!important}
+  .quote-round-button{width:38px!important;height:38px!important;min-width:38px!important}
+  .quote-preview-button{min-height:38px!important;padding:0 13px!important;font-size:14px!important}
+  .quote-shell{padding-left:12px!important;padding-right:12px!important}
+  .quote-document-head{border-radius:17px!important;box-shadow:none!important}
+  .quote-editor-section{border-radius:17px!important;box-shadow:none!important;padding:18px 16px!important;margin-bottom:12px!important}
+  .quote-section-title{margin-bottom:14px!important}.quote-section-title h2{font-size:20px!important;line-height:1.12!important;margin-top:3px!important}.quote-section-title small{font-size:13px!important;line-height:1.4!important}
+  .quote-field-grid{gap:12px!important}.quote-field{gap:6px!important}.quote-field label{font-size:13px!important;line-height:1.2!important}
+  .quote-field input,.quote-field textarea{font-size:16px!important;min-height:46px!important;border-radius:12px!important;padding:11px 13px!important}
+  .quote-helper{font-size:12.5px!important;margin-top:5px!important}
+  .quote-summary-column{margin-top:12px!important}
+  .quote-summary-card{position:static!important;border-radius:18px!important;box-shadow:none!important;padding:18px 16px!important}
+  .quote-summary-head{margin-bottom:10px!important}.quote-summary-head>span{font-size:10.5px!important}.quote-summary-head small{font-size:12px!important;color:var(--maddy-secondary)!important}
+  .quote-summary-row{min-height:42px!important;font-size:15px!important;border-bottom:1px solid var(--maddy-line)!important}
+  .quote-discount-field{margin:0!important;padding:12px 0!important;border-bottom:1px solid var(--maddy-line)!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:12px!important}
+  .quote-discount-field label{font-size:15px!important;margin:0!important}.quote-discount-field>div{width:132px!important;min-height:40px!important;border:0!important;background:#f2f2f3!important;border-radius:10px!important;padding:0 10px!important}.quote-discount-field input{font-size:15px!important;min-height:40px!important;border:0!important;background:transparent!important;text-align:right!important;padding:0!important}
+  .quote-summary-total{padding:16px 0 8px!important;align-items:baseline!important}.quote-summary-total span{font-size:15px!important;color:var(--maddy-secondary)!important}.quote-summary-total strong{font-size:30px!important;line-height:1!important;color:var(--maddy-ink)!important}
+  .quote-summary-card>.quote-helper{margin:4px 0 14px!important;font-size:12.5px!important}
+  .quote-secondary-action,.quote-primary-action{width:100%!important;min-height:48px!important;border-radius:13px!important;font-size:16px!important;line-height:1!important;margin-top:8px!important}
+  .quote-write-note{font-size:11.5px!important;line-height:1.35!important;text-align:left!important;margin:12px 2px 0!important;color:#77787e!important}
+  .quote-gate-stage{margin:12px!important;border-radius:20px!important;padding:24px 18px!important}.quote-gate-intro{font-size:14px!important;line-height:1.45!important}
 }
-
-html { background: var(--maddy-bg); }
-body {
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  background:
-    radial-gradient(circle at 90% -10%, rgba(216,107,28,.07), transparent 32rem),
-    var(--maddy-bg);
-}
-
-/* Give independent documents the same app-like chrome without changing routes. */
-.quote-header {
-  background: rgba(244,244,242,.86) !important;
-  border-bottom: 1px solid var(--maddy-border) !important;
-  backdrop-filter: blur(18px) saturate(145%);
-  -webkit-backdrop-filter: blur(18px) saturate(145%);
-}
-.quote-header-inner { min-height: 68px; }
-.quote-header-brand strong { letter-spacing: -.015em; }
-.quote-header-brand small { color: var(--maddy-muted); }
-
-.quote-round-button,
-.quote-preview-button,
-.quote-secondary-action,
-.quote-primary-action,
-.quote-add-item,
-.quote-change-branch {
-  transition: transform var(--maddy-motion), box-shadow var(--maddy-motion), background var(--maddy-motion), border-color var(--maddy-motion), opacity var(--maddy-motion);
-}
-.quote-round-button:hover,
-.quote-preview-button:hover:not(:disabled),
-.quote-secondary-action:hover,
-.quote-add-item:hover,
-.quote-change-branch:hover { transform: translateY(-1px); }
-.quote-primary-action:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(185,84,16,.20);
-}
-.quote-round-button:active,
-.quote-preview-button:active:not(:disabled),
-.quote-secondary-action:active,
-.quote-primary-action:active:not(:disabled),
-.quote-add-item:active,
-.quote-change-branch:active { transform: scale(.985); }
-
-.quote-workspace { animation: maddy-enter .28s ease both; }
-.quote-shell { max-width: 1380px; }
-.quote-document-head,
-.quote-editor-section,
-.quote-summary-card {
-  border-color: var(--maddy-border) !important;
-  box-shadow: var(--maddy-shadow-soft) !important;
-}
-.quote-editor-section,
-.quote-summary-card { background: var(--maddy-panel) !important; }
-.quote-summary-card {
-  position: sticky;
-  top: 88px;
-  border-radius: var(--maddy-radius) !important;
-}
-
-.quote-section-title h2,
-.quote-document-number-row h1,
-.quote-summary-total strong { letter-spacing: -.025em; }
-.quote-section-title > div > span,
-.quote-document-kicker,
-.quote-summary-head > span {
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  font-size: 11px;
-  font-weight: 750;
-}
-
-.quote-field label { color: #4e4e54; font-weight: 650; }
-.quote-field input,
-.quote-field textarea,
-.quote-discount-field input {
-  border-color: rgba(32,32,34,.13) !important;
-  background: rgba(255,255,255,.88) !important;
-  transition: border-color var(--maddy-motion), box-shadow var(--maddy-motion), background var(--maddy-motion);
-}
-.quote-field input:hover,
-.quote-field textarea:hover { border-color: rgba(32,32,34,.22) !important; }
-.quote-field input:focus,
-.quote-field textarea:focus,
-.quote-discount-field input:focus {
-  border-color: rgba(216,107,28,.65) !important;
-  box-shadow: 0 0 0 4px rgba(216,107,28,.10) !important;
-  outline: none;
-  background: #fff !important;
-}
-.quote-helper { color: var(--maddy-muted) !important; }
-
-.quote-primary-action {
-  background: linear-gradient(180deg, #df762b, var(--maddy-accent-deep)) !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 16px rgba(185,84,16,.15);
-}
-.quote-primary-action:disabled { box-shadow: none; }
-
-.quote-gate-stage {
-  border-radius: 24px;
-  box-shadow: var(--maddy-shadow);
-}
-.quote-gate-option {
-  transition: transform var(--maddy-motion), border-color var(--maddy-motion), box-shadow var(--maddy-motion), background var(--maddy-motion);
-}
-.quote-gate-option:hover {
-  transform: translateY(-2px);
-  border-color: rgba(216,107,28,.32) !important;
-  box-shadow: var(--maddy-shadow-soft);
-}
-
-.quote-preview-overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.quote-preview-sheet { box-shadow: 0 -20px 60px rgba(20,20,22,.18); }
-
-@keyframes maddy-enter {
-  from { opacity: 0; transform: translateY(7px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (max-width: 900px) {
-  .quote-summary-card { position: static; }
-  .quote-header-inner { min-height: 62px; }
-  .quote-editor-section,
-  .quote-summary-card { border-radius: 16px !important; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
