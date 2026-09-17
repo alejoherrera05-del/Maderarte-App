@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {payrollCalculate,payrollDays} from '../public/js/core/payroll-rules.js';
+import {payrollCalculate,payrollDays,payrollPeriod,payrollPeriodLabel} from '../public/js/core/payroll-rules.js';
 import {sandboxRuntime} from './fixtures/owner-sandbox-runtime.mjs';
 const employee={start:'2025-01-01',salary:0,transport:true};
 assert.equal(payrollDays('2026-02-16','2026-02-28'),15);
@@ -35,3 +35,30 @@ assert.throws(()=>call('NOMINA_PREVISUALIZAR',{employeeId:e.id,type:'LIQUIDACION
 f.c.mdDrive_=()=>({getContentText:()=>JSON.stringify({shared:true,permissions:[{type:'anyone',role:'reader'}]})});assert.throws(()=>f.c.npPrivateFolder_({getId:()=> 'synthetic-folder'}),/privada/);
 f.production().tables.Usuarios.rows[0].Rol='VENDEDOR';f.production().tables.Roles.rows.push({Rol:'VENDEDOR',Activo:'SI',Permisos_JSON:'["ordenes.read"]'});assert.throws(()=>call('NOMINA_LISTAR'),e=>e.appCode==='PERMISSION_DENIED');
 console.log('Payroll: statutory example, 30-day periods, rounding, private permissions, employees, old commissions, manual eligibility, atomic timeout replay, reservation, cancellation, payment, changed sale and duplicate periods passed.');
+
+const absence=payrollCalculate({type:'SALARIO',from:'2026-09-01',to:'2026-09-15',absent:2,workedDays:13,absenceReason:'Ausencia no remunerada de muestra'},employee);
+assert.equal(absence.attendance.workedDays,13);assert.equal(absence.attendance.absentDays,2);
+assert.equal(absence.lines.find(x=>x.label==='Días no remunerados · salario').amount,116727);
+assert.equal(absence.lines.find(x=>x.label.includes('salud')).calculation.basis,758726);
+assert.equal(absence.net,805969);
+assert.throws(()=>payrollCalculate({type:'SALARIO',from:'2026-09-01',to:'2026-09-15',absent:2,workedDays:15,absenceReason:'Test'},employee),/sumar/);
+assert.throws(()=>payrollCalculate({type:'SALARIO',from:'2026-09-01',to:'2026-09-15',absent:2},employee),/motivo/);
+for(const [month,to] of [['2026-02','2026-02-28'],['2028-02','2028-02-29'],['2026-09','2026-09-30'],['2026-10','2026-10-31']]){const p=payrollPeriod(month,2);assert.equal(p.to,to);assert.equal(payrollDays(p.from,p.to),15);}
+assert.equal(payrollPeriodLabel('SALARIO','2026-09-01','2026-09-15'),'Primera quincena de septiembre de 2026');
+assert.equal(payrollPeriodLabel('SALARIO','2026-09-16','2026-09-20'),'Período personalizado');
+assert.throws(()=>payrollPeriod('2026-13',1),/fecha/);
+f.production().tables.Usuarios.rows[0].Rol='PROPIETARIO';
+const beforeSettings=call('NOMINA_OBTENER',{id:r.id});
+const settingsInput={year:2026,salary:1800000,transport:250000,revision:0,confirmed:true};
+const config=call('NOMINA_PARAMETROS_GUARDAR',settingsInput,'PAYROLL-RATES-0001');
+assert.equal(call('NOMINA_PARAMETROS_GUARDAR',settingsInput,'PAYROLL-RATES-0001').revision,config.revision);
+assert.equal(call('NOMINA_LISTAR').rates[2026].salary,1800000);
+assert.deepEqual(call('NOMINA_OBTENER',{id:r.id}),beforeSettings);
+const configured=call('NOMINA_PREVISUALIZAR',{employeeId:e.id,type:'SALARIO',from:'2026-09-01',to:'2026-09-15'});
+assert.equal(configured.document.ratesSnapshot.salary,1800000);assert.equal(configured.document.lines[0].amount,900000);
+assert.throws(()=>call('NOMINA_PARAMETROS_GUARDAR',{...settingsInput,salary:1900000}),/cambiaron/);
+assert.throws(()=>call('NOMINA_PARAMETROS_GUARDAR',{...settingsInput,revision:config.revision,salary:1}),/inferiores/);
+const issueInput={employeeId:e.id,type:'SALARIO',from:'2026-10-01',to:'2026-10-15'};const oldPreview=call('NOMINA_PREVISUALIZAR',issueInput);
+call('NOMINA_PARAMETROS_GUARDAR',{...settingsInput,revision:config.revision,salary:1900000});
+assert.throws(()=>call('NOMINA_EMITIR',{input:issueInput,fingerprint:oldPreview.fingerprint,confirmed:true}),/camb|revis/i);
+console.log('Payroll settings: persisted annual values, conflict/retry protection, immutable receipts, refreshed preview and explicit attendance passed.');
