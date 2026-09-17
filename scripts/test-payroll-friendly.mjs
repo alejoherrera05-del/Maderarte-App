@@ -14,9 +14,11 @@ Object.assign(globalThis,{
 const root=document.getElementById('root');
 
 root.innerHTML=`
-  <div class="np-top"><div><span class="np-eyebrow">Personas y pagos</span><h1>Nómina</h1><p>Revisa tu quincena y registra cada pago.</p></div><button id="np-new" class="np-button dark">Nuevo comprobante</button></div>
-  <nav class="np-tabs"><button data-tab="quincena">Quincena</button><button data-tab="comprobantes">Comprobantes</button><button data-tab="comisiones">Comisiones</button></nav>
-  <div id="np-run-result">
+  <header class="cfg-header"><div class="cfg-header-inner"><a class="cfg-round" href="/index.html">←</a><div class="cfg-brand"><strong>Nómina</strong><span>Maddy · by Maderarte</span></div><button class="np-button" id="np-refresh">Actualizar</button></div></header>
+  <main class="np-wrap">
+    <div class="np-top"><div><span class="np-eyebrow">Personas y pagos</span><h1>Nómina</h1><p>Revisa tu quincena y registra cada pago.</p></div><div class="np-actions"><a class="np-button" href="/configuracion.html#nomina">Configurar nómina</a><button id="np-new" class="np-button dark">Nuevo comprobante</button></div></div>
+    <nav class="np-tabs"><button data-tab="quincena" aria-pressed="true">Quincena</button><button data-tab="comprobantes" aria-pressed="false">Comprobantes</button><button data-tab="comisiones" aria-pressed="false">Comisiones</button></nav>
+    <div id="np-content"><div id="np-run-result">
     <section class="np-run-picker"><div><h2>¿Qué quincena vas a preparar?</h2><p>Elige el período y revisa a cada persona antes de registrar su pago.</p></div></section>
     <div class="np-summary"><div><small>Total previsto</small><strong>$ 2</strong></div><div><small>Por registrar como pagado</small><strong>$ 1</strong></div><div><small>Pagos registrados</small><strong>$ 1</strong></div></div>
     <ol class="np-run-steps"><li><b>1</b> Revisa días y novedades</li><li><b>2</b> Confirma el desglose</li><li><b>3</b> Registra el pago realizado</li></ol>
@@ -25,20 +27,27 @@ root.innerHTML=`
       <article class="np-run-person" id="pending"><div class="np-run-name"><h3>Pendiente</h3><span class="np-run-state">Por revisar</span></div><button class="np-button primary" data-run-person="1">Revisar pago <span>→</span></button></article>
     </div>
     <p class="np-run-help">Registrar un pago deja constancia del dinero que ya entregaste.</p>
-  </div>`;
+    </div></div>
+    <footer class="np-footer">Maddy · by Maderarte</footer>
+  </main>`;
 
 enhancePayrollFriendlyUx(root);
-assert.equal(root.querySelector('.np-eyebrow').textContent,'Pagos del equipo');
-assert.match(root.querySelector('.np-top p').textContent,/una persona a la vez/);
+assert.equal(root.querySelector('.np-top h1').textContent,'Pagos del equipo');
+assert.equal(root.querySelector('.np-eyebrow').hidden,true);
+assert.match(root.querySelector('.np-top p').textContent,/registra cada pago/);
 assert.equal(root.querySelector('[data-tab="comprobantes"]').textContent,'Historial');
-assert.equal(root.querySelector('#np-new').textContent,'Otro pago');
+assert.equal(root.querySelector('#np-refresh').classList.contains('cfg-round'),true);
+assert.equal(root.querySelector('#np-refresh img').getAttribute('src'),'/assets/icons/arrow-clockwise.svg');
+assert.equal(root.querySelector('.np-top #np-new'),null);
+assert.equal(root.querySelector('.np-friendly-tools #np-new').textContent,'Otro pago');
+assert.equal(root.querySelector('.np-friendly-tools a[href*="configuracion"]').textContent,'Configuración de nómina');
 assert.equal(root.querySelector('.np-run-picker h2').textContent,'¿Qué quincena quieres pagar?');
-assert.equal(root.querySelector('.np-summary div:nth-child(2) small').textContent,'Falta completar');
+assert.equal(root.querySelector('.np-summary div:nth-child(2) small').textContent,'Pendiente');
 assert.equal(root.querySelector('.np-run-people').firstElementChild.id,'pending');
 assert.equal(root.querySelector('#pending .np-run-state').textContent,'Falta revisar');
 assert.match(root.querySelector('#pending [data-run-person]').textContent,/Preparar pago/);
 assert.equal(root.querySelector('#paid .np-run-state').textContent,'✓ Pagado');
-assert.ok(root.querySelector('.np-friendly-guide'));
+assert.match(root.querySelector('.np-friendly-guide strong').textContent,/1 pago por completar/);
 
 root.innerHTML=`
   <div id="np-title">Revisar a Carlos</div>
@@ -63,6 +72,9 @@ assert.ok(form.querySelector('.np-friendly-attendance-question'));
 assert.equal(form.querySelector('button[type="submit"]').disabled,true);
 assert.equal(form.querySelector('.np-extra-details summary').textContent,'¿Hay anticipos u otros ajustes?');
 assert.equal(form.querySelector('#np-save-draft').textContent,'Guardar para después');
+assert.equal(form.querySelector('#np-concepts > .np-hint').classList.contains('np-friendly-hidden'),true);
+form.querySelector('[data-friendly-attendance="changes"]').click();
+assert.equal(form.querySelector('#np-concepts > .np-hint').classList.contains('np-friendly-hidden'),false);
 form.querySelector('[data-friendly-attendance="complete"]').click();
 assert.equal(form.dataset.friendlyAttendance,'complete');
 assert.equal(form.elements.absent.value,'0');
