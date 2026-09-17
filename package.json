@@ -20,7 +20,7 @@
     "test:sandbox": "node scripts/test-owner-sandbox.mjs && node scripts/test-owner-sandbox-client.mjs",
     "release:stamp": "node scripts/stamp-release.mjs",
     "test:release": "node scripts/stamp-release.mjs --check && node scripts/test-app-updates.mjs",
-    "test:payroll": "node scripts/sync-payroll-rules.mjs --check && node scripts/test-payroll.mjs && node scripts/test-payroll-pdf.mjs"
+    "test:payroll": "node scripts/sync-payroll-rules.mjs --check && node scripts/test-payroll.mjs && node scripts/test-payroll-pdf.mjs && node scripts/test-payroll-friendly.mjs"
   },
   "engines": {
     "node": ">=20"
