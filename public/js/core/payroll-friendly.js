@@ -310,7 +310,7 @@ function updateFriendlyAttendance(form) {
   const summary = form.querySelector('#np-days-summary');
   const absenceReason = form.querySelector('#np-absence-label');
   const novelty = form.elements.noveltyType?.closest('details');
-  const immediateHint = summary?.nextElementSibling?.matches('.np-hint') ? summary.nextElementSibling : null;
+  const immediateHint = [...concepts.children].find((node) => node.classList?.contains('np-hint')) || null;
   const mode = form.dataset.friendlyAttendance || '';
   const hideDetails = mode !== 'changes';
 
