@@ -63,3 +63,79 @@
 @media(prefers-reduced-motion:reduce){
   .np-friendly .np-run-person,.np-friendly-choice{transition:none}
 }
+
+
+/* Cohesive Maddy payroll pass */
+.np-friendly{--np-orange:#b9632d}
+.np-friendly .cfg-header-inner{width:min(980px,100%);grid-template-columns:44px 1fr 44px}
+.np-friendly #np-refresh.np-friendly-refresh{width:42px;height:42px;min-height:42px;padding:0;border:0;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(45,35,40,.07)}
+.np-friendly #np-refresh.np-friendly-refresh img{width:19px;height:19px}
+.np-friendly .np-wrap{max-width:980px;padding:30px 18px 60px}
+.np-friendly .np-top{align-items:flex-end;margin:0 0 18px}
+.np-friendly .np-top>div:first-child{min-width:0}
+.np-friendly .np-eyebrow{display:none!important}
+.np-friendly .np-top h1{margin:0;font-size:clamp(1.75rem,4vw,2.15rem);font-weight:650;letter-spacing:-.04em}
+.np-friendly .np-top p{max-width:560px;margin:7px 0 0;color:#817b80;font-size:.86rem;line-height:1.5}
+.np-friendly .np-top>.np-actions:empty{display:none}
+.np-friendly .np-tabs{margin:0 0 22px}
+.np-friendly .np-run-picker{padding:22px 24px;border:1px solid rgba(0,0,0,.055);border-radius:21px;box-shadow:0 5px 20px rgba(40,32,36,.03)}
+.np-friendly .np-run-picker h2{font-size:22px}
+.np-friendly .np-run-picker p{font-size:14px;color:#817b80}
+.np-friendly .np-run-controls label{font-size:14px}
+.np-friendly #np-run-result .np-summary{gap:0;margin:20px 0;border:1px solid rgba(0,0,0,.055);border-radius:21px;background:#fff;box-shadow:0 5px 20px rgba(40,32,36,.03)}
+.np-friendly #np-run-result .np-summary>div{padding:20px 22px;background:transparent}
+.np-friendly #np-run-result .np-summary>div+div{border-left:1px solid var(--np-line)}
+.np-friendly #np-run-result .np-summary small{font-size:12px;color:#817b80;font-weight:550}
+.np-friendly #np-run-result .np-summary strong{margin-top:7px;font-size:24px;font-weight:620;letter-spacing:-.035em}
+.np-friendly .np-run-steps{display:none}
+.np-friendly-guide{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:24px 2px 10px;padding:0;border:0;border-radius:0;background:transparent;color:#292529}
+.np-friendly-guide strong{font-size:16px;font-weight:620;letter-spacing:-.015em}
+.np-friendly-guide span{max-width:460px;color:#817b80;font-size:13px;line-height:1.5;text-align:right}
+.np-friendly .np-run-people{overflow:hidden;border:1px solid rgba(0,0,0,.055);border-radius:21px;background:#fff;box-shadow:0 5px 20px rgba(40,32,36,.03)}
+.np-friendly .np-run-person{padding:22px 24px;background:transparent}
+.np-friendly .np-run-person+.np-run-person{border-top:1px solid rgba(60,60,67,.10)}
+.np-friendly .np-run-person:not(.np-friendly-paid)>.np-button.primary{box-shadow:none}
+.np-friendly .np-run-person.np-friendly-paid{background:#fafafa}
+.np-friendly .np-run-name h3{font-size:19px;font-weight:620;letter-spacing:-.02em}
+.np-friendly .np-run-name p{font-size:14px;color:#817b80}
+.np-friendly .np-run-state{min-height:26px;padding:4px 8px;background:#fff3e8;color:#824719;font-size:12px;font-weight:600}
+.np-friendly .np-run-state.is-paid{background:#edf6ef;color:#286745}
+.np-friendly .np-run-value>span,.np-friendly .np-run-value small{font-size:12px;color:#817b80}
+.np-friendly .np-run-value strong{font-size:23px;font-weight:620;letter-spacing:-.03em}
+.np-friendly .np-run-person>.np-button{min-height:48px;border-radius:13px;font-size:14px;font-weight:600}
+.np-friendly .np-run-help{margin-top:16px;text-align:center;font-size:12px}
+.np-friendly-tools{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:30px;padding-top:18px;border-top:1px solid rgba(60,60,67,.10)}
+.np-friendly-tools-label{color:#817b80;font-size:12px;font-weight:600}
+.np-friendly-tools-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.np-friendly-tools .np-button{min-height:42px;padding:9px 13px;border-color:#e2e2e6;background:#fff;font-size:13px;font-weight:550}
+.np-friendly-question{border-color:#e5e5e8;background:#f7f7f8}
+.np-friendly-choice.is-selected{border-color:#b9632d;background:#fff5ee;box-shadow:0 0 0 2px #b9632d14}
+.np-friendly-choice.is-selected::before{background:#b9632d}
+.np-friendly-step{color:#9a5428}
+
+@media(max-width:640px){
+  .np-friendly .cfg-header-inner{padding-left:14px;padding-right:14px}
+  .np-friendly .np-wrap{padding:22px 14px 48px}
+  .np-friendly .np-top{margin-bottom:16px}
+  .np-friendly .np-top h1{font-size:1.8rem}
+  .np-friendly .np-top p{max-width:none;font-size:.82rem}
+  .np-friendly .np-tabs{margin-bottom:18px}
+  .np-friendly .np-run-picker{padding:18px;border-radius:19px}
+  .np-friendly #np-run-result .np-summary{grid-template-columns:1fr;border-radius:19px}
+  .np-friendly #np-run-result .np-summary>div{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 18px}
+  .np-friendly #np-run-result .np-summary>div+div{border-left:0;border-top:1px solid var(--np-line)}
+  .np-friendly #np-run-result .np-summary strong{margin:0;font-size:22px;text-align:right}
+  .np-friendly-guide{display:grid;gap:4px;margin:22px 2px 9px}
+  .np-friendly-guide span{text-align:left}
+  .np-friendly .np-run-people{border-radius:19px}
+  .np-friendly .np-run-person{padding:18px}
+  .np-friendly .np-run-name h3{font-size:19px}
+  .np-friendly .np-run-name p{font-size:13px}
+  .np-friendly-tools{align-items:flex-start;flex-direction:column;gap:10px;margin-top:24px}
+  .np-friendly-tools-actions{width:100%;justify-content:flex-start}
+}
+
+@media(max-width:380px){
+  .np-friendly-tools-actions{display:grid;grid-template-columns:1fr;width:100%}
+  .np-friendly-tools .np-button{width:100%}
+}
