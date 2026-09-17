@@ -138,17 +138,19 @@
 
 
 /* Payroll feedback and loading states */
-.np-dialog{position:relative}
 .np-operation-feedback{
-  position:absolute;inset:0;z-index:30;display:grid;place-items:center;padding:24px;
-  border-radius:inherit;background:rgba(245,245,247,.84);
-  backdrop-filter:blur(12px) saturate(115%);-webkit-backdrop-filter:blur(12px) saturate(115%);
-  opacity:0;transition:opacity .16s ease;pointer-events:auto
+  width:min(340px,calc(100% - 36px));max-width:340px;margin:auto;padding:0;border:0;
+  border-radius:24px;background:transparent;color:#292529;overflow:visible;
+  opacity:0;transition:opacity .16s ease
 }
-.np-operation-feedback.is-page{position:fixed;border-radius:0}
+.np-operation-feedback[open]{display:block}
+.np-operation-feedback::backdrop{
+  background:rgba(245,245,247,.84);
+  backdrop-filter:blur(12px) saturate(115%);-webkit-backdrop-filter:blur(12px) saturate(115%)
+}
 .np-operation-feedback.is-visible{opacity:1}
 .np-operation-card{
-  width:min(340px,100%);padding:28px 24px;border:1px solid rgba(255,255,255,.92);
+  width:100%;padding:28px 24px;border:1px solid rgba(255,255,255,.92);
   border-radius:24px;background:#fff;text-align:center;
   box-shadow:0 18px 60px rgba(35,31,32,.14),0 2px 7px rgba(35,31,32,.05);
   animation:np-feedback-card-in .22s cubic-bezier(.23,1,.32,1)
@@ -161,9 +163,7 @@
   width:34px;height:34px;border:2.5px solid #eadfd7;border-top-color:#b9632d;border-radius:50%;
   animation:np-feedback-spin .8s linear infinite
 }
-.np-operation-check{
-  display:none;color:#fff;font-size:28px;font-weight:700;line-height:1
-}
+.np-operation-check{display:none;color:#fff;font-size:28px;font-weight:700;line-height:1}
 .np-operation-title{display:block;color:#292529;font-size:20px;line-height:1.25;font-weight:650;letter-spacing:-.025em}
 .np-operation-detail{max-width:280px;margin:8px auto 0;color:#817b80;font-size:14px;line-height:1.5}
 .np-operation-feedback[data-state=success] .np-operation-mark{background:#2f8a58;animation:np-feedback-success .32s cubic-bezier(.2,1.35,.45,1)}
@@ -187,8 +187,7 @@
 @keyframes np-feedback-check{0%{opacity:0;transform:scale(.55)}100%{opacity:1;transform:scale(1)}}
 
 @media(max-width:640px){
-  .np-dialog>.np-operation-feedback{position:fixed;inset:0;border-radius:0}
-  .np-operation-feedback{padding:18px}
+  .np-operation-feedback{width:min(330px,calc(100% - 32px));max-width:330px}
   .np-operation-card{padding:26px 20px;border-radius:22px}
   .np-operation-title{font-size:19px}
   .np-loading-panel{min-height:210px;border-radius:19px}
