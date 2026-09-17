@@ -16,16 +16,17 @@ dialog.showModal();
 showPayrollProgress(root,{title:'Creando comprobante',detail:'Validando el cálculo y guardando el registro.'});
 let feedback=root.querySelector('#np-operation-feedback');
 assert(feedback,'feedback exists immediately');
-assert.equal(feedback.parentElement,dialog,'feedback stays above the active modal');
+assert.equal(feedback.tagName,'DIALOG','feedback uses its own top-layer dialog');
+assert.equal(feedback.parentElement,document.body,'feedback is independent of the long payroll dialog');
 assert.equal(feedback.dataset.state,'working');
-assert.equal(feedback.hidden,false);
+assert.equal(feedback.open,true);
 assert.equal(feedback.querySelector('.np-operation-title').textContent,'Creando comprobante');
 
 const done=showPayrollSuccess(root,{title:'Comprobante listo',detail:'Todo quedó guardado.',holdMs:1});
 assert.equal(feedback.dataset.state,'success');
 assert.equal(feedback.querySelector('.np-operation-title').textContent,'Comprobante listo');
 await done;
-assert.equal(feedback.hidden,true,'success feedback closes after confirmation');
+assert.equal(feedback.open,false,'success feedback closes after confirmation');
 
 const loading=payrollLoadingPanel('Preparando tu nómina','Organizando trabajadores y pagos.');
 assert.match(loading,/Preparando tu nómina/);
@@ -33,7 +34,7 @@ assert.match(loading,/np-loading-ring/);
 
 showPayrollProgress(root,{title:'Guardando',detail:'Un momento'});
 hidePayrollFeedback(root);
-assert.equal(feedback.hidden,true);
+assert.equal(feedback.open,false);
 
 dom.window.close();
 delete globalThis.window;delete globalThis.document;delete globalThis.requestAnimationFrame;
