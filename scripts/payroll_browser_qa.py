@@ -36,7 +36,7 @@ try:
    page.evaluate("""async()=>{const m=await import('/js/core/payroll-feedback.js');m.showPayrollProgress(document.querySelector('#payroll-app'),{title:'Creando comprobante',detail:'Validando el cálculo y guardando el registro.'});}""")
    expect(page.locator('#np-operation-feedback')).to_be_visible()
    expect(page.locator('#np-operation-feedback')).to_have_attribute('data-state','working')
-   assert page.locator('#np-operation-feedback').evaluate("e=>e.parentElement.id==='np-dialog'")
+   assert page.locator('#np-operation-feedback').evaluate("e=>e.tagName==='DIALOG' && e.parentElement===document.body && e.open")
    page.screenshot(path=str(out/f'feedback-cargando-{width}.png'))
    page.evaluate("""async()=>{const m=await import('/js/core/payroll-feedback.js');window.__payrollSuccess=m.showPayrollSuccess(document.querySelector('#payroll-app'),{title:'Comprobante listo',detail:'El pago quedó listo.',holdMs:60000});}""")
    expect(page.locator('#np-operation-feedback')).to_have_attribute('data-state','success')
