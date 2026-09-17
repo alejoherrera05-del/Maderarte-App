@@ -14,7 +14,7 @@ Object.assign(globalThis,{
 const root=document.getElementById('root');
 
 root.innerHTML=`
-  <header class="cfg-header"><div class="cfg-header-inner"><a class="cfg-round" href="/index.html">←</a><div class="cfg-brand"><strong>Nómina</strong><span>Maddy · by Maderarte</span></div><button class="np-button" id="np-refresh">Actualizar</button></div></header>
+  <header class="ag-header np-app-header"><a class="ag-round" href="/index.html">←</a><div class="ag-brand"><img class="ag-seal" src="/assets/brand/maderarte-logo-2026.webp" alt=""><img class="ag-wordmark" src="/assets/brand/maderarte-wordmark-algerian.png" alt="Maderarte"><span>Nómina</span></div><button class="ag-round" id="np-refresh"><img src="/assets/icons/arrow-clockwise.svg" alt=""></button></header>
   <main class="np-wrap">
     <div class="np-top"><div><span class="np-eyebrow">Personas y pagos</span><h1>Nómina</h1><p>Revisa tu quincena y registra cada pago.</p></div><div class="np-actions"><a class="np-button" href="/configuracion.html#nomina">Configurar nómina</a><button id="np-new" class="np-button dark">Nuevo comprobante</button></div></div>
     <nav class="np-tabs"><button data-tab="quincena" aria-pressed="true">Quincena</button><button data-tab="comprobantes" aria-pressed="false">Comprobantes</button><button data-tab="comisiones" aria-pressed="false">Comisiones</button></nav>
@@ -36,7 +36,9 @@ assert.equal(root.querySelector('.np-top h1').textContent,'Pagos del equipo');
 assert.equal(root.querySelector('.np-eyebrow').hidden,true);
 assert.match(root.querySelector('.np-top p').textContent,/registra cada pago/);
 assert.equal(root.querySelector('[data-tab="comprobantes"]').textContent,'Historial');
-assert.equal(root.querySelector('#np-refresh').classList.contains('cfg-round'),true);
+assert.equal(root.querySelector('#np-refresh').classList.contains('ag-round'),true);
+assert.equal(root.querySelector('.ag-brand .ag-wordmark').getAttribute('alt'),'Maderarte');
+assert.equal(root.querySelector('.ag-brand span').textContent,'Nómina');
 assert.equal(root.querySelector('#np-refresh img').getAttribute('src'),'/assets/icons/arrow-clockwise.svg');
 assert.equal(root.querySelector('.np-top #np-new'),null);
 assert.equal(root.querySelector('.np-friendly-tools #np-new').textContent,'Otro pago');

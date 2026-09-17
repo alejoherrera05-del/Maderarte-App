@@ -67,9 +67,6 @@
 
 /* Cohesive Maddy payroll pass */
 .np-friendly{--np-orange:#b9632d}
-.np-friendly .cfg-header-inner{width:min(980px,100%);grid-template-columns:44px 1fr 44px}
-.np-friendly #np-refresh.np-friendly-refresh{width:42px;height:42px;min-height:42px;padding:0;border:0;border-radius:50%;background:#fff;box-shadow:0 6px 18px rgba(45,35,40,.07)}
-.np-friendly #np-refresh.np-friendly-refresh img{width:19px;height:19px}
 .np-friendly .np-wrap{max-width:980px;padding:30px 18px 60px}
 .np-friendly .np-top{align-items:flex-end;margin:0 0 18px}
 .np-friendly .np-top>div:first-child{min-width:0}
@@ -114,7 +111,6 @@
 .np-friendly-step{color:#9a5428}
 
 @media(max-width:640px){
-  .np-friendly .cfg-header-inner{padding-left:14px;padding-right:14px}
   .np-friendly .np-wrap{padding:22px 14px 48px}
   .np-friendly .np-top{margin-bottom:16px}
   .np-friendly .np-top h1{font-size:1.8rem}
