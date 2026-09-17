@@ -8,7 +8,7 @@ export function payrollCalculate(p,employee,commissions=[]){
   if(!rates)throw Error('Faltan parámetros aprobados para ese año.');if(from>to||from<employee.start||(employee.end&&to>employee.end&&p.type!=='COMISION'))throw Error('El período debe estar dentro de la vinculación laboral.');
   if(!['SALARIO','COMISION','PRIMA','LIQUIDACION'].includes(p.type))throw Error('Selecciona el tipo de comprobante.');
   const salary=payrollAmount(employee.salary||rates.salary),transport=employee.transport===false?0:rates.transport,lines=[],coverage=[];
-  const add=(label,value,deduction=false)=>{value=payrollAmount(value);if(value)lines.push({label,amount:value,deduction});};
+  const add=(label,value,deduction=false,calculation=null)=>{value=payrollAmount(value);if(value)lines.push({label,amount:value,deduction,calculation:calculation||{basis:value,factor:'Valor registrado'}});};
   const cover=(concept,a,b)=>coverage.push({concept,from:a,to:b});
   const commission=commissions.reduce((sum,c)=>sum+payrollAmount(c.amount),0);
   let taxable=commission;
@@ -18,13 +18,13 @@ export function payrollCalculate(p,employee,commissions=[]){
     const paidDays=days-absent;const secondHalf=Number(from.slice(8))===16&&days===15&&absent===0;
     const earned=secondHalf?salary-Math.round(salary/2):Math.round(salary*paidDays/30);
     const travel=secondHalf?transport-Math.round(transport/2):Math.round(transport*paidDays/30);
-    add('Salario · '+paidDays+' días',earned);add('Auxilio de transporte',travel);taxable+=earned;
+    add('Salario · '+paidDays+' días',earned,false,{basis:salary,factor:paidDays+' / 30 días',from,to});add('Auxilio de transporte',travel,false,{basis:transport,factor:paidDays+' / 30 días',from,to});taxable+=earned;
     add('Otros devengados salariales',p.extra);taxable+=payrollAmount(p.extra);cover('SALARIO',from,to);
   }
-  if(commission)add('Comisiones · 1 % sobre las ventas seleccionadas',commission);
+  if(commission)add('Comisiones · ventas seleccionadas',commission,false,{basis:commissions.reduce((sum,c)=>sum+c.total,0),factor:'1 %',units:commissions.length+' OP'});
   if(p.type==='COMISION'&&!commission)throw Error('Selecciona al menos una comisión pendiente.');
   if(['SALARIO','COMISION'].includes(p.type)){
-    add('Aporte trabajador · salud 4 %',taxable*.04,true);add('Aporte trabajador · pensión 4 %',taxable*.04,true);
+    add('Aporte trabajador · salud 4 %',taxable*.04,true,{basis:taxable,factor:'4 %'});add('Aporte trabajador · pensión 4 %',taxable*.04,true,{basis:taxable,factor:'4 %'});
     if(taxable>=rates.salary*4)throw Error('Esta base alcanza cuatro salarios mínimos. Requiere revisión de aportes adicionales antes de emitir.');
     if(p.type==='SALARIO'&&taxable>rates.salary*2&&transport)throw Error('Revisa la procedencia del auxilio de transporte por el total devengado.');
   }
@@ -35,16 +35,16 @@ export function payrollCalculate(p,employee,commissions=[]){
       payrollDate(start);if(start<employee.start||start>to)throw Error('Revisa el período de '+label.toLowerCase()+'.');
       const days=payrollDays(start,to);if(days>360)throw Error('Liquida '+label.toLowerCase()+' por vigencia anual.');
       base=payrollAmount(base);if(!base)throw Error('Falta la base de '+label.toLowerCase()+'.');const gross=Math.round(base*days/divisor),paid=payrollAmount(already);if(paid>gross)throw Error('Lo ya reconocido supera '+label.toLowerCase()+'.');
-      add(label+' · '+days+' días',gross);add(label+' · ya reconocido',paid,true);cover(concept,start,to);return {gross,days};
+      add(label+' · '+days+' días',gross,false,{basis:base,factor:days+' / '+divisor+' días',from:start,to});add(label+' · ya reconocido',paid,true);cover(concept,start,to);return {gross,days};
     };
     const primaFrom=p.primaFrom||from;if(primaFrom.slice(0,4)!==to.slice(0,4)||Math.floor((Number(primaFrom.slice(5,7))-1)/6)!==Math.floor((Number(to.slice(5,7))-1)/6))throw Error('La prima debe corresponder a un mismo semestre.');
     benefit('PRIMA','Prima de servicios',primaFrom,p.benefitBase,360,p.primaPaid);
     if(p.type==='LIQUIDACION'){
       const c=benefit('CESANTIAS','Cesantías',p.severanceFrom||from,p.severanceBase||p.benefitBase,360,p.severancePaid);
-      const interest=Math.round(c.gross*c.days*.12/360),interestPaid=payrollAmount(p.interestPaid);if(interestPaid>interest)throw Error('Revisa los intereses ya pagados.');add('Intereses a las cesantías',interest);add('Intereses ya pagados',interestPaid,true);
+      const interest=Math.round(c.gross*c.days*.12/360),interestPaid=payrollAmount(p.interestPaid);if(interestPaid>interest)throw Error('Revisa los intereses ya pagados.');add('Intereses a las cesantías',interest,false,{basis:c.gross,factor:'12 % × '+c.days+'/360'});add('Intereses ya pagados',interestPaid,true);
       benefit('VACACIONES','Vacaciones pendientes',p.vacationFrom||from,p.vacationBase,720,p.vacationPaid);
       if(payrollAmount(p.salaryPending)){const a=payrollDate(p.salaryPendingFrom),b=payrollDate(p.salaryPendingTo);if(a<employee.start||a>b||b>to||a.slice(0,7)!==b.slice(0,7))throw Error('Revisa las fechas del salario pendiente.');cover('SALARIO',a,b);}add('Salario pendiente de liquidación',p.salaryPending);add('Indemnización revisada',p.indemnity);
-      const pending=payrollAmount(p.salaryPending);add('Salud sobre salario pendiente · 4 %',pending*.04,true);add('Pensión sobre salario pendiente · 4 %',pending*.04,true);
+      const pending=payrollAmount(p.salaryPending);add('Salud sobre salario pendiente · 4 %',pending*.04,true,{basis:pending,factor:'4 %'});add('Pensión sobre salario pendiente · 4 %',pending*.04,true,{basis:pending,factor:'4 %'});
     }
   }
   add('Anticipos de nómina',p.advance,true);add('Otros descuentos autorizados',p.deduction,true);
