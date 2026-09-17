@@ -4,22 +4,25 @@ const PAYROLL_RATES = Object.freeze({2025:{salary:1423500,transport:200000},2026
 function payrollDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(v||'')||new Date(v+'T12:00:00Z').toISOString().slice(0,10)!==v)throw Error('Revisa la fecha.');return v;}
 function payrollDays(from,to){payrollDate(from);payrollDate(to);if(from>to)throw Error('La fecha inicial es posterior a la final.');const a=from.split('-').map(Number),b=to.split('-').map(Number);const last=new Date(Date.UTC(b[0],b[1],0)).getUTCDate();return (b[0]-a[0])*360+(b[1]-a[1])*30+Math.min(30,b[2]===last?30:b[2])-Math.min(30,a[2])+1;}
 function payrollAmount(v){const n=Number(v||0);if(!Number.isFinite(n)||n<0||n>1000000000)throw Error('Revisa los importes: usa valores positivos, sin separadores.');return Math.round(n);}
-function payrollCalculate(p,employee,commissions=[]){
-  const from=payrollDate(p.from),to=payrollDate(p.to),year=Number(to.slice(0,4)),rates=PAYROLL_RATES[year];
+function payrollCalculate(p,employee,commissions=[],configuredRates=PAYROLL_RATES){
+  const from=payrollDate(p.from),to=payrollDate(p.to),year=Number(to.slice(0,4)),rates=configuredRates[year];
   if(!rates)throw Error('Faltan parámetros aprobados para ese año.');if(from>to||from<employee.start||(employee.end&&to>employee.end&&p.type!=='COMISION'))throw Error('El período debe estar dentro de la vinculación laboral.');
   if(!['SALARIO','COMISION','PRIMA','LIQUIDACION'].includes(p.type))throw Error('Selecciona el tipo de comprobante.');
   const salary=payrollAmount(employee.salary||rates.salary),transport=employee.transport===false?0:rates.transport,lines=[],coverage=[];
   const add=(label,value,deduction=false,calculation=null)=>{value=payrollAmount(value);if(value)lines.push({label,amount:value,deduction,calculation:calculation||{basis:value,factor:'Valor registrado'}});};
   const cover=(concept,a,b)=>coverage.push({concept,from:a,to:b});
   const commission=commissions.reduce((sum,c)=>sum+payrollAmount(c.amount),0);
-  let taxable=commission;
+  let taxable=commission,attendance=null;
   if(p.type==='SALARIO'){
     if(from.slice(0,7)!==to.slice(0,7))throw Error('Prepara la nómina por mes o quincena.');
     const days=payrollDays(from,to),absent=Number(p.absent||0);if(!Number.isInteger(absent)||absent<0||absent>days||days>30)throw Error('Revisa los días no remunerados.');
-    const paidDays=days-absent;const secondHalf=Number(from.slice(8))===16&&days===15&&absent===0;
+    const paidDays=days-absent;if(p.workedDays!==undefined&&Number(p.workedDays)!==paidDays)throw Error('Los días trabajados y no remunerados deben sumar el período.');if(absent&&!String(p.absenceReason||'').trim())throw Error('Indica el motivo de los días no remunerados.');const secondHalf=Number(from.slice(8))===16&&days===15&&absent===0;
     const earned=secondHalf?salary-Math.round(salary/2):Math.round(salary*paidDays/30);
     const travel=secondHalf?transport-Math.round(transport/2):Math.round(transport*paidDays/30);
-    add('Salario · '+paidDays+' días',earned,false,{basis:salary,factor:paidDays+' / 30 días',from,to});add('Auxilio de transporte',travel,false,{basis:transport,factor:paidDays+' / 30 días',from,to});taxable+=earned;
+    const fullSalary=absent?Math.round(salary*days/30):earned,fullTravel=absent?Math.round(transport*days/30):travel;
+    add('Salario · '+days+' días',fullSalary,false,{basis:salary,factor:days+' / 30 días',from,to});add('Auxilio de transporte',fullTravel,false,{basis:transport,factor:days+' / 30 días',from,to});
+    add('Días no remunerados · salario',fullSalary-earned,true,{basis:salary,factor:absent+' / 30 días'});add('Días no remunerados · auxilio',fullTravel-travel,true,{basis:transport,factor:absent+' / 30 días'});taxable+=earned;
+    attendance={periodDays:days,workedDays:paidDays,absentDays:absent,salaryDaily:salary/30,transportDaily:transport/30,reason:String(p.absenceReason||'').trim().slice(0,300)};
     add('Otros devengados salariales',p.extra);taxable+=payrollAmount(p.extra);cover('SALARIO',from,to);
   }
   if(commission)add('Comisiones · ventas seleccionadas',commission,false,{basis:commissions.reduce((sum,c)=>sum+c.total,0),factor:'1 %',units:commissions.length+' OP'});
@@ -52,5 +55,18 @@ function payrollCalculate(p,employee,commissions=[]){
   if((payrollAmount(p.deduction)||payrollAmount(p.extra)||payrollAmount(p.indemnity))&&!String(p.notes||'').trim())throw Error('Describe los conceptos adicionales y su soporte en las notas.');
   const earned=lines.filter(x=>!x.deduction).reduce((s,x)=>s+x.amount,0),deducted=lines.filter(x=>x.deduction).reduce((s,x)=>s+x.amount,0);
   if(deducted>earned||earned===0)throw Error('Revisa el neto: los descuentos no pueden superar lo devengado.');
-  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,rules:'CO-2026-09-v1',notes:String(p.notes||'').slice(0,500)};
+  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,attendance,ratesSnapshot:{salary:rates.salary,transport:rates.transport},rules:'CO-2026-09-v2',notes:String(p.notes||'').slice(0,500)};
+}
+
+function payrollPeriod(month,half){
+ if(!/^\d{4}-\d{2}$/.test(month)||!['1','2'].includes(String(half)))throw Error('Selecciona mes y quincena.');
+ const last=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).getUTCDate();
+ const from=month+(String(half)==='1'?'-01':'-16'),to=month+'-'+(String(half)==='1'?'15':last);payrollDate(from);payrollDate(to);return {from,to};
+}
+function payrollPeriodLabel(type,from,to){
+ if(type!=='SALARIO'||from.slice(0,7)!==to.slice(0,7))return '';
+ const month=from.slice(0,7),half=from.slice(8)==='01'?'1':from.slice(8)==='16'?'2':'';
+ if(!half)return 'Período personalizado';const period=payrollPeriod(month,half);if(period.to!==to)return 'Período personalizado';
+ const months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+ return (half==='1'?'Primera':'Segunda')+' quincena de '+months[Number(from.slice(5,7))-1]+' de '+from.slice(0,4);
 }

@@ -13,6 +13,7 @@ function routeAction_(action, payload, context) {
   switch (action) {
     case 'NOMINA_LISTAR': return npList_(payload,context);
     case 'NOMINA_OBTENER': return npGet_(payload,context);
+    case 'NOMINA_PARAMETROS_GUARDAR': return npSettingsSave_(payload,context);
     case 'NOMINA_TRABAJADOR_GUARDAR': return npEmployeeSave_(payload,context);
     case 'NOMINA_PREVISUALIZAR': return npPreview_(payload,context);
     case 'NOMINA_EMITIR': return npIssue_(payload,context);
