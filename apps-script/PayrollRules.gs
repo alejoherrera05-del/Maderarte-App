@@ -17,12 +17,20 @@ function payrollCalculate(p,employee,commissions=[],configuredRates=PAYROLL_RATE
     if(from.slice(0,7)!==to.slice(0,7))throw Error('Prepara la nómina por mes o quincena.');
     const days=payrollDays(from,to),absent=Number(p.absent||0);if(!Number.isInteger(absent)||absent<0||absent>days||days>30)throw Error('Revisa los días no remunerados.');
     const paidDays=days-absent;if(p.workedDays!==undefined&&Number(p.workedDays)!==paidDays)throw Error('Los días trabajados y no remunerados deben sumar el período.');if(absent&&!String(p.absenceReason||'').trim())throw Error('Indica el motivo de los días no remunerados.');const secondHalf=Number(from.slice(8))===16&&days===15&&absent===0;
-    const earned=secondHalf?salary-Math.round(salary/2):Math.round(salary*paidDays/30);
-    const travel=secondHalf?transport-Math.round(transport/2):Math.round(transport*paidDays/30);
+    const novelty=String(p.noveltyType||'NINGUNA'),special=['VACACIONES','INCAPACIDAD','MIXTA'].includes(novelty),specialDays=Number(p.noveltyDays||0);
+    if(!['NINGUNA','PERMISO','VACACIONES','INCAPACIDAD','MIXTA'].includes(novelty))throw Error('Selecciona una novedad válida.');
+    if(novelty!=='NINGUNA'&&(!Number.isInteger(specialDays)||specialDays<1||specialDays>paidDays||!String(p.noveltyDetail||'').trim()))throw Error('Indica los días, las fechas y el detalle de la novedad.');
+    if(special&&p.noveltyReviewed!==true)throw Error('Revisa los valores de vacaciones o incapacidad antes de continuar.');
+    if(special&&(p.noveltyAmount==null||p.noveltyBase==null||p.transportDays==null))throw Error('Completa el valor de la novedad, su base de aportes y los días con auxilio.');
+    const transportDays=novelty==='NINGUNA'?paidDays:Number(p.transportDays);
+    if(!Number.isInteger(transportDays)||transportDays<0||transportDays>paidDays-(special?specialDays:0))throw Error('Revisa los días con derecho a auxilio de transporte.');
+    const earned=secondHalf&&!special?salary-Math.round(salary/2):Math.round(salary*(paidDays-(special?specialDays:0))/30);
+    const travel=secondHalf&&transportDays===paidDays?transport-Math.round(transport/2):Math.round(transport*transportDays/30);
     const fullSalary=absent?Math.round(salary*days/30):earned,fullTravel=absent?Math.round(transport*days/30):travel;
     add('Salario · '+days+' días',fullSalary,false,{basis:salary,factor:days+' / 30 días',from,to});add('Auxilio de transporte',fullTravel,false,{basis:transport,factor:days+' / 30 días',from,to});
-    add('Días no remunerados · salario',fullSalary-earned,true,{basis:salary,factor:absent+' / 30 días'});add('Días no remunerados · auxilio',fullTravel-travel,true,{basis:transport,factor:absent+' / 30 días'});taxable+=earned;
-    attendance={periodDays:days,workedDays:paidDays,absentDays:absent,salaryDaily:salary/30,transportDaily:transport/30,reason:String(p.absenceReason||'').trim().slice(0,300)};
+    if(special){lines.splice(0,lines.length);add('Salario ordinario · '+(paidDays-specialDays)+' días',earned,false,{basis:salary,factor:(paidDays-specialDays)+' / 30 días',from,to});add('Auxilio de transporte',travel,false,{basis:transport,factor:transportDays+' / 30 días',from,to});add(novelty==='VACACIONES'?'Vacaciones disfrutadas':novelty==='INCAPACIDAD'?'Incapacidad · valor revisado':'Novedades remuneradas · valor revisado',p.noveltyAmount,false,{basis:payrollAmount(p.noveltyAmount),factor:specialDays+' días · valor revisado'});taxable+=payrollAmount(p.noveltyBase);}
+    else{add('Días no remunerados · salario',fullSalary-earned,true,{basis:salary,factor:absent+' / 30 días'});add(novelty==='NINGUNA'?'Días no remunerados · auxilio':'Ajuste de auxilio · días sin desplazamiento',fullTravel-travel,true,{basis:transport,factor:(days-transportDays)+' / 30 días'});}taxable+=earned;
+    attendance={periodDays:days,workedDays:paidDays,absentDays:absent,salaryDaily:salary/30,transportDaily:transport/30,reason:String(p.absenceReason||'').trim().slice(0,300),novelty:novelty,noveltyDays:novelty==='NINGUNA'?0:specialDays,noveltyDetail:novelty==='NINGUNA'?'':String(p.noveltyDetail).trim().slice(0,300),transportDays:transportDays};
     add('Otros devengados salariales',p.extra);taxable+=payrollAmount(p.extra);cover('SALARIO',from,to);
   }
   if(commission)add('Comisiones · ventas seleccionadas',commission,false,{basis:commissions.reduce((sum,c)=>sum+c.total,0),factor:'1 %',units:commissions.length+' OP'});
@@ -55,7 +63,7 @@ function payrollCalculate(p,employee,commissions=[],configuredRates=PAYROLL_RATE
   if((payrollAmount(p.deduction)||payrollAmount(p.extra)||payrollAmount(p.indemnity))&&!String(p.notes||'').trim())throw Error('Describe los conceptos adicionales y su soporte en las notas.');
   const earned=lines.filter(x=>!x.deduction).reduce((s,x)=>s+x.amount,0),deducted=lines.filter(x=>x.deduction).reduce((s,x)=>s+x.amount,0);
   if(deducted>earned||earned===0)throw Error('Revisa el neto: los descuentos no pueden superar lo devengado.');
-  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,attendance,ratesSnapshot:{salary:rates.salary,transport:rates.transport},rules:'CO-2026-09-v2',notes:String(p.notes||'').slice(0,500)};
+  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,attendance,ratesSnapshot:{salary:rates.salary,transport:rates.transport},rules:'CO-2026-09-v3',notes:[String(p.notes||'').slice(0,500),attendance&&attendance.noveltyDetail?attendance.noveltyDetail:''].filter(Boolean).join(' · ')};
 }
 
 function payrollPeriod(month,half){
