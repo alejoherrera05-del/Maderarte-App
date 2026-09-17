@@ -1,52 +1,53 @@
 const reducedMotion=()=>window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const wait=ms=>new Promise(resolve=>window.setTimeout(resolve,ms));
 
-function ensure(root){
-  const dialog=root?.querySelector('#np-dialog');
-  const host=dialog?.open?dialog:root;
-  let node=root?.querySelector('#np-operation-feedback');
-  if(node&&node.parentElement!==host)host?.append(node);
-  if(node){node.classList.toggle('is-page',host===root);return node;}
-  node=document.createElement('div');
+function ensure(){
+  let node=document.getElementById('np-operation-feedback');
+  if(node)return node;
+  node=document.createElement('dialog');
   node.id='np-operation-feedback';
   node.className='np-operation-feedback';
-  node.hidden=true;
-  node.setAttribute('role','status');
-  node.setAttribute('aria-live','polite');
-  node.setAttribute('aria-atomic','true');
-  node.innerHTML=`<div class="np-operation-card">
+  node.setAttribute('aria-labelledby','np-operation-title');
+  node.addEventListener('cancel',event=>event.preventDefault());
+  node.innerHTML=`<div class="np-operation-card" role="status" aria-live="polite" aria-atomic="true">
     <div class="np-operation-mark" aria-hidden="true"><span class="np-operation-spinner"></span><span class="np-operation-check">✓</span></div>
-    <strong class="np-operation-title"></strong>
+    <strong class="np-operation-title" id="np-operation-title"></strong>
     <p class="np-operation-detail"></p>
   </div>`;
-  node.classList.toggle('is-page',host===root);
-  host?.append(node);
+  document.body.append(node);
   return node;
 }
 
+function open(node){
+  if(node.open)return;
+  if(typeof node.showModal==='function')node.showModal();
+  else node.setAttribute('open','');
+}
+
 export function showPayrollProgress(root,{title,detail=''}) {
-  const node=ensure(root);
+  const node=ensure();
   node.dataset.state='working';
   node.querySelector('.np-operation-title').textContent=title;
   node.querySelector('.np-operation-detail').textContent=detail;
-  node.hidden=false;
+  open(node);
   requestAnimationFrame(()=>node.classList.add('is-visible'));
   return node;
 }
 
 export function hidePayrollFeedback(root){
-  const node=root?.querySelector('#np-operation-feedback');
+  const node=document.getElementById('np-operation-feedback');
   if(!node)return;
   node.classList.remove('is-visible');
-  node.hidden=true;
+  if(typeof node.close==='function'&&node.open)node.close();
+  else node.removeAttribute('open');
 }
 
 export async function showPayrollSuccess(root,{title,detail='',holdMs=520}){
-  const node=ensure(root);
+  const node=ensure();
   node.dataset.state='success';
   node.querySelector('.np-operation-title').textContent=title;
   node.querySelector('.np-operation-detail').textContent=detail;
-  node.hidden=false;
+  open(node);
   node.classList.add('is-visible');
   await wait(reducedMotion()?80:holdMs);
   hidePayrollFeedback(root);
