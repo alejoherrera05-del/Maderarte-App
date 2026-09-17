@@ -9,7 +9,7 @@ const field=(label,value)=>`<div><small>${label}</small><strong>${e(value||'—'
 export function payrollDocument(d){
  const m=payrollMoney,split=(rows,n)=>Array.from({length:Math.ceil(rows.length/n)},(_,i)=>rows.slice(i*n,(i+1)*n));
  const inlineSale=d.lines.length<=4&&(d.commissions||[]).length===1;
- const concepts=split(d.lines,8),groups=inlineSale?[]:split(d.commissions||[],12),count=concepts.length+groups.length;
+ const concepts=split(d.lines,d.attendance?(d.notes?4:6):8),groups=inlineSale?[]:split(d.commissions||[],12),count=concepts.length+groups.length;
  const branch=companyBranch(d.employee.branch),status={EMITIDO:'Pendiente de pago',PAGADO:'Pagado',ANULADO:'Anulado'}[d.status]||'Borrador';
  const titles={SALARIO:'Comprobante de nómina',COMISION:'Comprobante de comisiones',PRIMA:'Prima de servicios',LIQUIDACION:'Liquidación laboral'};
  const periodLabel=payrollPeriodLabel(d.type,d.from,d.to),subtitle=date(d.from)+' — '+date(d.to);
