@@ -6,7 +6,7 @@ void guardStandalonePage({
   permission:'nomina.read',
   render:async({session})=>{
     const root=document.getElementById('payroll-app');
-    await mountPayroll(root,session);
     installPayrollFriendlyUx(root);
+    await mountPayroll(root,session);
   }
 });
