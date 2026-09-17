@@ -1,5 +1,5 @@
 """Synthetic payroll UI evidence; never calls the commercial service."""
-import shutil,subprocess,time,urllib.request
+import json,shutil,subprocess,time,urllib.request
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 out=Path('artifacts/payroll');out.mkdir(parents=True,exist_ok=True)
@@ -26,15 +26,19 @@ try:
    expect(page.locator('#np-body')).to_contain_text('2026-01-01');page.screenshot(path=str(out/f'ficha-{width}.png'))
    assert not errors,errors;ctx.close()
   # Render the same document module used by Cloudflare, using only synthetic data.
-  script="""import {payrollDocument} from './public/js/core/payroll-document.js';import {payrollCalculate} from './public/js/core/payroll-rules.js';const employee={name:'Trabajador de muestra',document:'DEMO-001',role:'Asesor comercial',start:'2026-01-01',transport:true};const commissions=[{order:'MP-OP-DEMO-001',date:'2026-01-10',total:5000000,paid:500000,amount:50000}];console.log(payrollDocument({...payrollCalculate({type:'COMISION',from:'2026-06-01',to:'2026-06-30'},employee,commissions),employee,number:'NOM-DEMO-001',status:'EMITIDO',revision:1}));"""
-  markup=subprocess.check_output(['node','--input-type=module','-e',script],text=True)
-  page=browser.new_page(viewport={'width':1120,'height':1200});page.goto('http://127.0.0.1:4173/nomina.html?preview=1')
-  page.set_content('<html><head><link rel="stylesheet" href="/css/nomina-document.css"></head><body class="payroll-print">'+markup+'</body></html>')
+  script="""import {payrollDocument} from './public/js/core/payroll-document.js';import {payrollCalculate} from './public/js/core/payroll-rules.js';const employee={name:'Trabajador de muestra',document:'DEMO-001',role:'Asesor comercial',start:'2026-01-01',transport:true};const commissions=[{order:'MP-OP-DEMO-001',date:'2026-01-10',total:5000000,paid:500000,amount:50000}];console.log(JSON.stringify({documentKind:'payroll',...payrollCalculate({type:'COMISION',from:'2026-06-01',to:'2026-06-30'},employee,commissions),employee,number:'NOM-DEMO-001',status:'EMITIDO',revision:1}));"""
+  payload=json.loads(subprocess.check_output(['node','--input-type=module','-e',script],text=True))
+  page=browser.new_page(viewport={'width':1120,'height':1200})
+  page.goto('http://127.0.0.1:4173/documento-render.html')
+  page.evaluate("d=>{const n=document.createElement('script');n.id='maddy-document-data';n.type='application/json';n.textContent=JSON.stringify(d);document.body.append(n)}",payload)
+  expect(page.locator('#quote-preview-content')).to_have_attribute('data-document-ready','true')
   page.locator('.np-paper img').first.wait_for();page.evaluate('Promise.all([...document.images].map(i=>i.decode()))');page.pdf(path=str(out/'comision-muestra.pdf'),format='A4',print_background=True,prefer_css_page_size=True)
   page.screenshot(path=str(out/'pdf-muestra.png'),full_page=True)
   script=script.replace("type:'COMISION',from:'2026-06-01',to:'2026-06-30'","type:'LIQUIDACION',from:'2026-01-01',to:'2026-12-31',primaFrom:'2026-07-01',benefitBase:2000000,severanceBase:2000000,vacationBase:1750905,primaPaid:100000,severancePaid:100000,interestPaid:10000,vacationPaid:100000,salaryPending:100000,salaryPendingFrom:'2026-12-16',salaryPendingTo:'2026-12-31',advance:10000,deduction:10000,indemnity:100000,reviewed:true,notes:'Detalle verificado. '.repeat(25)").replace('employee,commissions)','employee,[])')
-  markup=subprocess.check_output(['node','--input-type=module','-e',script],text=True)
-  page.set_content('<html><head><link rel="stylesheet" href="/css/nomina-document.css"></head><body class="payroll-print">'+markup+'</body></html>')
+  payload=json.loads(subprocess.check_output(['node','--input-type=module','-e',script],text=True))
+  page.goto('http://127.0.0.1:4173/documento-render.html')
+  page.evaluate("d=>{const n=document.createElement('script');n.id='maddy-document-data';n.type='application/json';n.textContent=JSON.stringify(d);document.body.append(n)}",payload)
+  expect(page.locator('#quote-preview-content')).to_have_attribute('data-document-ready','true')
   page.evaluate('Promise.all([...document.images].map(i=>i.decode()))');page.emulate_media(media='print')
   assert page.locator('.np-paper').evaluate_all('rows=>rows.every(r=>[...r.children].filter(c=>c.tagName!=="FOOTER").every(c=>c.getBoundingClientRect().bottom<r.querySelector("footer").getBoundingClientRect().top))'), 'PDF content overlaps footer'
   page.pdf(path=str(out/'liquidacion-muestra.pdf'),format='A4',print_background=True,prefer_css_page_size=True)
