@@ -43,7 +43,7 @@ try:
    page.screenshot(path=str(out/f'comisiones-{width}.png'),full_page=True)
    page.locator('[data-commission]').first.click();expect(page.locator('#np-dialog')).to_be_visible()
    page.locator('[name=from]').fill('2026-06-01');page.locator('[name=to]').fill('2026-06-30')
-   page.get_by_role('button',name='Ver total a pagar',exact=False).click();expect(page.locator('.np-total')).to_contain_text('46.000')
+   page.get_by_role('button',name='Revisar desglose',exact=True).click();expect(page.locator('.np-total')).to_contain_text('46.000')
    assert page.locator('#np-dialog').evaluate('e=>e.scrollWidth<=e.clientWidth+1')
    page.screenshot(path=str(out/f'comprobante-{width}.png'))
    page.locator('#np-close').click()
