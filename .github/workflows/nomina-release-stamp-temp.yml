@@ -1,0 +1,24 @@
+name: Nomina release stamp temp
+
+on:
+  push:
+    branches: [ux/nomina-simple]
+
+permissions:
+  contents: read
+
+jobs:
+  stamp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Calcular release marker
+        run: |
+          npm run release:stamp
+          echo "RELEASE_JSON=$(cat public/release.json)"
+          echo "RELEASE_JS=$(cat public/js/core/release.js | tail -n 1)"
