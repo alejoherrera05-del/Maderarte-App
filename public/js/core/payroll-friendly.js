@@ -120,7 +120,7 @@ function enhanceRunPeople(root) {
   });
 
   const ordered = [...cards].sort((a, b) => Number(a.classList.contains('np-friendly-paid')) - Number(b.classList.contains('np-friendly-paid')));
-  ordered.forEach((card) => list.append(card));
+  if (ordered.some((card, index) => cards[index] !== card)) ordered.forEach((card) => list.append(card));
 }
 
 function enhanceRun(root) {
