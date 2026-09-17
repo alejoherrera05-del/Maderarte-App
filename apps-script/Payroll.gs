@@ -3,7 +3,7 @@ var PAYROLL_HEADERS_=['ID','Fecha','Tipo','Entidad_ID','Version','Usuario','Requ
 function npSession_(ctx,permission){var s=validateSessionToken_(ctx.sessionToken,false);requirePermission_(s,'nomina.read');if(permission)requirePermission_(s,permission);return s;}
 function npRows_(){return getSpreadsheet_().getSheetByName('Nomina_Eventos')?listRows_('Nomina_Eventos'):[];}
 function npEnsure_(){var b=getSpreadsheet_(),s=b.getSheetByName('Nomina_Eventos');if(!s){s=b.insertSheet('Nomina_Eventos');s.getRange(1,1,1,PAYROLL_HEADERS_.length).setValues([PAYROLL_HEADERS_]);SpreadsheetApp.flush();}if(getHeaders_(s).join('|')!==PAYROLL_HEADERS_.join('|'))throw appError_('PAYROLL_SCHEMA','Revisa el registro de nómina.',503);}
-function npState_(rows){var state={employees:{},receipts:{},files:{},settings:{}};rows.forEach(function(r){var d=parseJson_(r.Datos_JSON,null);if(!d)throw appError_('PAYROLL_INTEGRITY','Un registro de nómina necesita revisión.',409);var group=r.Tipo==='TRABAJADOR'?state.employees:r.Tipo==='ARCHIVO'?state.files:r.Tipo==='PARAMETROS'?state.settings:state.receipts;group[r.Entidad_ID]=d;});return state;}
+function npState_(rows){var state={employees:{},receipts:{},files:{},settings:{},drafts:{}};rows.forEach(function(r){var d=parseJson_(r.Datos_JSON,null);if(!d)throw appError_('PAYROLL_INTEGRITY','Un registro de nómina necesita revisión.',409);var group=r.Tipo==='TRABAJADOR'?state.employees:r.Tipo==='ARCHIVO'?state.files:r.Tipo==='PARAMETROS'?state.settings:r.Tipo==='BORRADOR'?state.drafts:state.receipts;group[r.Entidad_ID]=d;});return state;}
 function npText_(v,max){return String(v==null?'':v).trim().slice(0,max||160);}
 function npReceipt_(st,id){var d=st.receipts[id];if(!d)throw appError_('PAYROLL_NOT_FOUND','No se encontró el comprobante.',404);return d;}
 function npEmployee_(st,id){var e=st.employees[id];if(!e)throw appError_('PAYROLL_EMPLOYEE','Selecciona un trabajador registrado.',404);return e;}
@@ -63,4 +63,18 @@ function npSettingsSave_(p,ctx){ctx.payrollPayload=p;return npCommit_(ctx,'nomin
  if(PAYROLL_RATES[year]&&(salary<PAYROLL_RATES[year].salary||transport<PAYROLL_RATES[year].transport))throw Error('Los valores no pueden ser inferiores a la referencia legal verificada para ese año.');
  if(p.confirmed!==true)throw Error('Confirma los parámetros salariales.');
  return {id:id,revision:old?old.revision:0,year:year,salary:salary,transport:transport};
+ });}
+function npDraftKey_(employeeId,month,half){payrollPeriod(month,half);return 'DRAFT-'+employeeId+'-'+month+'-'+half;}
+function npRunInput_(e,month,half){var period=payrollPeriod(month,half),from=e.start>period.from?e.start:period.from,to=e.end&&e.end<period.to?e.end:period.to;return {type:'SALARIO',employeeId:e.id,from:from,to:to,absent:0,orders:[]};}
+function npPeriod_(p,ctx){npSession_(ctx);var period=payrollPeriod(p.month,p.half),st=npState_(npRows_()),items=Object.values(st.employees).filter(function(e){return e.start<=period.to&&(!e.end||e.end>=period.from)&&(e.status==='ACTIVO'||!!e.end);}).map(function(e){
+ var draft=st.drafts[npDraftKey_(e.id,p.month,p.half)],input=draft?draft.input:npRunInput_(e,p.month,p.half),docs=Object.values(st.receipts).filter(function(r){return r.status!=='ANULADO'&&r.employee.id===e.id&&(r.coverage||[]).some(function(c){return c.concept==='SALARIO'&&c.from<=period.to&&c.to>=period.from;});});
+ var row={employee:{id:e.id,name:e.name,role:e.role,branch:e.branch},input:input,draft:draft||null,status:draft?'BORRADOR':'POR_REVISAR',net:null,receipts:docs.map(function(r){return {id:r.id,number:r.number,status:r.status,net:r.net,from:r.from,to:r.to};})};
+ if(docs.length){row.status=docs.every(function(r){return r.status==='PAGADO';})?'PAGADO':'EMITIDO';row.net=docs.reduce(function(sum,r){return sum+r.net;},0);row.partial=docs.length!==1||docs[0].from!==input.from||docs[0].to!==input.to;return row;}
+ try{var d=npPreviewData_(input,st);row.net=d.net;row.days=d.attendance;row.fingerprint=sha256_(JSON.stringify(d));if(draft&&draft.status==='REVISADO'&&draft.fingerprint===row.fingerprint)row.status='REVISADO';else if(draft&&draft.status==='REVISADO')row.message='Cambió la información. Revisa nuevamente antes de pagar.';}catch(err){row.message=String(err.message||err);row.status='REVISAR_DATOS';}return row;
+ });return {month:p.month,half:String(p.half),from:period.from,to:period.to,label:payrollPeriodLabel('SALARIO',period.from,period.to),items:items};}
+function npDraftSave_(p,ctx){ctx.payrollPayload=p;return npCommit_(ctx,'nomina.prepare','BORRADOR',function(st,s){
+ var e=npEmployee_(st,p.input&&p.input.employeeId),period=payrollPeriod(p.month,p.half),id=npDraftKey_(e.id,p.month,p.half),old=st.drafts[id];if(Number(p.revision||0)!==(old?old.revision:0))throw Error('Otra persona actualizó este borrador. Abre de nuevo la quincena.');
+ var input=JSON.parse(JSON.stringify(p.input));if(input.type!=='SALARIO'||input.from<period.from||input.to>period.to)throw Error('El borrador debe corresponder a esta quincena.');
+ var d=npPreviewData_(input,st),fingerprint=sha256_(JSON.stringify(d));if(p.reviewed===true&&p.fingerprint!==fingerprint)throw Error('El cálculo cambió. Revisa nuevamente los valores.');
+ return {id:id,revision:old?old.revision:0,month:p.month,half:String(p.half),employeeId:e.id,input:input,status:p.reviewed===true?'REVISADO':'BORRADOR',fingerprint:fingerprint,net:d.net,reviewedBy:p.reviewed===true?s.profile.name:'',reviewedAt:p.reviewed===true?now_().toISOString():''};
  });}

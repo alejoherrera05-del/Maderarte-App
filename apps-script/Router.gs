@@ -12,6 +12,8 @@ function validateProxy_(body) {
 function routeAction_(action, payload, context) {
   switch (action) {
     case 'NOMINA_LISTAR': return npList_(payload,context);
+    case 'NOMINA_QUINCENA': return npPeriod_(payload,context);
+    case 'NOMINA_BORRADOR_GUARDAR': return npDraftSave_(payload,context);
     case 'NOMINA_OBTENER': return npGet_(payload,context);
     case 'NOMINA_PARAMETROS_GUARDAR': return npSettingsSave_(payload,context);
     case 'NOMINA_TRABAJADOR_GUARDAR': return npEmployeeSave_(payload,context);
