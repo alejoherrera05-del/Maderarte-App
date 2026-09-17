@@ -14,7 +14,7 @@ dialog.close=()=>{dialog.removeAttribute('open');};
 dialog.showModal();
 
 showPayrollProgress(root,{title:'Creando comprobante',detail:'Validando el cálculo y guardando el registro.'});
-let feedback=root.querySelector('#np-operation-feedback');
+let feedback=document.getElementById('np-operation-feedback');
 assert(feedback,'feedback exists immediately');
 assert.equal(feedback.tagName,'DIALOG','feedback uses its own top-layer dialog');
 assert.equal(feedback.parentElement,document.body,'feedback is independent of the long payroll dialog');
