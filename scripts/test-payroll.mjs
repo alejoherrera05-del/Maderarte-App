@@ -4,7 +4,7 @@ import {sandboxRuntime} from './fixtures/owner-sandbox-runtime.mjs';
 const employee={start:'2025-01-01',salary:0,transport:true};
 assert.equal(payrollDays('2026-02-16','2026-02-28'),15);
 const first=payrollCalculate({type:'SALARIO',from:'2026-01-01',to:'2026-01-15'},employee),second=payrollCalculate({type:'SALARIO',from:'2026-01-16',to:'2026-01-31'},employee);
-assert.equal(first.earned+second.earned,2000000);assert.equal(first.deducted,70036);
+assert.equal(first.lines[0].calculation.basis,1750905);assert.equal(first.lines[0].calculation.factor,'15 / 30 días');assert.equal(first.lines.find(l=>l.label.includes('salud')).calculation.basis,875453);assert.equal(first.earned+second.earned,2000000);assert.equal(first.deducted,70036);
 const settlement=payrollCalculate({type:'LIQUIDACION',from:'2026-01-01',to:'2026-12-31',primaFrom:'2026-07-01',benefitBase:2000000,severanceBase:2000000,vacationBase:1750905,reviewed:true},employee);
 assert.equal(settlement.lines.find(l=>l.label==='Intereses a las cesantías').amount,240000);
 assert.throws(()=>payrollCalculate({type:'PRIMA',from:'2026-01-01',to:'2026-12-31',benefitBase:2000000,reviewed:true},employee),/semestre/);
