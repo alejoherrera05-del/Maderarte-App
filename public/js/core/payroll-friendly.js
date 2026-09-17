@@ -65,7 +65,8 @@ function ensureSecondaryTools(root) {
   }
 
   const slot = tools.querySelector('.np-friendly-tools-actions');
-  const config = root.querySelector('a[href*="configuracion.html"][href*="#nomina"]');
+  const config = root.querySelector('.np-top .np-actions a[href*="configuracion.html"][href*="#nomina"]')
+    || root.querySelector('.np-friendly-tools-actions a[href*="configuracion.html"][href*="#nomina"]');
   const newReceipt = root.querySelector('#np-new');
   if (config && config.parentElement !== slot) {
     setText(config, 'Configuración de nómina');
