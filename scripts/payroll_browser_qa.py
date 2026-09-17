@@ -32,6 +32,8 @@ try:
   page.goto('http://127.0.0.1:4173/documento-render.html')
   page.evaluate("d=>{const n=document.createElement('script');n.id='maddy-document-data';n.type='application/json';n.textContent=JSON.stringify(d);document.body.append(n)}",payload)
   expect(page.locator('#quote-preview-content')).to_have_attribute('data-document-ready','true')
+  assert page.locator('.np-paper').count()==1, 'A single commission should not need an annex page'
+  expect(page.locator('.np-sale')).to_contain_text('MP-OP-DEMO-001')
   page.locator('.np-paper img').first.wait_for();page.evaluate('Promise.all([...document.images].map(i=>i.decode()))');page.pdf(path=str(out/'comision-muestra.pdf'),format='A4',print_background=True,prefer_css_page_size=True)
   page.screenshot(path=str(out/'pdf-muestra.png'),full_page=True)
   commission_script=script
