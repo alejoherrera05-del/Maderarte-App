@@ -1,0 +1,39 @@
+name: Nomina friendly idempotency temp
+
+on:
+  push:
+    branches: [ux/nomina-simple]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          ref: ux/nomina-simple
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Hacer reordenamiento idempotente y actualizar release
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'public/js/core/payroll-friendly.js';
+          let source = fs.readFileSync(path, 'utf8');
+          const before = `  const ordered = [...cards].sort((a, b) => Number(a.classList.contains('np-friendly-paid')) - Number(b.classList.contains('np-friendly-paid')));\n  ordered.forEach((card) => list.append(card));`;
+          const after = `  const ordered = [...cards].sort((a, b) => Number(a.classList.contains('np-friendly-paid')) - Number(b.classList.contains('np-friendly-paid')));\n  if (ordered.some((card, index) => cards[index] !== card)) ordered.forEach((card) => list.append(card));`;
+          if (!source.includes(before)) throw new Error('No se encontró el bloque esperado.');
+          source = source.replace(before, after);
+          fs.writeFileSync(path, source);
+          NODE
+          npm run release:stamp
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/js/core/payroll-friendly.js public/release.json public/js/core/release.js
+          git commit -m "fix(payroll): make pending-first ordering idempotent"
+          git push origin HEAD:ux/nomina-simple
