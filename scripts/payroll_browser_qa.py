@@ -32,6 +32,8 @@ try:
   page.goto('http://127.0.0.1:4173/documento-render.html')
   page.evaluate("d=>{const n=document.createElement('script');n.id='maddy-document-data';n.type='application/json';n.textContent=JSON.stringify(d);document.body.append(n)}",payload)
   expect(page.locator('#quote-preview-content')).to_have_attribute('data-document-ready','true')
+  assert page.locator('.np-paper').count()==1, 'A single commission should not need an annex page'
+  expect(page.locator('.np-sale')).to_contain_text('MP-OP-DEMO-001')
   page.locator('.np-paper img').first.wait_for();page.evaluate('Promise.all([...document.images].map(i=>i.decode()))');page.pdf(path=str(out/'comision-muestra.pdf'),format='A4',print_background=True,prefer_css_page_size=True)
   page.screenshot(path=str(out/'pdf-muestra.png'),full_page=True)
   commission_script=script
@@ -55,6 +57,11 @@ try:
   expect(page.locator('.np-detail')).to_contain_text('15 / 30 días')
   expect(page.locator('.np-payment')).to_contain_text('DEMO-QUINCENA-01')
   assert page.locator('.np-doc-heading').evaluate('e=>getComputedStyle(e).textAlign==="center"')
+  expect(page.locator('.np-doc-net')).to_contain_text('Neto pagado')
+  assert page.locator('.np-paper').evaluate('e=>parseFloat(getComputedStyle(e.querySelector("h1")).fontSize)>parseFloat(getComputedStyle(e.querySelector(".np-doc-net strong")).fontSize)')
+  assert page.locator('.np-detail tbody tr').evaluate_all('rows=>rows.every(r=>r.getBoundingClientRect().height>=40)')
+  assert page.locator('.np-paper td').evaluate_all('cells=>cells.every(c=>c.scrollWidth<=c.clientWidth+1)'), 'A table value is clipped'
+
   assert page.locator('.np-paper').evaluate_all('rows=>rows.every(r=>[...r.children].filter(c=>c.tagName!=="FOOTER").every(c=>c.getBoundingClientRect().bottom<r.querySelector("footer").getBoundingClientRect().top))')
   assert page.locator('.np-paper').count()==1
   page.pdf(path=str(out/'quincena-muestra.pdf'),format='A4',print_background=True,prefer_css_page_size=True)
