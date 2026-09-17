@@ -103,14 +103,6 @@ function enhanceShell(root) {
     setText(top.querySelector('p'), copy[1]);
   }
 
-  const refresh = root.querySelector('#np-refresh');
-  if (refresh && !refresh.classList.contains('np-friendly-refresh')) {
-    refresh.classList.remove('np-button');
-    refresh.classList.add('cfg-round', 'np-friendly-refresh');
-    refresh.title = 'Actualizar nómina';
-    refresh.innerHTML = '<img src="/assets/icons/arrow-clockwise.svg" alt="" aria-hidden="true">';
-  }
-
   const newReceipt = root.querySelector('#np-new');
   if (newReceipt) {
     setButton(newReceipt, 'Otro pago');
