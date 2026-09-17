@@ -1,0 +1,65 @@
+/* Friendly payroll layer: keeps payroll calculations intact and simplifies the path for occasional users. */
+.np-friendly .np-friendly-secondary{background:#fff!important;border-color:#dedee2!important;color:var(--np-ink)!important}
+.np-friendly .np-friendly-secondary:hover:not(:disabled){background:#f1f1f3!important}
+.np-friendly-guide{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:26px 0 12px;padding:18px 20px;border-radius:16px;background:#fff7f0;border:1px solid #ead8c8;color:#53331f}
+.np-friendly-guide strong{font-size:16px;font-weight:600}
+.np-friendly-guide span{font-size:14px;line-height:1.5;color:#755742;text-align:right}
+.np-friendly .np-run-person{transition:background .18s ease,border-color .18s ease}
+.np-friendly .np-run-person:not(.np-friendly-paid)>.np-button.primary{box-shadow:0 8px 24px #ad622d20}
+.np-friendly .np-run-person.np-friendly-paid{background:#f8f8f9}
+.np-friendly .np-run-person.np-friendly-paid .np-run-name,.np-friendly .np-run-person.np-friendly-paid .np-run-value{opacity:.72}
+.np-friendly .np-run-person.np-friendly-paid>.np-button{background:#fff;border-color:#dedee2;color:#454348}
+.np-friendly .np-run-state{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border-radius:999px;background:#fff3e8;color:#824719;font-size:14px;font-weight:500}
+.np-friendly .np-run-state.is-paid{background:#edf6ef;color:#286745}
+.np-friendly-question{margin:4px 0 20px;padding:22px;border:1px solid #e7e1dc;border-radius:18px;background:#fcfaf8}
+.np-friendly-step{display:block;margin-bottom:7px;color:#995828;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.np-friendly-question h3{margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em;line-height:1.3}
+.np-friendly-question>p{margin:8px 0 0;color:#68636a;font-size:15px;line-height:1.55}
+.np-friendly-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.np-friendly-choice{min-height:58px;padding:13px 16px;border:1px solid #d7d3d0;border-radius:14px;background:#fff;color:#292624;font:inherit;font-size:16px;font-weight:550;text-align:left;cursor:pointer;transition:transform .12s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease}
+.np-friendly-choice:hover{background:#f7f4f1}
+.np-friendly-choice:active{transform:scale(.985)}
+.np-friendly-choice.is-selected{border-color:#ad622d;background:#fff7f0;box-shadow:0 0 0 2px #ad622d18}
+.np-friendly-choice.is-selected::before{content:'✓';display:inline-grid;place-items:center;width:22px;height:22px;margin-right:8px;border-radius:50%;background:#ad622d;color:#fff;font-size:13px}
+.np-friendly-choice-help{min-height:22px!important;margin-top:12px!important;color:#79533a!important;font-weight:500}
+.np-friendly-hidden{display:none!important}
+.np-friendly-form #np-days-summary{font-size:15px}
+.np-friendly-form #np-absence-label{padding:14px 16px;border-radius:12px;background:#fff4ee}
+.np-friendly-form .np-extra-details,.np-friendly-form .np-novelties{border-color:#dfdfe3}
+.np-friendly-form .np-extra-details summary,.np-friendly-form .np-novelties summary{font-size:16px}
+.np-friendly-details-help{margin:-4px 0 12px;color:#777278;font-size:14px;line-height:1.5}
+.np-friendly-review-help,.np-friendly-payment-note{margin:0 0 18px;padding:14px 16px;border-radius:12px;background:#f6f6f7;color:#5e5b60;font-size:15px;line-height:1.55}
+.np-friendly .np-total{padding:24px;border-radius:18px}
+.np-friendly .np-total span{text-transform:uppercase;letter-spacing:.06em;font-size:12px;font-weight:600;color:#d9d5d2}
+.np-friendly .np-total strong{font-size:32px}
+.np-friendly-success{display:grid;gap:4px;margin-bottom:18px;padding:18px;border-radius:16px;background:#eef7f0;border:1px solid #d4ead9;color:#245c38}
+.np-friendly-success strong{font-size:20px;font-weight:600}
+.np-friendly-success span{font-size:14px;line-height:1.5;color:#4f715b}
+.np-friendly #np-friendly-next{order:10}
+.np-friendly .np-dialog-body>.np-actions:last-child{margin-top:18px}
+.np-friendly .np-dialog-body>.np-actions:last-child .np-button.primary{min-width:180px}
+
+@media(max-width:640px){
+  .np-friendly .np-top p{max-width:310px}
+  .np-friendly-guide{display:grid;padding:16px;margin-top:20px}
+  .np-friendly-guide span{text-align:left}
+  .np-friendly-choices{grid-template-columns:1fr}
+  .np-friendly-choice{min-height:60px}
+  .np-friendly-question{padding:18px;margin-top:0}
+  .np-friendly-question h3{font-size:21px}
+  .np-friendly .np-run-person.np-friendly-paid .np-run-name,.np-friendly .np-run-person.np-friendly-paid .np-run-value{opacity:.8}
+  .np-friendly .np-dialog-body>.np-actions:last-child{display:grid;grid-template-columns:1fr;width:100%}
+  .np-friendly .np-dialog-body>.np-actions:last-child .np-button{width:100%}
+  .np-friendly .np-total{align-items:flex-end}
+  .np-friendly .np-total strong{font-size:29px}
+}
+
+@media(max-width:380px){
+  .np-friendly-question{padding:16px}
+  .np-friendly-choice{font-size:15px}
+  .np-friendly .np-total{display:grid;gap:7px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .np-friendly .np-run-person,.np-friendly-choice{transition:none}
+}
