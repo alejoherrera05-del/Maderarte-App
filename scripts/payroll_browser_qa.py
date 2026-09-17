@@ -13,7 +13,7 @@ try:
   for width in [1440,390,320]:
    ctx=browser.new_context(viewport={'width':width,'height':950},device_scale_factor=2)
    page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-   page.goto('http://127.0.0.1:4173/nomina.html?preview=1');expect(page.locator('.np-summary')).to_be_visible();expect(page.locator('.np-premium-hero')).to_be_visible();expect(page.locator('#np-new')).not_to_be_visible()
+   page.goto('http://127.0.0.1:4173/nomina.html?preview=1');expect(page.locator('.np-summary')).to_be_visible()
    expect(page.locator('[data-tab=quincena]')).to_have_attribute('aria-pressed','true')
    page.locator('#np-run-month').fill('2026-09');page.locator('#np-run-half').select_option('1')
    expect(page.locator('.np-run-heading')).to_contain_text('Primera quincena de septiembre')
@@ -56,7 +56,7 @@ try:
    page.locator('[data-tab=trabajadores]').click();page.locator('[data-employee]').click()
    expect(page.locator('#np-body')).to_contain_text('2026-01-01');page.screenshot(path=str(out/f'ficha-{width}.png'))
    page.locator('#np-close').click()
-   page.goto('http://127.0.0.1:4173/nomina.html?preview=1');page.locator('.np-premium-menu-trigger').click();page.locator('[data-premium-action=other]').click()
+   page.goto('http://127.0.0.1:4173/nomina.html?preview=1');page.locator('#np-new').click()
    page.locator('[name=month]').fill('2026-09');page.locator('[name=half]').select_option('1')
    expect(page.locator('[name=from]')).to_have_value('2026-09-01');expect(page.locator('[name=to]')).to_have_value('2026-09-15')
    page.locator('[name=workedDays]').fill('13');expect(page.locator('[name=absent]')).to_have_value('2')
