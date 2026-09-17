@@ -2,8 +2,11 @@ const reducedMotion=()=>window.matchMedia?.('(prefers-reduced-motion: reduce)').
 const wait=ms=>new Promise(resolve=>window.setTimeout(resolve,ms));
 
 function ensure(root){
+  const dialog=root?.querySelector('#np-dialog');
+  const host=dialog?.open?dialog:root;
   let node=root?.querySelector('#np-operation-feedback');
-  if(node)return node;
+  if(node&&node.parentElement!==host)host?.append(node);
+  if(node){node.classList.toggle('is-page',host===root);return node;}
   node=document.createElement('div');
   node.id='np-operation-feedback';
   node.className='np-operation-feedback';
@@ -16,7 +19,8 @@ function ensure(root){
     <strong class="np-operation-title"></strong>
     <p class="np-operation-detail"></p>
   </div>`;
-  root.append(node);
+  node.classList.toggle('is-page',host===root);
+  host?.append(node);
   return node;
 }
 
