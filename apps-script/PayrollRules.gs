@@ -6,7 +6,7 @@ function payrollDays(from,to){payrollDate(from);payrollDate(to);if(from>to)throw
 function payrollAmount(v){const n=Number(v||0);if(!Number.isFinite(n)||n<0||n>1000000000)throw Error('Revisa los importes: usa valores positivos, sin separadores.');return Math.round(n);}
 function payrollCalculate(p,employee,commissions=[],configuredRates=PAYROLL_RATES){
   const from=payrollDate(p.from),to=payrollDate(p.to),year=Number(to.slice(0,4)),rates=configuredRates[year];
-  if(!rates)throw Error('Faltan parámetros aprobados para ese año.');if(from>to||from<employee.start||(employee.end&&to>employee.end&&p.type!=='COMISION'))throw Error('El período debe estar dentro de la vinculación laboral.');
+  if(!rates)throw Error('Faltan parámetros aprobados para ese año.');if(!employee.start&&['PRIMA','LIQUIDACION'].includes(p.type))throw Error('Completa la fecha real de ingreso en la ficha antes de calcular prestaciones.');if(from>to||from<employee.start||(employee.end&&to>employee.end&&p.type!=='COMISION'))throw Error('El período debe estar dentro de la vinculación laboral.');
   if(!['SALARIO','COMISION','PRIMA','LIQUIDACION'].includes(p.type))throw Error('Selecciona el tipo de comprobante.');
   const salary=payrollAmount(employee.salary||rates.salary),transport=employee.transport===false?0:rates.transport,lines=[],coverage=[];
   const add=(label,value,deduction=false,calculation=null)=>{value=payrollAmount(value);if(value)lines.push({label,amount:value,deduction,calculation:calculation||{basis:value,factor:'Valor registrado'}});};
