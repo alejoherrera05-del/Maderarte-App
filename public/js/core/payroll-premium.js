@@ -1,5 +1,6 @@
 const qs=(root,selector)=>root?.querySelector(selector)||null;
 const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value;};
+const addClass=(node,name)=>{if(node&&!node.classList.contains(name))node.classList.add(name);};
 
 const monthName=(value)=>{
   if(!/^\d{4}-\d{2}$/.test(String(value||'')))return '';
@@ -95,7 +96,7 @@ function enhanceHeader(root){
 function bindPeriodControls(root){
   const picker=qs(root,'.np-run-picker');
   if(!picker)return;
-  picker.classList.add('np-premium-period-picker');
+  addClass(picker,'np-premium-period-picker');
   picker.querySelectorAll('input,select').forEach(control=>{
     if(control.dataset.premiumHeroBound)return;
     control.dataset.premiumHeroBound='1';
@@ -122,13 +123,13 @@ function ready(root){
   const loading=[...root.querySelectorAll('[role="status"]')].some(node=>/Cargando nómina/i.test(node.textContent));
   if(loading)return;
   if(!qs(root,'.np-wrap'))return;
-  root.classList.add('np-premium-ready');
-  document.getElementById('payroll-boot')?.classList.add('is-hidden');
+  addClass(root,'np-premium-ready');
+  addClass(document.getElementById('payroll-boot'),'is-hidden');
 }
 
 export function enhancePayrollPremiumUx(root){
   if(!root)return;
-  root.classList.add('np-premium-root');
+  addClass(root,'np-premium-root');
   enhanceHeader(root);
   ensureHero(root);
   bindPeriodControls(root);
