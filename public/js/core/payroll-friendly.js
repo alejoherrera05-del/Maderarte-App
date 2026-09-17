@@ -49,13 +49,65 @@ function replaceExact(root, selector, from, to) {
   return node;
 }
 
+function ensureSecondaryTools(root) {
+  const wrap = root.querySelector('.np-wrap');
+  const content = root.querySelector('#np-content');
+  const footer = root.querySelector('.np-footer');
+  if (!wrap || !content || !footer || wrap.classList.contains('np-settings-wrap')) return;
+
+  let tools = root.querySelector('.np-friendly-tools');
+  if (!tools) {
+    tools = document.createElement('aside');
+    tools.className = 'np-friendly-tools';
+    tools.setAttribute('aria-label', 'Otras acciones de nómina');
+    tools.innerHTML = '<span class="np-friendly-tools-label">Otras acciones</span><div class="np-friendly-tools-actions"></div>';
+    footer.before(tools);
+  }
+
+  const slot = tools.querySelector('.np-friendly-tools-actions');
+  const config = root.querySelector('a[href*="configuracion.html"][href*="#nomina"]');
+  const newReceipt = root.querySelector('#np-new');
+  if (config && config.parentElement !== slot) {
+    setText(config, 'Configuración de nómina');
+    config.classList.add('np-friendly-tool');
+    slot.append(config);
+  }
+  if (newReceipt && newReceipt.parentElement !== slot) {
+    setButton(newReceipt, 'Otro pago');
+    newReceipt.classList.remove('dark');
+    newReceipt.classList.add('np-friendly-secondary', 'np-friendly-tool');
+    newReceipt.title = 'Prima, liquidación u otro comprobante fuera de la quincena normal';
+    slot.append(newReceipt);
+  }
+  tools.hidden = slot.children.length === 0;
+}
+
 function enhanceShell(root) {
+  const wrap = root.querySelector('.np-wrap');
+  const settings = wrap?.classList.contains('np-settings-wrap');
   const top = root.querySelector('.np-top');
-  if (top && !root.classList.contains('np-settings-mode')) {
+  const tabs = [...root.querySelectorAll('.np-tabs [data-tab]')];
+  const active = tabs.find((button) => button.getAttribute('aria-pressed') === 'true')?.dataset.tab || 'quincena';
+
+  if (top && !settings) {
+    const copy = {
+      quincena: ['Pagos del equipo', 'Revisa lo pendiente y registra cada pago cuando ya lo hayas entregado.'],
+      comprobantes: ['Historial de pagos', 'Consulta comprobantes y pagos anteriores sin mezclarlos con la quincena actual.'],
+      comisiones: ['Comisiones', 'Revisa ventas pendientes y las comisiones que ya fueron incluidas en un pago.'],
+    }[active] || ['Pagos del equipo', TEXT.shellDescription];
+
     const eyebrow = top.querySelector('.np-eyebrow');
-    setText(eyebrow, 'Pagos del equipo');
-    const description = top.querySelector('p');
-    setText(description, TEXT.shellDescription);
+    if (eyebrow) eyebrow.hidden = true;
+    setText(top.querySelector('h1'), copy[0]);
+    setText(top.querySelector('p'), copy[1]);
+  }
+
+  const refresh = root.querySelector('#np-refresh');
+  if (refresh && !refresh.classList.contains('np-friendly-refresh')) {
+    refresh.classList.remove('np-button');
+    refresh.classList.add('cfg-round', 'np-friendly-refresh');
+    refresh.title = 'Actualizar nómina';
+    refresh.innerHTML = '<img src="/assets/icons/arrow-clockwise.svg" alt="" aria-hidden="true">';
   }
 
   const newReceipt = root.querySelector('#np-new');
@@ -66,9 +118,9 @@ function enhanceShell(root) {
     newReceipt.title = 'Prima, liquidación u otro comprobante fuera de la quincena normal';
   }
 
-  const tabs = [...root.querySelectorAll('.np-tabs [data-tab]')];
   const receipts = tabs.find((button) => button.dataset.tab === 'comprobantes');
   setText(receipts, 'Historial');
+  ensureSecondaryTools(root);
 }
 
 function enhanceRunSummary(root) {
@@ -78,7 +130,7 @@ function enhanceRunSummary(root) {
   labels.forEach((label) => {
     const value = label.textContent.trim();
     if (value.startsWith('Total previsto')) setText(label, value.replace('Total previsto', 'Total de la quincena'));
-    if (value === 'Por registrar como pagado') setText(label, 'Falta completar');
+    if (value === 'Por registrar como pagado') setText(label, 'Pendiente');
     if (value === 'Pagos registrados') setText(label, 'Ya pagado');
   });
 }
@@ -145,15 +197,21 @@ function enhanceRun(root) {
     steps[2].lastChild.nodeValue = ' Registra el pago';
   }
 
-  const people = root.querySelector('.np-run-people');
-  if (people && !root.querySelector('.np-friendly-guide')) {
-    const guide = document.createElement('div');
-    guide.className = 'np-friendly-guide';
-    guide.innerHTML = '<strong>Empieza por la primera persona pendiente.</strong><span>Maddy te guía paso a paso. Los pagos terminados quedan al final.</span>';
-    people.before(guide);
-  }
-
   enhanceRunPeople(root);
+
+  const people = root.querySelector('.np-run-people');
+  if (people) {
+    let guide = root.querySelector('.np-friendly-guide');
+    if (!guide) {
+      guide = document.createElement('div');
+      guide.className = 'np-friendly-guide';
+      guide.innerHTML = '<strong></strong><span></span>';
+      people.before(guide);
+    }
+    const pending = [...people.querySelectorAll(':scope > .np-run-person')].filter((card) => !card.classList.contains('np-friendly-paid')).length;
+    setText(guide.querySelector('strong'), pending ? `${pending} pago${pending === 1 ? '' : 's'} por completar` : 'Quincena al día');
+    setText(guide.querySelector('span'), pending ? 'Empieza por la primera persona pendiente. Maddy te guía paso a paso.' : 'Todos los pagos de esta quincena están registrados.');
+  }
 
   const help = root.querySelector('.np-run-help');
   setText(help, 'Maddy solo registra lo que ya pagaste. No hace transferencias ni mueve dinero.');
