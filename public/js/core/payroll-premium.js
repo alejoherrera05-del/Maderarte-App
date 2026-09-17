@@ -1,4 +1,5 @@
 const qs=(root,selector)=>root?.querySelector(selector)||null;
+const setText=(node,value)=>{if(node&&node.textContent!==value)node.textContent=value;};
 
 const monthName=(value)=>{
   if(!/^\d{4}-\d{2}$/.test(String(value||'')))return '';
@@ -41,14 +42,14 @@ function updateHero(root){
   const tab=currentTab(root);
   if(tab==='quincena'){
     const period=runPeriod(root);
-    title.textContent=period?period.label:'Tu quincena';
-    subtitle.textContent=period?.monthLabel?`${period.monthLabel[0].toUpperCase()+period.monthLabel.slice(1)} · Maddy te muestra primero los pagos pendientes.`:'Maddy te muestra primero lo que requiere tu atención.';
+    setText(title,period?period.label:'Tu quincena');
+    setText(subtitle,period?.monthLabel?`${period.monthLabel[0].toUpperCase()+period.monthLabel.slice(1)} · Maddy te muestra primero los pagos pendientes.`:'Maddy te muestra primero lo que requiere tu atención.');
   }else if(tab==='comprobantes'){
-    title.textContent='Historial de pagos';
-    subtitle.textContent='Comprobantes y pagos anteriores, sin mezclarlo con la tarea de hoy.';
+    setText(title,'Historial de pagos');
+    setText(subtitle,'Comprobantes y pagos anteriores, sin mezclarlo con la tarea de hoy.');
   }else if(tab==='comisiones'){
-    title.textContent='Comisiones';
-    subtitle.textContent='Ventas pendientes y comisiones ya registradas, ordenadas para revisar.';
+    setText(title,'Comisiones');
+    setText(subtitle,'Ventas pendientes y comisiones ya registradas, ordenadas para revisar.');
   }
 }
 
@@ -85,10 +86,8 @@ function ensureMenu(root){
 function enhanceHeader(root){
   const brand=qs(root,'.cfg-brand');
   if(brand){
-    const strong=qs(brand,'strong');
-    const span=qs(brand,'span');
-    if(strong)strong.textContent='Nómina';
-    if(span)span.textContent='Maddy';
+    setText(qs(brand,'strong'),'Nómina');
+    setText(qs(brand,'span'),'Maddy');
   }
   ensureMenu(root);
 }
@@ -116,8 +115,7 @@ function enhanceList(root){
   }
   const count=people.querySelectorAll(':scope > .np-run-person').length;
   const pending=[...people.querySelectorAll(':scope > .np-run-person')].filter(card=>!card.classList.contains('np-friendly-paid')).length;
-  const badge=qs(head,'.np-premium-list-count');
-  if(badge)badge.textContent=pending?`${pending} pendiente${pending===1?'':'s'}`:`${count} completos`;
+  setText(qs(head,'.np-premium-list-count'),pending?`${pending} pendiente${pending===1?'':'s'}`:`${count} completos`);
 }
 
 function ready(root){
