@@ -1,0 +1,28 @@
+name: Revert Nomina Premium Temp
+
+on:
+  push:
+    branches: [revert/nomina-premium]
+
+permissions:
+  contents: write
+
+jobs:
+  revert:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: revert/nomina-premium
+          fetch-depth: 0
+      - name: Restaurar Nómina al estado anterior
+        run: |
+          git fetch origin 9bb6bb4a34799354deba6881678ddd4c1f1fab34 --depth=1
+          git checkout 9bb6bb4a34799354deba6881678ddd4c1f1fab34 -- package.json public/js/pages/nomina.js public/nomina.html public/js/core/release.js public/release.json scripts/payroll_browser_qa.py
+          git rm -f public/css/nomina-premium.css public/js/core/payroll-premium.js scripts/test-payroll-premium.mjs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "revert(payroll): remove premium redesign and restore prior UX"
+          git push origin HEAD:revert/nomina-premium
