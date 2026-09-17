@@ -12,3 +12,6 @@
 .np-continuation .np-doc-heading{padding:14px 0}.np-continuation .np-doc-heading h1{font-size:27px}.np-continuation .np-person-meta{display:none}.np-continuation .np-person-main{padding:10px 0}.np-continuation .np-person-main strong{font-size:16px}.np-continuation .np-person{margin-bottom:14px}
 
 .np-sale{margin-top:20px;border-bottom:1px solid #dedbd7;padding-bottom:13px}.np-sale-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:12px}.np-sale-grid strong{font-size:11px;font-weight:500}.np-sale-grid small{font-size:9px;margin-bottom:5px}
+
+.np-doc-heading .np-quincena{font-size:16px;color:#92502a;font-weight:600;margin-top:10px}.np-doc-heading>small{margin-top:6px;font-size:10px}.np-attendance{display:flex;justify-content:space-between;gap:14px;padding:0 0 14px;font-size:10px;color:#655d57}.np-attendance strong{font-size:12px;color:#292624;margin-left:5px}.np-with-days .np-doc-heading{padding:18px 0}.np-with-days .np-person{margin-bottom:12px}
+.np-with-days .np-person-main{padding:11px 0 9px}.np-with-days .np-person-meta{padding:8px 0 10px}.np-with-days .np-detail td,.np-with-days .np-detail th{padding-top:11px;padding-bottom:11px}.np-with-days .np-closing{padding-top:12px}.np-with-days .np-signatures{margin-top:28px}.np-with-days .np-doc-heading{padding:16px 0}
