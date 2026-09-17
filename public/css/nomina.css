@@ -2,3 +2,5 @@
 /* Keep the shared compact header, with enough room for its action. */
 .cfg-header-inner{width:min(1200px,100%);grid-template-columns:44px 1fr auto}.np-list{margin-top:16px}.np-amount .np-button{margin-top:8px}.np-form textarea{resize:vertical}.np-dialog-body{overflow-wrap:anywhere}
 @media(max-width:360px){.np-tabs{gap:2px}.np-tabs button{font-size:12px;padding:12px 3px;min-width:0}.np-summary{grid-template-columns:1fr 1fr}.np-summary div:first-child{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}.np-summary div:first-child strong{margin:0}.np-top{flex-wrap:wrap}.np-top>.np-button{width:100%}.np-total{padding:16px;gap:12px}.np-total strong{font-size:22px}}
+
+.np-settings-wrap{max-width:none;margin:0;padding:0}.np-period-caption{font-size:18px;font-weight:600;color:var(--text-primary,#292624);margin:8px 0 16px}.np-form input[readonly]{background:#f2f2f4;color:#68636a}.np-settings-wrap .np-top{margin-top:0}
