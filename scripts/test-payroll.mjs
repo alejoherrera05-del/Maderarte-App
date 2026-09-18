@@ -21,7 +21,7 @@ const p={type:'COMISION',from:'2026-06-01',to:'2026-06-30',employeeId:e.id,order
 let preview=call('NOMINA_PREVISUALIZAR',p);assert.equal(preview.document.net,46000);
 const issuance={input:p,fingerprint:preview.fingerprint,confirmed:true};f.state.loseBatch=true;
 assert.throws(()=>call('NOMINA_EMITIR',issuance,'PAYROLL-ISSUE-00001'));
-const r=call('NOMINA_EMITIR',issuance,'PAYROLL-ISSUE-00001');assert.equal(r.number,'NOM-00001');assert.equal(f.c.readOrderFence_(),null);
+const r=call('NOMINA_EMITIR',issuance,'PAYROLL-ISSUE-00001');assert.equal(r.number,'NOM-00001');assert.equal(f.c.readOrderFence_(),null);assert.equal(call('NOMINA_LISTAR').receipts.find(x=>x.id===r.id).employeeId,e.id);
 assert.equal(call('NOMINA_LISTAR').commissions[0].status,'EN_COMPROBANTE');
 assert.throws(()=>call('NOMINA_PREVISUALIZAR',p),/reservada/);
 const cancel=call('NOMINA_ESTADO',{id:r.id,revision:r.revision,operation:'ANULAR',reason:'Prueba sintética'});
