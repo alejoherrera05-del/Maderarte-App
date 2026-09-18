@@ -73,6 +73,7 @@ try:
    page.locator('[name=type]').select_option('LIQUIDACION')
    expect(page.get_by_text('Calculado por Maddy',exact=True)).to_be_visible()
    expect(page.get_by_text('Fecha de retiro',exact=True)).to_be_visible()
+   expect(page.locator('[name=to]')).to_have_value('2026-09-17')
    expect(page.locator('[name=from]')).not_to_be_visible()
    expect(page.locator('[data-benefit-card]')).to_have_count(4)
    expect(page.locator('#np-concepts').get_by_text('Prima de servicios',exact=True)).to_be_visible()
