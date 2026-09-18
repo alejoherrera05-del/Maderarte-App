@@ -1,8 +1,11 @@
 """Synthetic payroll UI evidence; never calls the commercial service."""
 import json,shutil,subprocess,time,urllib.request
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 out=Path('artifacts/payroll');out.mkdir(parents=True,exist_ok=True)
+bogota_today=datetime.now(ZoneInfo('America/Bogota')).date().isoformat()
 server=subprocess.Popen(['node','scripts/serve.mjs'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
  for _ in range(50):
@@ -75,7 +78,7 @@ try:
    expect(page.get_by_text('Liquidar desde',exact=True)).to_be_visible()
    expect(page.get_by_text('Liquidar hasta',exact=True)).to_be_visible()
    expect(page.locator('[name=from]')).to_have_value('2026-01-01')
-   expect(page.locator('[name=to]')).to_have_value('2026-09-17')
+   expect(page.locator('[name=to]')).to_have_value(bogota_today)
    expect(page.locator('[data-card]')).to_have_count(5)
    expect(page.locator('#np-concepts').get_by_text('Prima · 1er semestre 2026',exact=True)).to_be_visible()
    expect(page.locator('#np-concepts').get_by_text('Prima · 2º semestre 2026',exact=True)).to_be_visible()
