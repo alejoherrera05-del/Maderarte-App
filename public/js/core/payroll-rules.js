@@ -54,7 +54,7 @@ export function payrollCalculate(p,employee,commissions=[],configuredRates=PAYRO
       payrollDate(start);if(start<employee.start||start>to)throw Error('Revisa el período de '+label.toLowerCase()+'.');
       const days=payrollDays(start,to);if(days>360&&concept!=='VACACIONES')throw Error('Liquida '+label.toLowerCase()+' por vigencia anual.');
       base=payrollAmount(base);if(!base)throw Error('Falta la base de '+label.toLowerCase()+'.');const gross=Math.round(base*days/divisor),paid=payrollAmount(already);if(paid>gross)throw Error('Lo ya reconocido supera '+label.toLowerCase()+'.');
-      add(label+' · '+days+' días',gross,false,{basis:base,factor:days+' / '+divisor+' días',from:start,to});add(label+' · ya reconocido',paid,true);cover(concept,start,to);return {gross,days};
+      add(label+' · '+days+' días',gross,false,{basis:base,factor:days+' / '+divisor+' días',from:start,to});add(label+' · ya reconocido',paid,true);if(paid<gross)cover(concept,start,to);return {gross,days};
     };
     const primaFrom=p.primaFrom||defaults.primaFrom;if(primaFrom.slice(0,4)!==to.slice(0,4)||Math.floor((Number(primaFrom.slice(5,7))-1)/6)!==Math.floor((Number(to.slice(5,7))-1)/6))throw Error('La prima debe corresponder a un mismo semestre.');
     benefit('PRIMA','Prima de servicios',primaFrom,p.benefitBase||defaults.benefitBase,360,p.primaPaid);
