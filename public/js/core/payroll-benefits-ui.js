@@ -1,7 +1,7 @@
 import {payrollBenefitDefaults,payrollDays} from './payroll-rules.js';
 import {payrollMoney as money} from './payroll-document.js';
 
-const esc=value=>String(value??'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[ch]));
+const esc=value=>String(value??'').replace(/[&<>\"']/g,ch=>ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch==='\"'?'&quot;':'&#39;');
 const amount=value=>Math.max(0,Math.round(Number(value||0)));
 const gross=(base,from,to,divisor)=>Math.round(amount(base)*payrollDays(from,to)/divisor);
 const nextDay=value=>{const d=new Date(value+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10);};
