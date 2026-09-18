@@ -1,0 +1,401 @@
+/* Maddy · Cotización V6
+   Object-led workflow: client and furniture behave like business objects, not permanent forms. */
+
+body.maddy-quote-v3-page {
+  --mq6-canvas: #f4f3f0;
+  --mq6-paper: #fffefa;
+  --mq6-ink: #1d1c1a;
+  --mq6-muted: #6f6d68;
+  --mq6-faint: #92908a;
+  --mq6-line: rgba(37,34,30,.10);
+  --mq6-line-strong: rgba(37,34,30,.17);
+  --mq6-orange: #d66318;
+  --mq6-orange-dark: #a94709;
+  --mq6-orange-soft: #fff0e4;
+  --mq6-green: #2c6d4c;
+  --mq6-warning: #a46a12;
+  --mq6-ease: cubic-bezier(.2,.75,.25,1);
+  background: var(--mq6-canvas) !important;
+}
+
+/* Navigation recedes further. The furniture workflow should win attention. */
+.maddy-quote-v3 .mq-sidebar {
+  width: 220px !important;
+  background: #181715 !important;
+  border-right: 1px solid rgba(255,255,255,.045) !important;
+}
+.maddy-quote-v3 .mq-nav a { color: rgba(255,255,255,.58) !important; }
+.maddy-quote-v3 .mq-nav a.is-active {
+  background: rgba(214,99,24,.13) !important;
+  box-shadow: inset 2px 0 0 var(--mq6-orange) !important;
+}
+.mq5-brand-story {
+  opacity: .76;
+  filter: saturate(.74) contrast(.96);
+  border-color: rgba(255,255,255,.05) !important;
+}
+.mq5-brand-story span { font-size: 15px !important; color: rgba(255,247,238,.84) !important; }
+
+/* Toolbar: actual draft feedback, no fake save button. */
+.maddy-quote-v3 .quote-header {
+  background: rgba(250,249,246,.86) !important;
+  border-color: rgba(255,255,255,.74) !important;
+}
+.mq6-save-state {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 0;
+  color: #74716c;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.mq6-save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #aaa7a1;
+  transition: background 160ms var(--mq6-ease), box-shadow 160ms var(--mq6-ease);
+}
+.mq6-save-state[data-state="saved"] .mq6-save-dot { background: var(--mq6-green); }
+.mq6-save-state[data-state="restored"] .mq6-save-dot { background: var(--mq6-warning); }
+.mq6-save-state[data-state="warning"] { color: #8f4d2d; }
+.mq6-save-state[data-state="warning"] .mq6-save-dot { background: #b64c2c; box-shadow: 0 0 0 3px rgba(182,76,44,.10); }
+.maddy-quote-v3 .quote-preview-button { margin-left: 4px !important; }
+
+/* Progress is a quiet locator, not a UI centerpiece. */
+.maddy-quote-v3 .mq-flow-steps {
+  top: 84px !important;
+  gap: 24px !important;
+  padding: 0 0 10px !important;
+  margin: 8px 0 14px !important;
+  background: rgba(244,243,240,.95) !important;
+}
+.maddy-quote-v3 .mq-flow-step {
+  flex: 0 0 auto !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 7px !important;
+  color: #918e87 !important;
+  font-size: 11.5px !important;
+}
+.maddy-quote-v3 .mq-flow-step::before {
+  width: 19px !important;
+  height: 19px !important;
+  background: transparent !important;
+  border: 1px solid #d2d0ca;
+  color: #8e8b84 !important;
+}
+.maddy-quote-v3 .mq-flow-step::after { display: none !important; }
+.maddy-quote-v3 .mq-flow-step.is-active { color: var(--mq6-ink) !important; }
+.maddy-quote-v3 .mq-flow-step.is-active::before {
+  border-color: var(--mq6-orange) !important;
+  background: var(--mq6-orange) !important;
+  color: #fff !important;
+}
+.maddy-quote-v3 .mq-flow-step.is-complete::before {
+  border-color: var(--mq6-green) !important;
+  background: var(--mq6-green) !important;
+  color: #fff !important;
+}
+
+/* CLIENT — editing surface only while editing; then it becomes identity. */
+.maddy-quote-v3 .quote-editor-section.mq6-client-object {
+  padding-top: 16px !important;
+  padding-bottom: 22px !important;
+}
+.maddy-quote-v3 .quote-editor-section.mq6-client-object .quote-section-title {
+  margin-bottom: 9px !important;
+}
+.maddy-quote-v3 .quote-editor-section.mq6-client-object .quote-section-title h2 {
+  font-size: 18px !important;
+}
+.mq5-client-summary {
+  min-height: 78px !important;
+  padding: 10px 12px !important;
+  gap: 12px !important;
+  border-radius: 14px !important;
+  border: 1px solid var(--mq6-line) !important;
+  background: rgba(255,254,250,.72) !important;
+  box-shadow: 0 5px 18px rgba(35,31,27,.025);
+}
+.mq5-client-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  background: #eee4da !important;
+}
+.mq5-client-avatar img { width: 21px; height: 21px; opacity: .68; }
+.mq5-client-copy strong { font-size: 15px !important; font-weight: 720; }
+.mq5-client-copy span { color: var(--mq6-muted) !important; font-size: 11.5px !important; }
+.mq5-client-edit {
+  min-height: 36px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--mq6-orange-dark) !important;
+  font-size: 11.5px !important;
+}
+.mq5-client-edit:hover { background: var(--mq6-orange-soft) !important; }
+
+/* FURNITURE — visual identity first, editing second. */
+.maddy-quote-v3 .quote-items-section { padding-top: 30px !important; }
+.maddy-quote-v3 .quote-items-section .quote-section-title { margin-bottom: 14px !important; }
+.maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size: 29px !important; }
+.maddy-quote-v3 .quote-add-item {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  border: 0 !important;
+  border-radius: 11px !important;
+  background: var(--mq6-orange) !important;
+  color: #fff !important;
+  box-shadow: 0 6px 14px rgba(169,71,9,.14) !important;
+}
+.maddy-quote-v3 .quote-add-item:hover { background: #c85810 !important; transform: translateY(-1px); }
+
+.maddy-quote-v3 .quote-item {
+  margin-top: 12px !important;
+  border: 1px solid var(--mq6-line) !important;
+  border-radius: 16px !important;
+  background: rgba(255,254,250,.92) !important;
+  box-shadow: 0 7px 24px rgba(35,31,27,.035) !important;
+  transition: border-color 170ms var(--mq6-ease), box-shadow 170ms var(--mq6-ease), transform 170ms var(--mq6-ease) !important;
+}
+.maddy-quote-v3 .quote-item:hover { border-color: rgba(37,34,30,.15) !important; box-shadow: 0 12px 32px rgba(35,31,27,.055) !important; }
+.maddy-quote-v3 .quote-item-head { min-height: 42px !important; padding: 8px 14px !important; border-bottom: 1px solid var(--mq6-line) !important; }
+.maddy-quote-v3 .quote-item-index > div strong { font-size: 12px !important; }
+.maddy-quote-v3 .quote-item-index > div small { font-size: 10px !important; color: var(--mq6-faint) !important; }
+
+.mq5-item-presentation {
+  grid-template-columns: 142px minmax(0,1fr) 150px !important;
+  min-height: 126px;
+  gap: 16px !important;
+  padding: 14px 16px !important;
+  background: transparent;
+  cursor: default;
+}
+.quote-item.mq5-compact .mq5-item-presentation { cursor: pointer; }
+.mq5-item-thumb {
+  position: relative;
+  width: 142px !important;
+  height: 104px !important;
+  border-radius: 12px !important;
+  background: #ebe8e2 !important;
+}
+.mq5-item-thumb img { transition: transform 260ms var(--mq6-ease), opacity 180ms var(--mq6-ease); }
+.quote-item.mq5-compact:hover .mq5-item-thumb img { transform: scale(1.015); }
+.mq5-item-thumb[data-source="empty"] img { display: none !important; }
+.mq6-thumb-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 12px;
+  text-align: center;
+  color: #8a867e;
+}
+.mq6-thumb-empty[hidden] { display: none !important; }
+.mq6-thumb-empty::before {
+  content: '+';
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 7px;
+  border: 1px solid #cbc7c0;
+  border-radius: 50%;
+  color: #77736c;
+  font-size: 16px;
+}
+.mq6-thumb-empty strong { font-size: 10.5px; font-weight: 700; }
+.mq6-thumb-empty span { margin-top: 3px; font-size: 8.5px; line-height: 1.25; }
+
+.mq5-item-copy strong { font-size: 17px !important; line-height: 1.12 !important; }
+.mq5-item-copy > span { max-width: 430px; color: var(--mq6-muted) !important; font-size: 11.5px !important; }
+.mq5-item-swatches { margin-top: 10px !important; gap: 12px !important; }
+.mq5-swatch { font-size: 10px !important; color: #6c6861 !important; }
+.mq5-swatch::before { width: 15px !important; height: 15px !important; }
+
+.mq5-item-money {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: center;
+  justify-items: end;
+  min-width: 0 !important;
+}
+.mq6-item-quantity {
+  order: -2;
+  display: block;
+  margin-bottom: 8px;
+  color: var(--mq6-muted);
+  font-size: 10.5px;
+}
+.mq5-item-money > span:not(.mq6-item-quantity) { color: var(--mq6-faint) !important; }
+.mq5-item-money strong { font-size: 20px !important; }
+.mq5-item-toggle { display: none !important; }
+.quote-item.mq5-compact .mq5-item-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  margin-top: 9px !important;
+  border: 0 !important;
+  background: #f2f0eb !important;
+  color: #55514b !important;
+}
+
+/* Editing panel becomes a quiet drawer below the product identity. */
+.maddy-quote-v3 .quote-item:not(.mq5-compact) .quote-item-essential {
+  padding: 16px !important;
+  background: #fbfaf7;
+  border-top: 1px solid var(--mq6-line);
+}
+.maddy-quote-v3 .quote-item:not(.mq5-compact) .quote-item-details {
+  background: #fbfaf7;
+}
+.maddy-quote-v3 .quote-item:not(.mq5-compact) .quote-item-details > summary {
+  color: #5c5852 !important;
+  font-size: 12px !important;
+}
+.quote-item.mq5-compact .quote-item-head { display: none !important; }
+.quote-item.mq5-compact .mq5-item-presentation { border-bottom: 0 !important; }
+
+/* FINANCIAL INSPECTOR — contextual rather than permanently loud. */
+.maddy-quote-v3 .quote-summary-card { transition: min-height 180ms var(--mq6-ease), padding 180ms var(--mq6-ease); }
+.mq6-review-cta {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--mq6-ink);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+body.mq6-work-mode .mq6-review-cta { display: flex; }
+body.mq6-review-mode .mq6-review-cta { display: none; }
+
+@media (min-width: 761px) {
+  body.mq6-work-mode .quote-summary-card > .quote-summary-row,
+  body.mq6-work-mode .quote-summary-card > .quote-discount-field,
+  body.mq6-work-mode .quote-summary-card > .quote-helper,
+  body.mq6-work-mode .quote-summary-card > .quote-secondary-action,
+  body.mq6-work-mode .quote-summary-card > .quote-primary-action { display: none !important; }
+  body.mq6-work-mode .quote-summary-total { padding: 16px 0 7px !important; border-top: 0 !important; }
+  body.mq6-work-mode .quote-summary-total span { font-size: 11px !important; }
+  body.mq6-work-mode .quote-summary-total strong { font-size: 31px !important; }
+  body.mq6-work-mode .quote-summary-card { padding: 16px !important; }
+}
+
+/* Original draft message stays available for its recovery/discard action, but visually subordinate. */
+.maddy-quote-v3 .quote-draft-status {
+  font-size: 10.5px !important;
+  color: #77746e !important;
+}
+.maddy-quote-v3 .quote-draft-status button {
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  font-size: 10.5px !important;
+}
+
+/* MOBILE — selected objects, not a tall form pretending to be native. */
+@media (max-width: 760px) {
+  .mq6-save-state { margin-left: auto; padding: 0 4px; min-width: 16px; }
+  .mq6-save-copy { display: none; }
+  .mq6-save-dot { width: 7px; height: 7px; }
+
+  .maddy-quote-v3 .mq-flow-steps {
+    top: 56px !important;
+    gap: 18px !important;
+    justify-content: flex-start !important;
+    padding: 7px 14px 9px !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .maddy-quote-v3 .mq-flow-steps::-webkit-scrollbar { display: none; }
+  .maddy-quote-v3 .mq-flow-step { flex: 0 0 auto !important; font-size: 10.5px !important; }
+
+  .maddy-quote-v3 .quote-editor-section.mq6-client-object { padding-top: 13px !important; padding-bottom: 17px !important; }
+  .mq5-client-summary { min-height: 70px !important; padding: 10px !important; }
+  .mq5-client-avatar { width: 40px !important; height: 40px !important; }
+  .mq5-client-copy strong { font-size: 14px !important; }
+  .mq5-client-copy span { font-size: 10.5px !important; }
+  .mq5-client-edit { min-height: 34px !important; padding: 0 8px !important; }
+
+  .maddy-quote-v3 .quote-items-section .quote-section-title { align-items: center !important; }
+  .maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size: 25px !important; }
+  .maddy-quote-v3 .quote-add-item { min-height: 38px !important; padding: 0 12px !important; }
+
+  .maddy-quote-v3 .quote-item { border-radius: 15px !important; box-shadow: none !important; }
+  .mq5-item-presentation {
+    grid-template-columns: 94px minmax(0,1fr) !important;
+    min-height: 106px;
+    gap: 11px !important;
+    padding: 10px !important;
+  }
+  .mq5-item-thumb {
+    grid-row: 1 / span 2;
+    width: 94px !important;
+    height: 94px !important;
+    border-radius: 11px !important;
+  }
+  .mq6-thumb-empty { padding: 8px; }
+  .mq6-thumb-empty::before { width: 23px; height: 23px; margin-bottom: 5px; }
+  .mq6-thumb-empty span { display: none; }
+  .mq5-item-copy strong { font-size: 14px !important; }
+  .mq5-item-copy > span { font-size: 10.5px !important; }
+  .mq5-item-swatches { margin-top: 6px !important; gap: 8px !important; }
+  .mq5-swatch { font-size: 9px !important; }
+  .mq5-swatch::before { width: 12px !important; height: 12px !important; }
+  .mq5-item-money {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 7px;
+    justify-items: start;
+  }
+  .mq6-item-quantity { margin: 0 !important; font-size: 9.5px !important; }
+  .mq5-item-money > span:not(.mq6-item-quantity) { display: none !important; }
+  .mq5-item-money strong { font-size: 16px !important; justify-self: start; }
+  .quote-item.mq5-compact .mq5-item-toggle {
+    margin: 0 0 0 auto !important;
+    min-height: 30px !important;
+    font-size: 10.5px !important;
+  }
+
+  /* An open mobile summary is review mode even if the user came from Cliente/Muebles. */
+  body.mq6-work-mode .quote-summary-column.is-open .quote-summary-row { display: flex !important; }
+  body.mq6-work-mode .quote-summary-column.is-open .quote-discount-field,
+  body.mq6-work-mode .quote-summary-column.is-open .quote-helper,
+  body.mq6-work-mode .quote-summary-column.is-open .quote-secondary-action,
+  body.mq6-work-mode .quote-summary-column.is-open .quote-primary-action { display: block !important; }
+  body.mq6-work-mode .quote-summary-column.is-open .mq6-review-cta { display: none !important; }
+
+  .maddy-quote-v3 .mq-mobile-dock {
+    min-height: 64px !important;
+    border-radius: 22px !important;
+    background: rgba(251,250,247,.88) !important;
+  }
+  .maddy-quote-v3 .mq-dock-review {
+    min-width: 102px !important;
+    background: var(--mq6-orange) !important;
+    box-shadow: 0 7px 16px rgba(169,71,9,.20) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maddy-quote-v3 .quote-add-item:hover,
+  .quote-item.mq5-compact:hover .mq5-item-thumb img { transform: none !important; }
+}

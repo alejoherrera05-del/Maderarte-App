@@ -1,0 +1,380 @@
+/* Maddy · Cotización V7
+   Final refinement before design-system extraction.
+   Goal: the screen should communicate quote state with hierarchy, not extra chrome. */
+
+body.maddy-quote-v3-page {
+  --mq7-canvas:#f5f4f1;
+  --mq7-paper:#fffefa;
+  --mq7-ink:#1d1c1a;
+  --mq7-muted:#706e69;
+  --mq7-faint:#96938d;
+  --mq7-line:rgba(37,34,30,.095);
+  --mq7-line-strong:rgba(37,34,30,.16);
+  --mq7-orange:#d66318;
+  --mq7-orange-dark:#a94709;
+  --mq7-green:#2d6d4d;
+  --mq7-working:#a56a16;
+  --mq7-ease:cubic-bezier(.2,.75,.25,1);
+  background:var(--mq7-canvas)!important;
+}
+
+/* Header + document context: one quiet navigation layer. */
+.maddy-quote-v3 .quote-header {
+  margin:10px 18px 0!important;
+  border-radius:15px!important;
+  box-shadow:0 7px 22px rgba(33,30,27,.035)!important;
+}
+.maddy-quote-v3 .quote-header-inner { min-height:56px!important; }
+.maddy-quote-v3 .mq-page-title-copy strong { font-size:16px!important; }
+.maddy-quote-v3 .quote-preview-button { min-height:34px!important; }
+
+.maddy-quote-v3 .quote-document-head {
+  min-height:56px!important;
+  padding:8px 1px 11px!important;
+  margin-bottom:0!important;
+  border:0!important;
+  border-bottom:1px solid var(--mq7-line)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.maddy-quote-v3 .quote-document-kicker,
+.maddy-quote-v3 #quote-meta-branch-name { display:none!important; }
+.maddy-quote-v3 .quote-document-number-row h1 { font-size:19px!important; }
+.maddy-quote-v3 .quote-document-status {
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:var(--mq7-faint)!important;
+}
+.maddy-quote-v3 .quote-meta-cell {
+  min-width:92px!important;
+  padding:0 13px!important;
+  border-left:1px solid var(--mq7-line)!important;
+}
+.maddy-quote-v3 .quote-change-branch {
+  min-height:32px!important;
+  margin-left:6px!important;
+  color:var(--mq7-orange-dark)!important;
+}
+
+/* Progress: location cue, not a segmented control. */
+.maddy-quote-v3 .mq-flow-steps {
+  top:78px!important;
+  gap:30px!important;
+  padding:9px 0 10px!important;
+  margin:0 0 12px!important;
+  border-bottom:1px solid var(--mq7-line)!important;
+  background:rgba(245,244,241,.95)!important;
+}
+.maddy-quote-v3 .mq-flow-step {
+  position:relative;
+  min-height:28px!important;
+  gap:5px!important;
+  padding:0!important;
+  color:#8b8882!important;
+  font-size:11px!important;
+  font-weight:620!important;
+}
+.maddy-quote-v3 .mq-flow-step::before {
+  width:auto!important;
+  height:auto!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#aaa69f!important;
+  font-size:10px!important;
+  font-weight:700!important;
+}
+.maddy-quote-v3 .mq-flow-step.is-active { color:var(--mq7-ink)!important; }
+.maddy-quote-v3 .mq-flow-step.is-active::before { background:transparent!important;color:var(--mq7-orange)!important; }
+.maddy-quote-v3 .mq-flow-step.is-active::after {
+  content:''!important;
+  display:block!important;
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-11px;
+  height:2px;
+  background:var(--mq7-orange);
+}
+.maddy-quote-v3 .mq-flow-step.is-complete::before { background:transparent!important;color:var(--mq7-green)!important; }
+.maddy-quote-v3 .mq-flow-step:disabled {
+  opacity:.42!important;
+  cursor:default!important;
+}
+
+/* Reduce scaffolding around the actual work. */
+.maddy-quote-v3 .quote-shell { max-width:1280px!important; padding-top:18px!important; }
+.maddy-quote-v3 .quote-form {
+  grid-template-columns:minmax(0,1fr) 270px!important;
+  gap:28px!important;
+}
+.maddy-quote-v3 .quote-editor-section {
+  padding-left:0!important;
+  padding-right:0!important;
+  background:transparent!important;
+  border-left:0!important;
+  border-right:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.maddy-quote-v3 .quote-section-title > div > span { display:none!important; }
+.maddy-quote-v3 .quote-section-title h2 { font-size:23px!important;letter-spacing:-.035em!important; }
+.maddy-quote-v3 .quote-section-title small { color:var(--mq7-muted)!important; }
+
+/* Search first: before client identity is known, ask for only one thing. */
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only {
+  padding-top:18px!important;
+  padding-bottom:24px!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-field-grid-client {
+  display:block!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-field-grid-client > .quote-field:not(.quote-client-lookup) {
+  display:none!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-client-lookup {
+  width:min(520px,100%);
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title {
+  margin-bottom:14px!important;
+}
+.maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title h2::after {
+  content:'Busca al cliente';
+  display:block;
+  margin-top:5px;
+  color:var(--mq7-muted);
+  font-size:12px;
+  font-weight:450;
+  letter-spacing:0;
+}
+
+/* Before client identity is complete, future steps recede instead of becoming more form. */
+.mq7-furniture-gate {
+  display:none;
+  align-items:center;
+  gap:12px;
+  min-height:62px;
+  padding:12px 2px;
+  border-top:1px solid var(--mq7-line);
+  border-bottom:1px solid var(--mq7-line);
+  color:var(--mq7-muted);
+}
+.mq7-gate-index {
+  display:grid;
+  place-items:center;
+  width:26px;
+  height:26px;
+  border:1px solid #d6d2cb;
+  border-radius:50%;
+  color:#99958e;
+  font-size:10px;
+  font-weight:700;
+}
+.mq7-furniture-gate > span:last-child { display:grid;gap:2px; }
+.mq7-furniture-gate strong { color:#5d5a54;font-size:13px; }
+.mq7-furniture-gate small { color:#98948d;font-size:11.5px; }
+body.mq7-client-pending .maddy-quote-v3 .quote-items-section > :not(.mq7-furniture-gate) { display:none!important; }
+body.mq7-client-pending .maddy-quote-v3 .quote-items-section .mq7-furniture-gate { display:flex!important; }
+body.mq7-client-pending .maddy-quote-v3 .quote-items-section {
+  padding:16px 0 18px!important;
+  border-bottom:0!important;
+}
+body.mq7-client-pending .maddy-quote-v3 .quote-editor > .quote-editor-section:nth-child(3) { display:none!important; }
+
+/* Client identity is intentionally one compact object once known. */
+.maddy-quote-v3 .mq5-client-summary {
+  min-height:70px!important;
+  padding:10px 12px!important;
+  border-color:var(--mq7-line)!important;
+  background:rgba(255,254,250,.72)!important;
+  box-shadow:none!important;
+}
+.maddy-quote-v3 .mq5-client-copy strong { font-size:15px!important; }
+.maddy-quote-v3 .mq5-client-edit { color:var(--mq7-orange-dark)!important; }
+
+/* Furniture is the visual center of the workflow. */
+.maddy-quote-v3 .quote-items-section { padding-top:26px!important; }
+.maddy-quote-v3 .quote-items-section .quote-section-title { margin-bottom:12px!important; }
+.maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size:26px!important; }
+.maddy-quote-v3 .quote-add-item {
+  min-height:38px!important;
+  padding:0 13px!important;
+  border-radius:10px!important;
+  box-shadow:none!important;
+}
+
+.maddy-quote-v3 .quote-item {
+  margin-top:10px!important;
+  border-radius:15px!important;
+  border-color:var(--mq7-line)!important;
+  box-shadow:0 6px 20px rgba(35,31,27,.025)!important;
+}
+.maddy-quote-v3 .quote-item.mq7-state-empty {
+  border-style:dashed!important;
+  background:rgba(255,254,250,.46)!important;
+  box-shadow:none!important;
+}
+.maddy-quote-v3 .quote-item.mq7-state-working {
+  border-color:rgba(165,106,22,.25)!important;
+  box-shadow:0 7px 22px rgba(87,65,34,.035)!important;
+}
+.maddy-quote-v3 .quote-item.mq7-state-ready {
+  background:rgba(255,254,250,.94)!important;
+}
+
+.maddy-quote-v3 .quote-item-head { min-height:38px!important;padding:7px 13px!important; }
+.mq7-item-state {
+  margin-left:auto;
+  margin-right:8px;
+  color:var(--mq7-faint);
+  font-size:10px;
+  font-weight:650;
+  letter-spacing:.01em;
+}
+.quote-item.mq7-state-working .mq7-item-state { color:var(--mq7-working); }
+.quote-item.mq7-state-ready .mq7-item-state { color:var(--mq7-green); }
+
+.maddy-quote-v3 .mq5-item-presentation {
+  grid-template-columns:136px minmax(0,1fr) 140px!important;
+  min-height:118px!important;
+  padding:13px 15px!important;
+}
+.maddy-quote-v3 .mq5-item-thumb { width:136px!important;height:98px!important; }
+.maddy-quote-v3 .mq5-item-copy strong { font-size:16.5px!important; }
+.maddy-quote-v3 .mq5-item-copy > span { margin-top:4px!important; }
+.maddy-quote-v3 .mq5-item-swatches { margin-top:8px!important; }
+.maddy-quote-v3 .mq5-item-money strong { font-size:19px!important; }
+
+/* The editing drawer stays functional but visually subordinate. */
+.maddy-quote-v3 .quote-item:not(.mq5-compact) .quote-item-essential,
+.maddy-quote-v3 .quote-item:not(.mq5-compact) .quote-item-details { background:#fbfaf7!important; }
+.maddy-quote-v3 .quote-item:not(.mq5-compact) .quote-item-essential { padding:14px!important; }
+.maddy-quote-v3 .quote-item-description input { font-weight:620;letter-spacing:-.01em; }
+
+/* Photo hierarchy: first image is visibly the cover used by the object card. */
+.quote-photo-thumb.mq7-cover-photo { position:relative; }
+.quote-photo-thumb.mq7-cover-photo::after {
+  content:'Portada';
+  position:absolute;
+  left:6px;
+  bottom:6px;
+  padding:3px 6px;
+  border-radius:7px;
+  background:rgba(24,23,21,.78);
+  color:#fff;
+  font-size:9px;
+  font-weight:650;
+  letter-spacing:.01em;
+  pointer-events:none;
+}
+
+/* Contextual financial inspector. */
+.maddy-quote-v3 .quote-summary-card {
+  top:88px!important;
+  border-color:var(--mq7-line)!important;
+  box-shadow:0 10px 30px rgba(35,31,27,.035)!important;
+}
+body.mq6-work-mode .maddy-quote-v3 .quote-summary-card { padding:15px!important; }
+.mq6-review-cta:disabled,
+.maddy-quote-v3 .mq-dock-review:disabled {
+  cursor:default!important;
+  background:#e7e4de!important;
+  color:#98948d!important;
+  box-shadow:none!important;
+  opacity:1!important;
+}
+
+/* Keyboard/focus craft. */
+.maddy-quote-v3 :where(button,a,input,textarea,select,[role="button"]):focus-visible {
+  outline:2px solid rgba(214,99,24,.7)!important;
+  outline-offset:2px!important;
+}
+
+@media (max-width:760px) {
+  .maddy-quote-v3 .quote-header { margin:0!important;border-radius:0!important;box-shadow:none!important; }
+  .maddy-quote-v3 .quote-header-inner { min-height:54px!important; }
+  .maddy-quote-v3 .quote-preview-button { display:none!important; }
+  .maddy-quote-v3 .mq-page-title-copy strong { font-size:17px!important; }
+
+  .maddy-quote-v3 .quote-workspace { padding-top:8px!important; }
+  .maddy-quote-v3 .quote-document-head { min-height:46px!important; }
+
+  .maddy-quote-v3 .mq-flow-steps {
+    top:54px!important;
+    gap:0!important;
+    justify-content:space-between!important;
+    padding:6px 2px 9px!important;
+    margin-bottom:8px!important;
+  }
+  .maddy-quote-v3 .mq-flow-step {
+    flex:0 0 auto!important;
+    min-height:26px!important;
+    font-size:10.5px!important;
+  }
+  .maddy-quote-v3 .mq-flow-step.is-active::after { bottom:-10px; }
+
+  .maddy-quote-v3 .quote-form { display:block!important; }
+  .maddy-quote-v3 .quote-section-title { margin-bottom:12px!important; }
+  .maddy-quote-v3 .quote-section-title h2 { font-size:22px!important; }
+  .maddy-quote-v3 .quote-section-title small { display:none!important; }
+
+  .maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only {
+    padding:14px 0 18px!important;
+  }
+  .maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title h2 {
+    font-size:20px!important;
+  }
+  .maddy-quote-v3 .quote-editor-section.mq7-client-lookup-only .quote-section-title h2::after {
+    font-size:12px;
+  }
+  .mq7-furniture-gate { min-height:58px;padding:10px 1px; }
+  .mq7-furniture-gate small { font-size:11px; }
+
+  .maddy-quote-v3 .quote-items-section { padding-top:18px!important; }
+  .maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size:23px!important; }
+  .maddy-quote-v3 .quote-add-item { min-height:38px!important; }
+
+  .maddy-quote-v3 .quote-item { border-radius:14px!important; }
+  .maddy-quote-v3 .quote-item-head { min-height:36px!important;padding:6px 11px!important; }
+  .mq7-item-state { margin-right:4px;font-size:9.5px; }
+
+  .maddy-quote-v3 .mq5-item-presentation {
+    grid-template-columns:82px minmax(0,1fr)!important;
+    min-height:100px!important;
+    gap:10px!important;
+    padding:10px 11px!important;
+  }
+  .maddy-quote-v3 .mq5-item-thumb { width:82px!important;height:78px!important; }
+  .maddy-quote-v3 .mq5-item-copy strong { font-size:14.5px!important; }
+  .maddy-quote-v3 .mq5-item-copy > span { font-size:10.5px!important; }
+  .maddy-quote-v3 .mq5-item-swatches { gap:7px!important;margin-top:6px!important; }
+  .maddy-quote-v3 .mq5-swatch { font-size:9.5px!important; }
+  .maddy-quote-v3 .mq5-item-money { grid-column:2!important; }
+  .maddy-quote-v3 .mq5-item-money strong { font-size:16.5px!important; }
+
+  /* Review is a solid modal sheet; glass stays in navigation, not content. */
+  .maddy-quote-v3 .mq-summary-backdrop.is-open {
+    background:rgba(24,22,20,.24)!important;
+    backdrop-filter:blur(4px)!important;
+    -webkit-backdrop-filter:blur(4px)!important;
+  }
+  .maddy-quote-v3 .quote-summary-column.is-open {
+    background:#fbfaf7!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .maddy-quote-v3 .quote-summary-column.is-open .quote-summary-card {
+    background:#fbfaf7!important;
+    opacity:1!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+
+  .maddy-quote-v3 .quote-shell { padding-bottom:108px!important; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .mq7-state-transition { animation:none!important; }
+}

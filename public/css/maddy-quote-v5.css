@@ -1,0 +1,292 @@
+/* Maddy · Cotización V5
+   Product-specific refinement inspired by Maderarte's furniture domain.
+   Additive UI layer: no commercial rules, data contracts or backend calls change. */
+
+body.maddy-quote-v3-page {
+  --mq5-canvas: #f4f3f0;
+  --mq5-paper: #fffefa;
+  --mq5-ink: #1e1d1b;
+  --mq5-muted: #706f6a;
+  --mq5-line: rgba(36,34,31,.10);
+  --mq5-line-strong: rgba(36,34,31,.17);
+  --mq5-orange: #d76418;
+  --mq5-orange-dark: #aa480a;
+  --mq5-orange-wash: #fff1e6;
+  --mq5-wood: #6f4c34;
+  background: var(--mq5-canvas) !important;
+}
+
+/* Brand belongs to the product context, not to decorative UI chrome. */
+.maddy-quote-v3 .mq-sidebar {
+  width: 232px !important;
+  padding-bottom: 170px !important;
+  background: #181715 !important;
+}
+.maddy-quote-v3 .mq-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 180px;
+  background: radial-gradient(circle at 18% -10%, rgba(215,100,24,.16), transparent 72%);
+  pointer-events: none;
+}
+.mq5-brand-story {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 42px;
+  height: 118px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.07);
+  background: #27231f url('/assets/interiors/living-room-night.webp') center/cover no-repeat;
+}
+.mq5-brand-story::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15,14,13,.10), rgba(15,14,13,.88));
+}
+.mq5-brand-story span {
+  position: absolute;
+  z-index: 1;
+  left: 14px;
+  right: 14px;
+  bottom: 13px;
+  color: #f4ede5;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 17px;
+  line-height: 1.05;
+  letter-spacing: -.025em;
+}
+.mq5-brand-story span::after {
+  content: 'MADERARTE';
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-sans);
+  font-size: 8px;
+  letter-spacing: .17em;
+  color: rgba(255,255,255,.48);
+}
+
+/* Toolbar — quiet, almost architectural. */
+.maddy-quote-v3 .quote-header {
+  margin: 12px 20px 0 !important;
+  border-color: rgba(255,255,255,.76) !important;
+  background: rgba(250,249,246,.82) !important;
+}
+.maddy-quote-v3 .quote-header-inner { min-height: 60px !important; }
+.maddy-quote-v3 .mq-page-title-copy strong { font-size: 17px !important; }
+.maddy-quote-v3 .mq-page-title-copy span { font-size: 10.5px !important; letter-spacing: .02em; }
+
+/* Replace segmented-control look with an editorial progress rail. */
+.maddy-quote-v3 .mq-flow-steps {
+  position: sticky !important;
+  top: 84px !important;
+  z-index: 12;
+  display: flex !important;
+  width: 100% !important;
+  gap: 0 !important;
+  padding: 0 0 12px !important;
+  margin: 14px 0 10px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--mq5-line) !important;
+  border-radius: 0 !important;
+  background: rgba(244,243,240,.92) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+  counter-reset: mq5step;
+}
+.maddy-quote-v3 .mq-flow-step {
+  counter-increment: mq5step;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px !important;
+  padding: 0 28px 0 0 !important;
+  margin-right: 30px;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #898781 !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 620 !important;
+}
+.maddy-quote-v3 .mq-flow-step::before {
+  content: counter(mq5step) !important;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #deddd9;
+  color: #79766f;
+  font-size: 10px;
+  font-weight: 750;
+}
+.maddy-quote-v3 .mq-flow-step::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  width: 22px;
+  height: 1px;
+  background: #d7d5d0;
+}
+.maddy-quote-v3 .mq-flow-step:last-child::after { display: none; }
+.maddy-quote-v3 .mq-flow-step.is-active { color: var(--mq5-ink) !important; }
+.maddy-quote-v3 .mq-flow-step.is-active::before { background: var(--mq5-orange); color: #fff; }
+.maddy-quote-v3 .mq-flow-step.is-complete::before { content: '✓' !important; background: #2d6d4c; color: #fff; }
+
+/* Client summary: forms recede once identity is known. */
+.mq5-client-summary {
+  display: none;
+  align-items: center;
+  gap: 14px;
+  min-height: 84px;
+  padding: 14px 16px;
+  border: 1px solid var(--mq5-line);
+  border-radius: 15px;
+  background: rgba(255,254,250,.76);
+}
+.mq5-client-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f1e8df;
+  color: #5c5048;
+}
+.mq5-client-avatar svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.mq5-client-copy { min-width: 0; flex: 1; }
+.mq5-client-copy strong { display: block; color: var(--mq5-ink); font-size: 15px; letter-spacing: -.02em; }
+.mq5-client-copy span { display: block; margin-top: 4px; color: var(--mq5-muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mq5-client-edit {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--mq5-line-strong);
+  border-radius: 10px;
+  background: rgba(255,255,255,.72);
+  color: var(--mq5-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.quote-editor-section.mq5-client-collapsed .mq5-client-summary { display: flex; }
+.quote-editor-section.mq5-client-collapsed .quote-field-grid-client,
+.quote-editor-section.mq5-client-collapsed > .quote-helper { display: none !important; }
+.quote-editor-section.mq5-client-collapsed .quote-section-title { margin-bottom: 10px !important; }
+.quote-editor-section.mq5-client-collapsed .quote-section-title small { display: none; }
+
+/* Furniture is the domain object. */
+.maddy-quote-v3 .quote-items-section { padding-top: 28px !important; }
+.maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size: 27px !important; }
+.maddy-quote-v3 .quote-item {
+  border-radius: 15px !important;
+  background: rgba(255,254,250,.88) !important;
+  box-shadow: 0 8px 26px rgba(35,31,27,.04) !important;
+}
+.maddy-quote-v3 .quote-item::before { display: none !important; }
+.maddy-quote-v3 .quote-item-head {
+  padding: 11px 14px !important;
+  background: transparent !important;
+}
+.maddy-quote-v3 .quote-item-index > span { background: transparent !important; color: #9b9891 !important; font-size: 10px !important; }
+.mq5-item-presentation {
+  display: grid;
+  grid-template-columns: 126px minmax(0,1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px 16px;
+  border-bottom: 1px solid var(--mq5-line);
+}
+.mq5-item-thumb {
+  width: 126px;
+  height: 94px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e8e4df;
+}
+.mq5-item-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mq5-item-copy { min-width: 0; }
+.mq5-item-copy strong { display: block; color: var(--mq5-ink); font-size: 16px; line-height: 1.15; letter-spacing: -.025em; }
+.mq5-item-copy > span { display: block; margin-top: 5px; color: var(--mq5-muted); font-size: 12px; line-height: 1.35; }
+.mq5-item-swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 9px; }
+.mq5-swatch { display: inline-flex; align-items: center; gap: 6px; color: #6c6964; font-size: 10.5px; }
+.mq5-swatch::before { content: ''; width: 13px; height: 13px; border-radius: 50%; border: 1px solid rgba(0,0,0,.09); background: #d9d1c7; }
+.mq5-swatch.is-wood::before { background: linear-gradient(135deg,#9e7552,#5f3e28); }
+.mq5-item-money { min-width: 120px; text-align: right; }
+.mq5-item-money span { display: block; color: var(--mq5-muted); font-size: 10px; }
+.mq5-item-money strong { display: block; margin-top: 4px; color: var(--mq5-ink); font-size: 18px; letter-spacing: -.035em; }
+.mq5-item-toggle { margin-top: 10px; min-height: 34px; padding: 0 10px; border: 1px solid var(--mq5-line); border-radius: 9px; background: #f4f3f0; color: #4e4b47; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.quote-item.mq5-compact .quote-item-essential,
+.quote-item.mq5-compact .quote-item-details,
+.quote-item.mq5-compact > .quote-helper { display: none !important; }
+.quote-item.mq5-compact .mq5-item-presentation { border-bottom: 0; }
+.quote-item.mq5-compact .quote-item-head { display: none !important; }
+
+/* Summary inspector: information first, action second. */
+.maddy-quote-v3 .quote-summary-card {
+  border-color: var(--mq5-line) !important;
+  background: rgba(255,254,250,.90) !important;
+  box-shadow: 0 12px 36px rgba(35,31,27,.05) !important;
+}
+.maddy-quote-v3 .quote-summary-head > span { font-size: 13px !important; font-weight: 700 !important; }
+.maddy-quote-v3 .quote-summary-total strong { font-size: 32px !important; }
+.maddy-quote-v3 .quote-primary-action {
+  background: var(--mq5-orange) !important;
+  box-shadow: 0 8px 18px rgba(170,72,10,.16) !important;
+}
+.maddy-quote-v3 .quote-primary-action:hover:not(:disabled) { background: #ca5910 !important; transform: translateY(-1px); }
+
+/* Mobile: purpose-built composition, not compressed desktop. */
+@media (max-width: 760px) {
+  .maddy-quote-v3 .quote-header { margin: 0 !important; border-radius: 0 !important; }
+  .maddy-quote-v3 .mq-flow-steps {
+    top: 56px !important;
+    padding: 8px 14px 10px !important;
+    margin: 0 -14px 8px !important;
+    background: rgba(250,249,246,.95) !important;
+  }
+  .maddy-quote-v3 .mq-flow-step { flex: 1; margin-right: 0; padding: 0 4px !important; justify-content: center; font-size: 10.5px !important; }
+  .maddy-quote-v3 .mq-flow-step::after { display: none; }
+  .maddy-quote-v3 .mq-flow-step::before { width: 20px; height: 20px; }
+
+  .mq5-client-summary { min-height: 74px; padding: 11px 12px; border-radius: 14px; gap: 11px; }
+  .mq5-client-avatar { width: 42px; height: 42px; }
+  .mq5-client-copy strong { font-size: 14px; }
+  .mq5-client-copy span { font-size: 11.5px; }
+  .mq5-client-edit { min-height: 36px; padding: 0 9px; font-size: 11.5px; }
+
+  .maddy-quote-v3 .quote-items-section .quote-section-title h2 { font-size: 25px !important; }
+  .mq5-item-presentation {
+    grid-template-columns: 86px minmax(0,1fr);
+    gap: 11px;
+    padding: 11px 12px 13px;
+  }
+  .mq5-item-thumb { width: 86px; height: 82px; border-radius: 10px; grid-row: 1 / span 2; }
+  .mq5-item-copy strong { font-size: 14px; }
+  .mq5-item-copy > span { font-size: 11px; margin-top: 3px; }
+  .mq5-item-swatches { margin-top: 6px; gap: 8px; }
+  .mq5-swatch { font-size: 9.5px; }
+  .mq5-item-money { grid-column: 2; display: flex; align-items: baseline; justify-content: space-between; min-width: 0; text-align: left; }
+  .mq5-item-money span { font-size: 9.5px; }
+  .mq5-item-money strong { font-size: 16px; }
+  .mq5-item-toggle { margin-top: 0; min-height: 30px; }
+
+  .maddy-quote-v3 .mq-mobile-dock {
+    left: 9px !important;
+    right: 9px !important;
+    border-radius: 22px !important;
+    background: rgba(251,250,247,.86) !important;
+  }
+  .maddy-quote-v3 .mq-dock-review { background: var(--mq5-orange) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maddy-quote-v3 .quote-primary-action:hover:not(:disabled) { transform: none; }
+}
