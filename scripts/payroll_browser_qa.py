@@ -116,7 +116,7 @@ try:
   page.locator('.np-paper img').first.wait_for();page.evaluate('Promise.all([...document.images].map(i=>i.decode()))');page.pdf(path=str(out/'comision-muestra.pdf'),format='A4',print_background=True,prefer_css_page_size=True)
   page.screenshot(path=str(out/'pdf-muestra.png'),full_page=True)
   commission_script=script
-  script=script.replace("type:'COMISION',from:'2026-06-01',to:'2026-06-30'","type:'LIQUIDACION',from:'2026-01-01',to:'2026-12-31',primaFrom:'2026-07-01',benefitBase:2000000,severanceBase:2000000,vacationBase:1750905,primaPaid:100000,severancePaid:100000,interestPaid:10000,vacationPaid:100000,salaryPending:100000,salaryPendingFrom:'2026-12-16',salaryPendingTo:'2026-12-31',advance:10000,deduction:10000,indemnity:100000,reviewed:true,notes:'Detalle verificado. '.repeat(25)").replace('employee,commissions)','employee,[])')
+  script=script.replace("type:'COMISION',from:'2026-06-01',to:'2026-06-30'","type:'LIQUIDACION',from:'2026-01-01',to:'2026-12-31',primaFrom:'2026-07-01',benefitBase:2000000,severanceBase:2000000,vacationFrom:'2026-01-01',vacationBase:1750905,primaPaid:100000,severancePaid:100000,interestPaid:10000,vacationPaid:100000,salaryPending:100000,salaryPendingFrom:'2026-12-16',salaryPendingTo:'2026-12-31',advance:10000,deduction:10000,indemnity:100000,reviewed:true,notes:'Detalle verificado. '.repeat(25)").replace('employee,commissions)','employee,[])')
   payload=json.loads(subprocess.check_output(['node','--input-type=module','-e',script],text=True))
   page.goto('http://127.0.0.1:4173/documento-render.html')
   page.evaluate("d=>{const n=document.createElement('script');n.id='maddy-document-data';n.type='application/json';n.textContent=JSON.stringify(d);document.body.append(n)}",payload)
