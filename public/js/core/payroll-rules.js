@@ -6,9 +6,20 @@ export function payrollAmount(v){const n=Number(v||0);if(!Number.isFinite(n)||n<
 export function payrollBenefitDefaults(to,employee,configuredRates=PAYROLL_RATES){
   const end=payrollDate(to),year=Number(end.slice(0,4)),rates=configuredRates[year];
   if(!rates)throw Error('Faltan parámetros aprobados para ese año.');
-  const start=payrollDate(employee.start),salary=payrollAmount(employee.salary||rates.salary),transport=employee.transport===false?0:payrollAmount(rates.transport);
-  const semesterStart=year+'-'+(Number(end.slice(5,7))<=6?'01-01':'07-01'),yearStart=year+'-01-01';
-  return {salary,transport,benefitBase:salary+transport,vacationBase:salary,primaFrom:start>semesterStart?start:semesterStart,severanceFrom:start>yearStart?start:yearStart};
+  const salary=payrollAmount(employee.salary||rates.salary),transport=employee.transport===false?0:payrollAmount(rates.transport);
+  return {salary,transport,benefitBase:salary+transport,vacationBase:salary};
+}
+export function payrollBenefitPeriods(from,to){
+  payrollDate(from);payrollDate(to);if(from>to)throw Error('La fecha inicial es posterior a la final.');
+  const prime=[],severance=[],startYear=Number(from.slice(0,4)),endYear=Number(to.slice(0,4));
+  const clip=(a,b)=>{const x=a<from?from:a,y=b>to?to:b;return x<=y?{from:x,to:y}:null;};
+  for(let year=startYear;year<=endYear;year++){
+    for(const [half,a,b] of [['1',year+'-01-01',year+'-06-30'],['2',year+'-07-01',year+'-12-31']]){
+      const p=clip(a,b);if(p)prime.push({...p,year,half});
+    }
+    const c=clip(year+'-01-01',year+'-12-31');if(c)severance.push({...c,year});
+  }
+  return {prime,severance};
 }
 export function payrollCalculate(p,employee,commissions=[],configuredRates=PAYROLL_RATES){
   const from=payrollDate(p.from),to=payrollDate(p.to),year=Number(to.slice(0,4)),rates=configuredRates[year];
@@ -50,19 +61,38 @@ export function payrollCalculate(p,employee,commissions=[],configuredRates=PAYRO
     if(commissions.length)throw Error('Las comisiones se pagan en nómina o comprobante de comisiones.');
     if(p.reviewed!==true)throw Error('Confirma el historial de prestaciones antes de continuar.');
     const defaults=payrollBenefitDefaults(to,employee,configuredRates);
-    const benefit=(concept,label,start,base,divisor,already)=>{
-      payrollDate(start);if(start<employee.start||start>to)throw Error('Revisa el período de '+label.toLowerCase()+'.');
-      const days=payrollDays(start,to);if(days>360&&concept!=='VACACIONES')throw Error('Liquida '+label.toLowerCase()+' por vigencia anual.');
-      base=payrollAmount(base);if(!base)throw Error('Falta la base de '+label.toLowerCase()+'.');const gross=Math.round(base*days/divisor),paid=payrollAmount(already);if(paid>gross)throw Error('Lo ya reconocido supera '+label.toLowerCase()+'.');
-      add(label+' · '+days+' días',gross,false,{basis:base,factor:days+' / '+divisor+' días',from:start,to});add(label+' · ya reconocido',paid,true);if(paid<gross)cover(concept,start,to);return {gross,days};
+    const checkPeriods=(rows,concept)=>{
+      if(!Array.isArray(rows)||!rows.length)throw Error('Faltan los períodos de '+concept.toLowerCase()+'.');
+      const sorted=rows.map(x=>({from:payrollDate(x.from),to:payrollDate(x.to),paid:payrollAmount(x.paid),interestPaid:payrollAmount(x.interestPaid)})).sort((a,b)=>a.from.localeCompare(b.from));
+      sorted.forEach((x,i)=>{if(x.from<from||x.to>to||x.from>x.to)throw Error('Revisa el período de '+concept.toLowerCase()+'.');if(i&&sorted[i-1].to>=x.from)throw Error('Hay períodos repetidos de '+concept.toLowerCase()+'.');});
+      return sorted;
     };
-    const primaFrom=p.primaFrom||defaults.primaFrom;if(primaFrom.slice(0,4)!==to.slice(0,4)||Math.floor((Number(primaFrom.slice(5,7))-1)/6)!==Math.floor((Number(to.slice(5,7))-1)/6))throw Error('La prima debe corresponder a un mismo semestre.');
-    benefit('PRIMA','Prima de servicios',primaFrom,p.benefitBase||defaults.benefitBase,360,p.primaPaid);
+    const benefit=(concept,label,start,end,base,divisor,already)=>{
+      const days=payrollDays(start,end);base=payrollAmount(base);if(!base)throw Error('Falta la base de '+label.toLowerCase()+'.');
+      const gross=Math.round(base*days/divisor),paid=payrollAmount(already);if(paid>gross)throw Error('Lo ya reconocido supera '+label.toLowerCase()+'.');
+      add(label+' · '+days+' días',gross,false,{basis:base,factor:days+' / '+divisor+' días',from:start,to:end});add(label+' · ya reconocido',paid,true);
+      if(paid<gross)cover(concept,start,end);return {gross,days,paid};
+    };
+    const automatic=payrollBenefitPeriods(from,to);
+    const primeInput=Array.isArray(p.primaPeriods)&&p.primaPeriods.length?p.primaPeriods:automatic.prime.map(x=>({...x,paid:0}));
+    const primePeriods=checkPeriods(primeInput,'Prima');
+    primePeriods.forEach(x=>{
+      const half=Number(x.from.slice(5,7))<=6?'1er semestre':'2º semestre',yearLabel=x.to.slice(0,4);
+      if(x.from.slice(0,4)!==x.to.slice(0,4)||Math.floor((Number(x.from.slice(5,7))-1)/6)!==Math.floor((Number(x.to.slice(5,7))-1)/6))throw Error('Cada prima debe corresponder a un solo semestre.');
+      benefit('PRIMA','Prima de servicios · '+half+' '+yearLabel,x.from,x.to,p.benefitBase||defaults.benefitBase,360,x.paid);
+    });
     if(p.type==='LIQUIDACION'){
-      const c=benefit('CESANTIAS','Cesantías',p.severanceFrom||defaults.severanceFrom,p.severanceBase||p.benefitBase||defaults.benefitBase,360,p.severancePaid);
-      const interest=Math.round(c.gross*c.days*.12/360),interestPaid=payrollAmount(p.interestPaid);if(interestPaid>interest)throw Error('Revisa los intereses ya pagados.');add('Intereses a las cesantías',interest,false,{basis:c.gross,factor:'12 % × '+c.days+'/360'});add('Intereses ya pagados',interestPaid,true);
+      const severanceInput=Array.isArray(p.severancePeriods)&&p.severancePeriods.length?p.severancePeriods:automatic.severance.map(x=>({...x,paid:0,interestPaid:0}));
+      const severancePeriods=checkPeriods(severanceInput,'Cesantías');
+      severancePeriods.forEach(x=>{
+        if(x.from.slice(0,4)!==x.to.slice(0,4))throw Error('Cada período de cesantías debe corresponder a una sola vigencia.');
+        const yearLabel=x.to.slice(0,4),c=benefit('CESANTIAS','Cesantías · '+yearLabel,x.from,x.to,p.severanceBase||p.benefitBase||defaults.benefitBase,360,x.paid);
+        const interest=Math.round(c.gross*c.days*.12/360),interestPaid=payrollAmount(x.interestPaid);if(interestPaid>interest)throw Error('Revisa los intereses ya pagados de '+yearLabel+'.');
+        add('Intereses a las cesantías · '+yearLabel,interest,false,{basis:c.gross,factor:'12 % × '+c.days+'/360',from:x.from,to:x.to});add('Intereses ya pagados · '+yearLabel,interestPaid,true);
+        if(interestPaid<interest)cover('INTERESES_CESANTIAS',x.from,x.to);
+      });
       if(!p.vacationFrom)throw Error('Confirma desde qué fecha hay vacaciones pendientes.');
-      benefit('VACACIONES','Vacaciones pendientes',p.vacationFrom,p.vacationBase||defaults.vacationBase,720,p.vacationPaid);
+      benefit('VACACIONES','Vacaciones pendientes',p.vacationFrom,to,p.vacationBase||defaults.vacationBase,720,p.vacationPaid);
       if(payrollAmount(p.salaryPending)){const a=payrollDate(p.salaryPendingFrom),b=payrollDate(p.salaryPendingTo);if(a<employee.start||a>b||b>to||a.slice(0,7)!==b.slice(0,7))throw Error('Revisa las fechas del salario pendiente.');cover('SALARIO',a,b);}add('Salario pendiente de liquidación',p.salaryPending);add('Indemnización revisada',p.indemnity);
       const pending=payrollAmount(p.salaryPending);add('Salud sobre salario pendiente · 4 %',pending*.04,true,{basis:pending,factor:'4 %'});add('Pensión sobre salario pendiente · 4 %',pending*.04,true,{basis:pending,factor:'4 %'});
     }
@@ -71,7 +101,7 @@ export function payrollCalculate(p,employee,commissions=[],configuredRates=PAYRO
   if((payrollAmount(p.deduction)||payrollAmount(p.extra)||payrollAmount(p.indemnity))&&!String(p.notes||'').trim())throw Error('Describe los conceptos adicionales y su soporte en las notas.');
   const earned=lines.filter(x=>!x.deduction).reduce((s,x)=>s+x.amount,0),deducted=lines.filter(x=>x.deduction).reduce((s,x)=>s+x.amount,0);
   if(deducted>earned||earned===0)throw Error('Revisa el neto: los descuentos no pueden superar lo devengado.');
-  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,attendance,ratesSnapshot:{salary:rates.salary,transport:rates.transport},rules:'CO-2026-09-v3',notes:[String(p.notes||'').slice(0,500),attendance&&attendance.noveltyDetail?attendance.noveltyDetail:''].filter(Boolean).join(' · ')};
+  return {type:p.type,from,to,year,lines,earned,deducted,net:earned-deducted,coverage,commissions,attendance,ratesSnapshot:{salary:rates.salary,transport:rates.transport},rules:'CO-2026-09-v4',notes:[String(p.notes||'').slice(0,500),attendance&&attendance.noveltyDetail?attendance.noveltyDetail:''].filter(Boolean).join(' · ')};
 }
 
 export function payrollPeriod(month,half){
