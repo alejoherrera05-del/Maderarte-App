@@ -196,3 +196,52 @@
   .np-operation-feedback,.np-operation-card,.np-operation-spinner,.np-operation-check,
   .np-loading-ring,.np-app-header #np-refresh.is-loading img{animation:none;transition:none}
 }
+
+
+/* Automatic labor benefits */
+.np-friendly .np-summary .np-summary-date strong{font-size:19px;line-height:1.2;text-transform:none}
+.np-benefit-date-grid{grid-template-columns:1fr!important}
+.np-benefit-auto{display:grid;gap:16px}
+.np-benefit-source{
+  display:flex;align-items:center;justify-content:space-between;gap:20px;padding:17px 18px;
+  border:1px solid #e6e3e0;border-radius:16px;background:#f8f7f6
+}
+.np-benefit-source div{display:grid;gap:3px}
+.np-benefit-source span{color:#9a5428;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.np-benefit-source strong{font-size:16px;font-weight:620;letter-spacing:-.01em}
+.np-benefit-source p{max-width:290px;margin:0;color:#777278;font-size:13px;line-height:1.45;text-align:right}
+.np-benefit-warning{margin:0;padding:13px 15px;border-radius:13px;background:#fff4e8;color:#75421d;font-size:13px;line-height:1.5}
+.np-benefit-cards{display:grid;gap:10px}
+.np-benefit-card{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 16px;padding:16px 17px;
+  border:1px solid #e7e5e3;border-radius:16px;background:#fff
+}
+.np-benefit-card-copy{display:grid;gap:3px;min-width:0}
+.np-benefit-card-copy span{font-size:15px;font-weight:620;letter-spacing:-.01em}
+.np-benefit-card-copy small{color:#817b80;font-size:12px;line-height:1.4}
+.np-benefit-card>strong{font-size:20px;font-weight:650;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.np-benefit-paid{
+  grid-column:1/-1;display:flex!important;align-items:center;gap:9px!important;margin-top:3px;padding-top:10px;
+  border-top:1px solid #efedef;font-size:13px!important;font-weight:500!important;color:#615c60
+}
+.np-benefit-paid input{width:20px!important;height:20px!important;min-height:20px!important;accent-color:#b9632d}
+.np-benefit-history{
+  padding:18px;border:1px solid #e3ded9;border-radius:17px;background:#fbfaf9
+}
+.np-benefit-history h4{margin:0;font-size:18px;font-weight:620;letter-spacing:-.015em}
+.np-benefit-history>p{margin:6px 0 0;color:#777278;font-size:13px;line-height:1.5}
+.np-benefit-history .np-friendly-choices{margin-top:14px}
+.np-benefit-history>label{display:grid;gap:7px;margin-top:14px;font-size:14px;font-weight:550}
+.np-benefit-history input[type=date]{min-height:48px;border:1px solid #dcdce0;border-radius:11px;background:#fff;padding:11px 12px;font:inherit}
+.np-benefit-advanced{border-top:1px solid #e4e1df;padding-top:10px}
+.np-benefit-advanced summary{min-height:46px;display:flex;align-items:center;cursor:pointer;font-size:14px;font-weight:620;color:#5f595d}
+.np-benefit-advanced>p{margin:0 0 14px;color:#817b80;font-size:13px;line-height:1.5}
+.np-benefit-advanced .np-grid+.np-grid{margin-top:14px}
+
+@media(max-width:640px){
+  .np-benefit-source{display:grid;gap:8px;padding:15px}
+  .np-benefit-source p{text-align:left}
+  .np-benefit-card{padding:15px}
+  .np-benefit-card>strong{font-size:19px}
+  .np-benefit-history{padding:16px}
+}
