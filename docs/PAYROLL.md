@@ -30,3 +30,15 @@ Los borradores BORRADOR viven en Nomina_Eventos con control de revisión, audito
 Novedades: ausencias no remuneradas separadas; permisos remunerados conservan salario y permiten indicar días con auxilio. Vacaciones, incapacidades o varias novedades requieren días, fechas/detalle, valor y base de aportes revisados por la persona responsable/contador. No se aplica una tasa genérica de incapacidad ni se presume una liquidación de vacaciones correcta sin sus antecedentes. Se reemplaza el salario ordinario de esos días, no se suma dos veces; el detalle se conserva en el comprobante. Este circuito no calcula la PILA ni determina origen/prórroga de incapacidades. Referencia: Ministerio de Salud, Concepto Jurídico 2024424001742752 de 2024, https://www.minsalud.gov.co/Normatividad_Nuevo/Concepto%20Jur%C3%ADdico%202024424001742752%20de%202024.pdf .
 
 Pruebas sintéticas: quincena seleccionable, revisión legible en 320/390/1440px, borrador y reintento, edición concurrente, revisión sin emisión, pago único, períodos superpuestos, entrada parcial, ausencia frente a permiso e incapacidad, y permisos del servidor.
+
+
+## Liquidación automática — 17 de septiembre de 2026
+La liquidación deja de pedir al usuario las fórmulas o bases normales. Para trabajadores con salario fijo o mínimo, Maddy deriva por defecto la base de prima y cesantías con salario + auxilio de transporte cuando corresponda, y vacaciones con salario sin auxilio. La fecha de retiro es la única fecha principal visible; la fecha de ingreso ya vive en la ficha laboral.
+
+Períodos automáticos: prima desde el inicio del semestre vigente o desde el ingreso si fue posterior; cesantías desde el 1 de enero de la vigencia o desde el ingreso si fue posterior. Vacaciones requieren confirmar historial cuando el contrato supera un año: si nunca se han disfrutado/compensado se calculan desde el ingreso; si ya existen períodos cubiertos, solo se pregunta hasta qué fecha quedaron cubiertos. El sistema no inventa ese antecedente.
+
+La pantalla muestra importes calculados y preguntas simples (“esta prima ya fue pagada”, “estas cesantías ya fueron reconocidas”, “estos intereses ya fueron pagados”). Las bases, pagos parciales, salario variable, salario pendiente e indemnización quedan en “Ajustar cálculo” y no forman parte del recorrido normal.
+
+Un beneficio marcado completamente pagado no crea una nueva cobertura que choque con el comprobante anterior; el documento conserva las líneas de valor causado y valor ya reconocido. El resumen de quincena muestra fecha de pago/vencimiento en vez de repetir un importe “Pendiente”.
+
+Referencias privadas de trabajo: CST art. 134 (pago por períodos iguales y vencidos), art. 249 (cesantía: un mes por año o proporcional), art. 306 (prima: 30 días por año en dos pagos), art. 186/192 y Ley 995 de 2005 (vacaciones y compensación proporcional), Decreto 1072 de 2015 arts. 2.2.1.3.4–2.2.1.3.5 (intereses de cesantías 12% anual proporcional). El auxilio de transporte se integra para liquidar prestaciones sociales cuando corresponde; no integra vacaciones.
