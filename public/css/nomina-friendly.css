@@ -200,7 +200,7 @@
 
 /* Automatic labor benefits */
 .np-friendly .np-summary .np-summary-date strong{font-size:19px;line-height:1.2;text-transform:none}
-.np-benefit-date-grid{grid-template-columns:1fr!important}
+.np-benefit-date-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 .np-benefit-auto{display:grid;gap:16px}
 .np-benefit-source{
   display:flex;align-items:center;justify-content:space-between;gap:20px;padding:17px 18px;
@@ -237,6 +237,10 @@
 .np-benefit-advanced summary{min-height:46px;display:flex;align-items:center;cursor:pointer;font-size:14px;font-weight:620;color:#5f595d}
 .np-benefit-advanced>p{margin:0 0 14px;color:#817b80;font-size:13px;line-height:1.5}
 .np-benefit-advanced .np-grid+.np-grid{margin-top:14px}
+.np-benefit-advanced-grid{display:grid;gap:14px}
+.np-benefit-advanced-grid fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;padding:14px;border:1px solid #e8e5e2;border-radius:14px}
+.np-benefit-advanced-grid legend{padding:0 6px;color:#5f595d;font-size:13px;font-weight:650}
+.np-benefit-advanced-grid label{font-size:13px}
 
 @media(max-width:640px){
   .np-benefit-source{display:grid;gap:8px;padding:15px}
@@ -244,4 +248,6 @@
   .np-benefit-card{padding:15px}
   .np-benefit-card>strong{font-size:19px}
   .np-benefit-history{padding:16px}
+  .np-benefit-date-grid{grid-template-columns:1fr!important}
+  .np-benefit-advanced-grid fieldset{grid-template-columns:1fr}
 }

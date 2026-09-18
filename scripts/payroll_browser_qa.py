@@ -1,8 +1,11 @@
 """Synthetic payroll UI evidence; never calls the commercial service."""
 import json,shutil,subprocess,time,urllib.request
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from playwright.sync_api import sync_playwright,expect
 out=Path('artifacts/payroll');out.mkdir(parents=True,exist_ok=True)
+bogota_today=datetime.now(ZoneInfo('America/Bogota')).date().isoformat()
 server=subprocess.Popen(['node','scripts/serve.mjs'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 try:
  for _ in range(50):
@@ -72,17 +75,20 @@ try:
    page.goto('http://127.0.0.1:4173/nomina.html?preview=1');page.locator('#np-new').click()
    page.locator('[name=type]').select_option('LIQUIDACION')
    expect(page.get_by_text('Calculado por Maddy',exact=True)).to_be_visible()
-   expect(page.get_by_text('Fecha de retiro',exact=True)).to_be_visible()
-   expect(page.locator('[name=to]')).to_have_value('2026-09-17')
-   expect(page.locator('[name=from]')).not_to_be_visible()
-   expect(page.locator('[data-benefit-card]')).to_have_count(4)
-   expect(page.locator('#np-concepts').get_by_text('Prima de servicios',exact=True)).to_be_visible()
-   expect(page.locator('#np-concepts').get_by_text('Cesantías',exact=True)).to_be_visible()
-   expect(page.locator('#np-concepts').get_by_text('Intereses a las cesantías',exact=True)).to_be_visible()
+   expect(page.get_by_text('Liquidar desde',exact=True)).to_be_visible()
+   expect(page.get_by_text('Liquidar hasta',exact=True)).to_be_visible()
+   expect(page.locator('[name=from]')).to_have_value('2026-01-01')
+   expect(page.locator('[name=to]')).to_have_value(bogota_today)
+   expect(page.locator('[data-card]')).to_have_count(5)
+   expect(page.locator('#np-concepts').get_by_text('Prima · 1er semestre 2026',exact=True)).to_be_visible()
+   expect(page.locator('#np-concepts').get_by_text('Prima · 2º semestre 2026',exact=True)).to_be_visible()
+   expect(page.locator('#np-concepts').get_by_text('Cesantías · 2026',exact=True)).to_be_visible()
+   expect(page.locator('#np-concepts').get_by_text('Intereses de cesantías · 2026',exact=True)).to_be_visible()
    expect(page.locator('#np-concepts').get_by_text('Vacaciones pendientes',exact=True)).to_be_visible()
    page.screenshot(path=str(out/f'liquidacion-automatica-{width}.png'))
-   page.locator('#np-prima-paid').check()
-   expect(page.locator('[data-benefit-value=prima]')).to_contain_text('0')
+   page.locator('#np-prime-paid-0').check()
+   expect(page.locator('[data-benefit-value="prima-0"]')).to_contain_text('0')
+   expect(page.locator('[data-benefit-value="prima-1"]')).not_to_contain_text('$ 0')
    page.get_by_role('button',name='Ver total a pagar',exact=False).click()
    expect(page.locator('.np-total')).to_be_visible()
    page.locator('#np-close').click()
