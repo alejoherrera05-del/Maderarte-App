@@ -63,7 +63,7 @@ export function payrollCalculate(p,employee,commissions=[],configuredRates=PAYRO
     const defaults=payrollBenefitDefaults(to,employee,configuredRates);
     const checkPeriods=(rows,concept)=>{
       if(!Array.isArray(rows)||!rows.length)throw Error('Faltan los períodos de '+concept.toLowerCase()+'.');
-      const sorted=rows.map(x=>({from:payrollDate(x.from),to:payrollDate(x.to),paid:payrollAmount(x.paid),interestPaid:payrollAmount(x.interestPaid)})).sort((a,b)=>a.from.localeCompare(b.from));
+      const sorted=rows.map(x=>({from:payrollDate(x.from),to:payrollDate(x.to),base:payrollAmount(x.base),paid:payrollAmount(x.paid),interestPaid:payrollAmount(x.interestPaid)})).sort((a,b)=>a.from.localeCompare(b.from));
       sorted.forEach((x,i)=>{if(x.from<from||x.to>to||x.from>x.to)throw Error('Revisa el período de '+concept.toLowerCase()+'.');if(i&&sorted[i-1].to>=x.from)throw Error('Hay períodos repetidos de '+concept.toLowerCase()+'.');});
       return sorted;
     };
@@ -79,14 +79,14 @@ export function payrollCalculate(p,employee,commissions=[],configuredRates=PAYRO
     primePeriods.forEach(x=>{
       const half=Number(x.from.slice(5,7))<=6?'1er semestre':'2º semestre',yearLabel=x.to.slice(0,4);
       if(x.from.slice(0,4)!==x.to.slice(0,4)||Math.floor((Number(x.from.slice(5,7))-1)/6)!==Math.floor((Number(x.to.slice(5,7))-1)/6))throw Error('Cada prima debe corresponder a un solo semestre.');
-      const periodBase=p.benefitBase||payrollBenefitDefaults(x.to,employee,configuredRates).benefitBase;benefit('PRIMA','Prima de servicios · '+half+' '+yearLabel,x.from,x.to,periodBase,360,x.paid);
+      const periodBase=x.base||p.benefitBase||payrollBenefitDefaults(x.to,employee,configuredRates).benefitBase;benefit('PRIMA','Prima de servicios · '+half+' '+yearLabel,x.from,x.to,periodBase,360,x.paid);
     });
     if(p.type==='LIQUIDACION'){
       const severanceInput=Array.isArray(p.severancePeriods)&&p.severancePeriods.length?p.severancePeriods:automatic.severance.map(x=>({...x,paid:0,interestPaid:0}));
       const severancePeriods=checkPeriods(severanceInput,'Cesantías');
       severancePeriods.forEach(x=>{
         if(x.from.slice(0,4)!==x.to.slice(0,4))throw Error('Cada período de cesantías debe corresponder a una sola vigencia.');
-        const yearLabel=x.to.slice(0,4),periodBase=p.severanceBase||p.benefitBase||payrollBenefitDefaults(x.to,employee,configuredRates).benefitBase,c=benefit('CESANTIAS','Cesantías · '+yearLabel,x.from,x.to,periodBase,360,x.paid);
+        const yearLabel=x.to.slice(0,4),periodBase=x.base||p.severanceBase||p.benefitBase||payrollBenefitDefaults(x.to,employee,configuredRates).benefitBase,c=benefit('CESANTIAS','Cesantías · '+yearLabel,x.from,x.to,periodBase,360,x.paid);
         const interest=Math.round(c.gross*c.days*.12/360),interestPaid=payrollAmount(x.interestPaid);if(interestPaid>interest)throw Error('Revisa los intereses ya pagados de '+yearLabel+'.');
         add('Intereses a las cesantías · '+yearLabel,interest,false,{basis:c.gross,factor:'12 % × '+c.days+'/360',from:x.from,to:x.to});add('Intereses ya pagados · '+yearLabel,interestPaid,true);
         if(interestPaid<interest)cover('INTERESES_CESANTIAS',x.from,x.to);
