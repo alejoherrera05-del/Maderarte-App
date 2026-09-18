@@ -42,3 +42,13 @@ La pantalla muestra importes calculados y preguntas simples (“esta prima ya fu
 Un beneficio marcado completamente pagado no crea una nueva cobertura que choque con el comprobante anterior; el documento conserva las líneas de valor causado y valor ya reconocido. El resumen de quincena muestra fecha de pago/vencimiento en vez de repetir un importe “Pendiente”.
 
 Referencias privadas de trabajo: CST art. 134 (pago por períodos iguales y vencidos), art. 249 (cesantía: un mes por año o proporcional), art. 306 (prima: 30 días por año en dos pagos), art. 186/192 y Ley 995 de 2005 (vacaciones y compensación proporcional), Decreto 1072 de 2015 arts. 2.2.1.3.4–2.2.1.3.5 (intereses de cesantías 12% anual proporcional). El auxilio de transporte se integra para liquidar prestaciones sociales cuando corresponde; no integra vacaciones.
+
+
+### Períodos explícitos en liquidación — 18 de septiembre de 2026
+La liquidación muestra **Liquidar desde / Liquidar hasta**. El inicio propone la fecha de ingreso y el final propone la fecha actual (o una finalización contractual ya pasada), pero ambos pueden revisarse. El rango global no se reutiliza ciegamente para todas las prestaciones: Maddy lo divide por las unidades legales de cada concepto.
+
+La prima se separa por semestres calendario. Un rango enero–septiembre, por ejemplo, genera una prima del primer semestre y otra proporcional del segundo semestre. Cada una conserva estado/pago independiente. Marcar pagada la prima enero–junio nunca elimina la prima julio–retiro.
+
+Cesantías e intereses se separan por vigencia anual. Cada año permite indicar si las cesantías ya fueron reconocidas/consignadas y si sus intereses ya fueron pagados. Los períodos pagados se mantienen en el desglose como valor causado menos valor reconocido, pero no crean una cobertura pendiente que choque con un comprobante previo.
+
+Para trabajadores en salario mínimo, cada período histórico usa los parámetros del año de ese período; no se aplica el salario mínimo del año actual retroactivamente. Las bases por período solo se editan en “Ajustar cálculo”.
