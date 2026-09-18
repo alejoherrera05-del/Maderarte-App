@@ -7,7 +7,7 @@ const first=payrollCalculate({type:'SALARIO',from:'2026-01-01',to:'2026-01-15'},
 assert.equal(first.lines[0].calculation.basis,1750905);assert.equal(first.lines[0].calculation.factor,'15 / 30 días');assert.equal(first.lines.find(l=>l.label.includes('salud')).calculation.basis,875453);assert.equal(first.earned+second.earned,2000000);assert.equal(first.deducted,70036);
 const settlement=payrollCalculate({type:'LIQUIDACION',from:'2026-01-01',to:'2026-12-31',primaFrom:'2026-07-01',benefitBase:2000000,severanceBase:2000000,vacationFrom:'2026-01-01',vacationBase:1750905,reviewed:true},employee);
 assert.equal(settlement.lines.find(l=>l.label==='Intereses a las cesantías').amount,240000);
-assert.throws(()=>payrollCalculate({type:'PRIMA',from:'2026-01-01',to:'2026-12-31',benefitBase:2000000,reviewed:true},employee),/semestre/);
+const autoPrima=payrollCalculate({type:'PRIMA',from:'2026-01-01',to:'2026-12-31',benefitBase:2000000,reviewed:true},employee);assert.equal(autoPrima.lines.find(l=>l.label.startsWith('Prima de servicios')).amount,1000000);assert.equal(autoPrima.coverage[0].from,'2026-07-01');
 assert.throws(()=>payrollCalculate({type:'SALARIO',from:'2026-02-01',to:'2026-02-15'},{...employee,end:'2026-01-31'}),/vinculación/);
 assert.throws(()=>payrollCalculate({type:'LIQUIDACION',from:'2026-07-01',to:'2026-12-31',benefitBase:2000000,vacationFrom:'2026-07-01',vacationBase:1750905,reviewed:true,salaryPending:500000},employee),/fecha/);
 const f=sandboxRuntime();let serial=0;const call=(a,p={},id='PAYROLL-TEST-'+String(++serial).padStart(8,'0'))=>f.c.routeAction_(a,p,{...f.ctx,requestId:id,session:f.c.validateSessionToken_(f.ctx.sessionToken,false)});
