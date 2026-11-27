@@ -4,7 +4,7 @@ import { resolve, relative, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const generated = new Set(['public/release.json', 'public/js/core/release.js']);
-const text = new Set(['.html', '.css', '.js', '.json', '.svg', '.webmanifest', '.txt', '.toml', '']);
+const text = new Set(['.html', '.css', '.js', '.json', '.md', '.svg', '.webmanifest', '.txt', '.toml', '']);
 export function releaseId(root) {
   const files = [];
   function walk(dir) {
@@ -33,7 +33,7 @@ export function stampRelease(root, check = false) {
   for (const [path, content] of Object.entries(outputs)) {
     if (check) {
       if (readFileSync(resolve(root, path), 'utf8').replace(/\r\n/g, '\n') !== content) {
-        throw new Error('Release marker is stale. Run npm run release:stamp and commit both generated files.');
+        throw new Error(`Release marker is stale (expected ${id}). Run npm run release:stamp and commit both generated files.`);
       }
     } else writeFileSync(resolve(root, path), content);
   }

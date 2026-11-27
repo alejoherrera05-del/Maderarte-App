@@ -36,6 +36,9 @@ function routeAction_(action, payload, context) {
     case 'RECAUDOS_LISTAR': return colList_(payload,context);
     case 'RECAUDO_RECIBIR': return colReceive_(payload,context);
     case 'RECAUDO_RECEPCION_ESTADO': return colStatus_(payload,context);
+    case 'FACTURACION_RESUMEN': return billingSummary_(payload,context);
+    case 'FACTURACION_REGISTRAR': return billingRegister_(payload,context);
+    case 'FACTURACION_REGISTRO_ESTADO': return billingStatus_(payload,context);
     case 'GARANTIA_COMPROBANTE_DATOS': return wcDocument_(payload, context);
     case 'GARANTIA_LISTAR': return wcList_(payload, context);
     case 'GARANTIA_GUARDAR': return wcSave_(payload, context);

@@ -18,6 +18,7 @@ Nombre exacto: `Base de Datos Maderarte App`.
 | `Remision_Items` | Cantidades entregadas por producto |
 | `Agenda` | Entregas, visitas y tareas asociadas |
 | `Documentos` | Índice de PDFs y soportes |
+| `Facturacion_Electronica` | Control de facturas ya emitidas y firmadas en FacturaTech; se crea en el primer registro |
 
 ## Pestañas de control
 
@@ -46,6 +47,14 @@ Nombre exacto: `Base de Datos Maderarte App`.
 Cada fila de `Abonos` conserva recibo, OP, fecha, valor, medio de pago, referencia, comentario, saldo anterior, saldo nuevo, PDF, soporte, usuario, estado y `Request_ID`.
 
 No existen columnas `Abono_1`, `Abono_2`, etc. Una OP puede tener tantos registros de abono como necesite.
+
+## Control de facturación electrónica
+
+`Facturacion_Electronica` es una pestaña opcional y perezosa. Sus encabezados exactos son:
+
+`Factura_ID`, `Fecha_Emision`, `Sede`, `Prefijo`, `Numero`, `CUFE`, `Valor_Total`, `Estado`, `OPs_JSON`, `Cliente`, `Notas`, `Fuente`, `Registrado_Por`, `Fecha_Registro`, `Request_ID`.
+
+La pestaña no convierte una OP en documento tributario: conserva la referencia de una factura que ya fue emitida y firmada en FacturaTech. La lectura del módulo no crea esta pestaña.
 
 ## Integridad de encabezados
 

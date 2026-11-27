@@ -10,6 +10,7 @@ var USER_PERMISSION_GROUPS_ = [
   {title:'Abonos',items:[['abonos.read','Consultar abonos'],['abonos.create','Registrar abonos']]},
   {title:'Entregas y producción',items:[['remisiones.read','Consultar remisiones'],['remisiones.create','Registrar remisiones'],['produccion.read','Consultar producción'],['produccion.update','Actualizar producción']]},
   {title:'Agenda y garantías',items:[['agenda.read','Consultar agenda y garantías'],['agenda.update','Gestionar agenda y garantías']]},
+  {title:'Facturación electrónica · información tributaria',sensitive:true,items:[['facturacion.read','Consultar ritmo y facturas registradas'],['facturacion.manage','Registrar facturas ya emitidas en FacturaTech']]},
   {title:'Acciones delicadas',sensitive:true,items:[['ajustes.desistir','Retirar muebles de una orden'],['ajustes.retornar','Registrar devolución de un mueble'],['ajustes.transferir','Trasladar saldo a otra orden'],['ajustes.devolver','Registrar devolución de dinero'],['recaudos.read','Consultar ingresos por sede'],['recaudos.receive','Confirmar efectivo recibido'],['config.read','Consultar configuración'],['users.manage','Administrar equipo y sus accesos']]}
 ];
 var USER_PERMISSION_DEPS_ = {
@@ -23,6 +24,7 @@ var USER_PERMISSION_DEPS_ = {
   'ajustes.desistir':['ordenes.read','abonos.read'],'ajustes.retornar':['ordenes.read','abonos.read'],
   'ajustes.transferir':['ordenes.read','abonos.read'],'ajustes.devolver':['ordenes.read','abonos.read'],
   'recaudos.read':['ordenes.read','abonos.read'],'recaudos.receive':['recaudos.read'],'users.manage':['config.read']
+  ,'facturacion.read':['ordenes.read'],'facturacion.manage':['facturacion.read']
 };
 function upKeys_(){return USER_PERMISSION_GROUPS_.reduce(function(a,g){return a.concat(g.items.map(function(i){return i[0];}));},[]);}
 function upLegacy_(role){
