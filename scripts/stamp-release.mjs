@@ -33,7 +33,7 @@ export function stampRelease(root, check = false) {
   for (const [path, content] of Object.entries(outputs)) {
     if (check) {
       if (readFileSync(resolve(root, path), 'utf8').replace(/\r\n/g, '\n') !== content) {
-        throw new Error('Release marker is stale. Run npm run release:stamp and commit both generated files.');
+        throw new Error(`Release marker is stale (expected ${id}). Run npm run release:stamp and commit both generated files.`);
       }
     } else writeFileSync(resolve(root, path), content);
   }
