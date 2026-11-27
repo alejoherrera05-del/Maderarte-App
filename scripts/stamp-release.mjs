@@ -4,7 +4,7 @@ import { resolve, relative, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const generated = new Set(['public/release.json', 'public/js/core/release.js']);
-const text = new Set(['.html', '.css', '.js', '.json', '.svg', '.webmanifest', '.txt', '.toml', '']);
+const text = new Set(['.html', '.css', '.js', '.json', '.md', '.svg', '.webmanifest', '.txt', '.toml', '']);
 export function releaseId(root) {
   const files = [];
   function walk(dir) {
