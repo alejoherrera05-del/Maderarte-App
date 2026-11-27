@@ -164,6 +164,10 @@ export function previewApiData(action, payload = {}) {
     return {...common,data:{items:filtered,total:filtered.length,hasMore:false,modules:['EQUIPO','PRODUCCION'],actors:items.map(x=>x.actor)}};
   }
   if (action === 'DASHBOARD_RESUMEN') return { ...common, data: { metrics: { activeOrders: 0, pendingBalance: 0, pendingProduction: 0, readyDelivery: 0 }, priorities: [], mode: 'PREPARACION' } };
+  if (action === 'FACTURACION_RESUMEN') {
+    const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Bogota'}),ago=days=>new Date(Date.now()-days*86400000).toISOString().slice(0,10),recent=[{id:'sample-invoice',date:ago(8),branch:'MP',prefix:'FE',number:'1042',cufe:'muestra'.repeat(16),amount:6800000,status:'FIRMADA',orders:['MP-0084'],client:'Cliente de muestra',notes:'',source:'MANUAL_FACTURATECH',registeredAt:ago(8)}];
+    return {...common,msg:'Datos demostrativos locales.',data:{today,config:{minimumMonthly:20000000,minimumWeekly:2,warningDays:5,urgentDays:8},alert:{level:'urgent',message:'Ojo: llevas 8 días sin registrar una factura firmada.',daysSince:8},month:{key:today.slice(0,7),total:6800000,count:1,target:20000000,remaining:13200000,progress:34,expectedToDate:18000000},week:{from:today,to:today,count:0,target:2,remaining:2},last:recent[0],recent,candidates:[{number:'MP-0091',date:ago(18),branch:'MP',document:'1061000001',client:'María López',total:7400000,status:'ACTIVA'},{number:'MP-0095',date:ago(10),branch:'MP',document:'1061000002',client:'Carlos Ruiz',total:5350000,status:'ACTIVA'},{number:'TP-0048',date:ago(6),branch:'TP',document:'1061000003',client:'Ana Muñoz',total:9200000,status:'ACTIVA'}],enabled:false,setup:true}};
+  }
   if (action === 'CLIENTES_LISTAR') return { ...common, data: { items: [], total: 0 } };
   if (action === 'CLIENTE_OBTENER') return { ...common, data: null };
   if (action === 'ORDENES_LISTAR') return { ...common, data: { items: [], total: 0 } };

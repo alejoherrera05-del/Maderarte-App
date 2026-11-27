@@ -22,6 +22,7 @@ No se copian datos, URLs privadas, IDs, credenciales, PDFs, cachés, mascota Hom
 | `documentos.html` | Centro documental | `public/documentos.html` | Portar patrón cuando llegue el módulo de documentos. |
 | `calendario.html` | Agenda, eventos, recordatorios y navegación desde campana | `public/agenda.html` | Fuente para Agenda y notificaciones reales. |
 | `configuracion.html` | Configuración, integraciones, usuarios y parámetros | `public/configuracion.html` | Portar estructura por secciones; adaptar permisos/config Maderarte. |
+| — | No existe un control equivalente de factura electrónica en HomeEasy vigente | `public/facturacion.html` | Diferencia real del negocio Maderarte. Reutiliza el shell de Recaudos y el lenguaje de recordatorios de Agenda; no inventa una contabilidad paralela. |
 | `caja.html` | Flujo de caja | — | NO APLICA por ahora: no existe storage/contrato equivalente en el schema Maderarte actual. No inventar. |
 | `ar-homeeasy-v3.html` | Vista AR | — | NO APLICA por ahora. Requiere decisión explícita de producto para Maderarte. |
 
@@ -122,6 +123,12 @@ Visual QA de Seguimiento valida Chrome desktop y móvil, protege el grid de tres
 - Formularios y documentos pueden mejorar el equivalente de HomeEasy cuando la mejora responde al negocio de mobiliario, sin perder su esencia minimalista y operativa.
 
 Cualquier otra desviación debe estar pedida explícitamente por el propietario o justificada por una diferencia real de negocio.
+
+## Facturación electrónica — diferencia real de negocio
+
+Se inspeccionó `Homeeasy/main` antes de construir el módulo y no existe una pantalla equivalente para controlar facturas electrónicas o CUFE. La desviación está justificada por el uso de FacturaTech y por la solicitud expresa del propietario.
+
+Maddy reutiliza patrones ya aprobados: cabecera independiente y tarjetas administrativas de Recaudos, selección compacta de registros y el tono de recordatorio de Agenda. El flujo registra documentos ya firmados; no emite facturas, no clasifica OP como “no facturables” y no presenta la meta mensual como un máximo.
 
 ## Orden de pedido: formulario y documento de preparación
 
